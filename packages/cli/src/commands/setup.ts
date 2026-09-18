@@ -1,4 +1,14 @@
-import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, realpathSync, rmSync } from 'node:fs'
+import {
+  chmodSync,
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,6 +21,7 @@ import { PreconditionError, RefusedError } from '../errors.js'
 import { ensureInstallationDirectories } from '../installation-directories.js'
 import { Output } from '../output.js'
 import { runProcess } from '../process.js'
+import { CORPUS_FILE } from './docs.js'
 
 interface SetupOptions {
   dir?: string
@@ -76,14 +87,26 @@ function installRuntime(source: string, target: string): void {
     const destination = join(dynamic, entry)
     if (!existsSync(destination)) copyFileSync(join(defaults, entry), destination)
   }
+  // The applier container runs `node <root>/bin/portta up` with only `<root>`
+  // mounted, so everything that entry point loads has to be inside it. The
+  // bundle is split across chunks that `cli.js` imports by relative path, so
+  // the whole directory travels, not just the entry file.
   const bin = join(target, 'bin')
   mkdirSync(bin, { recursive: true })
+  const bundle = import.meta.dirname
   const executable = fileURLToPath(import.meta.url)
   const installed = join(bin, 'portta')
-  if (resolve(executable) !== resolve(installed)) copyFileSync(executable, installed)
+  if (resolve(executable) !== resolve(bundle)) {
+    for (const entry of readdirSync(bundle).filter((name) => name.endsWith('.js')))
+      copyFileSync(join(bundle, entry), join(bin, entry))
+    // `portta` has no extension, and the chunks beside it are ESM. Node infers
+    // that from syntax, but saying it here leaves nothing to infer.
+    writeFileSync(join(bin, 'package.json'), '{ "type": "module" }\n')
+    copyFileSync(join(bundle, 'cli.js'), installed)
+  }
   chmodSync(installed, 0o755)
-  const docs = join(import.meta.dirname, 'documentation.json')
-  if (existsSync(docs)) copyFileSync(docs, join(bin, 'documentation.json'))
+  const docs = join(bundle, CORPUS_FILE)
+  if (existsSync(docs)) copyFileSync(docs, join(bin, CORPUS_FILE))
 }
 
 export async function setupCommand(options: SetupOptions, command: Command): Promise<void> {
