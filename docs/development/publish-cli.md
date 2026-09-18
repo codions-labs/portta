@@ -85,8 +85,8 @@ one manifest.
 | Trigger | Generated version | Panel image tags | npm dist-tag |
 | --- | --- | --- | --- |
 | Published GitHub Release `vX.Y.Z` | `X.Y.Z` | `X.Y.Z`, `sha-<short-sha>` | `latest` |
-| Push to `develop` | `0.0.0-develop.<run>.sha-<sha>` | `0.0.0-develop.<run>.sha-<sha>`, `develop`, `develop-<short-sha>`, `sha-<short-sha>` | `dev` |
-| Push to `main` | `0.0.0-next.<run>.sha-<sha>` | `0.0.0-next.<run>.sha-<sha>`, `next`, `next-<short-sha>`, `sha-<short-sha>` | `next` |
+| Push to `develop` | `0.0.0-develop.<timestamp-UTC>.sha-<sha>` | `0.0.0-develop.<timestamp-UTC>.sha-<sha>`, `develop`, `develop-<short-sha>`, `sha-<short-sha>` | `dev` |
+| Push to `main` | `0.0.0-next.<timestamp-UTC>.sha-<sha>` | `0.0.0-next.<timestamp-UTC>.sha-<sha>`, `next`, `next-<short-sha>`, `sha-<short-sha>` | `next` |
 
 Every channel publishes the tag equal to the exact generated version, because
 that is what an installed runtime pulls: `portta up` reads the version the
@@ -94,6 +94,11 @@ package was built with and asks for `ghcr.io/codions-labs/portta:<version>`.
 The GHCR package `portta` must be public for that anonymous pull to succeed;
 package visibility is set once in the GHCR package settings, never by the
 workflow.
+
+The development stamp is the UTC build time (`YYYYMMDDHHMMSS`), the same identity
+`npm run publish:bootstrap` produces. It is deliberately not `github.run_number`:
+that counter belongs to the repository, and recreating the repository restarts it,
+which would publish versions that sort below the ones the registry already holds.
 
 The `v` prefix belongs only to the GitHub Release name. Docker and npm use the
 normalized value without it: `v1.2.3` produces `portta:1.2.3` and
@@ -180,5 +185,33 @@ a granular, publish-scoped secret and document the reason before adding it.
 
 For a version mismatch, correct the GitHub Release tag rather than editing a
 checkout or a runner. The generated file is an artefact, never release state.
+
+## After recreating the GitHub repository
+
+Deleting and recreating the repository keeps the code but issues a new numeric
+repository ID, and every external trust relationship was bound to the old one.
+Nothing in this repository can repair that; these are one-time settings changes.
+
+1. **npm trusted publishing.** npm stores the publisher by repository ID, and
+   GitHub puts that ID in the OIDC subject claim
+   (`repo:<org>@<org-id>/<repo>@<repo-id>`). The stored publisher stops matching
+   silently, npm falls back to no credential, and `npm publish` fails with an
+   E404 on `PUT`. On npmjs.com → `@codions/portta` → Settings → Trusted
+   publishing, **remove** the publisher and **add it again** with the values in
+   the table above. Re-reading the fields is not enough.
+
+2. **GHCR packages.** The container packages survive the deletion but lose their
+   Actions access to the repository, so image pushes fail with
+   `denied: permission_denied: write_package`. For each package — `portta` and
+   `portta-sandbox` — open its settings under
+   `github.com/orgs/<owner>/packages/container/<name>/settings`, then Manage
+   Actions access → Add repository → `portta` → **Write**. Package visibility is
+   a separate setting and is not restored by this step: `portta` must stay public
+   so an installed runtime can pull anonymously.
+
+3. **Repository configuration.** Environments, secrets, variables, rulesets and
+   branch protection are all gone. `taskflow-live-integrations.yaml` needs the
+   `live-integration-certification` environment with the `PORTTA_FLOW_E2E_*`
+   variables and the `PORTTA_FLOW_E2E_GITHUB_TOKEN` and `LINEAR_API_KEY` secrets.
 
 See npm's documentation for [publishing a package](https://docs.npmjs.com/cli/v11/commands/npm-publish/), [two-factor authentication](https://docs.npmjs.com/about-two-factor-authentication/), and [trusted publishing](https://docs.npmjs.com/trusted-publishers/).

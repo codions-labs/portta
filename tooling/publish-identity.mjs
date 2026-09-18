@@ -3,21 +3,34 @@ import { fileURLToPath } from 'node:url'
 
 const STABLE_RELEASE_TAG = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/
 const SHA = /^[0-9a-f]{7,64}$/i
-const RUN = /^[1-9]\d*$/
 
 function required(value, label) {
   if (!value) throw new Error(`${label} is required`)
   return value
 }
 
-function developmentIdentity(branch, runNumber, sha) {
+// A UTC stamp, not the workflow run number: recreating the repository restarts
+// `github.run_number` and would publish versions that sort below the ones npm
+// already holds.
+function stamp(now) {
+  if (!(now instanceof Date) || Number.isNaN(now.valueOf())) throw new Error('invalid publication timestamp')
+  return [
+    now.getUTCFullYear(),
+    String(now.getUTCMonth() + 1).padStart(2, '0'),
+    String(now.getUTCDate()).padStart(2, '0'),
+    String(now.getUTCHours()).padStart(2, '0'),
+    String(now.getUTCMinutes()).padStart(2, '0'),
+    String(now.getUTCSeconds()).padStart(2, '0'),
+  ].join('')
+}
+
+export function developmentIdentity(branch, sha, now = new Date()) {
   const channel = branch === 'develop' ? 'develop' : branch === 'main' ? 'next' : null
   if (!channel) throw new Error(`unsupported publication branch: ${branch}`)
-  if (!RUN.test(required(runNumber, 'GitHub run number'))) throw new Error(`invalid GitHub run number: ${runNumber}`)
   if (!SHA.test(required(sha, 'Git commit SHA'))) throw new Error(`invalid Git commit SHA: ${sha}`)
   const shortSha = sha.slice(0, 7).toLowerCase()
   return {
-    version: `0.0.0-${channel}.${runNumber}.sha-${shortSha}`,
+    version: `0.0.0-${channel}.${stamp(now)}.sha-${shortSha}`,
     channel,
     npmTag: channel === 'develop' ? 'dev' : 'next',
     ref: sha,
@@ -30,23 +43,15 @@ export function releaseIdentity(tag) {
   return { version: tag.slice(1), channel: 'release', npmTag: 'latest', ref: tag }
 }
 
+// The bootstrap publishes from a local worktree, so it has no ref to hand back.
 export function bootstrapIdentity(sha, now = new Date()) {
-  if (!SHA.test(required(sha, 'Git commit SHA'))) throw new Error(`invalid Git commit SHA: ${sha}`)
-  if (!(now instanceof Date) || Number.isNaN(now.valueOf())) throw new Error('invalid bootstrap timestamp')
-  const stamp = [
-    now.getUTCFullYear(),
-    String(now.getUTCMonth() + 1).padStart(2, '0'),
-    String(now.getUTCDate()).padStart(2, '0'),
-    String(now.getUTCHours()).padStart(2, '0'),
-    String(now.getUTCMinutes()).padStart(2, '0'),
-    String(now.getUTCSeconds()).padStart(2, '0'),
-  ].join('')
-  return { version: `0.0.0-develop.${stamp}.sha-${sha.slice(0, 7).toLowerCase()}`, channel: 'develop', npmTag: 'dev' }
+  const { ref, ...identity } = developmentIdentity('develop', sha, now)
+  return identity
 }
 
-export function resolvePublication({ eventName, refName, releaseTag, sha, runNumber }) {
+export function resolvePublication({ eventName, refName, releaseTag, sha, now = new Date() }) {
   if (eventName === 'release') return releaseIdentity(releaseTag)
-  if (eventName === 'push') return developmentIdentity(required(refName, 'Git branch'), runNumber, sha)
+  if (eventName === 'push') return developmentIdentity(required(refName, 'Git branch'), sha, now)
   throw new Error(`unsupported publication event: ${eventName}`)
 }
 
@@ -56,7 +61,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     refName: process.env.REF_NAME,
     releaseTag: process.env.RELEASE_TAG,
     sha: process.env.SHA,
-    runNumber: process.env.RUN_NUMBER,
   })
   process.stdout.write(
     `${Object.entries(identity)

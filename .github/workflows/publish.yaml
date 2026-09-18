@@ -16,7 +16,11 @@ permissions:
 jobs:
   version:
     name: Resolve publication identity
+    # sandbox-image.yaml owns the sandbox-v* releases; without this guard
+    # publish-identity.mjs refuses the tag and this workflow fails on each one.
+    if: github.event_name != 'release' || !startsWith(github.event.release.tag_name, 'sandbox-')
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.resolve.outputs.version }}
       channel: ${{ steps.resolve.outputs.channel }}
@@ -38,7 +42,6 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           REF_NAME: ${{ github.ref_name }}
           SHA: ${{ github.sha }}
-          RUN_NUMBER: ${{ github.run_number }}
         run: node tooling/publish-identity.mjs >> "$GITHUB_OUTPUT"
 
   validation:
@@ -129,7 +132,15 @@ jobs:
           fi
           cat <<'EOF' >&2
           npm publish failed. For scoped packages an E404/E403 on PUT almost always
-          means Trusted Publisher is missing or still points at an old workflow file.
+          means npm never accepted an OIDC identity for this workflow: the trusted
+          publisher is missing, points at an old workflow file, or is bound to a
+          repository that no longer exists.
+
+          npm stores the trusted publisher by GitHub repository ID, and GitHub puts
+          that ID in the OIDC subject claim. Deleting and recreating the repository
+          gives it a new ID, so the stored publisher silently stops matching. In that
+          case remove the publisher and add it again; re-reading the values is not
+          enough.
 
           On npmjs.com → @codions/portta → Settings → Trusted publishing, set:
             GitHub owner:       codions-labs
