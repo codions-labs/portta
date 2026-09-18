@@ -10,8 +10,8 @@
 // socket that was allowed. Losing the membership closes nothing that is
 // already open; that is what the next connection is for.
 
+import { z } from 'portta-core/zod'
 import type { WebSocket } from 'ws'
-import { z } from 'zod'
 import type { AppDeps } from '../../deps.ts'
 import { projectOfEnvironment } from '../../services/access-control.ts'
 import { createLogDecoder } from '../../services/docker/client.ts'

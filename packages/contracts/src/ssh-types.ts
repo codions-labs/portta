@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 
 const named = <T extends z.ZodType>(schema: T, ref: string): T => schema.meta({ ref }) as T
 const unixSeconds = z.number().describe('Unix timestamp in seconds')

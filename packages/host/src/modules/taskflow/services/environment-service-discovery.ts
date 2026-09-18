@@ -7,7 +7,7 @@ import type {
   ServicePort,
   ServiceStatus,
 } from 'portta-core/taskflow'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { NodeProcessRunner, type ProcessRunner, runCaptured } from '../adapters/process-runner.ts'
 
 const bindingSchema = z.object({ HostIp: z.string(), HostPort: z.string() })

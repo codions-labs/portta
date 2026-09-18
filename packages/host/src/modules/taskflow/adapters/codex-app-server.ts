@@ -1,5 +1,5 @@
 import { RUNTIME_IDENTITY } from 'portta-core/taskflow/config'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { log } from '../lib/log.ts'
 import { isRecord } from '../lib/type-guards.ts'
 import { NodeProcessRunner, type ProcessRunner, type RunningProcess } from './process-runner.ts'

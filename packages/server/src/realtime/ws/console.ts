@@ -4,8 +4,8 @@
 
 import type { Duplex } from 'node:stream'
 import type { Principal } from 'portta-auth-core'
+import { z } from 'portta-core/zod'
 import type { WebSocket } from 'ws'
-import { z } from 'zod'
 import type { AppDeps } from '../../deps.ts'
 import { projectOfEnvironment } from '../../services/access-control.ts'
 import { assertNotGatewayOwned, findContainer } from '../../services/actions.ts'

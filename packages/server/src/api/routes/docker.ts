@@ -8,7 +8,7 @@ import {
   type Ownership,
   RemovalPreview,
 } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { findContainer, removalPreview, removeContainer, runContainerAction } from '../../services/actions.ts'
 import { record } from '../audit.ts'

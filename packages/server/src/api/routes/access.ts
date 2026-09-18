@@ -2,7 +2,7 @@ import { type Context, Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { authorizeScope, principalOf } from 'portta-auth-core/hono'
 import { AccessView, Bridge, ServiceConnection } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import {
   closeBridge,

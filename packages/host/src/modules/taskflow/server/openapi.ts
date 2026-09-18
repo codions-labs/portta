@@ -8,7 +8,7 @@ import {
 } from 'hono-openapi'
 import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import { apiContract, type RouteDefinition } from 'portta-contracts/taskflow'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { parseJsonValue, parseValue, readSearchParams } from './api-validation.ts'
 
 export type ApiTag =

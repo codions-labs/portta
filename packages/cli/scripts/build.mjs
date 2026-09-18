@@ -1,7 +1,8 @@
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { gzipSync } from 'node:zlib'
 import { build } from 'esbuild'
-import { collectKnowledge, writeCorpus } from '../../../tooling/docs.mjs'
+import { collectKnowledge } from '../../../tooling/docs.mjs'
 
 const root = resolve(import.meta.dirname, '..')
 const output = resolve(root, 'dist')
@@ -18,7 +19,26 @@ mkdirSync(output, { recursive: true })
 // source. What stays outside the bundle is what must be found on disk at
 // runtime: a native addon, and packages that locate their own files or spawn
 // their own entry points relative to where they are installed.
+// Zod ships 63 locales and reaches them through a barrel. Our own code imports
+// zod by name (`portta-core/zod`), which tree shakes, but `hono-openapi` pulls
+// the barrel in with `await import('zod/v4/core')` — a dynamic namespace import
+// no bundler can prune. Only `en` is ever used, so the barrel is narrowed to it.
+// `matched` guards the seam: if a zod upgrade moves this file the build fails
+// here instead of quietly growing by 240 KB again.
+const localeDirectory = resolve(root, '../../node_modules/zod/v4/locales')
+let matched = 0
+const englishLocaleOnly = {
+  name: 'zod-english-locale-only',
+  setup(plugin) {
+    plugin.onLoad({ filter: /zod\/v4\/locales\/index\.js$/ }, () => {
+      matched += 1
+      return { contents: "export { default as en } from './en.js'", loader: 'js', resolveDir: localeDirectory }
+    })
+  },
+}
+
 await build({
+  plugins: [englishLocaleOnly],
   entryPoints: [
     { in: resolve(root, 'src/cli.ts'), out: 'cli' },
     { in: resolve(root, '../host/src/bin.ts'), out: 'host' },
@@ -37,6 +57,11 @@ await build({
     '@agentclientprotocol/claude-agent-acp',
     '@agentclientprotocol/codex-acp',
     'pi-acp',
+    // Not a resolution constraint like the ones above: `systeminformation` is a
+    // barrel over the probes of every operating system, 709 KB for the eleven
+    // calls `portta metrics` makes. It is a dependency of this package, so it
+    // resolves from disk like any other runtime import.
+    'systeminformation',
   ],
   // When this CLI was built, shown beside its version. PORTTA_BUILD_DATE pins it.
   define: {
@@ -47,8 +72,31 @@ await build({
   banner: {
     js: '#!/usr/bin/env node\nimport { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);',
   },
+  // The three programs share most of their graph: without splitting the whole
+  // host went into `cli.js` as well as `host.js`. Chunk names carry no
+  // directory, so every module still sees `dist/` as `import.meta.dirname` —
+  // which is how the bundles locate each other and their assets. The assertion
+  // below keeps that true.
+  splitting: true,
+  chunkNames: '[name]-[hash]',
+  // Names survive minification so a stack trace from an installed CLI still
+  // points at something, and lines stay short enough that the frame Node prints
+  // above it is readable rather than 80 KB of one line. Together they cost
+  // about 5% of the bundle.
+  minify: true,
+  keepNames: true,
+  lineLimit: 500,
+  legalComments: 'none',
   logLevel: 'info',
 })
+
+if (matched === 0)
+  throw new Error('the zod locale barrel was not narrowed: check whether zod still keeps it at v4/locales/index.js')
+
+const nested = readdirSync(output, { recursive: true }).filter(
+  (entry) => typeof entry === 'string' && entry.endsWith('.js') && entry.includes('/'),
+)
+if (nested.length > 0) throw new Error(`the bundle must stay flat in dist/, these are not: ${nested.join(', ')}`)
 
 // Taskflow's builtin workflows and its authoring skill, where the bundles look
 // for them (`portta-host/taskflow/assets`).
@@ -58,7 +106,9 @@ cpSync(resolve(root, '../../skills/portta-workflows'), resolve(assets, 'skills',
   recursive: true,
 })
 
-writeCorpus(collectKnowledge(), resolve(output, 'documentation.json'))
+// The documentation corpus, gzipped: 1.6 MB of JSON that compresses to 400 KB,
+// read only by `portta docs`, which pays a few milliseconds to inflate it.
+writeFileSync(resolve(output, 'documentation.json.gz'), gzipSync(`${JSON.stringify(collectKnowledge())}\n`))
 
 const repository = resolve(root, '../..')
 const runtime = resolve(output, 'runtime')

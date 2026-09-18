@@ -1,5 +1,7 @@
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { gunzipSync } from 'node:zlib'
 import type { Command } from 'commander'
 import {
   DocumentationIndex,
@@ -15,8 +17,8 @@ import {
   getDocumentationPage,
   searchDocumentation,
 } from 'portta-core'
+import { z } from 'portta-core/zod'
 import { type DocumentationOperation, type DocumentationReader, remoteDocumentationReader } from 'portta-mcp'
-import { z } from 'zod'
 import { CliError, PreconditionError, UsageError } from '../errors.js'
 import { Output } from '../output.js'
 import { clientFor } from './work.js'
@@ -24,14 +26,21 @@ import { clientFor } from './work.js'
 export type { DocumentationOperation, DocumentationReader }
 export { remoteDocumentationReader }
 
+/** The corpus as it ships: gzip, because it is 1.6 MB of JSON and 400 KB of it. */
+export const CORPUS_FILE = 'documentation.json.gz'
+
 export function loadLocalDocumentation(): DocumentationCorpus {
-  // In a release this module is bundled into dist/cli.js. Source runs use the
-  // generated checkout artifact, with no dependency on cwd or PORTTA_ROOT.
-  const file = import.meta.url.endsWith('/cli.js')
-    ? new URL('./documentation.json', import.meta.url)
-    : new URL('../../../../docs/.generated/corpus.json', import.meta.url)
+  // Beside this file in a release, whether that is dist/ or the bin/ copy the
+  // applier runs from. Source runs fall back to the generated checkout
+  // artifact, with no dependency on cwd or PORTTA_ROOT.
+  const packaged = join(import.meta.dirname, CORPUS_FILE)
+  const bundled = existsSync(packaged)
+  const file = bundled ? pathToFileURL(packaged) : new URL('../../../../docs/.generated/corpus.json', import.meta.url)
   try {
-    const corpus = JSON.parse(readFileSync(file, 'utf8')) as DocumentationCorpus
+    const bytes = readFileSync(file)
+    const corpus = JSON.parse(
+      bundled ? gunzipSync(bytes).toString('utf8') : bytes.toString('utf8'),
+    ) as DocumentationCorpus
     if (corpus.schemaVersion !== 1) throw new Error('unsupported corpus version')
     return corpus
   } catch {

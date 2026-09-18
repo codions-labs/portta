@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { CreateWorktreeRequestSchema } from 'portta-contracts/taskflow'
+import { z } from 'portta-core/zod'
 import { describe, expect, it } from 'vitest'
-import { z } from 'zod'
 import { parseValue } from './api-validation.ts'
 import { contractRoute } from './openapi.ts'
 

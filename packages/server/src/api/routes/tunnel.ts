@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { TunnelView } from 'portta-contracts'
 import { isWritable, patchEnvFile } from 'portta-core'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { forgetTunnel, TunnelSetupError, tunnelView } from '../../services/tunnel.ts'
 import { documentRoute } from '../openapi.ts'

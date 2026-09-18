@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync 
 import { basename, delimiter, isAbsolute, join, resolve } from 'node:path'
 import type { Command } from 'commander'
 import { branchSuffix, composeNamespace, parseEnv } from 'portta-core'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { gatewayContext } from '../context.js'
 import { PreconditionError, RefusedError, UsageError } from '../errors.js'
 import { Output } from '../output.js'

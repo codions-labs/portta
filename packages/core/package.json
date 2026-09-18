@@ -11,6 +11,11 @@
       "development": "./src/index.ts",
       "import": "./dist/index.js"
     },
+    "./zod": {
+      "types": "./src/zod.ts",
+      "development": "./src/zod.ts",
+      "import": "./dist/zod.js"
+    },
     "./browser": {
       "types": "./src/browser.ts",
       "development": "./src/browser.ts",

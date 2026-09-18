@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { EnvironmentSchema, EnvironmentServiceSchema } from 'portta-contracts/taskflow'
 import type { EnvironmentRecord, EnvironmentService, EnvironmentTrustApproval } from 'portta-core/taskflow'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { EnvironmentTrustStore } from './environment-provider.ts'
 import { openDatabase } from './sqlite.ts'
 

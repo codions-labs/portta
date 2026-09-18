@@ -8,7 +8,7 @@ import {
   SshTestResult,
   TestSshKey,
 } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { SshKeysService } from '../../services/ssh-keys.ts'
 import { record } from '../audit.ts'

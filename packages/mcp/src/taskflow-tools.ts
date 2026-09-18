@@ -8,7 +8,7 @@
 
 import { randomUUID } from 'node:crypto'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { type ApiCaller, asSdkResult } from './tools.ts'
 
 const segment = (value: string) => encodeURIComponent(value)
