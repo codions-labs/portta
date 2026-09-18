@@ -253,7 +253,7 @@ jobs:
           echo "$DIGEST" > "$output/digest"
 
       - name: Upload digest and manifest
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: sandbox-${{ matrix.arch }}
           path: ${{ runner.temp }}/sandbox-${{ matrix.arch }}
@@ -270,7 +270,7 @@ jobs:
       packages: write
     steps:
       - name: Download digests and manifests
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: sandbox-*
           path: ${{ runner.temp }}/sandbox
@@ -343,7 +343,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload installed-version manifests
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: portta-sandbox-${{ needs.identity.outputs.build_id }}-manifests
           path: ${{ runner.temp }}/sandbox/sandbox-*/manifest-*.json
