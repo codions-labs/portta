@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { globalPaths } from 'portta-core/taskflow/paths'

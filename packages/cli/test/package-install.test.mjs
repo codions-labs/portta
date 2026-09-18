@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import test from 'node:test'
@@ -37,8 +37,14 @@ test('the packed npm package installs, runs, and ships its runtime assets outsid
     const installed = join(installRoot, 'node_modules', '@codions', 'portta')
     const executable = join(installRoot, 'node_modules', '.bin', 'portta')
     assert.equal(readFileSync(join(installed, 'dist', 'cli.js'), 'utf8').startsWith('#!/usr/bin/env node\n'), true)
-    assert.equal(existsSync(join(installed, 'dist', 'documentation.json')), true)
+    assert.equal(existsSync(join(installed, 'dist', 'documentation.json.gz')), true)
     assert.equal(existsSync(join(installed, 'dist', 'runtime', 'VERSION')), true)
+
+    // The build splits the shared graph into chunks that the entry points
+    // import by relative path, and `files` has to carry all of them. One lone
+    // .js would mean the split silently collapsed back into three copies.
+    const chunks = readdirSync(join(installed, 'dist')).filter((name) => name.endsWith('.js'))
+    assert.ok(chunks.length > 3, `expected chunks beside the entry points, got ${chunks.join(', ')}`)
 
     // The host daemon, the Taskflow supervisor and the module's assets ship
     // beside the CLI that starts them.

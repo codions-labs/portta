@@ -147,7 +147,7 @@ manifest.
 4. Wait for **Publish Portta** to succeed. It reuses the repository's
    validation workflow, then builds the CLI and runs `npm run test:package`,
    which packs the workspace, installs the tarball in a temporary directory
-   outside the checkout, confirms `dist/cli.js`, `dist/documentation.json` and
+   outside the checkout, confirms `dist/cli.js`, `dist/documentation.json.gz` and
    `dist/runtime/` are present, and executes `portta --help` and
    `portta --version`. `npm publish` then runs with `--ignore-scripts`, so the
    checks and build are not repeated.
