@@ -70,10 +70,10 @@ RUN usermod -l agent -d /root -s /bin/bash node \
     && ln -sf /usr/local/lib/portta-sandbox/scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 LABEL org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.description="Universal Task Flow agent sandbox" \
+      org.opencontainers.image.description="Universal Portta agent sandbox" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.source="https://github.com/codions-labs/task-flow" \
-      org.opencontainers.image.title="Task Flow Sandbox" \
+      org.opencontainers.image.source="https://github.com/codions-labs/portta" \
+      org.opencontainers.image.title="Portta Sandbox" \
       org.opencontainers.image.version="${SANDBOX_VERSION}"
 
 CMD ["sleep", "infinity"]
