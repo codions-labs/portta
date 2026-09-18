@@ -25,6 +25,9 @@ export default function build() {
     for (const workspace of [
       'portta-core',
       'portta-contracts',
+      // portta-server imports it, so a clean `npm ci` has no dist for it to
+      // resolve and the panel build fails on `Can't resolve 'portta-mcp'`.
+      'portta-mcp',
       'portta-db',
       'portta-auth-core',
       'portta-server',
