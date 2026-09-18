@@ -9,8 +9,8 @@
 import { posix } from 'node:path'
 import { asc, eq } from 'drizzle-orm'
 import { parseRemote } from 'portta-core'
+import { z } from 'portta-core/zod'
 import { type Db, repositories } from 'portta-db'
-import { z } from 'zod'
 
 export const REPOSITORY_PROVIDERS = ['local', 'github', 'gitlab', 'bitbucket', 'other'] as const
 export type RepositoryProvider = (typeof REPOSITORY_PROVIDERS)[number]

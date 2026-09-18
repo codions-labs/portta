@@ -3,8 +3,8 @@
 
 import { asc, eq, inArray } from 'drizzle-orm'
 import { parseRelativeProjectPath, TASK_PROVIDERS, type TaskProvider } from 'portta-core'
+import { z } from 'portta-core/zod'
 import { type Db, environments, projectEnvironments, projects } from 'portta-db'
-import { z } from 'zod'
 
 export interface ProjectRecord {
   id: string

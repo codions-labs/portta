@@ -1,7 +1,7 @@
 // The consolidated Service: what an environment runs, its endpoints and its
 // resource usage as one row a person or an agent can act on.
 
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import {
   Bridge,
   ContainerState,

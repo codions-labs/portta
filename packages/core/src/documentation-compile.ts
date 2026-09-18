@@ -1,12 +1,12 @@
 /** Pure compilation: callers provide source strings and repository paths. */
 import MarkdownIt from 'markdown-it'
-import { z } from 'zod'
 import type {
   DocumentationCorpus,
   DocumentationHeading,
   DocumentationIdentity,
   DocumentationPage,
 } from './documentation.ts'
+import { z } from './zod.ts'
 
 const label = z.string().trim().min(1)
 const slug = z.string().regex(/^[a-z0-9]+(?:[/-][a-z0-9]+)*$/)

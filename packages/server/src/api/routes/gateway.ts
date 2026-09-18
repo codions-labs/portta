@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { ApplyResult, ApplyStatus, Diagnostic, GatewayStatus, LogsResponse, TraefikVerdict } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { moduleDiagnostics, SERVER_MODULES } from '../../modules/index.ts'
 import { ActionRefused } from '../../services/actions.ts'

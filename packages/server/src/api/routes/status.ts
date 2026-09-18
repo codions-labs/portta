@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { Overview } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { panelOverview } from '../../services/status.ts'
 import { documentRoute } from '../openapi.ts'

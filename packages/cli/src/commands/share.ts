@@ -10,7 +10,7 @@ import {
   writeEnvFile,
   writeProtectionStore,
 } from 'portta-core'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { gatewayContext } from '../context.js'
 import { UsageError } from '../errors.js'
 import { Output } from '../output.js'

@@ -2,7 +2,7 @@
 // and what an agent needs before it starts. Both are read models over the
 // entities in types.ts, work-types.ts and service-types.ts.
 
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { Service } from './service-types.ts'
 import { Diagnostic, InstructionFile, RepositoryGitSummary, SpecificationReference } from './types.ts'
 import { Issue, IssueSummary, Session } from './work-types.ts'

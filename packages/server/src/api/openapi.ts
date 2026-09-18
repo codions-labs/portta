@@ -6,7 +6,7 @@ import type { Permission } from 'portta-auth-core'
 import { authorize } from 'portta-auth-core'
 import { principalOf } from 'portta-auth-core/hono'
 import { ApiError, LiveEvent } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { PanelConfig } from '../config.ts'
 import { type ModuleApiTag, moduleTags, SERVER_MODULES } from '../modules/index.ts'
 

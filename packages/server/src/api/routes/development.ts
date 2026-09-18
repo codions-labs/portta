@@ -19,7 +19,7 @@ import {
 } from 'portta-contracts'
 import { parseIssueRef } from 'portta-core'
 import { taskflowModule } from 'portta-core/modules'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { type Database, requireDatabase } from '../../db/index.ts'
 import type { AppDeps } from '../../deps.ts'
 import { SERVER_MODULES } from '../../modules/index.ts'

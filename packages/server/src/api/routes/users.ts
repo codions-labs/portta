@@ -8,7 +8,7 @@
 import { Hono } from 'hono'
 import { principalOf } from 'portta-auth-core/hono'
 import { BanUser, CreateUser, SetPassword, SetRole, SetUserProjects, User, UserSessions, Users } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { UsersService } from '../../services/users.ts'
 import { documentRoute } from '../openapi.ts'

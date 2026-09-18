@@ -15,7 +15,7 @@
 // growing a `if (provider === …)` in every component.
 
 import { ACTIVITY_KINDS, ACTIVITY_SOURCES, ACTOR_KINDS, ISSUE_STATES, TASK_PROVIDERS } from 'portta-core/browser'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 
 const named = <T extends z.ZodType>(schema: T, ref: string): T => schema.meta({ ref }) as T
 const unixSeconds = z.number().describe('Unix timestamp in seconds')

@@ -17,7 +17,7 @@ import {
   RouteUrl,
   SpecificationReference,
 } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { type Database, requireDatabase } from '../../db/index.ts'
 import type { RepositoryRow } from '../../db/repositories.ts'
 import type { AppDeps } from '../../deps.ts'

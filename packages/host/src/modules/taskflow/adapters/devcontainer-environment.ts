@@ -10,7 +10,7 @@ import type {
   EnvironmentSecurityAssessment,
   ResolvedEnvironment,
 } from 'portta-core/taskflow'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { environmentIdFor } from '../services/environment-coordinator.ts'
 import { buildIsolationReport } from '../services/environment-isolation.ts'
 import type {

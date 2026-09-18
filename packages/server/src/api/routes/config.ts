@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { ConfigDiscardResult, ConfigPatchResult, ConfigView } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { buildConfigView, discardConfig, patchConfig } from '../../services/configview.ts'
 import { record } from '../audit.ts'

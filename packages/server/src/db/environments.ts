@@ -6,6 +6,7 @@
 
 import { and, count, desc, eq, sql } from 'drizzle-orm'
 import { parseIssueRef } from 'portta-core'
+import { z } from 'portta-core/zod'
 import {
   type Db,
   environmentIssues,
@@ -14,7 +15,6 @@ import {
   projectEnvironments,
   serviceSettings,
 } from 'portta-db'
-import { z } from 'zod'
 import type { IssueLinkSource, StoredIssueLink } from '../services/issues/environments.ts'
 
 export interface EnvironmentRecord {

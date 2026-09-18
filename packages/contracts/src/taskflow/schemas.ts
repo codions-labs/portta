@@ -1,5 +1,5 @@
 import { type JsonValue, WORKSPACE_ACCESSES, WORKSPACE_STRATEGIES } from 'portta-core/taskflow'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { IssueRef } from '../work-types.ts'
 
 const BooleanLikeSchema = z.union([

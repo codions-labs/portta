@@ -2,8 +2,8 @@
 
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm'
 import { SESSION_ABANDON_AFTER_SECONDS, type SessionStatus } from 'portta-core'
+import { z } from 'portta-core/zod'
 import { type Db, workSessions } from 'portta-db'
-import { z } from 'zod'
 
 /** Milliseconds from SQLite's own clock, matching what the schema defaults to. */
 const NOW = sql`(CAST(unixepoch('subsec') * 1000 AS INTEGER))`

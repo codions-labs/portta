@@ -15,7 +15,7 @@ import {
 } from 'portta-contracts'
 import type { ActivityKind } from 'portta-core'
 import { issueRefLabel, issueRefUrl } from 'portta-core'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { requireDatabase } from '../../db/index.ts'
 import type { AppDeps } from '../../deps.ts'
 import { adoptions, projectOfEnvironment, visible } from '../../services/access-control.ts'

@@ -15,7 +15,7 @@ const ACTOR_HEADER = {
 import { HTTPException } from 'hono/http-exception'
 import { authorizeScope, principalOf } from 'portta-auth-core/hono'
 import { Session } from 'portta-contracts'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { type Database, requireDatabase } from '../../db/index.ts'
 import { StartSession, UpdateSession } from '../../db/work-sessions.ts'
 import type { AppDeps } from '../../deps.ts'

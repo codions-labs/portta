@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 
 export const DocumentationAudience = z.enum(['user', 'developer', 'all'])
 export const DocumentationIdentity = z.object({

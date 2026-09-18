@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 
 export type IsolationRiskKind =
   | 'fixed_host_port'

@@ -17,8 +17,8 @@ import {
   parseProjectConfig,
   projectsFor,
 } from 'portta-core'
+import { z } from 'portta-core/zod'
 import { parse as parseYaml } from 'yaml'
-import { z } from 'zod'
 import { confirm } from '../confirm.js'
 import { gatewayContext } from '../context.js'
 import { inspectContainers } from '../docker.js'

@@ -1,5 +1,5 @@
 import type { ContainerRecord } from 'portta-core'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { PreconditionError, UsageError } from './errors.js'
 import { runProcess } from './process.js'
 

@@ -11,7 +11,7 @@
 // `.portta/runtime.json`; a second copy here would be two answers to one
 // question. See docs/product/reference/portta-directory.md.
 
-import { z } from 'zod'
+import { z } from './zod.ts'
 
 export const PROJECT_CONFIG_FILE = 'project.yaml'
 export const PROJECT_CONFIG_PATH = `.portta/${PROJECT_CONFIG_FILE}`

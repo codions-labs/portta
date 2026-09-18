@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 
 export class UnknownSettingKey extends Error {
   constructor(scope: string, key: string) {

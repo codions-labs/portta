@@ -5,7 +5,7 @@ import {
   type AgentsUiConversationState,
 } from 'portta-contracts/taskflow'
 import { APP_NAME, LINEAR_IDENTITY } from 'portta-core/taskflow/config'
-import { z } from 'zod'
+import { z } from 'portta-core/zod'
 import { log } from '../lib/log.ts'
 import {
   type attachToIssue,
