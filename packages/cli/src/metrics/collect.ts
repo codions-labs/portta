@@ -11,7 +11,6 @@ import {
   normalizeHost,
   serviceOf,
 } from 'portta-core'
-import si from 'systeminformation'
 import { dockerOperatingSystem, inspectContainers, readContainerStats } from '../docker.js'
 import { loadInstance } from './store.js'
 
@@ -19,6 +18,16 @@ type Settled<T> = PromiseSettledResult<T>
 
 function value<T>(result: Settled<T>): T | undefined {
   return result.status === 'fulfilled' ? result.value : undefined
+}
+
+// `systeminformation` stays out of the bundle: it is a barrel over the probes
+// of every operating system, 709 KB of them for the eleven calls below. Like
+// the other external packages it loads on demand, so a command that never reads
+// metrics never needs it on disk.
+let probes: typeof import('systeminformation') | null = null
+async function systeminformation() {
+  probes ??= await import('systeminformation')
+  return probes
 }
 
 let staticCache: {
@@ -31,6 +40,7 @@ let staticCache: {
 
 export async function loadStaticFacts(): Promise<typeof staticCache> {
   if (staticCache) return staticCache
+  const si = await systeminformation()
   const [system, chassis, os, cpu, graphics] = await Promise.allSettled([
     si.system(),
     // The chassis type is what says notebook, desktop or rack; read once.
@@ -86,6 +96,7 @@ async function collectProjects(): Promise<MetricsSnapshot['projects']> {
 export async function collectSnapshot(root: string, now = Date.now()): Promise<MetricsSnapshot> {
   const collectedAt = Math.floor(now / 1000)
   const facts = await loadStaticFacts()
+  const si = await systeminformation()
   const [mem, currentLoad, fsSize, operatingSystem, time, cpuTemperature, battery] = await Promise.allSettled([
     si.mem(),
     si.currentLoad(),
