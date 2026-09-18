@@ -92,7 +92,8 @@ test_route_is() { [ "$(test_http_code "$1")" = "$2" ]; }
 
 # The toolbox the CLI builds for this checkout, whatever version it carries.
 test_toolbox_ensure() {
-  PORTTA_TOOLBOX_IMAGE=$("$PORTTA_ROOT/bin/portta" toolbox build --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["image"])')
+  # --json answers with the CLI envelope: the payload is under "data".
+  PORTTA_TOOLBOX_IMAGE=$("$PORTTA_ROOT/bin/portta" toolbox build --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["image"])')
   export PORTTA_TOOLBOX_IMAGE
 }
 
