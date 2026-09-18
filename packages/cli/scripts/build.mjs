@@ -89,3 +89,23 @@ mkdirSync(resolve(runtime, 'config/traefik/dynamic'), { recursive: true })
 for (const file of ['middlewares.yaml', 'tcp.yaml']) {
   cpSync(resolve(repository, 'config/traefik/dynamic', file), resolve(runtime, 'config/traefik/dynamic', file))
 }
+
+// The npm page of a package shows the README and the licence that sit at the
+// root of its tarball, and this package has neither in source: both live at the
+// repository root. They are generated here, beside the manifest, so publishing
+// stays a build away and there is no second README to keep in sync.
+cpSync(resolve(repository, 'LICENSE'), resolve(root, 'LICENSE'))
+const readme = readFileSync(resolve(repository, 'README.md'), 'utf8')
+// A relative target only resolves inside the repository. On npm the README is
+// read far from it, so every link becomes an absolute GitHub URL; an image has
+// to point at raw content, which a blob page is not.
+const repositoryUrl = 'https://github.com/codions-labs/portta'
+const rawUrl = 'https://raw.githubusercontent.com/codions-labs/portta/main'
+writeFileSync(
+  resolve(root, 'README.md'),
+  readme.replace(
+    /(!?)\[([^\]]*)\]\((?!https?:|mailto:|#)([^)\s]+)\)/g,
+    (_, image, text, target) =>
+      `${image}[${text}](${image ? `${rawUrl}/${target}` : `${repositoryUrl}/blob/main/${target}`})`,
+  ),
+)

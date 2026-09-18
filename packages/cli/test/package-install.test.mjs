@@ -46,6 +46,13 @@ test('the packed npm package installs, runs, and ships its runtime assets outsid
       assert.equal(existsSync(join(installed, 'dist', file)), true, `missing dist/${file}`)
     }
 
+    // What the npm page shows: the build writes both from the repository root.
+    assert.equal(existsSync(join(installed, 'LICENSE')), true)
+    const readme = readFileSync(join(installed, 'README.md'), 'utf8')
+    assert.equal(readme.startsWith('# Portta\n'), true)
+    // Read far from the repository, a relative target resolves nowhere.
+    assert.equal(/\]\((?!https?:|mailto:|#)/.test(readme), false, 'the packed README keeps a relative link')
+
     assert.match(run(executable, ['--help'], installRoot), /portta/)
     const flowHelp = spawnSync(executable, ['flow', '--help'], {
       cwd: installRoot,

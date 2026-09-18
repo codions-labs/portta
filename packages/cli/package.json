@@ -2,6 +2,16 @@
   "name": "@codions/portta",
   "version": "0.0.0-local",
   "description": "Machine-first CLI for a shared Docker development gateway",
+  "keywords": [
+    "docker",
+    "docker-compose",
+    "traefik",
+    "development",
+    "gateway",
+    "devcontainer",
+    "reverse-proxy",
+    "mcp"
+  ],
   "license": "MIT",
   "type": "module",
   "bin": {
