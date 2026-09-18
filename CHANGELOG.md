@@ -6,27 +6,6 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
-### Changed
-
-- The published CLI is a quarter of its former size: the npm package went from
-  10.2 MB unpacked to 2.6 MB, and `dist/cli.js` from 4.9 MB to 447 KB. The
-  esbuild build now minifies, keeps function names for stack traces, and splits
-  the shared graph into chunks, so the host no longer ships once inside
-  `cli.js` and again in `host.js`. Zod is imported by name through
-  `portta-core/zod` instead of through its `z` namespace object, which lets
-  tree shaking drop the 63 bundled locales and the v3 compatibility tree — that
-  alone was 700 KB of the supervisor's 854 KB. `systeminformation` loads on
-  demand like the other external packages, and the documentation corpus ships
-  gzipped as `documentation.json.gz`.
-
-### Fixed
-
-- `portta docs` works from the runtime copy the applier runs. It located its
-  corpus by testing whether the entry point was named `cli.js`, which is false
-  for the `<root>/bin/portta` copy that `portta setup` installs, so it looked
-  for a checkout that is not there. It now looks for the corpus beside itself.
-- `dist/supervisor.js` no longer carries two `#!/usr/bin/env node` lines.
-
 ## [0.1.0] - 2026-09-18
 
 ### Added
@@ -183,6 +162,16 @@ All notable changes to Portta are documented here. The format follows
   `ghcr.io/codions-labs/portta-sandbox` image with Codex, Claude Code, OpenCode
   and Pi for Taskflow's Docker profiles
   ([Publish the Portta CLI](docs/development/publish-cli.md)).
+- The published package is 2.6 MB unpacked, with a 447 KB `dist/cli.js`: the
+  build minifies while keeping function names for stack traces, splits the
+  shared graph into chunks so the host daemon ships once instead of twice,
+  imports Zod by name so tree shaking drops its locales and its v3
+  compatibility tree, loads `systeminformation` on demand, and ships the
+  documentation corpus gzipped.
+- The package carries the project README, the MIT licence text and its
+  keywords, so the npm page documents the CLI it installs. The build generates
+  all three from the repository root, rewriting the README's relative links to
+  absolute GitHub URLs.
 
 [Unreleased]: https://github.com/codions-labs/portta/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/codions-labs/portta/releases/tag/v0.1.0
