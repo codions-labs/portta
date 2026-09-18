@@ -1,0 +1,204 @@
+{
+  "title": "Projetos",
+  "description": "Produtos que você reconhece e os ambientes em execução para eles neste host.",
+  "catalogDescription": "Um Project é o produto. Um Environment é um stack Compose rodando para ele neste host.",
+  "newProject": "Novo projeto",
+  "needsDatabase": "Projetos precisam do banco de dados do painel",
+  "needsDatabaseHint": "São decisões, não observações, por isso são persistidos. Inicie o PostgreSQL e o catálogo volta; os ambientes continuam listando sem ele.",
+  "catalogEmpty": "Nenhum projeto ainda",
+  "catalogEmptyHint": "Crie um produto, depois anexe repositórios e adote os ambientes em execução para ele.",
+  "repository": "{{count}} repositório",
+  "repositories": "{{count}} repositórios",
+  "create": {
+    "title": "Novo projeto",
+    "description": "Um nome e um slug. Repositórios e ambientes são anexados depois.",
+    "create": "Criar",
+    "name": "Nome",
+    "slug": "Slug",
+    "slugHint": "Também o que a label portta.project de um ambiente deve dizer para ser adotado automaticamente.",
+    "descriptionLabel": "Descrição"
+  },
+  "searchPlaceholder": "Buscar projeto, ambiente, serviço, imagem",
+  "searchAria": "Buscar projetos",
+  "empty": "Nenhum ambiente em execução",
+  "emptyHint": "Um ambiente aparece quando o Compose está no ar neste host. Adote-o num Project com a label portta.project ou à mão.",
+  "archived": "arquivado",
+  "running": "{{running}}/{{total}} em execução",
+  "detail": {
+    "notFound": "Nenhum projeto '{{slug}}'",
+    "backToAll": "Voltar para todos os projetos",
+    "private": "privado",
+    "unhealthyCount": "{{count}} unhealthy",
+    "sourceReason": {
+      "repoMatch": "seu repositório pertence a este projeto",
+      "label": "declarado pela label portta.project",
+      "manual": "vinculado manualmente",
+      "path": "roda a partir de um diretório deste projeto"
+    }
+  },
+  "environments": {
+    "title": "Ambientes",
+    "description": "Projetos Compose neste host que pertencem a este project, e por quê.",
+    "empty": "Nada está em execução para este project",
+    "emptyHint": "Inicie um ambiente, rotule-o com portta.project usando este slug, ou vincule um manualmente.",
+    "adopt": "Adotar um environment",
+    "adoptButton": "Adotar"
+  },
+  "issues": {
+    "title": "Issues",
+    "description": "Projetadas do GitHub. Cada linha diz há quanto tempo a resposta foi obtida.",
+    "filterAria": "Filtrar issues",
+    "status": "Status",
+    "state": "Estado da issue",
+    "reading": "Lendo a projeção de issues",
+    "needsDatabase": "Issues precisam do banco de dados do painel",
+    "needsDatabaseHint": "São uma projeção do GitHub, mantida localmente para responder enquanto o GitHub está inacessível."
+  },
+  "repositoriesCard": {
+    "title": "Repositórios",
+    "description": "O Git deste produto. Local primeiro; o GitHub é metadado opcional.",
+    "empty": "Nenhum repositório ainda",
+    "emptyHint": "Adicione um que o host escaneou, ou nomeie-o manualmente.",
+    "remove": "Desregistrar"
+  },
+  "environmentsLink": "Ambientes neste host ({{count}})",
+  "tabs": {
+    "label": "Seções de {{name}}",
+    "overview": "Visão geral",
+    "issues": "Issues",
+    "repositories": "Repositórios ({{count}})",
+    "environments": "Environments ({{count}})",
+    "activity": "Atividade",
+    "settings": "Configurações"
+  },
+  "pulse": {
+    "sessions": "{{count}} ativa(s)",
+    "unhealthy": "{{count}} unhealthy"
+  },
+  "density": {
+    "cards": "Cartões"
+  },
+  "overview": {
+    "resources": "Recursos",
+    "noMeasurement": "Nenhum environment deste projeto está sendo medido agora.",
+    "manageRepositories": "Gerenciar",
+    "manageEnvironments": "Gerenciar"
+  },
+  "settings": {
+    "title": "Projeto",
+    "description": "O que o painel guarda sobre este produto. Nada aqui toca um repositório ou um container.",
+    "relativePath": "Diretório no Projects Home",
+    "relativePathHint": "Um diretório de primeiro nível de PORTTA_PROJECTS_HOME. Arquivos nunca são movidos.",
+    "archived": "Arquivado",
+    "deleteTitle": "Excluir este projeto",
+    "deleteDescription": "Remove o registro e o que o Portta guarda sobre ele. Nada muda no host.",
+    "deleteRemoves": "Removido: o projeto, o registro dos repositórios, as sessões e a atividade.",
+    "deleteKeeps": "Mantido: todos os containers, volumes, redes, diretórios e issues do GitHub. Os environments voltam a ficar sem projeto.",
+    "typeSlug": "Digite {{slug}} para confirmar",
+    "deleteButton": "Excluir projeto",
+    "provider": "Onde o trabalho vive",
+    "providerHint": "GitHub Issues, ou Linear. Derivado significa: GitHub, quando um repositório daqui tem remote no GitHub.",
+    "providerDerived": "Derivado do repositório",
+    "linearTeam": "Time do Linear",
+    "linearTeamHint": "A chave do time a que as issues pertencem, por exemplo ENG."
+  },
+  "actions": {
+    "label": "Ambientes",
+    "menuFor": "Ações para {{name}}",
+    "start": "Iniciar ambientes",
+    "stop": "Parar ambientes",
+    "restart": "Reiniciar ambientes",
+    "archive": "Arquivar",
+    "unarchive": "Desarquivar",
+    "delete": "Excluir projeto",
+    "openRepositories": "Repositórios",
+    "openEnvironments": "Ambientes",
+    "settings": "Configurações",
+    "failed": "Não foi possível agir sobre {{name}}",
+    "done": {
+      "start": "{{count}} ambiente de {{name}} iniciado",
+      "start_one": "{{count}} ambiente de {{name}} iniciado",
+      "start_other": "{{count}} ambientes de {{name}} iniciados",
+      "stop": "{{count}} ambiente de {{name}} parado",
+      "stop_one": "{{count}} ambiente de {{name}} parado",
+      "stop_other": "{{count}} ambientes de {{name}} parados",
+      "restart": "{{count}} ambiente de {{name}} reiniciado",
+      "restart_one": "{{count}} ambiente de {{name}} reiniciado",
+      "restart_other": "{{count}} ambientes de {{name}} reiniciados",
+      "archive": "{{name}} arquivado",
+      "unarchive": "{{name}} está ativo novamente",
+      "delete": "{{name}} removido"
+    },
+    "partial": {
+      "start": "{{name}}: {{failed}} de {{total}} ambientes não iniciaram",
+      "stop": "{{name}}: {{failed}} de {{total}} ambientes não pararam",
+      "restart": "{{name}}: {{failed}} de {{total}} ambientes não reiniciaram"
+    },
+    "confirm": {
+      "stopTitle": "Parar {{name}}?",
+      "stopImpact": "Isso interrompe {{count}} contêineres em {{environments}} ambientes.",
+      "stopImpact_one": "Isso interrompe {{count}} contêiner.",
+      "stopImpact_other": "Isso interrompe {{count}} contêineres em {{environments}} ambientes.",
+      "restartTitle": "Reiniciar {{name}}?",
+      "restartImpact": "Isso reinicia {{count}} contêineres em {{environments}} ambientes; cada um fica brevemente inacessível.",
+      "restartImpact_one": "Isso reinicia {{count}} contêiner; ele fica brevemente inacessível.",
+      "restartImpact_other": "Isso reinicia {{count}} contêineres em {{environments}} ambientes; cada um fica brevemente inacessível.",
+      "deleteTitle": "Excluir {{name}}?",
+      "deleteImpact": "Isso remove o projeto, os registros de seus repositórios, suas sessões e atividade.",
+      "deleteKeeps": "Preservado: todo contêiner, volume, rede, diretório de trabalho e issue do GitHub. Os ambientes voltam a ficar sem projeto."
+    },
+    "bulk": {
+      "start": "Iniciar",
+      "stop": "Parar",
+      "restart": "Reiniciar",
+      "archive": "Arquivar",
+      "nothingToStart": "Nenhum dos projetos selecionados tem ambiente parado",
+      "nothingToStop": "Nenhum dos projetos selecionados tem ambiente em execução",
+      "stopTitle": "Parar {{count}} projetos?",
+      "stopTitle_one": "Parar {{count}} projeto?",
+      "stopTitle_other": "Parar {{count}} projetos?",
+      "stopImpact": "Isso interrompe {{count}} contêineres.",
+      "restartTitle": "Reiniciar {{count}} projetos?",
+      "restartTitle_one": "Reiniciar {{count}} projeto?",
+      "restartTitle_other": "Reiniciar {{count}} projetos?",
+      "restartImpact": "Isso reinicia {{count}} contêineres; cada um fica brevemente inacessível.",
+      "archiveTitle": "Arquivar {{count}} projetos?",
+      "archiveImpact": "Eles saem da lista padrão. Nada no host muda, e podem ser desarquivados a qualquer momento."
+    }
+  },
+  "views": {
+    "cards": "Cards",
+    "table": "Tabela"
+  },
+  "viewLabel": "Visualização",
+  "table": {
+    "caption": "Projetos, seu estado e seu trabalho",
+    "name": "Projeto",
+    "state": "Estado",
+    "repositories": "Repos",
+    "environments": "Ambientes",
+    "agents": "Agentes",
+    "activity": "Última atividade",
+    "commit": "Último commit",
+    "resources": "Recursos",
+    "actions": "Ações"
+  },
+  "state": {
+    "running": "Em execução",
+    "partial": "Degradado",
+    "unhealthy": "Não saudável",
+    "idle": "Ocioso",
+    "archived": "Arquivado",
+    "runningHint": "Todo ambiente adotado está no ar e saudável.",
+    "partialHint": "Um ambiente está no ar com menos serviços do que declara.",
+    "unhealthyHint": "Um serviço deste projeto está falhando no health check.",
+    "idleHint": "Nada está rodando para este projeto agora."
+  },
+  "filters": {
+    "state": "Estado",
+    "anyState": "Qualquer estado",
+    "showArchived": "Mostrar arquivados"
+  },
+  "noMatch": "Nenhum projeto corresponde a estes filtros",
+  "noMatchHint": "Amplie a busca ou limpe o filtro de estado."
+}

@@ -1,0 +1,11 @@
+{
+  "hints": {
+    "notSaved": "o valor não foi salvo",
+    "databaseUnavailable": "páginas existentes baseadas em Docker continuam disponíveis; execute portta db status",
+    "panelLimit": "este é um limite do painel, não do Docker",
+    "unexpected": "falha inesperada"
+  },
+  "readOnly": "o painel está em modo somente leitura",
+  "crossOrigin": "gravações cross-origin são recusadas",
+  "bridgeClosed": "ponte fechada; o serviço em si não foi alterado"
+}

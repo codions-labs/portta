@@ -1,0 +1,142 @@
+{
+  "title": "Visão geral",
+  "reading": "Lendo o que está acontecendo",
+  "gatewayRunning": "Gateway em execução",
+  "gatewayDown": "Gateway inativo",
+  "problems_one": "{{count}} problema",
+  "problems_other": "{{count}} problemas",
+  "sessions": {
+    "description": "Quem está trabalhando, em quê, desde quando.",
+    "title": "Agentes e sessões",
+    "empty": "Nenhum agente trabalhando agora",
+    "emptyHint": "Uma sessão aparece aqui quando um agente ou uma pessoa inicia uma sobre uma issue.",
+    "none": "Nenhuma sessão ativa"
+  },
+  "attention": {
+    "title": "Precisa de atenção",
+    "description": "Serviços unhealthy, environments degradados, conflitos, host sob pressão e o que o gateway verifica.",
+    "diagnostics": "Diagnósticos",
+    "none": "Nada precisa de atenção.",
+    "count": "{{count}} para agir",
+    "count_one": "{{count}} para agir",
+    "count_other": "{{count}} para agir",
+    "hostPressure": "Host sob pressão: {{reasons}}",
+    "serviceUnhealthy": "{{environment}}/{{service}} não está saudável"
+  },
+  "projects": {
+    "title": "Projetos",
+    "all": "Todos os projetos",
+    "empty": "Nenhum projeto ainda",
+    "emptyHint": "Crie um em Projetos; os environments deste host continuam listados de qualquer forma."
+  },
+  "code": {
+    "title": "Código",
+    "description": "Commits recentes em todos os repositórios, e os repositórios com alterações locais.",
+    "uncommitted": "{{count}} sem commit",
+    "empty": "Nenhum commit coletado ainda",
+    "emptyHint": "O coletor do host varre cada repositório uma vez por minuto; portta repos scan faz isso agora.",
+    "dirty": "Alterações locais",
+    "recent": "Commits recentes",
+    "emptyHintShort": "O coletor do host varre cada repositório uma vez por minuto; para fazer agora, execute"
+  },
+  "resources": {
+    "top": "Usando este host",
+    "topDescription": "Environments por memória. Pare um daqui quando o host estiver sob pressão.",
+    "none": "Nada medido",
+    "environments": "Ambientes"
+  },
+  "reduced": {
+    "needsDatabase": "O painel de desenvolvimento precisa do banco de dados do painel",
+    "unavailable": "O painel de desenvolvimento não está disponível neste painel",
+    "hint": "O status do próprio gateway e seus problemas continuam aqui."
+  },
+  "host": {
+    "title": "Este host",
+    "description": "Como esta máquina está agora.",
+    "kind": {
+      "notebook": "Notebook",
+      "desktop": "Desktop",
+      "server": "Servidor",
+      "vm": "Máquina virtual"
+    },
+    "system": "Sistema",
+    "cpu": "CPU",
+    "memory": "Memória",
+    "gpu": "GPU",
+    "swap": "Swap",
+    "storage": {
+      "label": "Armazenamento",
+      "path": "Portta",
+      "docker": "Docker",
+      "portta": "Portta",
+      "both": "Disco"
+    },
+    "cores": "{{count}} núcleos",
+    "load": "load {{one}} {{five}} {{fifteen}}",
+    "up": "ligado há {{time}}",
+    "high": "alto",
+    "updated": "atualizado {{time}}",
+    "stale": "coletado há {{age}}s",
+    "collectorInactive": "Collector inativo",
+    "unavailable": "Não disponível",
+    "unavailableHint": "O collector do host não está gravando snapshots. Suba o gateway com portta up.",
+    "runtime": {
+      "label": "Ambiente",
+      "orbstack": "OrbStack",
+      "docker-desktop": "Docker Desktop",
+      "docker-engine": "Docker Engine",
+      "unknown": "Desconhecido"
+    },
+    "summary": "Host",
+    "details": "Detalhes do host",
+    "showDetails": "Mostrar detalhes do host",
+    "hideDetails": "Ocultar detalhes do host",
+    "temperature": "Temp",
+    "battery": "Bateria",
+    "loadLabel": "Carga",
+    "loadPerCore": "{{value}} por núcleo",
+    "charging": "carregando",
+    "onMains": "na tomada",
+    "onBattery": "na bateria",
+    "remaining": "restam {{time}}",
+    "cycles": "{{count}} ciclos",
+    "uptime": "Tempo ativo",
+    "gpuMemory": "Memória da GPU",
+    "kernel": "Kernel",
+    "architecture": "Arquitetura",
+    "virtual": "Máquina virtual",
+    "history": "{{label}} nos últimos {{minutes}} minutos"
+  },
+  "consumption": {
+    "title": "Consumo por projeto",
+    "description": "O que está usando CPU e memória neste host agora.",
+    "cpu": "CPU",
+    "memory": "RAM",
+    "containers": "{{count}} containers",
+    "open": "Abrir"
+  },
+  "pressure": {
+    "label": "Host",
+    "normal": "Normal",
+    "watch": "Atenção",
+    "pressured": "Sob pressão",
+    "critical": "Crítico",
+    "unmeasured": "Não medido",
+    "because": "Porque: {{reasons}}",
+    "normalHint": "Todos os recursos que este host reporta estão em faixa confortável.",
+    "unmeasuredHint": "Sem snapshot recente, então o estado do host é desconhecido.",
+    "reason": {
+      "cpu": "CPU em {{value}}",
+      "memory": "RAM em {{value}}",
+      "swap": "swap em {{value}}",
+      "storage": "disco em {{value}}",
+      "gpu": "GPU em {{value}}",
+      "temperature": "CPU a {{value}}",
+      "load": "carga {{value}} por núcleo",
+      "battery": "bateria em {{value}}"
+    }
+  },
+  "gateway": {
+    "label": "Gateway"
+  }
+}

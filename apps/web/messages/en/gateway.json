@@ -1,0 +1,122 @@
+{
+  "title": "Gateway",
+  "description": "The gateway's own components: status, diagnostics and logs.",
+  "checking": "Checking…",
+  "runDiagnostics": "Run diagnostics",
+  "restartTraefik": "Restart Traefik",
+  "restarted": "Restarted {{components}}. {{note}}:",
+  "components": {
+    "title": "Components",
+    "traefik": "Traefik",
+    "socketProxy": "Socket proxy",
+    "persistence": "Persistence",
+    "tailscale": "Tailscale",
+    "notRunning": "not running",
+    "sharedNetwork": "Shared network",
+    "attached": "{{count}} attached",
+    "missing": "missing",
+    "routedServices": "Routed services"
+  },
+  "versions": {
+    "title": "Versions and profile",
+    "gateway": "Gateway",
+    "panel": "Panel",
+    "profile": "Profile",
+    "domain": "Domain",
+    "traefikDashboard": "Traefik dashboard",
+    "thisPanel": "This panel",
+    "loopbackOnly": "loopback only",
+    "routedForwardAuth": "routed, behind Portta login",
+    "routedNoCredential": "routed with no credential",
+    "readOnly": "read-only"
+  },
+  "diagnostics": {
+    "title": "Diagnostics",
+    "summary": "{{failures}} failure(s), {{warnings}} warning(s) · {{time}}",
+    "description": "Checks the panel can make from inside its container.",
+    "notRun": "Not run yet",
+    "notRunHint": "For host-level checks (PATH, listening sockets, DNS, certificate files) run portta doctor.",
+    "deeperChecks": "deeper, host-level checks:"
+  },
+  "logs": {
+    "title": "Logs",
+    "componentAria": "Gateway component"
+  },
+  "settings": {
+    "issues": {
+      "reading": "Reading the issue providers",
+      "title": "Issue providers",
+      "description": "GitHub through the gh CLI, and Linear. Both are authenticated on the host, beside the daemon — the panel reports them and never holds their credentials.",
+      "signedIn": "signed in",
+      "notSignedIn": "not signed in",
+      "notInstalled": "not on this host"
+    }
+  },
+  "apply": {
+    "title": "Apply saved settings",
+    "barPending": "{{count}} saved settings are not running yet.",
+    "barPending_one": "{{count}} saved setting is not running yet.",
+    "barPending_other": "{{count}} saved settings are not running yet.",
+    "barApplying": "Applying saved settings…",
+    "barAction": "Apply",
+    "barReview": "Review",
+    "barManual": "Apply them on the host with:",
+    "unavailable": {
+      "disabled": "Set PORTTA_APPLY=true in the host's .env, then run the command once.",
+      "refused": "This host refuses to apply from the panel: {{reason}}.",
+      "notPrepared": "PORTTA_APPLY is already on; the applier is not prepared yet. Run the command once on the host."
+    },
+    "confirmTitle": "Apply saved settings?",
+    "confirmDescription": "Portta recreates its own containers so these saved values take effect.",
+    "confirmPanel": "This panel is one of them: it goes offline for a few seconds and comes back on its own.",
+    "confirmProjects": "Your projects are not touched. Only Portta's own containers are recreated, and the shared network stays as it is.",
+    "confirmMoves": "A pending setting changes where this panel answers, so this tab will not reconnect on its own.",
+    "confirmKeepTab": "Keep this tab open while it runs.",
+    "confirmBuild": "This host builds its own images, so the apply includes a Docker build. The first one can take several minutes.",
+    "confirmReference": "These saved values are a new reference. Recreating the gateway is not needed.",
+    "confirm": "Apply",
+    "discard": "Discard",
+    "discardAll": "Discard all",
+    "discarded": "Pending changes discarded.",
+    "discarded_one": "Change discarded.",
+    "discarded_other": "{{count}} pending changes discarded.",
+    "secretSet": "set",
+    "secretChanged": "changed",
+    "secretUnset": "empty",
+    "keepTabOpen": "Do not close this tab. The panel comes back on its own.",
+    "phase": {
+      "starting": "Starting the applier…",
+      "applying": "Recreating the gateway containers…",
+      "waiting": "The panel is restarting. Waiting for it to answer…",
+      "reconnected": "Done. The saved settings are running.",
+      "failed": "The apply failed.",
+      "timeout": "The panel has not answered yet."
+    },
+    "steps": {
+      "started": "Applier started",
+      "offline": "Panel went offline",
+      "back": "Panel answered again",
+      "applied": "Settings are running"
+    },
+    "reload": "Reload the panel",
+    "reloadWhy": "This page still shows what the previous process answered with.",
+    "failedExit": "The applier exited with code {{code}}. Nothing was rolled back.",
+    "failedHint": "Run it on the host to see the whole output:",
+    "showOutput": "Show output",
+    "timeoutBody": "The panel has not answered for {{time}}. It may still be starting. Reload the page, or finish it on the host:"
+  },
+  "overviewCard": {
+    "title": "Gateway",
+    "profile": "Profile",
+    "domain": "Domain",
+    "listening": "Listening",
+    "tls": "TLS",
+    "tlsEnabled": "enabled ({{mode}})",
+    "tailscale": "Tailscale",
+    "tailscaleRunning": "running",
+    "tailscaleEnabledNotRunning": "enabled, not running",
+    "publicAccess": "Public access",
+    "sharedNetwork": "Shared network",
+    "attached": "{{name}} · {{count}} attached"
+  }
+}

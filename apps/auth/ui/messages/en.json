@@ -1,0 +1,17 @@
+{
+  "protectedAccess": "Protected access",
+  "heading": "A private door to your workspace.",
+  "explanation": "This service is protected at the Portta edge. Sign in here; the application behind it never receives your password.",
+  "proxyBoundary": "Credential checked before the protected service",
+  "destination": "Destination",
+  "project": "Project",
+  "service": "Service",
+  "username": "Username",
+  "password": "Password",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "signIn": "Sign in",
+  "signingIn": "Checking access…",
+  "invalid": "Invalid username or password.",
+  "protectedBy": "Protected by Portta"
+}

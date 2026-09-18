@@ -1,0 +1,23 @@
+# ============================================================================
+# Remote profiles without TLS: plain HTTP on :80
+# ============================================================================
+# Applied on a remote profile when TLS_ENABLED=false, which is the default and
+# the only thing that works on an automatic domain: no public certificate
+# authority issues a wildcard for sslip.io or nip.io, and neither offers the
+# DNS-01 API that a wildcard needs.
+#
+# The point is what this does NOT do. The TLS overlay redirects :80 to :443
+# permanently, and doing that without a certificate the browser accepts turns a
+# URL that works into a warning page — the opposite of the goal. So a host with
+# no TLS answers on :80 and says so.
+#
+# docker/compose/profiles/remote-tls.yaml replaces this once TLS is configured.
+# ============================================================================
+
+services:
+  traefik:
+    environment:
+      # Routers that name no entrypoint attach to :80 only, exactly as they do
+      # on the local profile. Nothing answers on :443, rather than answering
+      # with a certificate nobody can verify.
+      TRAEFIK_ENTRYPOINTS_WEB_ASDEFAULT: "true"

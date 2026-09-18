@@ -1,0 +1,168 @@
+{
+  "title": {
+    "label": "Title",
+    "saving": "Saving…"
+  },
+  "markdown": {
+    "edit": "Edit",
+    "preview": "Preview",
+    "bold": "Bold",
+    "italic": "Italic",
+    "heading": "Heading",
+    "heading1": "Heading 1",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "strike": "Strikethrough",
+    "code": "Code",
+    "codeBlock": "Code block",
+    "link": "Link",
+    "linkText": "link text",
+    "quote": "Quote",
+    "list": "List",
+    "orderedList": "Numbered list",
+    "check": "Checklist"
+  },
+  "heading": "Issues",
+  "description": "Read live from {{provider}}. Portta does not keep a copy.",
+  "descriptionUnknown": "Work for this project, read live from its provider.",
+  "provider": {
+    "github": "GitHub",
+    "linear": "Linear",
+    "unknown": "the provider"
+  },
+  "new": "New issue",
+  "search": "Search issues",
+  "reading": "Reading issues…",
+  "state": {
+    "label": "State",
+    "open": "Open",
+    "closed": "Closed",
+    "all": "All"
+  },
+  "stateReason": {
+    "completed": "Completed",
+    "not_planned": "Not planned"
+  },
+  "table": {
+    "state": "State",
+    "key": "Key",
+    "title": "Title",
+    "labels": "Labels",
+    "assignees": "Assignees",
+    "comments": "Comments",
+    "updated": "Updated",
+    "caption": "Issues of this project"
+  },
+  "more": "+{{count}}",
+  "empty": {
+    "open": "No open issues",
+    "closed": "No closed issues",
+    "all": "No issues",
+    "hint": "Whatever is opened on the provider shows up here.",
+    "searchHint": "No issue matches this search."
+  },
+  "openOnProvider": "Open on {{provider}}",
+  "backToIssues": "Back to issues",
+  "create": {
+    "title": "New issue",
+    "description": "It is opened on {{provider}}, not stored here.",
+    "titleField": "Title",
+    "bodyField": "Description",
+    "bodyPlaceholder": "What has to happen, and how anyone would know it is done.",
+    "labels": "Labels",
+    "assignees": "Assignees",
+    "milestone": "Milestone",
+    "noMilestone": "No milestone",
+    "submit": "Open issue",
+    "vocabularyUnavailable": "Labels, assignees and milestones could not be read; the issue can still be opened without them.",
+    "noVocabulary": "This provider has none."
+  },
+  "detail": {
+    "body": "Description",
+    "bodyEmpty": "No description.",
+    "editBody": "Edit description",
+    "save": "Save",
+    "cancel": "Cancel",
+    "comments": "Comments",
+    "noComments": "No comments yet.",
+    "edited": "edited",
+    "commentPlaceholder": "Leave a comment",
+    "comment": "Comment",
+    "close": "Close issue",
+    "closeCompleted": "Close as completed",
+    "closeNotPlanned": "Close as not planned",
+    "reopen": "Reopen issue",
+    "labels": "Labels",
+    "addLabels": "Add labels",
+    "assignees": "Assignees",
+    "addAssignees": "Add assignees",
+    "milestone": "Milestone",
+    "noMilestone": "None",
+    "author": "Author",
+    "created": "Created",
+    "updated": "Updated",
+    "environments": "Environments running",
+    "environmentsHint": "What Portta knows and {{provider}} does not.",
+    "noEnvironments": "No environment is running for this issue.",
+    "environmentRunning": "{{running}}/{{total}} running",
+    "environmentStopped": "Stopped",
+    "unhealthy": "{{count}} unhealthy",
+    "sessions_one": "{{count}} active session",
+    "sessions_other": "{{count}} active sessions",
+    "worktrees": "Worktrees",
+    "noWorktrees": "No worktree is linked to this issue.",
+    "run": "Run",
+    "pr": "Pull request",
+    "source": {
+      "manual": "linked by hand",
+      "label": "from a label",
+      "branch": "from the branch",
+      "namespace": "from the namespace"
+    }
+  },
+  "run": {
+    "cta": "Work on this issue",
+    "title": "Work on this issue",
+    "description": "Creates a worktree and starts an ACP Run. Closing this page does not stop it.",
+    "agent": "Agent",
+    "type": "Branch type",
+    "branch": "Branch",
+    "branchHint": "From {{pattern}}. Change it if you need to.",
+    "submit": "Start Run",
+    "unavailable": "This project has no Taskflow workspace, or no agent is configured."
+  },
+  "failed": "The change was refused",
+  "trouble": {
+    "noProvider": {
+      "title": "This project has no issue provider",
+      "hint": "Add a repository with a GitHub remote, or choose Linear in the project settings."
+    },
+    "daemon": {
+      "title": "The host cannot reach a provider",
+      "hint": "The host daemon has to be running, and `gh` has to be installed on it."
+    },
+    "signedOut": {
+      "title": "Nobody is signed in on the host",
+      "hint": "Sign in on the host where the daemon runs."
+    },
+    "rateLimited": {
+      "title": "The provider is rate-limiting this host",
+      "hint": "Nothing is lost. Try again in a few moments."
+    },
+    "notFound": {
+      "title": "Not there, or not visible",
+      "hint": "The repository or the issue does not exist, or the signed-in account cannot see it."
+    }
+  },
+  "overview": {
+    "title": "Assigned to you",
+    "empty": "Nothing is assigned to you.",
+    "unknown": "No provider could be reached, so what is assigned to you is not known.",
+    "unknownHint": "This is not the same as having nothing to do."
+  },
+  "projectCard": {
+    "title": "Open issues",
+    "all": "All issues",
+    "empty": "No open issues"
+  }
+}

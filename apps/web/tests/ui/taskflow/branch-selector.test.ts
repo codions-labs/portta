@@ -1,0 +1,113 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { BranchSelector } from '@/modules/taskflow/components/worktrees/branch-selector'
+import { cleanup, fireEvent, render, screen, waitFor } from './render.tsx'
+
+const BRANCHES = [{ name: 'main' }, { name: 'release/base' }]
+
+describe('BranchSelector', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('auto-focuses the search input each time it is reopened after escape', async () => {
+    render(BranchSelector, {
+      props: {
+        label: 'Existing branch',
+        branches: BRANCHES,
+        initialOpen: true,
+        onSelect: vi.fn(),
+      },
+    })
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Existing branch search')).toHaveFocus()
+    })
+
+    await fireEvent.keyDown(screen.getByLabelText('Existing branch search'), {
+      key: 'Escape',
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Existing branch search')).not.toBeInTheDocument()
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Existing branch' }))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Existing branch search')).toHaveFocus()
+    })
+  })
+
+  it('auto-focuses the search input each time it is reopened after focus leaves the selector', async () => {
+    render(BranchSelector, {
+      props: {
+        label: 'Base branch',
+        branches: BRANCHES,
+        onSelect: vi.fn(),
+      },
+    })
+
+    const trigger = screen.getByRole('button', { name: 'Base branch' })
+    await fireEvent.click(trigger)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Base branch search')).toHaveFocus()
+    })
+
+    await fireEvent.focusOut(screen.getByLabelText('Base branch search'), {
+      relatedTarget: document.body,
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Base branch search')).not.toBeInTheDocument()
+    })
+
+    await fireEvent.click(trigger)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Base branch search')).toHaveFocus()
+    })
+  })
+
+  it('keeps the selector open when the inline toggle row is clicked', async () => {
+    const onInlineToggle = vi.fn()
+
+    render(BranchSelector, {
+      props: {
+        label: 'Existing branch',
+        branches: BRANCHES,
+        initialOpen: true,
+        inlineToggleLabel: 'include remote',
+        inlineToggleChecked: false,
+        onInlineToggle: onInlineToggle,
+        onSelect: vi.fn(),
+      },
+    })
+
+    const search = await screen.findByLabelText('Existing branch search')
+    const availabilityRow = screen.getByText(/2 available/).parentElement as HTMLElement
+
+    await fireEvent.mouseDown(availabilityRow)
+    await fireEvent.click(availabilityRow)
+
+    expect(onInlineToggle).not.toHaveBeenCalled()
+    expect(search).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Existing branch' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('keeps rendering the current branch list while a refresh is in flight', async () => {
+    render(BranchSelector, {
+      props: {
+        label: 'Existing branch',
+        branches: BRANCHES,
+        loading: true,
+        initialOpen: true,
+        onSelect: vi.fn(),
+      },
+    })
+
+    expect(await screen.findByRole('button', { name: 'main' })).toBeInTheDocument()
+    expect(screen.getByText('Updating...')).toBeInTheDocument()
+    expect(screen.queryByText('Loading branches...')).not.toBeInTheDocument()
+  })
+})

@@ -1,0 +1,24 @@
+# ============================================================================
+# Mailpit: capture outbound mail in development
+# ============================================================================
+# The UI (8025) is HTTP and joins the gateway. SMTP (1025) stays on the
+# project's private network and is reached with `portta access open`.
+#
+# The base Compose file should declare the mailpit service itself; this overlay
+# only adds the network and labels.
+#
+#   -> http://<COMPOSE_PROJECT_NAME>-mailpit.localhost
+# ============================================================================
+
+services:
+  mailpit:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-mailpit.loadbalancer.server.port=8025"
+
+networks:
+  portta:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}

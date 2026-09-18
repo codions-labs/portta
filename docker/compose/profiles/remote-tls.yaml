@@ -1,0 +1,31 @@
+# ============================================================================
+# Remote profiles with TLS: the parts both ACME challenges share
+# ============================================================================
+# Applied on a remote profile when TLS_ENABLED=true, together with exactly one
+# challenge overlay: remote-tls-dns.yaml or remote-tls-http.yaml.
+#
+# Deliberately not applied when TLS is off. Redirecting to an entrypoint with
+# no usable certificate turns a working HTTP URL into a browser warning, which
+# is exactly what a host on an auto domain has: no public CA issues a wildcard
+# for sslip.io, and neither service offers the DNS-01 API one would need.
+# docker/compose/profiles/remote.yaml serves those over plain HTTP instead.
+# See docs/development/adr/0022-project-domain-modes.md.
+# ============================================================================
+
+services:
+  traefik:
+    environment:
+      # Routers that name no entrypoint attach to :443 only; :80 just redirects.
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_ASDEFAULT: "true"
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO: websecure
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: https
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_PERMANENT: "true"
+
+      # TLS terminates at the entrypoint, so a project gets HTTPS without a
+      # single certificate label of its own.
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER: letsencrypt
+
+      # -- ACME ------------------------------------------------------------
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: ${ACME_EMAIL:-}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_CASERVER: ${ACME_CA_SERVER:-https://acme-v02.api.letsencrypt.org/directory}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_STORAGE: /etc/traefik/acme/acme.json

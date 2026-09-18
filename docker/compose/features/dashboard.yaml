@@ -1,0 +1,21 @@
+# ============================================================================
+# Portta: Traefik dashboard overlay (opt-in, loopback only)
+# ============================================================================
+# Enabled by PORTTA_DASHBOARD=true. The dashboard listens on Traefik's
+# internal entrypoint and is published on a dedicated host port bound to
+# PORTTA_DASHBOARD_BIND_ADDRESS (127.0.0.1 by default).
+#
+# It is never attached to the web/websecure entrypoints, so it can never be
+# reached through the public wildcard domain. See docs/product/concepts/security.md.
+# ============================================================================
+
+services:
+  traefik:
+    ports:
+      - "${PORTTA_DASHBOARD_BIND_ADDRESS:-127.0.0.1}:${PORTTA_DASHBOARD_PORT:-8080}:8080"
+    environment:
+      TRAEFIK_API: "true"
+      TRAEFIK_API_DASHBOARD: "true"
+      # Serves the dashboard on the built-in `traefik` entrypoint (:8080).
+      # Safe only because the published port is loopback-bound above.
+      TRAEFIK_API_INSECURE: "true"

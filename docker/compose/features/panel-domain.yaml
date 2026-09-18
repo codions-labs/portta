@@ -1,0 +1,42 @@
+# ============================================================================
+# Portta: the panel on the domain, over HTTPS, behind Portta ForwardAuth
+# ============================================================================
+# Applied when PORTTA_WEB_EXPOSE=domain. The panel answers on one hostname of
+# the gateway's own domain, on the entrypoint every application uses, with the
+# certificate that entrypoint already terminates.
+#
+# Why this is allowed on a public profile when `vpn` is not
+# ---------------------------------------------------------
+# `web-vpn.yaml` is refused on remote-public because it would publish a VPN
+# hostname on every interface. The `public` mode publishes the panel on
+# 0.0.0.0, and what stands in front of it is the panel itself -- accounts,
+# roles, sessions, a second factor and a rate limiter, all of them its own
+# (docs/development/adr/0035-authentication-lives-in-the-panel.md).
+#
+# So the remaining difference between `public` and this is not exposure. It is
+# which entrypoint carries the panel, and what that costs:
+#
+#   `public`  keeps the panel on its own entrypoint, so it needs no hostname
+#             and works on a bare IP -- but that entrypoint terminates no TLS,
+#             so the password crosses the network in clear text.
+#   `domain`  puts the panel on websecure, where it gets a real certificate and
+#             the same HTTPS every application gets. It needs a hostname, and
+#             it gives up the property that the panel's entrypoint carries
+#             nothing else. It carries no application the router does not name.
+#
+# The router names exactly one host, so publishing the panel still publishes no
+# application: an application is reachable only through a router of its own.
+#
+# There is no middleware: the panel signs people in itself, and `portta web up
+# --expose domain` refuses unless PORTTA_AUTH_MODE=required and TLS is on.
+# See docs/development/adr/0035-authentication-lives-in-the-panel.md.
+# ============================================================================
+
+services:
+  web:
+    labels:
+      # Overrides the `false` in web.yaml: a later overlay wins for map labels.
+      traefik.enable: "true"
+      traefik.http.routers.portta-panel.rule: >-
+        Host(`${PORTTA_PANEL_ADVERTISED_HOST:-portta-web}`)
+      traefik.http.services.portta-panel.loadbalancer.server.port: "8081"

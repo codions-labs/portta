@@ -1,0 +1,40 @@
+{
+  "name": "portta-monorepo",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=portta-core && npm run build --workspace=portta-contracts && npm run build --workspace=portta-mcp && npm run build --workspace=portta-db && npm run build --workspace=portta-host && npm run build --workspace=portta-auth-core && npm run build --workspace=portta-server && npm run build --workspace=portta-auth && npm run build --workspace=portta-web && npm run build --workspace=@codions/portta",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "biome lint --error-on-warnings .",
+    "format": "biome format --write .",
+    "check": "biome check --error-on-warnings .",
+    "fix": "biome check --write .",
+    "test:affected": "node tests/affected.mjs",
+    "test:integration": "node tests/run.mjs --integration",
+    "test:e2e": "node tests/run.mjs --e2e",
+    "test:release": "node tests/run.mjs --release",
+    "test:tooling": "node --test tests/tooling/*.test.mjs",
+    "test:package": "node --test packages/cli/test/package-install.test.mjs",
+    "cli:link": "node tooling/link-cli.mjs link",
+    "cli:unlink": "node tooling/link-cli.mjs unlink",
+    "publish:bootstrap": "node tooling/publish-bootstrap.mjs",
+    "docs:generate": "node --import tsx tooling/docs.mjs",
+    "docs:check": "node --import tsx tooling/docs.mjs --check"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.13"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "name": "portta-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared domain logic for Portta panel and CLI",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./src/browser.ts",
+      "development": "./src/browser.ts",
+      "import": "./dist/browser.js"
+    },
+    "./modules": {
+      "types": "./src/modules/index.ts",
+      "development": "./src/modules/index.ts",
+      "import": "./dist/modules/index.js"
+    },
+    "./documentation-compile": {
+      "types": "./src/documentation-compile.ts",
+      "development": "./src/documentation-compile.ts",
+      "import": "./dist/documentation-compile.js"
+    },
+    "./taskflow": {
+      "types": "./src/taskflow/index.ts",
+      "development": "./src/taskflow/index.ts",
+      "import": "./dist/taskflow/index.js"
+    },
+    "./taskflow/config": {
+      "types": "./src/taskflow/config.ts",
+      "development": "./src/taskflow/config.ts",
+      "import": "./dist/taskflow/config.js"
+    },
+    "./taskflow/paths": {
+      "types": "./src/taskflow/paths.ts",
+      "development": "./src/taskflow/paths.ts",
+      "import": "./dist/taskflow/paths.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11",
+    "@types/markdown-it": "^14.1.2"
+  },
+  "dependencies": {
+    "zod": "4.5.4",
+    "markdown-it": "^14.1.0"
+  }
+}

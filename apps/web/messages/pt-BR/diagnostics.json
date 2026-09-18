@@ -1,0 +1,219 @@
+{
+  "database": {
+    "title": "Persistência do painel",
+    "pass": {
+      "detail": "{{count}} migration(s) aplicada(s)"
+    },
+    "warn": {
+      "detail": "PostgreSQL inacessível; preferências armazenadas indisponíveis",
+      "fix": "portta db status"
+    }
+  },
+  "docker": {
+    "title": "Docker API",
+    "fail": {
+      "detail": "o painel não alcança seu socket proxy",
+      "fix": "portta web restart"
+    },
+    "pass": {
+      "detail": "acessível pelo socket proxy do painel"
+    }
+  },
+  "traefik": {
+    "title": "Traefik",
+    "fail": {
+      "notFound": "nenhum container do gateway encontrado",
+      "state": "container está {{state}}",
+      "unhealthy": "container não está saudável"
+    },
+    "warn": {
+      "starting": "health check ainda está iniciando"
+    },
+    "pass": {
+      "detail": "em execução ({{health}})"
+    }
+  },
+  "socket-proxy": {
+    "title": "Socket proxy do Traefik",
+    "fail": {
+      "state": "container está {{state}}",
+      "missing": "ausente",
+      "fix": "portta up {{profile}}"
+    },
+    "pass": {
+      "detail": "em execução"
+    }
+  },
+  "network": {
+    "title": "Rede compartilhada",
+    "fail": {
+      "detail": "{{network}} não existe",
+      "fix": "portta bootstrap"
+    },
+    "pass": {
+      "detail": "{{network}}: {{count}} container(s) anexado(s)"
+    }
+  },
+  "routes-off-network": {
+    "title": "Serviços roteados fora da rede compartilhada",
+    "fail": {
+      "fix": "anexe-os à rede {{network}}; veja docs/product/guides/adopting-projects.md"
+    },
+    "pass": {
+      "title": "Serviços roteados",
+      "detail": "todo serviço roteado está na rede compartilhada"
+    }
+  },
+  "hostname-collision": {
+    "title": "Colisões de hostname",
+    "fail": {
+      "fix": "dê COMPOSE_PROJECT_NAME distintos aos projetos: namespace portta"
+    },
+    "pass": {
+      "title": "Hostnames",
+      "detail": "sem colisões"
+    }
+  },
+  "split-working-dir": {
+    "title": "O ambiente '{{name}}' roda a partir de dois diretórios",
+    "warn": {
+      "fix": "dois checkouts compartilham um COMPOSE_PROJECT_NAME; dê outro nome a um deles (portta namespace)"
+    }
+  },
+  "port-conflict": {
+    "title": "Conflitos de portas publicadas",
+    "warn": {
+      "fix": "pare um dos containers ou mova-o para outra porta"
+    },
+    "pass": {
+      "title": "Portas publicadas",
+      "detail": "nenhuma porta está em uso duplicado"
+    }
+  },
+  "gateway-ports": {
+    "title": "Portas do gateway ocupadas por outros containers",
+    "warn": {
+      "fix": "pare o container ou altere PORTTA_HTTP_PORT / PORTTA_HTTPS_PORT"
+    }
+  },
+  "unhealthy": {
+    "title": "Containers não saudáveis",
+    "warn": {
+      "fix": "abra os logs do container"
+    },
+    "pass": {
+      "title": "Saúde dos containers",
+      "detail": "nada está não saudável"
+    }
+  },
+  "stale-bridges": {
+    "title": "Pontes de acesso expiradas",
+    "warn": {
+      "detail": "{{count}} ponte(s) expirada(s) ou parada(s)",
+      "fix": "portta access gc"
+    }
+  },
+  "public": {
+    "title": "Acesso público",
+    "warn": {
+      "detail": "serviços HTTP acessíveis em {{domain}}",
+      "fix": "portta public disable desativa isso"
+    }
+  },
+  "acme-email": {
+    "title": "ACME",
+    "fail": {
+      "detail": "TLS_MODE=acme sem ACME_EMAIL",
+      "fix": "defina ACME_EMAIL em Configurações"
+    }
+  },
+  "bind-address": {
+    "title": "Endereço de bind",
+    "fail": {
+      "detail": "o perfil privado está em bind em todas as interfaces",
+      "fix": "defina PORTTA_BIND_ADDRESS para o endereço VPN ou ative o Tailscale"
+    }
+  },
+  "aliases": {
+    "title": "Aliases de hostname",
+    "pass": {
+      "detail": "{{count}} roteado(s) além do hostname derivado"
+    }
+  },
+  "aliases-dangling": {
+    "title": "Aliases apontando para container inexistente",
+    "warn": {
+      "fix": "remova o alias ou redefina-o quando o ambiente voltar"
+    }
+  },
+  "shares-expired": {
+    "title": "Shares expirados",
+    "warn": {
+      "fix": "portta share gc"
+    }
+  },
+  "shares-dangling": {
+    "title": "Shares apontando para container inexistente",
+    "warn": {
+      "fix": "revogue-os ou recrie-os contra o novo container"
+    }
+  },
+  "shares": {
+    "title": "Shares temporários",
+    "pass": {
+      "detail": "{{count}} ativo(s), todos com expiração"
+    }
+  },
+  "traefik-verdict": {
+    "title": "Visão própria do Traefik",
+    "warn": {
+      "detail": "indisponível",
+      "fix": "defina PORTTA_DASHBOARD=true para o painel ler o Traefik diretamente"
+    },
+    "pass": {
+      "detail": "{{count}} router(s), todo serviço roteado entre eles"
+    }
+  },
+  "traefik-no-router": {
+    "title": "Serviços que o Traefik nunca roteou",
+    "fail": {
+      "fix": "verifique traefik.docker.network e se o container está na rede compartilhada"
+    }
+  },
+  "traefik-router-status": {
+    "title": "Routers recusados pelo Traefik",
+    "fail": {
+      "fix": "abra o router no dashboard do Traefik"
+    }
+  },
+  "panel-auth": {
+    "title": "Autenticação do painel",
+    "pass": {
+      "exposure": "Exposição do painel"
+    },
+    "fail": {
+      "detail": "o painel está roteado (expose: {{expose}}) sem credencial na frente",
+      "fix": "portta web auth set"
+    }
+  },
+  "panel-read-only": {
+    "title": "Painel roteado e gravável",
+    "warn": {
+      "detail": "quem passar pela credencial pode parar e remover containers",
+      "fix": "portta web up --read-only"
+    }
+  },
+  "panel-auth-file": {
+    "title": "Middleware do painel desatualizado",
+    "warn": {
+      "detail": "{{file}} não corresponde às configurações atuais",
+      "fix": "portta web auth apply"
+    }
+  },
+  "taskflow-host": {
+    "title": "Daemon de host do Taskflow",
+    "pass": {
+      "detail": "acessível em {{url}}, servindo {{count}} projeto(s)"
+    }
+  }
+}

@@ -1,0 +1,590 @@
+{
+  "title": "Configurações",
+  "description": "Como o Portta nomeia os projetos, quem pode alcançá-los e como este painel é acessado.",
+  "saved": "Salvo. O Traefik lê a configuração estática na inicialização; estes valores passam a valer quando os containers do gateway forem recriados no host:",
+  "notWritable": "O painel não pode gravar {{path}}. Edite no host.",
+  "sectionNotFound": "A seção de configurações “{{group}}” não existe",
+  "chooseGroup": "Escolha um dos grupos disponíveis.",
+  "secretsNote": "Segredos nunca são retornados pela API: o painel só informa se um token está definido. Valores são gravados em {{path}} com mode 600.",
+  "learnMore": "Saiba mais",
+  "configureDns": "Configurar DNS",
+  "configureTls": "Configurar TLS",
+  "valueDefault": "Padrão do Portta",
+  "valueDetected": "Detectado automaticamente",
+  "valueDerived": "Derivado automaticamente",
+  "valueEnvironment": "Definido pelo ambiente em execução",
+  "envVar": "Variável de ambiente",
+  "restartPending": "Estas alterações passam a valer depois que o gateway for recriado. Salve agora e use a barra de aplicação em seguida.",
+  "dashboard": {
+    "title": "Dashboard do Traefik",
+    "description": "O endereço que este host está servindo agora. Aplique as configurações salvas pela barra no rodapé.",
+    "loopbackOnly": "apenas nesta máquina",
+    "loopbackHint": "Este endereço de loopback só funciona nesta máquina. O dashboard não tem login próprio, por isso nunca é publicado num domínio.",
+    "tailnetWarning": "Num attachment Tailscale, a :8080 também fica alcançável na tailnet sem login enquanto o overlay de loopback estiver ativo.",
+    "copyAddress": "Copiar endereço",
+    "open": "Abrir o dashboard do Traefik",
+    "openDisabled": "Nenhum endereço utilizável daqui. O URL de loopback só funciona no host."
+  },
+  "projectDomain": {
+    "title": "Endereços resultantes",
+    "description": "O Portta monta o hostname de cada projeto a partir desta base.",
+    "formula": "Como um hostname é formado",
+    "formulaPattern": "<projeto>-<serviço>.<base>",
+    "base": "Domínio base",
+    "provider": "DNS automático",
+    "examples": "Um projeto chamado loja responderia em:",
+    "stateOk": "utilizável",
+    "stateLimited": "requer atenção",
+    "stateBroken": "não resolve",
+    "note": "Isto escolhe apenas o nome. Quem alcança o Traefik é decidido em Acesso aos projetos."
+  },
+  "panel": {
+    "network": "Rede do painel",
+    "networkHelp": "A porta e a interface do host usadas para publicar o painel. Elas são separadas da URL do navegador; modos roteados derivam e bloqueiam o bind.",
+    "access": "Endereço do painel",
+    "kinds": {
+      "local": "Somente nesta máquina",
+      "tailscale": "Pela VPN",
+      "public": "Na porta do painel, pela internet",
+      "hostname": "Por um endereço"
+    },
+    "kindHelp": {
+      "local": "http://127.0.0.1 e a porta acima. O padrão, e o mais seguro.",
+      "tailscale": "Associa o painel ao endereço da tailnet deste nó. O login passa a ser obrigatório.",
+      "public": "Publica o painel na própria porta. Não publica os projetos. O login passa a ser obrigatório.",
+      "hostname": "Alcance o painel por um nome. O login passa a ser obrigatório. Os projetos permanecem como estão."
+    },
+    "addressMode": "Qual hostname",
+    "hostnameKinds": {
+      "subdomain": "Subdomínio do domínio configurado",
+      "custom": "Um domínio próprio"
+    },
+    "subdomain": "Subdomínio",
+    "subdomainHelp": "Somente o rótulo. A base vem dos endereços de projeto já configurados.",
+    "customDomain": "Domínio",
+    "customDomainHelp": "Este nome precisa resolver para este servidor. Configure DNS e TLS se ainda não estiverem.",
+    "publicAddress": "Endereço público deste servidor",
+    "publicAddressHelp": "O IP ou hostname digitado antes da porta do painel. O protocolo e a porta são adicionados automaticamente.",
+    "publicAddressNeeded": "Informe um endereço alcançável pela internet para o Portta montar a URL de login.",
+    "authRequired": "O painel vai pedir login. Esta alteração não publica os seus projetos.",
+    "tlsNeeded": "Um hostname em HTTPS precisa de TLS ligado. docs/product/concepts/addresses-and-access.md#tls",
+    "tailnetBindNeeded": "Informe em Rede do painel o endereço Tailscale deste nó antes de salvar.",
+    "result": "URL resultante",
+    "open": "Abrir o painel",
+    "security": "Segurança",
+    "securityHelp": "Quem pode usar o painel, e a partir de quais origens.",
+    "features": "Recursos do painel",
+    "featuresHelp": "Documentação enviada com esta imagem."
+  },
+  "projectAccess": {
+    "title": "Quem pode alcançar os projetos",
+    "kinds": {
+      "local": "Somente nesta máquina",
+      "private": "Pela VPN",
+      "public": "Pela internet"
+    },
+    "kindHelp": {
+      "local": "O Traefik escuta apenas em 127.0.0.1. É o padrão mais seguro.",
+      "private": "O Traefik entra na tailnet do Tailscale; o acesso público permanece desligado.",
+      "public": "Publica as portas HTTP e HTTPS em todas as interfaces. Somente serviços que optaram por roteamento respondem."
+    },
+    "vpn": "Configuração da VPN",
+    "vpnHelp": "Escolha uma tailnet gerenciada pelo Portta ou associe uma interface VPN existente. Um domínio privado pode substituir a base dos projetos.",
+    "privateKinds": {
+      "tailscale": "Tailscale gerenciado pelo Portta",
+      "interface": "VPN já instalada neste host"
+    },
+    "privateKindHelp": {
+      "tailscale": "O padrão autocontido. O Traefik entra na rede do container Tailscale.",
+      "interface": "Associa o Traefik ao endereço privado de um Tailscale nativo do host ou de outra VPN."
+    },
+    "privateBindNeeded": "Informe o endereço privado da interface VPN deste host. O Portta continuará recusando 0.0.0.0.",
+    "privateDomainNeeded": "localhost resolve para a máquina de cada pessoa. Use endereços automáticos para os projetos ou informe um domínio privado que resolva para este servidor.",
+    "publicDomain": "Domínio dos projetos na internet",
+    "publicDomainKinds": {
+      "base": "Usar o domínio base já configurado ({{domain}})",
+      "custom": "Usar outro domínio"
+    },
+    "customDomain": "Outro domínio público",
+    "customDomainHelp": "Um registro curinga para este domínio precisa apontar para este servidor.",
+    "needsDomain": "localhost não funciona pela internet. Configure endereços automáticos ou um domínio próprio, ou informe outro domínio público.",
+    "noTls": "O tráfego será HTTP sem criptografia. Configure TLS antes de usar este acesso em produção.",
+    "bind": "Bind:",
+    "ports": "Portas HTTP/HTTPS:",
+    "result": "Exemplo:",
+    "network": "Rede e operação do gateway",
+    "networkHelp": "Portas e logs do Traefik. O bind é derivado do modo de acesso acima.",
+    "confirmTitle": "Disponibilizar projetos pela internet?",
+    "confirmDescription": "Esta alteração recria o gateway numa configuração alcançável pela rede pública.",
+    "confirm": "Ativar acesso público",
+    "confirmWarning": "O painel, bancos de dados e serviços sem roteamento continuam fora deste acesso. Projetos roteados sem proteção poderão ser acessados por qualquer pessoa."
+  },
+  "publicAccess": {
+    "result": "Os projetos que optarem por isso ficarão em <projeto>-<serviço>.{{domain}}."
+  },
+  "groups": {
+    "Gateway": "Gateway",
+    "Project access": "Acesso aos projetos",
+    "Traefik": "Traefik",
+    "TLS": "TLS",
+    "VPN": "VPN",
+    "Public access": "Acesso público",
+    "DNS": "DNS",
+    "Panel": "Painel",
+    "GitHub": "GitHub",
+    "Project domain": "Endereços dos projetos",
+    "Projects": "Projetos"
+  },
+  "groupIntro": {
+    "Projects": "O diretório que esta instalação trata como casa dos Projetos.",
+    "Project domain": "Como o Portta nomeia projetos e serviços. Um nome não é exposição.",
+    "Gateway": "Onde o Traefik escuta. Independente do endereço do painel.",
+    "Project access": "Onde o Traefik escuta e se os projetos respondem somente nesta máquina, pela VPN ou pela internet. Isto não publica o painel.",
+    "Public access": "Se a internet alcança o Traefik. Não muda como os projetos se chamam, e não publica este painel.",
+    "VPN": "Alcance os projetos numa tailnet em vez da rede pública.",
+    "TLS": "Certificados para os hostnames dos projetos. Não é presumido só porque um domínio foi definido.",
+    "DNS": "Automação opcional da Cloudflare para o wildcard e o DNS-01. Não escolhe o domínio dos projetos.",
+    "Panel": "Como você alcança este painel. Independente de os projetos serem públicos.",
+    "Traefik": "O proxy que roteia cada hostname. O dashboard sem autenticação fica em loopback, exceto quando o Traefik compartilha o namespace Tailscale."
+  },
+  "fields": {
+    "ACME_CA_SERVER": {
+      "label": "Diretório ACME",
+      "help": "Aponte para o endpoint de staging ao testar, para evitar rate limits."
+    },
+    "ACME_CHALLENGE": {
+      "label": "Como provar o domínio",
+      "help": "DNS emite um wildcard e precisa da credencial do provedor. HTTP emite um certificado por hostname e precisa da porta 80 alcançável na internet.",
+      "choices": {
+        "dns": "DNS (um wildcard)",
+        "http": "HTTP (um certificado por hostname)"
+      }
+    },
+    "ACME_DNS_PROVIDER": {
+      "label": "Provedor DNS-01",
+      "help": "Nome do provedor como o Traefik/lego entende. Necessário quando o desafio é DNS."
+    },
+    "ACME_EMAIL": {
+      "label": "Contato Let’s Encrypt",
+      "help": "Obrigatório quando os certificados vêm do Let’s Encrypt."
+    },
+    "CF_DNS_API_TOKEN": {
+      "label": "Token de API Cloudflare",
+      "help": "Token com escopo (Zone:DNS:Edit), nunca a chave global de API."
+    },
+    "CLOUDFLARE_ENABLED": {
+      "label": "DNS Cloudflare",
+      "help": "Cria o registro wildcard e responde aos desafios DNS-01 pela Cloudflare. Isto não escolhe o domínio dos projetos."
+    },
+    "CLOUDFLARE_ZONE": {
+      "label": "Zona Cloudflare",
+      "help": "Zona em que o registro wildcard reside."
+    },
+    "PORTTA_ACCESS_LOG": {
+      "label": "Log de acesso do Traefik",
+      "help": "Útil ao depurar roteamento; ruidoso no resto do tempo."
+    },
+    "PORTTA_AUTH_MODE": {
+      "label": "Autenticação",
+      "help": "Obrigatória faz o painel perguntar quem é você. Desligada faz toda requisição ser o operador local, e só é permitida nesta máquina.",
+      "choices": {
+        "disabled": "Não obrigatória (somente nesta máquina)",
+        "required": "Obrigatória"
+      }
+    },
+    "PORTTA_AUTH_SECRET": {
+      "label": "Segredo de assinatura das sessões",
+      "help": "Com o que sessões e tokens são assinados. Gerado no bootstrap; trocá-lo desconecta todo mundo."
+    },
+    "PORTTA_AUTO_DOMAIN_PROVIDER": {
+      "label": "Serviço de DNS automático",
+      "help": "sslip.io e nip.io resolvem qualquer nome que embuta o endereço deste host, então nenhum precisa de registro ou conta."
+    },
+    "PORTTA_BIND_ADDRESS": {
+      "label": "Escutar em",
+      "help": "Interface em que o Traefik publica. 127.0.0.1 mantém o tráfego dos projetos fora da rede local."
+    },
+    "PORTTA_DASHBOARD": {
+      "label": "Dashboard do Traefik",
+      "help": "Dashboard próprio do Traefik. Normalmente fica em loopback; um attachment Tailscale também pode deixá-lo alcançável na tailnet sem login."
+    },
+    "PORTTA_DASHBOARD_PORT": {
+      "label": "Porta do dashboard",
+      "help": "Porta do host para o dashboard do Traefik."
+    },
+    "PORTTA_DOMAIN": {
+      "label": "Seu domínio",
+      "help": "A base que o Portta usa para montar os endereços dos projetos. Um curinga *.<domínio> precisa resolver para este host."
+    },
+    "PORTTA_DOMAIN_MODE": {
+      "label": "Como os endereços são montados",
+      "help": "Nesta máquina usa localhost. Automático monta um nome a partir do endereço deste host, sem registro DNS. Um domínio próprio precisa de um wildcard apontando para cá.",
+      "choices": {
+        "local": "Nesta máquina (localhost)",
+        "auto": "Automático (pelo endereço deste host)",
+        "custom": "Um domínio que você possui"
+      }
+    },
+    "PORTTA_HTTPS_PORT": {
+      "label": "Porta HTTPS",
+      "help": "Porta do host para HTTPS."
+    },
+    "PORTTA_HTTP_PORT": {
+      "label": "Porta HTTP",
+      "help": "Porta do host para HTTP simples."
+    },
+    "PORTTA_LOG_LEVEL": {
+      "label": "Nível de log",
+      "help": "Nível de log dos componentes do gateway."
+    },
+    "PORTTA_PANEL_TRUSTED_ORIGINS": {
+      "label": "Origens confiáveis adicionais",
+      "help": "Outras origens de onde um navegador pode entrar, separadas por vírgula: um nome de VPN, um domínio público. O loopback e a URL do painel são sempre confiáveis."
+    },
+    "PORTTA_PANEL_URL": {
+      "label": "URL do painel",
+      "help": "O endereço em que um navegador alcança o painel. Ele decide para onde a entrada redireciona e se o cookie de sessão pode ser `Secure`."
+    },
+    "PORTTA_PROFILE": {
+      "label": "Perfil do gateway",
+      "help": "Onde o Traefik escuta: nesta máquina, numa rede privada ou na internet. Independente do painel.",
+      "choices": {
+        "local": "Nesta máquina",
+        "remote-private": "Remoto privado",
+        "remote-public": "Remoto público"
+      }
+    },
+    "PORTTA_PROJECTS_HOME": {
+      "label": "Projects Home",
+      "help": "O único diretório em que esta instalação gerencia Projetos. Mudar altera a referência; os arquivos não são movidos. Ambientes existentes fora deste caminho continuam visíveis como não gerenciados."
+    },
+    "PORTTA_PUBLIC_IP": {
+      "label": "Endereço do host",
+      "help": "O IPv4 que o modo automático embute no hostname. Detectado na instalação."
+    },
+    "PORTTA_RUNTIME_API_DOCS": {
+      "label": "Referência da API",
+      "help": "Serve a referência da API e seu console em /docs/api. Ele faz requisições reais contra este painel, então vazio usa o padrão seguro: ligado em loopback, desligado quando roteado."
+    },
+    "PORTTA_RUNTIME_DOCS": {
+      "label": "Documentação",
+      "help": "Serve a documentação do projeto em /docs, a partir desta imagem. É texto estático, sem nenhuma informação sobre o host, então um painel roteado pode servi-la."
+    },
+    "PORTTA_WEB_BIND_ADDRESS": {
+      "label": "Bind",
+      "help": "Interface do host usada para publicar o painel. Mantenha 127.0.0.1, salvo se for um endereço da tailnet ou se o entrypoint público for ativado explicitamente."
+    },
+    "PORTTA_WEB_EXPOSE": {
+      "label": "Como o painel é alcançado",
+      "help": "Nesta máquina é só loopback. Os outros modos colocam o painel além deste host e exigem login. Nenhum deles publica os projetos."
+    },
+    "PORTTA_WEB_HOST": {
+      "label": "Subdomínio do painel",
+      "help": "O rótulo na frente do domínio dos projetos quando o painel é alcançado como subdomínio."
+    },
+    "PORTTA_PANEL_ADVERTISED_HOST": {
+      "label": "Hostname do painel",
+      "help": "O hostname que o Traefik roteia para o painel quando ele é alcançado por um domínio."
+    },
+    "PORTTA_WEB_PORT": {
+      "label": "Porta",
+      "help": "Porta do host usada para publicar o painel."
+    },
+    "PORTTA_WEB_READ_ONLY": {
+      "label": "Somente leitura",
+      "help": "Recusa todo endpoint mutável. Padrão sempre que o painel é roteado."
+    },
+    "PRIVATE_DOMAIN": {
+      "label": "Domínio privado",
+      "help": "Wildcard opcional atendido só pela VPN. Deixe vazio para reutilizar a base dos projetos."
+    },
+    "PUBLIC_DOMAIN": {
+      "label": "Domínio público dos projetos",
+      "help": "Domínio usado para disponibilizar projetos opt-in na internet, por exemplo dev.example.com. Um wildcard precisa apontar para este host."
+    },
+    "PUBLIC_ENABLED": {
+      "label": "Acesso pela internet",
+      "help": "Deixa a internet alcançar o Traefik nas portas 80 e 443. Não muda como os projetos se chamam e não publica o painel. Só serviços que optam são roteados."
+    },
+    "TAILSCALE_ENABLED": {
+      "label": "Tailscale",
+      "help": "Executa o Traefik no namespace Tailscale para os projetos serem alcançáveis na tailnet, não na NIC pública."
+    },
+    "TAILSCALE_HOSTNAME": {
+      "label": "Hostname Tailscale",
+      "help": "Nome que este nó assume na tailnet."
+    },
+    "TLS_ENABLED": {
+      "label": "HTTPS",
+      "help": "Emite certificados para os hostnames dos projetos. Desligado, só HTTP é servido."
+    },
+    "TLS_MODE": {
+      "label": "Origem do certificado",
+      "help": "Nesta máquina usa uma CA local. Let’s Encrypt usa ACME.",
+      "choices": {
+        "local": "CA local",
+        "acme": "Let’s Encrypt"
+      }
+    },
+    "TS_AUTHKEY": {
+      "label": "Chave de autenticação Tailscale",
+      "help": "Prefira uma chave efêmera, com tag e pré-autorizada. Nunca sai do host."
+    }
+  },
+  "validation": {
+    "mustBeHostname": "deve ser um hostname, por exemplo dev.example.com",
+    "mustBePort": "deve ser uma porta entre 1 e 65535",
+    "mustBeIpv4": "deve ser um endereço IPv4",
+    "mustBeEmail": "deve ser um endereço de e-mail",
+    "mustBeHttpsUrl": "deve ser uma URL https",
+    "mustBeUrl": "deve ser uma URL",
+    "notManaged": "não é uma configuração gerenciada pelo painel",
+    "mustBeBoolean": "deve ser true ou false",
+    "mustBeOneOf": "deve ser um de {{choices}}",
+    "publicDomainRequired": "é obrigatório pelo perfil remote-public",
+    "bindAddressPrivate": "o perfil remote-private não pode fazer bind em 0.0.0.0",
+    "acmeEmailRequired": "é obrigatório quando TLS_MODE é acme",
+    "tailscaleHostnameRequired": "é obrigatório quando o Tailscale está ativado",
+    "panelNotOnEveryInterface": "o painel não é publicado em todas as interfaces; acesse pela VPN"
+  },
+  "savedShort": "Salvo.",
+  "restartRequired": "Exige reinício",
+  "restartHint": "Mudar isto passa a valer depois que o gateway reiniciar, não ao salvar.",
+  "pendingHint": "Salvo, mas o processo em execução ainda usa {{value}}.",
+  "sectionsLabel": "Seções de configurações",
+  "sections": {
+    "general": "Geral",
+    "environment": "Ambiente",
+    "users": "Usuários",
+    "tokens": "Tokens de API",
+    "security": "Segurança",
+    "integrations": "Integrações",
+    "audit": "Auditoria"
+  },
+  "roleHints": {
+    "owner": "É dono deste painel. Existe exatamente um, e o papel muda por transferência.",
+    "admin": "Tudo, menos assumir a propriedade. Vê todos os Projetos.",
+    "developer": "Trabalha nos Projetos de que participa: issues, ambientes, repositórios.",
+    "viewer": "Lê os Projetos de que participa, e não altera nada."
+  },
+  "localMode": {
+    "title": "Este painel não pede quem é você",
+    "users": "A autenticação está desativada: todos que alcançam este painel são o operador local, então não há contas para administrar. Defina PORTTA_AUTH_MODE=required no host para ligar as contas.",
+    "tokens": "Um token pertence a uma pessoa, e este painel não tem nenhuma. Defina PORTTA_AUTH_MODE=required no host para ligar contas e tokens.",
+    "security": "Não há conta a proteger: este painel não pergunta quem está perguntando. Defina PORTTA_AUTH_MODE=required no host para ligar as contas.",
+    "audit": "A auditoria registra quem fez o quê, e aqui todo mundo é o operador local. Defina PORTTA_AUTH_MODE=required no host para ligar as contas."
+  },
+  "agentPermissions": {
+    "title": "O que um agente local pode fazer",
+    "description": "O teto sobre uma requisição que se anuncia com X-Portta-Actor. Ele estreita o que a pessoa por trás já tem; nunca concede nada a mais.",
+    "restoreDefault": "Restaurar o padrão",
+    "usingDefault": "Usando o padrão"
+  },
+  "users": {
+    "title": "Usuários",
+    "description": "Quem pode entrar, o que cada um pode fazer e quais Projetos alcança.",
+    "create": "Novo usuário",
+    "createDescription": "A conta passa a existir assim que você a cria. Entregue a primeira senha você mesmo: este painel não envia e-mail.",
+    "name": "Nome",
+    "email": "E-mail",
+    "password": "Senha",
+    "passwordHint": "No mínimo 10 caracteres.",
+    "repeatPassword": "Repita a senha",
+    "passwordMismatch": "As duas não conferem.",
+    "passwordSignsOut": "Trocar a senha desconecta essa conta de todos os outros navegadores.",
+    "role": "Papel",
+    "status": "Situação",
+    "projects": "Projetos",
+    "created": "Criado",
+    "you": "você",
+    "active": "Ativo",
+    "banned": "Banido",
+    "twoFactor": "2FA",
+    "everyProject": "Todos os Projetos",
+    "noProject": "Nenhum Projeto ainda",
+    "noProjectsYet": "Este painel ainda não tem Projetos.",
+    "actionsFor": "Ações para {{name}}",
+    "makeRole": "Tornar {{role}}",
+    "setPassword": "Definir uma senha",
+    "setPasswordFor": "Definir uma senha para {{name}}",
+    "projectAccess": "Acesso a Projetos",
+    "projectAccessFor": "Acesso a Projetos de {{name}}",
+    "projectAccessHint": "Um developer ou um viewer vê os Projetos de que participa, e nada além.",
+    "sessions": "Sessões abertas",
+    "sessionsFor": "Sessões abertas de {{name}}",
+    "sessionsDescription": "Os navegadores em que esta conta está conectada agora.",
+    "revokeAll": "Desconectar de todos",
+    "noSessions": "Esta conta não está conectada em lugar nenhum.",
+    "transfer": "Transferir a propriedade",
+    "transferTitle": "Transferir a propriedade para {{name}}?",
+    "transferImpact": "{{name}} passa a ser o dono e você vira administrador, num passo só. Não há volta a não ser pedir que transfira de novo.",
+    "ban": "Banir",
+    "unban": "Suspender o banimento",
+    "banTitle": "Banir {{name}}?",
+    "banImpact": "A conta para de funcionar na próxima requisição. Nada é apagado, e o banimento pode ser desfeito.",
+    "removeTitle": "Remover {{name}}?",
+    "removeImpact": "A conta, suas sessões e seus tokens são apagados. O que a conta fez continua na auditoria.",
+    "removeTypeHint": "Digite {{email}} para confirmar.",
+    "empty": "Só você, por enquanto."
+  },
+  "tokens": {
+    "title": "Tokens de API",
+    "description": "Credenciais para o que não é um navegador: a CLI num laptop, um agente num terminal, um job de CI.",
+    "whose": "Tokens de quem",
+    "mine": "Meus",
+    "everybody": "De todos",
+    "create": "Novo token",
+    "createDescription": "Um token nunca pode mais do que o seu papel. Rebaixar o seu papel rebaixa todo token que você criou.",
+    "name": "Nome",
+    "nameHint": "Para que esta credencial serve: o laptop, o job de CI, o agente.",
+    "prefix": "Começa com",
+    "owner": "Dono",
+    "actor": "Ator",
+    "actorKind": "Usado por",
+    "agent": "Um agente",
+    "human": "Uma pessoa",
+    "actorHint": {
+      "agent": "Estreitado ainda pelo que os agentes podem fazer neste painel.",
+      "human": "Tem o que o seu papel tem, como se fosse você no teclado."
+    },
+    "lastUsed": "Último uso",
+    "neverUsed": "Nunca",
+    "expires": "Expira",
+    "expiresHint": "Uma credencial sem fim é uma que ninguém lembra de encerrar.",
+    "noExpiry": "Sem expiração",
+    "days": "{{count}} dias",
+    "scopeCount": "{{count}} permissões",
+    "scopeNote": "O token tem a interseção dos seus escopos com o seu papel, calculada a cada requisição.",
+    "revoke": "Revogar",
+    "revoked": "Revogado",
+    "revokeTitle": "Revogar {{name}}?",
+    "revokeImpact": "O que carrega este token para de funcionar na próxima requisição. A linha permanece, para a lista ainda poder dizer o que foi revogado.",
+    "empty": "Nenhum token ainda.",
+    "emptyHint": "Crie um para entrar pela CLI ou para deixar um agente agir em seu nome.",
+    "createdTitle": "Seu novo token",
+    "createdDescription": "Copie agora: o painel guarda um hash, não o segredo.",
+    "copySecret": "Copiar o token",
+    "copied": "Copiei",
+    "onlyOnce": "Esta é a única vez que este segredo aparece. Se ele se perder, revogue este token e crie outro.",
+    "useHint": "Envie como Authorization: Bearer <token>, ou rode portta auth login e cole."
+  },
+  "security": {
+    "title": "Segurança",
+    "description": "A sua conta: a sua senha, o seu segundo fator e onde você está conectado.",
+    "profile": "Perfil",
+    "password": "Senha",
+    "passwordDescription": "Não há recuperação por e-mail. Um administrador define uma nova, ou você roda portta auth reset-password no host.",
+    "changePassword": "Trocar a senha",
+    "changePasswordDescription": "Você continua conectado aqui, e é desconectado em todo o resto.",
+    "passwordRefused": "Essa senha não foi aceita.",
+    "currentPassword": "Senha atual",
+    "twoFactor": "Segundo fator",
+    "twoFactorDescription": "Um aplicativo autenticador, pedido depois da senha.",
+    "twoFactorHint": "Ligar isso acrescenta um passo à sua entrada, e nada mais. Os códigos de recuperação aparecem uma vez, quando você liga.",
+    "on": "Ligado",
+    "off": "Desligado",
+    "turnOn": "Ligar",
+    "turnOff": "Desligar",
+    "confirmPassword": "A sua senha, para ter certeza de que é você.",
+    "wrongPassword": "Essa senha não foi aceita.",
+    "scanTitle": "Escaneie isto com o seu aplicativo",
+    "scanDescription": "Depois digite o código de seis dígitos que ele mostra, para o painel saber que o aplicativo funciona.",
+    "qrLabel": "Código QR para o seu aplicativo autenticador",
+    "cannotScan": "Se o aplicativo não conseguir escanear, digite este segredo:",
+    "codeFromApp": "Código do aplicativo",
+    "verify": "Verificar",
+    "invalidCode": "Esse código não foi aceito. Os códigos mudam a cada 30 segundos.",
+    "backupTitle": "Seus códigos de recuperação",
+    "backupDescription": "Cada um serve uma vez, no lugar do código do aplicativo.",
+    "backupOnce": "Esta é a única vez que eles aparecem. Guarde-os onde você chegue sem este painel.",
+    "copyCodes": "Copiar os códigos",
+    "sessions": "Onde você está conectado",
+    "sessionsDescription": "Todo navegador com uma sessão desta conta.",
+    "sessionsRefused": "O painel não respondeu sobre as suas sessões.",
+    "noSessions": "Nenhuma outra sessão.",
+    "thisBrowser": "Este navegador",
+    "signOut": "Desconectar",
+    "unknownAddress": "endereço desconhecido",
+    "unknownBrowser": "navegador desconhecido",
+    "startedAt": "começou {{when}}",
+    "expires": "expira {{when}}",
+    "totpUnavailable": "Este painel não conseguiu ligar o aplicativo autenticador."
+  },
+  "integrations": {
+    "title": "Integrações",
+    "description": "O que o painel conversa e não é o host."
+  },
+  "environment": {
+    "title": "Ambiente",
+    "description": "O que este host tem instalado e se cada ferramenta funciona no shell não interativo do Portta.",
+    "neverCollected": "A prontidão do ambiente nunca foi coletada.",
+    "runCommand": "Execute portta env report no host. O painel nunca sonda o host a partir do container.",
+    "summary": "{{passed}} aprovados · {{recommendations}} recomendações · {{problems}} problemas",
+    "collected": "Coletado {{when}}",
+    "stale": "Desatualizado",
+    "refreshHint": "Atualize no host:",
+    "fix": "Sugestão",
+    "hostSecurity": "Segurança do host",
+    "hostSecurityDescription": "Observações somente de leitura coletadas {{when}}. O Portta não altera nada.",
+    "hostSecurityMissing": "A segurança do host ainda não foi coletada; execute portta env report no host.",
+    "categories": {
+      "infrastructure": "Infraestrutura",
+      "development": "Desenvolvimento",
+      "agents": "Agentes"
+    },
+    "status": {
+      "pass": "Utilizável",
+      "info": "Opcional",
+      "warn": "Recomendação",
+      "fail": "Problema"
+    }
+  },
+  "ssh": {
+    "title": "Chaves SSH",
+    "description": "Credenciais desta instância Portta. As chaves privadas ficam no armazenamento restrito do host e nunca aparecem na API.",
+    "empty": "Nenhuma chave SSH do Portta.",
+    "emptyHint": "Gere uma chave nova ou importe uma chave privada existente sem senha.",
+    "generate": "Gerar chave",
+    "import": "Importar chave",
+    "generateTitle": "Gerar uma chave SSH",
+    "generateDescription": "ED25519 é o padrão recomendado. Chaves RSA são geradas com 4096 bits.",
+    "importTitle": "Importar uma chave SSH",
+    "importDescription": "A entrada privada é gravada diretamente no armazenamento restrito e nunca é devolvida.",
+    "name": "Nome",
+    "descriptionLabel": "Descrição",
+    "algorithm": "Algoritmo",
+    "privateKey": "Chave privada",
+    "privateKeyHint": "Chave privada OpenSSH ou PEM sem senha. Ela não será exibida novamente.",
+    "publicKey": "Mostrar chave pública",
+    "copyPublicKey": "Copiar chave pública",
+    "forge": "Forge",
+    "test": "Testar",
+    "remove": "Remover",
+    "removeTitle": "Remover {{name}}",
+    "removeImpact": "Os arquivos privado e público serão removidos permanentemente desta instância Portta.",
+    "cancel": "Cancelar",
+    "origin": {
+      "generated": "gerada",
+      "imported": "importada"
+    }
+  },
+  "audit": {
+    "title": "Auditoria",
+    "description": "Quem fez o quê: contas, papéis, tokens, participação em Projetos e configurações. A atividade de desenvolvimento fica na página Atividade.",
+    "filterByUser": "Filtrar por usuário",
+    "everybody": "Todos",
+    "when": "Quando",
+    "who": "Quem",
+    "action": "Ação",
+    "resource": "Recurso",
+    "where": "Onde",
+    "kind": {
+      "local": "local",
+      "user": "conectado",
+      "token": "token"
+    },
+    "empty": "Nada registrado ainda.",
+    "emptyHint": "As entradas aparecem conforme contas, tokens e configurações mudam.",
+    "older": "Entradas mais antigas"
+  }
+}

@@ -1,0 +1,274 @@
+# ============================================================================
+# Portta: administration panel (opt-in)
+# ============================================================================
+# Enabled by PORTTA_WEB=true, or by `portta web up`.
+#
+# The panel is a development tool, so it is published on loopback by default
+# and never routed through the public entrypoints. Reaching it over a VPN is a
+# separate, explicit overlay: docker/compose/features/web-vpn.yaml.
+#
+# It gets its OWN Docker socket proxy rather than sharing Traefik's. Traefik
+# needs a strictly read-only view; the panel needs to start, stop, restart and
+# remove containers, and those two permission sets must not be merged into one.
+# See docs/product/guides/web-ui.md and docs/development/adr/0008-web-panel-socket-proxy.md.
+# ============================================================================
+
+networks:
+  # Panel <-> its socket proxy. `internal: true`: the proxy has no route to the
+  # outside world and is reachable from nothing else.
+  webcontrol:
+    name: ${PORTTA_WEB_NETWORK:-portta-web}
+    internal: true
+    labels:
+      portta.managed: "true"
+      portta.component: web-control-network
+
+services:
+  # --------------------------------------------------------------------------
+  # The panel's Docker socket proxy
+  # --------------------------------------------------------------------------
+  # Write access is limited to container lifecycle and interactive exec.
+  # Images, volumes, build, swarm and system endpoints (where prune lives) stay
+  # denied, and the panel enforces its narrower path allowlist on top.
+  web-socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0
+    restart: unless-stopped
+    read_only: true
+    environment:
+      # -- read ------------------------------------------------------------
+      CONTAINERS: "1"
+      NETWORKS: "1"
+      EVENTS: "1"
+      INFO: "1"
+      VERSION: "1"
+      PING: "1"
+      # -- write, limited to the container lifecycle ----------------------
+      POST: "1"
+      ALLOW_START: "1"
+      ALLOW_STOP: "1"
+      ALLOW_RESTARTS: "1"
+      # -- denied ----------------------------------------------------------
+      ALLOW_PAUSE: "0"
+      ALLOW_UNPAUSE: "0"
+      AUTH: "0"
+      BUILD: "0"
+      COMMIT: "0"
+      CONFIGS: "0"
+      DISTRIBUTION: "0"
+      # Four exec paths are allowed again inside the panel: create, attach,
+      # resize and inspect. Traefik's separate proxy remains read-only.
+      EXEC: "1"
+      GRPC: "0"
+      IMAGES: "0"
+      NODES: "0"
+      PLUGINS: "0"
+      SECRETS: "0"
+      SERVICES: "0"
+      SESSION: "0"
+      SWARM: "0"
+      SYSTEM: "0"
+      TASKS: "0"
+      VOLUMES: "0"
+      LOG_LEVEL: warning
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - webcontrol
+    # No `ports:`. The proxy is reachable only from the panel.
+    tmpfs:
+      - /tmp
+      - /run
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "2375"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    labels:
+      traefik.enable: "false"
+      portta.managed: "true"
+      portta.component: web-socket-proxy
+
+  # --------------------------------------------------------------------------
+  # The panel: API and UI in one process
+  # --------------------------------------------------------------------------
+  web:
+    # A normal installation never builds: the panel is a published image, and
+    # PORTTA_HOME holds no application source to build from. Developers opt
+    # back into a local build with PORTTA_WEB_BUILD=true
+    # (docker/compose/features/web-build.yaml), and `portta web dev` still
+    # builds the dev target. PORTTA_VERSION comes from the generated runtime
+    # asset, so the installed CLI and panel select the same image.
+    image: ${PORTTA_WEB_IMAGE:-ghcr.io/codions-labs/portta:${PORTTA_VERSION}}
+    restart: unless-stopped
+    depends_on:
+      web-socket-proxy:
+        condition: service_healthy
+    # `node` is in both the runtime and the `dev` image; the Dockerfile's
+    # `wget` healthcheck only exists on the runtime stage. start_period covers
+    # the first `next.prepare()`; retries then fit `--wait-timeout 180`.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/api/health').then((r)=>process.exit(r.ok||r.status===401?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 60s
+    # Whoever owns .env, which the Settings page writes. `bootstrap` and
+    # `web up` record it; the image's own `node` is only a last resort, and is
+    # right just when the host uid happens to be 1000.
+    user: ${PORTTA_WEB_USER:-node}
+    environment:
+      # The panel's database is a file under $PORTTA_HOME, bind-mounted below.
+      # There is nothing to configure and no service to wait for: the file is
+      # created on first open (ADR 0037).
+      PORTTA_RUNTIME_DATABASE_FILE: /app/state/panel/portta.db
+      PORTTA_AUTH_SIGNIN_ATTEMPTS: ${PORTTA_AUTH_SIGNIN_ATTEMPTS:-}
+      ACME_CHALLENGE: ${ACME_CHALLENGE:-dns}
+      ACME_DNS_RESOLVERS: ${ACME_DNS_RESOLVERS:-}
+      CLOUDFLARE_TUNNEL_ENABLED: ${CLOUDFLARE_TUNNEL_ENABLED:-false}
+      CLOUDFLARE_TUNNEL_ZONE: ${CLOUDFLARE_TUNNEL_ZONE:-}
+      PORTTA_RUNTIME_DOCKER_API: http://web-socket-proxy:2375
+      PORTTA_RUNTIME_HOST: 0.0.0.0
+      PORTTA_RUNTIME_PORT: "8081"
+      PORTTA_RUNTIME_ENV_FILE: /app/state/.env
+      PORTTA_RUNTIME_READ_ONLY: ${PORTTA_WEB_READ_ONLY:-false}
+      # The machine contract is always served; its browser defaults on only
+      # while the panel stays on loopback.
+      PORTTA_RUNTIME_DOCS: ${PORTTA_RUNTIME_DOCS:-true}
+      PORTTA_RUNTIME_API_DOCS: ${PORTTA_RUNTIME_API_DOCS:-}
+      # The MCP tools over HTTP at /api/mcp, off unless the operator turned
+      # them on: the endpoint follows the panel's own exposure.
+      PORTTA_MCP_HTTP: ${PORTTA_MCP_HTTP:-false}
+      # The resolved gateway configuration, so the panel and the CLI always
+      # describe the same gateway.
+      PORTTA_PROFILE: ${PORTTA_PROFILE:-local}
+      # Projects Home as a string, for location classification only: no
+      # project directory is ever mounted here (docs/development/adr/0031-projects-home-and-project.md).
+      PORTTA_PROJECTS_HOME: ${PORTTA_PROJECTS_HOME:-}
+      PORTTA_PROJECT_NAME: ${PORTTA_PROJECT_NAME:-portta}
+      PORTTA_NETWORK: ${PORTTA_NETWORK:-portta}
+      PORTTA_CONTROL_NETWORK: ${PORTTA_CONTROL_NETWORK:-portta-control}
+      PORTTA_ACCESS_NETWORK: ${PORTTA_ACCESS_NETWORK:-portta-access}
+      PORTTA_WEB_NETWORK: ${PORTTA_WEB_NETWORK:-portta-web}
+      PORTTA_TCP: ${PORTTA_TCP:-false}
+      PORTTA_TCP_POSTGRES_PORT: ${PORTTA_TCP_POSTGRES_PORT:-5432}
+      PORTTA_TCP_REDIS_PORT: ${PORTTA_TCP_REDIS_PORT:-6379}
+      PORTTA_DOMAIN: ${PORTTA_DOMAIN:-localhost}
+      # How that base was chosen, so the Settings page can show the mode and
+      # the address behind it rather than a bare hostname with no explanation.
+      # See docs/development/adr/0022-project-domain-modes.md.
+      PORTTA_DOMAIN_MODE: ${PORTTA_DOMAIN_MODE:-local}
+      PORTTA_PUBLIC_IP: ${PORTTA_PUBLIC_IP:-}
+      PORTTA_AUTO_DOMAIN_PROVIDER: ${PORTTA_AUTO_DOMAIN_PROVIDER:-sslip.io}
+      PORTTA_BIND_ADDRESS: ${PORTTA_BIND_ADDRESS:-127.0.0.1}
+      PORTTA_HTTP_PORT: ${PORTTA_HTTP_PORT:-80}
+      PORTTA_HTTPS_PORT: ${PORTTA_HTTPS_PORT:-443}
+      PORTTA_DASHBOARD: ${PORTTA_DASHBOARD:-false}
+      PORTTA_DASHBOARD_BIND_ADDRESS: ${PORTTA_DASHBOARD_BIND_ADDRESS:-127.0.0.1}
+      PORTTA_DASHBOARD_PORT: ${PORTTA_DASHBOARD_PORT:-8080}
+      # Traefik's own API, read-only, and only when the dashboard is enabled.
+      # The panel resolves the host from the attachment (`traefik` normally,
+      # `tailscale` when Traefik shares that namespace) and reaches it over the
+      # shared network it is already on, never over `control`: see
+      # docs/development/adr/0011-bounded-traefik-write-surface.md.
+      PORTTA_RUNTIME_TRAEFIK_API: ${PORTTA_RUNTIME_TRAEFIK_API:-}
+      PORTTA_LOG_LEVEL: ${PORTTA_LOG_LEVEL:-INFO}
+      PORTTA_ACCESS_LOG: ${PORTTA_ACCESS_LOG:-false}
+      PORTTA_WEB_PORT: ${PORTTA_WEB_PORT:-8081}
+      PORTTA_WEB_BIND_ADDRESS: ${PORTTA_WEB_BIND_ADDRESS:-127.0.0.1}
+      PORTTA_WEB_EXPOSE: ${PORTTA_WEB_EXPOSE:-local}
+      # The panel's own front door, which is now the panel's own business.
+      #
+      # `required` makes it sign people in: accounts, roles, sessions and
+      # tokens, all in its database. `disabled` makes every request the local
+      # operator. It is accepted with panel access `local`, `tailscale` and
+      # `vpn`, and the process refuses to start that way with `public` or
+      # `domain`. `local` bound to anything but loopback also needs
+      # PORTTA_AUTH_ALLOW_LAN=true. The secret signs sessions and is shared with
+      # the ForwardAuth service, which is the only other thing here that signs
+      # anything.
+      #
+      # PORTTA_PANEL_URL is where a browser reaches it, and three things come
+      # from it: whether the session cookie may be `Secure`, which origins a
+      # write is accepted from, and the address the panel prints. Empty means
+      # loopback on the published port.
+      PORTTA_AUTH_MODE: ${PORTTA_AUTH_MODE:-disabled}
+      PORTTA_AUTH_SECRET: ${PORTTA_AUTH_SECRET:-}
+      PORTTA_AUTH_ALLOW_LAN: ${PORTTA_AUTH_ALLOW_LAN:-false}
+      PORTTA_PANEL_URL: ${PORTTA_PANEL_URL:-}
+      PORTTA_PANEL_TRUSTED_ORIGINS: ${PORTTA_PANEL_TRUSTED_ORIGINS:-}
+      PORTTA_RUNTIME_DYNAMIC_DIR: /app/state/traefik-dynamic
+      PORTTA_RUNTIME_AUTH_STORE: /app/state/auth/protections.json
+      PORTTA_RUNTIME_RUNNER_DIR: /app/state/runner
+      PORTTA_RUNTIME_ACCESS_DIR: /app/state/access
+      PORTTA_RUNTIME_SSH_DIR: /app/state/ssh
+      PORTTA_PANEL_ADVERTISED_HOST: ${PORTTA_PANEL_ADVERTISED_HOST:-}
+      TLS_ENABLED: ${TLS_ENABLED:-false}
+      TLS_MODE: ${TLS_MODE:-local}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      ACME_CA_SERVER: ${ACME_CA_SERVER:-https://acme-v02.api.letsencrypt.org/directory}
+      ACME_DNS_PROVIDER: ${ACME_DNS_PROVIDER:-cloudflare}
+      TAILSCALE_ENABLED: ${TAILSCALE_ENABLED:-false}
+      TAILSCALE_HOSTNAME: ${TAILSCALE_HOSTNAME:-portta}
+      PRIVATE_DOMAIN: ${PRIVATE_DOMAIN:-}
+      PUBLIC_ENABLED: ${PUBLIC_ENABLED:-false}
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-}
+      CLOUDFLARE_ENABLED: ${CLOUDFLARE_ENABLED:-false}
+      CLOUDFLARE_ZONE: ${CLOUDFLARE_ZONE:-}
+    volumes:
+      # Explicit paths from the host, and nothing else. No project directory is ever
+      # mounted here: see docs/development/adr/0001-decoupled-infrastructure.md.
+      #
+      #   .env             the configuration the Settings page edits
+      #   state/git        metadata `portta repos scan` collected, read-only
+      #   state/metrics    current.json + history from `portta host watch`
+      #   state/environment host readiness report from the same collector
+      #   state/runner     the `{ verb, project }` request the runner reads
+      #   state/access     tunnel records cleaned when a project is removed
+      #   state/panel      the panel's SQLite database, read-write and its own
+      #   state/auth       credentials the panel manages, never served directly
+      #   state/ssh        SSH credentials the panel manages, never served directly
+      #   traefik/dynamic  read-write, and the ONE place the panel configures
+      #                    Traefik. It may write three generated filenames there
+      #                    and refuses every other path in its own process.
+      #                    See docs/development/adr/0011-bounded-traefik-write-surface.md.
+      - ./.env:/app/state/.env
+      - ./.env.example:/app/state/.env.example:ro
+      - ./.env-lock:/app/state/.env-lock
+      - ./state/git:/app/state/git:ro
+      - ./state/metrics:/app/state/metrics:ro
+      - ./state/environment:/app/state/environment:ro
+      - ./state/runner:/app/state/runner
+      - ./state/access:/app/state/access
+      # The panel's own database. A directory rather than the file, because
+      # SQLite in WAL mode is three files and creates two of them itself — a
+      # bind mount of one path would leave the -wal and -shm inside the
+      # container, which is how a restart loses the most recent writes.
+      - ./state/panel:/app/state/panel
+      - ./state/auth:/app/state/auth
+      - ./state/ssh:/app/state/ssh
+      - ./config/traefik/dynamic:/app/state/traefik-dynamic
+      # The Cloudflare Tunnel connector's generated config and its credential.
+      # Read-write because setting the tunnel up is something the panel is asked
+      # to do; the directory stays 0700 and the credentials file 0600, and the
+      # token itself is never stored anywhere else — not in .env, not in a log,
+      # not in any API response. See docs/development/adr/0025-cloudflare-tunnel.md.
+      - ./state/cloudflared:/app/state/cloudflared
+    networks:
+      # `gateway` so the panel can be published and, with the VPN overlay,
+      # routed by Traefik. `webcontrol` for the socket proxy.
+      - gateway
+      - webcontrol
+    # Deliberately no `ports:` here. Exactly one overlay decides how the panel
+    # is reached, so the two ways can never both bind the same host port:
+    #   docker/compose/features/web-bind.yaml     publishes it on PORTTA_WEB_BIND_ADDRESS
+    #   docker/compose/features/panel-public.yaml routes it through Traefik's
+    #                                             own `panel` entrypoint
+    #   docker/compose/features/panel-domain.yaml routes it on one hostname of
+    #                                             the gateway's own domain
+    labels:
+      # Off unless docker/compose/features/web-vpn.yaml turns it on: the panel is
+      # never routed through the public entrypoints by accident.
+      traefik.enable: "false"
+      portta.managed: "true"
+      portta.component: web

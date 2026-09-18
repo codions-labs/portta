@@ -1,0 +1,73 @@
+{
+  "title": "Docker",
+  "description": "Todos os containers desta máquina, com ou sem conhecimento do gateway.",
+  "filterOwnership": "Filtrar por propriedade",
+  "filterState": "Filtrar por estado",
+  "searchPlaceholder": "Buscar container, imagem, projeto",
+  "searchAria": "Buscar containers",
+  "stats": {
+    "running": "Em execução",
+    "gateway": "Portta",
+    "integrated": "Integrados",
+    "external": "Externos",
+    "networks": "Redes",
+    "portConflicts": "Conflitos de porta"
+  },
+  "groups": {
+    "gateway": {
+      "title": "Portta",
+      "description": "A infraestrutura própria do gateway."
+    },
+    "integrated": {
+      "title": "Projetos integrados",
+      "description": "Projetos Compose gerenciados pelo gateway."
+    },
+    "external": {
+      "title": "Docker externo",
+      "description": "Projetos Compose neste host que o gateway não gerencia."
+    },
+    "standalone": {
+      "title": "Containers avulsos",
+      "description": "Iniciados manualmente, fora de qualquer projeto Compose."
+    }
+  },
+  "empty": "Nenhum container corresponde aos filtros",
+  "containers": "Containers",
+  "publishedPorts": {
+    "title": "Portas publicadas",
+    "description": "Útil para identificar o container que já ocupa a porta que você precisa.",
+    "empty": "Nada está publicado no host",
+    "aria": "Portas publicadas",
+    "hostPort": "Porta",
+    "container": "Ocupada por",
+    "conflict": "Conflito",
+    "owner": "Dono",
+    "conflictBadge": "conflito"
+  },
+  "engine": {
+    "title": "Engine",
+    "docker": "Docker",
+    "host": "Host",
+    "platform": "Plataforma",
+    "resources": "Recursos"
+  },
+  "table": {
+    "name": "Container",
+    "state": "Estado",
+    "health": "Saúde",
+    "image": "Imagem",
+    "project": "Projeto",
+    "ports": "Portas",
+    "actions": "Ações",
+    "uptime": "Ativo há",
+    "resources": "Recursos",
+    "restarts": "{{count}} reinícios",
+    "restarts_one": "{{count}} reinício",
+    "restarts_other": "{{count}} reinícios",
+    "exitCode": "saída {{code}}",
+    "caption": "Contêineres em {{group}}, seu estado e o que consomem"
+  },
+  "anyState": "Qualquer estado",
+  "containersTotal": "{{total}} containers no total",
+  "networks": "Redes"
+}

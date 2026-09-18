@@ -1,0 +1,216 @@
+name: Validate
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [light, pr, release]
+        default: pr
+  workflow_call:
+    inputs:
+      mode:
+        description: light (no E2E), pr (E2E selected by the diff) or release (everything)
+        type: string
+        default: light
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  scope:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.scope.outputs.code }}
+      mode: ${{ steps.scope.outputs.mode }}
+      docs: ${{ steps.scope.outputs.docs }}
+      gateway: ${{ steps.scope.outputs.gateway }}
+      gateway_shards: ${{ steps.scope.outputs.gateway_shards }}
+      browser: ${{ steps.scope.outputs.browser }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - id: scope
+        env:
+          PORTTA_CI_MODE: ${{ inputs.mode || 'pr' }}
+          PORTTA_CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node tests/ci.mjs --scope
+
+  static:
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Biome
+        run: npm run check
+      - name: Static tool prerequisites
+        run: command -v shellcheck >/dev/null || { sudo apt-get update && sudo apt-get install -y shellcheck; }
+      - name: Static checks, types, OpenAPI and schema
+        env:
+          PORTTA_SKIP_DOCS_CHECK: ${{ needs.scope.outputs.docs == 'true' && '0' || '1' }}
+        run: node tests/run.mjs --integration --part static
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: validation-reports-static
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  docs:
+    needs: scope
+    if: needs.scope.outputs.code != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Documentation architecture
+        run: npm run docs:check
+
+  unit:
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
+    name: unit (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: server
+            workspaces: portta-server
+          - name: web
+            workspaces: portta-web
+          - name: packages
+            workspaces: portta-core,@codions/portta,portta-host,portta-contracts,portta-mcp,portta-db,portta-auth-core,portta-auth
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install
+        run: npm ci
+      # The host package's node:test suites drive a real, isolated tmux server.
+      - name: Host test prerequisites
+        if: matrix.name == 'packages'
+        run: command -v tmux >/dev/null || { sudo apt-get update && sudo apt-get install -y tmux; }
+      - name: Workspace tests
+        env:
+          WORKSPACES: ${{ matrix.workspaces }}
+        run: node tests/run.mjs --integration --workspaces "$WORKSPACES"
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: validation-reports-unit-${{ matrix.name }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  gateway-e2e:
+    needs: scope
+    if: needs.scope.outputs.mode != 'light' && needs.scope.outputs.gateway != ''
+    name: gateway-e2e (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.scope.outputs.gateway_shards) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      # The panel image is large and every suite loads it into a nested daemon:
+      # reclaim the preinstalled toolchains this repository never uses.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: docker/setup-buildx-action@v4
+      # Exposes ACTIONS_RUNTIME_TOKEN so image builds can use the GHA cache.
+      - uses: crazy-max/ghaction-github-runtime@v4
+      - name: Prepare images
+        run: node tests/docker/prepare-images.mjs
+      - name: Gateway suites
+        env:
+          SUITES: ${{ matrix.suites }}
+          PORTTA_E2E_PREBUILT_IMAGES: '1'
+        run: |
+          export PORTTA_E2E_NPM_CACHE="$HOME/.npm"
+          node tests/gateway-e2e.mjs --suites "$SUITES"
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: validation-reports-gateway-e2e-${{ matrix.name }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  browser-e2e:
+    needs: scope
+    if: needs.scope.outputs.mode != 'light' && needs.scope.outputs.browser != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - id: playwright
+        run: |
+          version=$(node -p "require(require.resolve('@playwright/test/package.json', { paths: ['apps/web'] })).version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - id: browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - name: Install Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: npx --workspace=portta-web playwright install --with-deps chromium
+      - name: Install Chromium system dependencies
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: npx --workspace=portta-web playwright install-deps chromium
+      - name: Browser specs
+        env:
+          SPECS: ${{ needs.scope.outputs.browser }}
+        run: |
+          IFS=, read -ra names <<< "$SPECS"
+          npm run test:e2e --workspace=portta-web -- "${names[@]/%/.spec.ts}"
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: validation-reports-browser-e2e
+          path: |
+            test-results/
+            apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7

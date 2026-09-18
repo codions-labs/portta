@@ -1,0 +1,30 @@
+# ============================================================================
+# Web + API + PostgreSQL + Redis: the common full stack
+# ============================================================================
+# Identical to template 03: adding a cache changes nothing about the contract.
+# Postgres and Redis both stay on the project's private network, both keep
+# their standard ports, and both are reached with `portta access open`.
+#
+# Workers are absent too. A queue consumer serves no HTTP, so it has nothing to
+# route; it stays on `default` and needs no changes at all.
+# ============================================================================
+
+services:
+  web:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-web.loadbalancer.server.port=3000"
+
+  api:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api.loadbalancer.server.port=8000"
+
+networks:
+  portta:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}

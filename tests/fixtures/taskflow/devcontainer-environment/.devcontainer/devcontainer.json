@@ -1,0 +1,13 @@
+{
+  "name": "Taskflow environment PoC",
+  "dockerComposeFile": "../compose.yaml",
+  "service": "backend",
+  "runServices": ["backend", "frontend", "postgres"],
+  "workspaceFolder": "/workspaces/taskflow-poc",
+  "forwardPorts": ["frontend:3000", "backend:8080", "postgres:5432"],
+  "portsAttributes": {
+    "frontend:3000": { "label": "Frontend", "protocol": "http" },
+    "backend:8080": { "label": "API", "protocol": "http" },
+    "postgres:5432": { "label": "PostgreSQL", "onAutoForward": "ignore" }
+  }
+}

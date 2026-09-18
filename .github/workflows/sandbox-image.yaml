@@ -1,0 +1,351 @@
+name: Portta Sandbox
+
+on:
+  pull_request:
+    paths:
+      - docker/images/sandbox/**
+      - .github/workflows/sandbox-image.yaml
+  push:
+    branches: [main]
+    paths:
+      - docker/images/sandbox/**
+      - .github/workflows/sandbox-image.yaml
+  release:
+    types: [published]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: portta-sandbox-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/codions-labs/portta-sandbox
+
+jobs:
+  validate:
+    name: Validate image
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: identity
+        name: Resolve build identity
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < docker/images/sandbox/VERSION)"
+          [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          {
+            echo "version=$version"
+            echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "build_id=pr-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build validation image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./docker/images/sandbox
+          file: ./docker/images/sandbox/Dockerfile
+          platforms: linux/amd64
+          load: true
+          pull: true
+          push: false
+          tags: portta-sandbox:validation
+          build-args: |
+            BUILD_DATE=${{ steps.identity.outputs.created }}
+            BUILD_ID=${{ steps.identity.outputs.build_id }}
+            SANDBOX_VERSION=${{ steps.identity.outputs.version }}
+            TOOLS_REFRESH=${{ github.run_id }}-${{ github.run_attempt }}
+            VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=portta-sandbox-amd64
+          cache-to: type=gha,scope=portta-sandbox-amd64,mode=max
+
+      - name: Smoke test image
+        run: |
+          docker run --rm \
+            --entrypoint /usr/local/lib/portta-sandbox/scripts/verify-image.sh \
+            portta-sandbox:validation
+          docker run --rm --entrypoint cat portta-sandbox:validation \
+            /etc/portta-sandbox/manifest.json | jq .
+
+  identity:
+    name: Resolve publication identity
+    if: github.event_name != 'pull_request' && (github.event_name != 'release' || startsWith(github.event.release.tag_name, 'sandbox-v'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      version: ${{ steps.identity.outputs.version }}
+      created: ${{ steps.identity.outputs.created }}
+      build_id: ${{ steps.identity.outputs.build_id }}
+      channel: ${{ steps.identity.outputs.channel }}
+      tags: ${{ steps.identity.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: identity
+        name: Resolve publication identity
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < docker/images/sandbox/VERSION)"
+          [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || {
+            echo "VERSION must contain a valid SemVer: $version" >&2
+            exit 1
+          }
+
+          created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          date_tag="$(date -u +%Y%m%d)"
+          build_id="build-${date_tag}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          major="${version%%.*}"
+          remainder="${version#*.}"
+          minor="${remainder%%.*}"
+
+          tags="type=raw,value=${build_id}"
+          channel=build
+          immutable_version=
+
+          if [ "$EVENT_NAME" = release ]; then
+            released_version="${RELEASE_TAG#sandbox-v}"
+            [ "$released_version" = "$version" ] || {
+              echo "Release $RELEASE_TAG does not match sandbox VERSION $version" >&2
+              exit 1
+            }
+            channel=stable
+            immutable_version="$version"
+            tags="$tags
+          type=raw,value=$version
+          type=raw,value=$major.$minor
+          type=raw,value=$major
+          type=raw,value=latest
+          type=raw,value=rolling"
+          elif [ "$REF_NAME" = main ]; then
+            channel=rolling
+            tags="$tags
+          type=raw,value=rolling"
+          fi
+
+          {
+            echo "version=$version"
+            echo "created=$created"
+            echo "build_id=$build_id"
+            echo "channel=$channel"
+            echo "immutable_version=$immutable_version"
+            echo "tags<<EOF"
+            echo "$tags"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+        if: steps.identity.outputs.immutable_version != ''
+
+      - name: Log in to GHCR
+        if: steps.identity.outputs.immutable_version != ''
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Protect immutable release tag
+        if: steps.identity.outputs.immutable_version != ''
+        env:
+          IMMUTABLE_VERSION: ${{ steps.identity.outputs.immutable_version }}
+        run: |
+          if docker buildx imagetools inspect "$IMAGE:$IMMUTABLE_VERSION" >/dev/null 2>&1; then
+            echo "Refusing to overwrite immutable tag $IMAGE:$IMMUTABLE_VERSION" >&2
+            exit 1
+          fi
+
+  build:
+    name: Build image (${{ matrix.arch }})
+    needs: identity
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: metadata
+        name: Generate image metadata
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          labels: |
+            org.opencontainers.image.version=${{ needs.identity.outputs.version }}
+            org.opencontainers.image.created=${{ needs.identity.outputs.created }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/codions-labs/portta
+            io.codions.portta.sandbox.build-id=${{ needs.identity.outputs.build_id }}
+            io.codions.portta.sandbox.channel=${{ needs.identity.outputs.channel }}
+
+      - id: build
+        name: Build and push by digest
+        uses: docker/build-push-action@v7
+        with:
+          context: ./docker/images/sandbox
+          file: ./docker/images/sandbox/Dockerfile
+          platforms: ${{ matrix.platform }}
+          pull: true
+          labels: ${{ steps.metadata.outputs.labels }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            BUILD_DATE=${{ needs.identity.outputs.created }}
+            BUILD_ID=${{ needs.identity.outputs.build_id }}
+            SANDBOX_VERSION=${{ needs.identity.outputs.version }}
+            TOOLS_REFRESH=${{ github.run_id }}-${{ github.run_attempt }}
+            VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=portta-sandbox-${{ matrix.arch }}
+          cache-to: type=gha,scope=portta-sandbox-${{ matrix.arch }},mode=max
+          provenance: mode=max
+          sbom: true
+
+      - name: Verify image and export its manifest
+        env:
+          ARCH: ${{ matrix.arch }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          reference="$IMAGE@$DIGEST"
+          output="$RUNNER_TEMP/sandbox-$ARCH"
+          mkdir -p "$output"
+          docker run --rm \
+            --entrypoint /usr/local/lib/portta-sandbox/scripts/verify-image.sh \
+            "$reference"
+          docker run --rm --entrypoint cat "$reference" \
+            /etc/portta-sandbox/manifest.json > "$output/manifest-$ARCH.json"
+          echo "$DIGEST" > "$output/digest"
+
+      - name: Upload digest and manifest
+        uses: actions/upload-artifact@v6
+        with:
+          name: sandbox-${{ matrix.arch }}
+          path: ${{ runner.temp }}/sandbox-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Publish multi-architecture image
+    needs: [identity, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Download digests and manifests
+        uses: actions/download-artifact@v7
+        with:
+          pattern: sandbox-*
+          path: ${{ runner.temp }}/sandbox
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: metadata
+        name: Generate image metadata
+        uses: docker/metadata-action@v6
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=false
+          tags: ${{ needs.identity.outputs.tags }}
+          labels: |
+            org.opencontainers.image.version=${{ needs.identity.outputs.version }}
+            org.opencontainers.image.created=${{ needs.identity.outputs.created }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/codions-labs/portta
+            io.codions.portta.sandbox.build-id=${{ needs.identity.outputs.build_id }}
+            io.codions.portta.sandbox.channel=${{ needs.identity.outputs.channel }}
+
+      - name: Create and push manifest list
+        env:
+          BUILD_ID: ${{ needs.identity.outputs.build_id }}
+        run: |
+          set -euo pipefail
+          args=()
+          while IFS= read -r tag; do args+=(--tag "$tag"); done < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          while IFS= read -r annotation; do args+=(--annotation "$annotation"); done < <(jq -r '.annotations[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          for digest in "$RUNNER_TEMP"/sandbox/sandbox-*/digest; do
+            args+=("$IMAGE@$(cat "$digest")")
+          done
+          docker buildx imagetools create "${args[@]}"
+          docker buildx imagetools inspect "$IMAGE:$BUILD_ID"
+
+      - name: Summarize published image
+        env:
+          BUILD_ID: ${{ needs.identity.outputs.build_id }}
+          CHANNEL: ${{ needs.identity.outputs.channel }}
+          VERSION: ${{ needs.identity.outputs.version }}
+        run: |
+          set -euo pipefail
+          digest="$(docker buildx imagetools inspect "$IMAGE:$BUILD_ID" --format '{{json .Manifest}}' | jq -r .digest)"
+          {
+            echo "## Portta Sandbox"
+            echo
+            echo "- Image: \`$IMAGE@$digest\`"
+            echo "- Sandbox version: \`$VERSION\`"
+            echo "- Channel: \`$CHANNEL\`"
+            echo "- Build: \`$BUILD_ID\`"
+            echo
+            for platform in amd64 arm64; do
+              echo "### linux/$platform"
+              echo
+              echo '| Tool | Version |'
+              echo '| --- | --- |'
+              jq -r '.tools | to_entries[] | "| \(.key) | `\(.value)` |"' \
+                "$RUNNER_TEMP/sandbox/sandbox-$platform/manifest-$platform.json"
+              echo
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload installed-version manifests
+        uses: actions/upload-artifact@v6
+        with:
+          name: portta-sandbox-${{ needs.identity.outputs.build_id }}-manifests
+          path: ${{ runner.temp }}/sandbox/sandbox-*/manifest-*.json
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,26 @@
+# ============================================================================
+# ACME over DNS-01: one wildcard certificate for the whole domain
+# ============================================================================
+# The default, and the only challenge that can issue `*.example.com`. It is
+# what makes a hostname work over HTTPS *before* anything is running on it,
+# and the only option for a private gateway the ACME server can never reach:
+# Let's Encrypt has to see a TXT record, not this host.
+#
+# The cost is a DNS provider credential. `remote-tls-http.yaml` is the trade
+# in the other direction. See docs/product/guides/dns-and-tls.md.
+# ============================================================================
+
+services:
+  traefik:
+    environment:
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_DOMAINS_0_MAIN: ${PORTTA_DOMAIN}
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_DOMAINS_0_SANS: "*.${PORTTA_DOMAIN}"
+
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE_PROVIDER: ${ACME_DNS_PROVIDER:-cloudflare}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE_RESOLVERS: ${ACME_DNS_RESOLVERS:-1.1.1.1:53,8.8.8.8:53}
+
+      # -- DNS provider credentials ----------------------------------------
+      # Read by lego inside Traefik. Empty unless the provider is configured;
+      # a scoped token, never a global API key. See docs/product/guides/cloudflare.md.
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN:-}

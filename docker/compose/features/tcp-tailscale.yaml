@@ -1,0 +1,30 @@
+# ============================================================================
+# TCP entrypoints for the Tailscale attachment
+# ============================================================================
+# Same as docker/compose/features/tcp.yaml, but the ports and the access network belong
+# to the Tailscale container: Traefik shares its network namespace and has
+# neither of its own (see docs/development/adr/0007-tailscale-sidecar.md).
+#
+# The published ports exist so the VPS itself can reach a database for
+# debugging. What matters is that the entrypoints listen on the tailnet
+# address, so `storefront-postgres.vpn.example.com:5432` works from any machine
+# on your tailnet and from nowhere else.
+# ============================================================================
+
+networks:
+  access:
+    external: true
+    name: ${PORTTA_ACCESS_NETWORK:-portta-access}
+
+services:
+  tailscale:
+    networks:
+      - access
+    ports:
+      - "${PORTTA_BIND_ADDRESS:-127.0.0.1}:${PORTTA_TCP_POSTGRES_PORT:-5432}:5432"
+      - "${PORTTA_BIND_ADDRESS:-127.0.0.1}:${PORTTA_TCP_REDIS_PORT:-6379}:6379"
+
+  traefik:
+    environment:
+      TRAEFIK_ENTRYPOINTS_POSTGRES_ADDRESS: ":5432"
+      TRAEFIK_ENTRYPOINTS_REDIS_ADDRESS: ":6379"

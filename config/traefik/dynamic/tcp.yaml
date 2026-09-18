@@ -1,0 +1,23 @@
+# ============================================================================
+# TLS options for the TCP entrypoints
+# ============================================================================
+# Loaded by the file provider on every profile. It defines options only; the
+# certificate comes from the default store, which is either the local CA
+# (`portta tls init`) or ACME on the remote profiles.
+# ============================================================================
+
+tls:
+  options:
+    # PostgreSQL 17 registered `postgresql` as an ALPN protocol identifier when
+    # it added direct TLS negotiation, and libpq 17+ offers it on every TLS
+    # connection, STARTTLS included. Traefik's entrypoints advertise h2,
+    # http/1.1 and acme-tls/1, so without this the handshake dies before any
+    # Postgres traffic happens:
+    #
+    #   psql: SSL error: tlsv1 alert no application protocol
+    #
+    # Older clients send no ALPN at all and are unaffected, so one option
+    # serves both. See docs/product/guides/tcp-routing.md.
+    postgres:
+      alpnProtocols:
+        - postgresql

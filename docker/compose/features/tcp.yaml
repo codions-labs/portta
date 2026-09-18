@@ -1,0 +1,40 @@
+# ============================================================================
+# Portta: TCP entrypoints, so databases are told apart by hostname
+# ============================================================================
+# Enabled by PORTTA_TCP=true. Off by default.
+#
+# One host port per protocol, however many instances are running behind it.
+# Traefik picks the backend from the TLS Server Name Indication, so two
+# projects can both run PostgreSQL on 5432 inside their own containers and
+# neither has to publish a port or renumber anything:
+#
+#   storefront-postgres.localhost:5432  ->  storefront's postgres:5432
+#   checkout-postgres.localhost:5432    ->  checkout's postgres:5432
+#
+# Only services that opt in are routed: `exposedByDefault` stays false, and a
+# datastore additionally has to join the access network. Nothing here publishes
+# a database by itself. See docs/product/guides/tcp-routing.md.
+#
+# This overlay is for the `host` attachment. docker/compose/features/tcp-tailscale.yaml
+# is the same thing for the Tailscale attachment, where the ports belong to the
+# Tailscale container because Traefik has no namespace of its own.
+# ============================================================================
+
+networks:
+  # Created by the CLI before Compose runs, the same way the shared network is.
+  # Datastores that opt into hostname routing join THIS network, never the
+  # shared HTTP one: Compose validation and routing tests keep that true.
+  access:
+    external: true
+    name: ${PORTTA_ACCESS_NETWORK:-portta-access}
+
+services:
+  traefik:
+    networks:
+      - access
+    ports:
+      - "${PORTTA_BIND_ADDRESS:-127.0.0.1}:${PORTTA_TCP_POSTGRES_PORT:-5432}:5432"
+      - "${PORTTA_BIND_ADDRESS:-127.0.0.1}:${PORTTA_TCP_REDIS_PORT:-6379}:6379"
+    environment:
+      TRAEFIK_ENTRYPOINTS_POSTGRES_ADDRESS: ":5432"
+      TRAEFIK_ENTRYPOINTS_REDIS_ADDRESS: ":6379"

@@ -1,0 +1,231 @@
+{
+  "agents": {
+    "transport": {
+      "transport": "Agent transport",
+      "native": "Native",
+      "permissionPolicy": "Permission policy",
+      "interactive": "Interactive",
+      "workspace": "Workspace policy",
+      "deny": "Deny tools",
+      "acpHint": "ACP uses structured agent sessions. The shell terminal remains a separate tmux session in the same workspace."
+    },
+    "editor": {
+      "name": "Agent name",
+      "namePlaceholder": "e.g. Gemini CLI",
+      "startCommand": "Start command",
+      "example": "e.g. {{command}}",
+      "resumeCommand": "Resume command",
+      "optional": "(optional)",
+      "placeholders": "Supported placeholders",
+      "placeholdersHint": "{{app}} exports placeholder values safely before running your command.",
+      "agentId": "Agent id:",
+      "looksGood": "Configuration looks good.",
+      "test": "Test"
+    }
+  },
+  "settings": {
+    "diagnostics": {
+      "title": "Project readiness",
+      "description": "Check local tools, agents, credentials, and Docker profiles.",
+      "run": "Run diagnostics",
+      "ready": "Ready for configured features",
+      "actionRequired": "Action required",
+      "status": {
+        "ok": "ok",
+        "warning": "warning",
+        "error": "error",
+        "skipped": "skipped"
+      },
+      "section": "Environment diagnostics"
+    },
+    "title": "Taskflow settings",
+    "interface": {
+      "title": "Interface",
+      "webChat": "Use web chat UI",
+      "webChatHint": "Show the in-app agent conversation instead of the terminal for supported agents."
+    },
+    "agents": {
+      "title": "Agents",
+      "description": "Add terminal agents that {{app}} can launch from the dashboard.",
+      "add": "Add agent",
+      "addTitle": "Add custom agent",
+      "loading": "Loading agents...",
+      "empty": "No custom agents setup",
+      "resume": "Resume: {{command}}",
+      "edit": "Edit {{name}}",
+      "editAction": "Edit",
+      "duplicate": "Duplicate {{name}}",
+      "duplicateAction": "Duplicate",
+      "copyName": "{{name}} Copy",
+      "deleteTitle": "Delete agent",
+      "deleteImpact": "Delete agent \"{{name}}\"?"
+    },
+    "linear": {
+      "title": "Linear",
+      "autoCreate": "Auto-create worktrees",
+      "autoCreateHint": "Automatically create worktrees for Todo Linear tickets with the \"{{label}}\" label.",
+      "autoCreateLabel": "Auto-create worktrees for Linear tickets"
+    },
+    "terminal": {
+      "title": "Terminal",
+      "multiplexer": "Multiplexer",
+      "herdr": "Panes run in herdr, which has no per-client sizing — the browser terminal is unavailable. Attach from your own terminal with <code>herdr</code>.",
+      "tmux": "Panes run in tmux.",
+      "change": "Change it with"
+    },
+    "github": {
+      "title": "GitHub",
+      "autoRemove": "Auto-remove on merge",
+      "autoRemoveHint": "Automatically remove worktrees when their PR is merged on GitHub.",
+      "autoRemoveLabel": "Auto-remove worktrees on PR merge"
+    },
+    "ssh": {
+      "label": "SSH Host",
+      "qualifier": "(for \"Open in Cursor\")",
+      "placeholder": "e.g. devbox or 10.0.0.5",
+      "hint": "Must match an entry in your local <code>~/.ssh/config</code>. Leave empty for local mode.",
+      "title": "Open in Cursor",
+      "saved": "SSH host saved"
+    },
+    "description": "How this project runs worktrees, agents and integrations on the host.",
+    "project": {
+      "title": "Taskflow project",
+      "prefix": "Prefix",
+      "name": "Name",
+      "mainBranch": "Main branch",
+      "directory": "Directory",
+      "worktrees": "Worktrees"
+    },
+    "autoName": {
+      "title": "Branch auto-naming",
+      "off": "Off: new worktrees need a branch name.",
+      "provider": "Named by {{provider}}",
+      "model": "Model {{model}}"
+    },
+    "browser": {
+      "title": "This browser",
+      "description": "Stored in this browser only, for every Taskflow project."
+    }
+  },
+  "sidebar": {
+    "pull": "Pull",
+    "pullTitle": "Pull latest from remote"
+  },
+  "projects": {
+    "title": "Projects",
+    "switch": "Switch project",
+    "current": "current",
+    "remove": "Remove project",
+    "initPhase": {
+      "creating_config": "Creating {{path}}",
+      "analyzing": "Analyzing project structure",
+      "ready": "Project ready",
+      "failed": "Setup failed",
+      "settingUp": "Setting up"
+    },
+    "empty": {
+      "title": "No projects yet",
+      "description": "{{app}} serves every project from this one dashboard. Add a git repo below and {{app}} sets it up for you — scaffolding a <code>{{path}}</code> and analyzing the project to fill it in.",
+      "placeholder": "Path to a git repo"
+    },
+    "setupError": {
+      "no-project": "Server accepted the project but returned nothing to open.",
+      "failed": "Project setup failed.",
+      "timeout": "Project setup timed out."
+    }
+  },
+  "topBar": {
+    "toggleSidebar": "Toggle sidebar",
+    "selectWorktree": "Select a worktree",
+    "editLabel": "Edit workspace label",
+    "archived": "Archived",
+    "dirty": "dirty",
+    "unpushed": "unpushed",
+    "closeTitle": "Close worktree window",
+    "restoreTitle": "Restore archived worktree",
+    "archiveTitle": "Archive worktree",
+    "restore": "Restore",
+    "archive": "Archive",
+    "mergeTitle": "Merge worktree",
+    "merge": "Merge",
+    "removeTitle": "Remove worktree",
+    "moreInfo": "More info",
+    "documentation": "Documentation",
+    "noNotifications": "No notifications yet",
+    "settings": "Settings",
+    "moreActions": "More worktree actions",
+    "syncPrs": "Refresh pull requests",
+    "copyTerminalCommand": "Copy terminal command"
+  },
+  "shell": {
+    "dashboard": "Dashboard",
+    "closeSidebar": "Close sidebar",
+    "newRunTitle": "New run (Cmd+Shift+K)",
+    "new": "New",
+    "creating_one": "Creating...",
+    "creating_other": "Creating {{count}}...",
+    "sections": "Project views",
+    "nav": {
+      "worktrees": "Worktrees",
+      "runs": "Runs",
+      "workflows": "Workflows",
+      "settings": "Settings"
+    },
+    "resizeSidebar": "Resize sidebar",
+    "settings": "Settings",
+    "documentation": "Documentation",
+    "shortcuts": {
+      "navigate": "Navigate",
+      "newRun": "New run",
+      "merge": "Merge",
+      "remove": "Remove"
+    },
+    "sidebar": "Taskflow sidebar",
+    "openSidebar": "Open sidebar"
+  },
+  "gate": {
+    "loading": "Looking for this project on the host",
+    "unreachable": "The host daemon did not answer",
+    "unreachableHint": "Taskflow runs in `portta host serve` on the host. Start it there, then reload this page; `portta doctor` checks the rest.",
+    "missing": "This project is not in Taskflow yet",
+    "missingHint": "Adding it registers its directory with the host daemon. A repository without `.portta/taskflow.yaml` is set up first.",
+    "noDirectory": "This project has no directory on the host",
+    "noDirectoryHint": "Taskflow works on a directory. Give the project a path under Projects Home, or a repository a local path, then come back.",
+    "directory": "Directory",
+    "add": "Add this project to Taskflow",
+    "notAllowed": "Ask somebody who can create projects to add it."
+  },
+  "module": {
+    "name": "Taskflow"
+  },
+  "home": {
+    "title": "Taskflow",
+    "description": "The directories the host daemon serves for worktrees, terminals, agents and Runs, and the Project each one belongs to.",
+    "add": "Add directory",
+    "addTitle": "Add a directory to Taskflow",
+    "addHint": "An absolute path to a git repository on the host. One without `.portta/taskflow.yaml` is scaffolded and analysed first.",
+    "path": "Path on the host",
+    "empty": "Taskflow serves no directory yet",
+    "emptyHint": "Add a repository here, or open a Project and add it from its Worktrees tab.",
+    "columns": {
+      "name": "Name",
+      "path": "Directory",
+      "prefix": "Prefix",
+      "project": "Project",
+      "state": "State"
+    },
+    "noProject": "No Project",
+    "active": "open in a browser",
+    "idle": "idle",
+    "open": "Open worktrees",
+    "remove": "Remove",
+    "removeTitle": "Remove from Taskflow",
+    "removeImpact": "Taskflow stops serving {{path}}. The repository, its worktrees and the Portta Project are left as they are.",
+    "removed": "Removed from Taskflow",
+    "added": "Added to Taskflow"
+  },
+  "preferences": {
+    "title": "Taskflow",
+    "description": "How Taskflow behaves in this browser."
+  }
+}

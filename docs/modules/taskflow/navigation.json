@@ -1,0 +1,111 @@
+{
+  "groups": [
+    {
+      "title": "Taskflow",
+      "category": "",
+      "audience": "user",
+      "sequential": true,
+      "pages": [
+        {
+          "source": "docs/modules/taskflow/README.md",
+          "slug": "taskflow",
+          "description": "What the Taskflow module is and where its guides start."
+        },
+        {
+          "source": "docs/modules/taskflow/getting-started.md",
+          "slug": "taskflow/getting-started",
+          "description": "Check the requirements, start the host daemon and create a first worktree."
+        },
+        {
+          "source": "docs/modules/taskflow/concepts.md",
+          "slug": "taskflow/concepts",
+          "description": "Projects, workspaces, worktrees, Runs, Executions and sessions."
+        }
+      ]
+    },
+    {
+      "title": "Taskflow",
+      "category": "Guides",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/modules/taskflow/projects-and-workspaces.md",
+          "slug": "taskflow/projects-and-workspaces",
+          "description": "Register Projects and manage the worktree lifecycle and workspace strategies."
+        },
+        {
+          "source": "docs/modules/taskflow/runs-and-sessions.md",
+          "slug": "taskflow/runs-and-sessions",
+          "description": "Direct Sessions, Workflow Runs, resume, cancellation and transcripts."
+        },
+        {
+          "source": "docs/modules/taskflow/workflows.md",
+          "slug": "taskflow/workflows",
+          "description": "Author deterministic multi-agent workflows in JavaScript."
+        },
+        {
+          "source": "docs/modules/taskflow/dev-containers.md",
+          "slug": "taskflow/dev-containers",
+          "description": "Dev Container, Compose and Dockerfile environments per worktree."
+        },
+        {
+          "source": "docs/modules/taskflow/integrations.md",
+          "slug": "taskflow/integrations",
+          "description": "Agent providers, GitHub, Linear, Docker profiles and MCP tools."
+        },
+        {
+          "source": "docs/modules/taskflow/dashboard.md",
+          "slug": "taskflow/dashboard",
+          "description": "Operate worktrees, Runs and workflows from the panel's Taskflow pages."
+        },
+        {
+          "source": "docs/modules/taskflow/operations.md",
+          "slug": "taskflow/operations",
+          "description": "Run the host daemon as a service, its token, binding and backups."
+        },
+        {
+          "source": "docs/modules/taskflow/troubleshooting.md",
+          "slug": "taskflow/troubleshooting",
+          "description": "Diagnose an unreachable daemon, token refusals, sessions and environments."
+        }
+      ]
+    },
+    {
+      "title": "Taskflow",
+      "category": "Reference",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/modules/taskflow/cli.md",
+          "slug": "taskflow/cli",
+          "description": "Every portta flow command and its options."
+        },
+        {
+          "source": "docs/modules/taskflow/configuration.md",
+          "slug": "taskflow/configuration",
+          "description": "The .portta/taskflow.yaml fields, runtime variables and state paths."
+        }
+      ]
+    },
+    {
+      "title": "Taskflow",
+      "category": "",
+      "audience": "developer",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/modules/taskflow/architecture.md",
+          "slug": "taskflow/architecture",
+          "description": "How the module runs in the host daemon, its contract, runtime and ACP supervisor."
+        },
+        {
+          "source": "docs/modules/taskflow/development.md",
+          "slug": "taskflow/development",
+          "description": "Run the module from source, test it and change its API."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "title": "Network",
+  "description": "Domains, routes, DNS, TLS and the Docker networks behind them.",
+  "domains": {
+    "title": "Domains",
+    "routedDomain": "Routed domain",
+    "vpnDomain": "VPN domain",
+    "publicDomain": "Public domain",
+    "scheme": "Scheme"
+  },
+  "tls": {
+    "title": "TLS",
+    "https": "HTTPS",
+    "mode": "Mode",
+    "acmeContact": "ACME contact",
+    "directory": "Directory"
+  },
+  "vpnDns": {
+    "title": "VPN and DNS",
+    "tailscale": "Tailscale",
+    "tailnetHostname": "Tailnet hostname",
+    "dnsProvider": "DNS-01 provider",
+    "cloudflare": "Cloudflare"
+  },
+  "routes": {
+    "title": "Routes",
+    "description": "Derived from Docker labels, exactly like Traefik derives them.",
+    "empty": "No service is routed yet",
+    "project": "Project",
+    "service": "Service",
+    "status": "Status",
+    "targetPort": "Target port",
+    "addresses": "Addresses"
+  },
+  "networks": {
+    "title": "Docker networks",
+    "name": "Name",
+    "role": "Role",
+    "driver": "Driver",
+    "containers": "Containers",
+    "flags": "Flags",
+    "internal": "internal",
+    "gateway": "gateway",
+    "roles": {
+      "shared": "shared",
+      "control": "control",
+      "access": "access",
+      "project": "project",
+      "other": "other"
+    }
+  }
+}

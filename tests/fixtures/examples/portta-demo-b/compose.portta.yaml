@@ -1,0 +1,18 @@
+services:
+  web:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-demo-b}-web.loadbalancer.server.port=3000"
+  api:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-demo-b}-api.loadbalancer.server.port=8000"
+
+networks:
+  portta:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}

@@ -1,0 +1,431 @@
+{
+  "linear": {
+    "title": "Linear",
+    "missingApiKey": "Set <code>LINEAR_API_KEY</code> to show your assigned Linear issues here.",
+    "empty": "No assigned Linear issues right now.",
+    "disabled": "Linear integration is disabled in this project.",
+    "searchPlaceholder": "Search issues…",
+    "implement": "Implement",
+    "noDescription": "No description",
+    "due": "Due {{date}}",
+    "post": {
+      "title": "Post to Linear",
+      "description": "Creates a new Linear issue for branch <mono>{{branch}}</mono> and attaches the conversation as JSON + a summary comment. To post back into an existing issue, start the worktree from the Linear panel (bottom-left) — picking an issue there seeds the session and routes the post-back to that issue automatically.",
+      "teamKey": "Team key",
+      "looksLikeIssue": "Looks like an issue id. Start the worktree from the Linear panel (bottom-left) to seed it with that issue — the worktree menu will then offer a direct \"Post conversation to {{issue}}\" action.",
+      "invalidTeamKey": "Expected a team key like ENG (uppercase letters only).",
+      "issueTitle": "New issue title",
+      "optional": "(optional)",
+      "titlePlaceholder": "{{app}} session: {{branch}}",
+      "submit": "Post"
+    }
+  },
+  "labelDialog": {
+    "title": "Workspace label",
+    "label": "Label"
+  },
+  "profileDialog": {
+    "title": "Worktree profile",
+    "switch": "Switch",
+    "restartHint": "Switching restarts the session with the new pane layout and commands. The agent conversation is resumed.",
+    "nextOpenHint": "The new layout and commands apply the next time this worktree is opened."
+  },
+  "openInCursor": "Open in Cursor",
+  "agentStatus": {
+    "idle": "idle",
+    "working": "working",
+    "waiting": "waiting",
+    "done": "done",
+    "error": "error"
+  },
+  "pr": {
+    "draft": "draft",
+    "state": {
+      "open": "open",
+      "closed": "closed",
+      "merged": "merged"
+    },
+    "open": "Open PR",
+    "openDraft": "Open draft PR",
+    "ci": "CI",
+    "viewChecks": "View CI checks",
+    "viewChecksFor": "View CI checks for {{pr}}",
+    "reviewComments": "Review PR comments",
+    "reviewCommentsFor_one": "Review {{count}} comment for {{pr}}",
+    "reviewCommentsFor_other": "Review {{count}} comments for {{pr}}"
+  },
+  "startupEnv": {
+    "title": "Startup Environment",
+    "optional": "(optional)"
+  },
+  "workspaceStrategy": {
+    "legend": "Workspace",
+    "recommended": "Recommended",
+    "currentBranchWarning": "The agent can modify and commit directly on <mono>{{branch}}</mono>.",
+    "currentBranchWarningActive": "The agent can modify and commit directly on the active branch.",
+    "options": {
+      "isolated_worktree": {
+        "label": "Isolated worktree",
+        "detail": "Best for code changes and parallel work."
+      },
+      "new_branch": {
+        "label": "New branch",
+        "detail": "Create a branch in the current checkout."
+      },
+      "current_branch": {
+        "label": "Current branch",
+        "detail": "Work directly in the active checkout."
+      }
+    }
+  },
+  "branchSelector": {
+    "placeholder": "Select a branch",
+    "searchLabel": "{{label}} search",
+    "searchPlaceholder": "Search branches...",
+    "loadingShort": "Loading...",
+    "loadFailed": "Load failed",
+    "available": "{{count}} available",
+    "updating": "Updating...",
+    "updateFailed": "Update failed",
+    "loading": "Loading branches...",
+    "failed": "Failed to load branches: {{error}}",
+    "noMatches": "No matching branches",
+    "selected": "Selected"
+  },
+  "createDialog": {
+    "title": "New run",
+    "description": "Start a direct agent session or run a structured workflow.",
+    "runType": "Run type",
+    "create": "Create",
+    "startWorkflow": "Start workflow",
+    "direct": {
+      "title": "Direct session",
+      "description": "Create a worktree and start the agent you choose."
+    },
+    "workflow": {
+      "title": "Workflow",
+      "description": "Run a repeatable multi-step agent process."
+    },
+    "prompt": "Prompt",
+    "required": "(required)",
+    "optional": "(optional)",
+    "promptPlaceholder": "Describe the task for the agent...",
+    "promptPlaceholderLinear": "Describe the task for the agent. This will also be used as the Linear ticket description...",
+    "workspaceReason": "Isolated worktrees are recommended for safe, parallel code changes.",
+    "branchName": "Branch name",
+    "branchPlaceholderLinear": "Generated from the Linear ticket",
+    "branchPlaceholderPrompt": "generated from prompt if empty",
+    "branchPlaceholderAuto": "auto-generated if empty",
+    "linearBranchHint": "The worktree branch will use the Linear ticket branch name.",
+    "multiAgentBranchHint": "A separate prefixed branch will be created for each selected agent.",
+    "useExistingBranch": "Use existing branch",
+    "existingBranch": "Existing branch",
+    "includeRemote": "include remote",
+    "includeRemoteBranches": "Include remote branches",
+    "createNewBranchInstead": "Create new branch instead",
+    "existingBranchRemovalHint": "Removing this worktree will also delete the branch.",
+    "baseBranch": "Base branch",
+    "baseBranchPlaceholder": "Project main branch (default)",
+    "subworktreeBase": "Creating a sub-worktree based on",
+    "useDefaultBase": "Use project default branch instead",
+    "dirtyCheckout": "The current checkout has uncommitted changes. {{app}} will block branch switching until it is clean.",
+    "agent": "Agent",
+    "agentsSelected": "Agents ({{count}} selected)",
+    "multipleSelection": "Multiple selection",
+    "enableMultipleAgents": "Enable multiple agent selection",
+    "onePerAgent": "Creates one worktree per agent.",
+    "multipleNeedIsolated": "Multiple agents require isolated worktrees.",
+    "noAgents": "No agents available.",
+    "saveDefault": "Save as default",
+    "linear": {
+      "create": "Create Linear ticket",
+      "createHint": "Creates the ticket first, uses the prompt as the ticket description, and uses the ticket branch name for the worktree.",
+      "teamKey": "Team key",
+      "looksLikeIssue": "Looks like an issue id. Enter the team key only (e.g. ENG).",
+      "invalidTeamKey": "Expected a team key like ENG (uppercase letters only).",
+      "title": "Linear ticket title",
+      "titlePlaceholder": "Auto-generated from the prompt when left blank"
+    }
+  },
+  "environment": {
+    "label": "Environment",
+    "loading": "Loading environment…",
+    "runtime": "Runtime",
+    "hostCommand": "Host command",
+    "reviewConfiguration": "Review configuration",
+    "rebuild": "Rebuild",
+    "destroy": "Destroy",
+    "actions": {
+      "start": "Start",
+      "stop": "Stop",
+      "restart": "Restart"
+    },
+    "status": {
+      "detected": "Ready to start",
+      "resolving": "Resolving",
+      "building": "Building",
+      "starting": "Starting",
+      "ready": "Running",
+      "stopping": "Stopping",
+      "stopped": "Stopped",
+      "failed": "Failed",
+      "missing": "Unavailable",
+      "awaiting_trust": "Review required"
+    },
+    "reviewAccess": "Review what this project can access",
+    "policyValidated": "Runtime policy validated",
+    "policyUnvalidated": "Runtime policy unvalidated",
+    "noServices": "No discovered services",
+    "serviceCount_one": "{{count}} service",
+    "serviceCount_other": "{{count}} services",
+    "servicesAndControls": "Services and controls",
+    "noPorts": "No service ports were discovered from this runtime.",
+    "startToDiscover": "Start the environment to discover its services and endpoints.",
+    "noObservedPorts": "No observed ports",
+    "serviceActionLabel": "{{action}} {{service}}",
+    "expose": "Expose",
+    "copyUrl": "Copy URL",
+    "copyAddress": "Copy address",
+    "revoke": "Revoke",
+    "containers": "Containers: {{ids}}",
+    "hostService": "Host service",
+    "trust": {
+      "title": "Review Runtime configuration",
+      "description": "The following project-controlled operations may run with your user permissions:",
+      "noElevated": "No elevated options were detected in the resolved configuration.",
+      "confirm": "Review & start"
+    },
+    "destroyDialog": {
+      "title": "Destroy environment?",
+      "impact": "Owned containers, local forwards, and endpoints will be removed."
+    },
+    "errors": {
+      "load": "Unable to load environment",
+      "action": "Environment action failed",
+      "expose": "Unable to expose service",
+      "service": "Service action failed",
+      "revoke": "Unable to revoke endpoint",
+      "destroy": "Unable to destroy environment",
+      "exec": "The command could not run"
+    },
+    "commands": {
+      "title": "Commands",
+      "exec": "Run in the environment",
+      "execPlaceholder": "e.g. npm test",
+      "run": "Run",
+      "exitCode": "exit {{code}}",
+      "timedOut": "timed out",
+      "copyTerminal": "Copy terminal command",
+      "copyLogs": "Copy logs command",
+      "copied": "Command copied"
+    }
+  },
+  "tabs": {
+    "close": "Close {{label}}",
+    "newFork": "New fork tab"
+  },
+  "creationPhase": {
+    "creating_worktree": "Creating worktree",
+    "preparing_runtime": "Preparing runtime",
+    "running_post_create_hook": "Running post-create hook",
+    "starting_session": "Starting session",
+    "reconciling": "Reconciling",
+    "creating": "Creating"
+  },
+  "diff": {
+    "title": "Changes",
+    "loading": "Loading diff...",
+    "empty": "No changes",
+    "currentDiff": "Current diff",
+    "gitStatus": "Git status ({{count}})",
+    "unpushed": "Unpushed commits ({{count}})",
+    "truncated": "Truncated (exceeded 200KB)"
+  },
+  "ci": {
+    "title": "CI Checks — {{pr}}",
+    "status": {
+      "pending": "pending",
+      "success": "success",
+      "failed": "failed",
+      "skipped": "skipped"
+    },
+    "hideLogs": "Hide logs",
+    "showLogs": "Show logs",
+    "viewLogs": "View logs",
+    "loadingLogs": "Loading logs...",
+    "copyLogs": "Copy logs",
+    "askFix": "Ask agent to fix",
+    "fixRequested": "Asked agent to fix {{check}}",
+    "copied": "Copied logs"
+  },
+  "comments": {
+    "title": "PR Comments — {{pr}}",
+    "send": "Send {{count}} to agent",
+    "deselectAll": "Deselect all",
+    "selectAll": "Select all",
+    "selectedCount": "{{selected}} of {{total}} selected",
+    "reply": "(reply)",
+    "review": "review",
+    "sent_one": "Sent {{count}} comment to agent",
+    "sent_other": "Sent {{count}} comments to agent"
+  },
+  "list": {
+    "empty": "No worktrees found.",
+    "oneshot": "oneshot",
+    "oneshotHint": "Autonomous run — auto-closes when done",
+    "archived": "archived",
+    "opening": "opening...",
+    "closed": "closed",
+    "actionsTitle": "Worktree actions",
+    "actionsFor": "Actions for {{branch}}",
+    "restore": "Restore",
+    "archive": "Archive",
+    "changeProfile": "Change profile…",
+    "merge": "Merge",
+    "createSubworktree": "Create sub-worktree",
+    "postingToLinear": "Posting to Linear…",
+    "postToIssue": "Post conversation to {{issue}}",
+    "postToLinear": "Post conversation to Linear…",
+    "scrollTo": {
+      "above": {
+        "waiting": "Scroll to next waiting worktree above",
+        "error": "Scroll to next error worktree above",
+        "done-unread": "Scroll to next unread worktree above"
+      },
+      "below": {
+        "waiting": "Scroll to next waiting worktree below",
+        "error": "Scroll to next error worktree below",
+        "done-unread": "Scroll to next unread worktree below"
+      }
+    }
+  },
+  "chat": {
+    "processing": "{{agent}} is processing",
+    "unavailable": "Chat is not available for this worktree yet.",
+    "openFirst": "Open this worktree first to use chat.",
+    "empty": "No messages yet. Send the first prompt to start this chat.",
+    "reconnect": "Reconnect",
+    "attach": "Attach",
+    "interrupt": "Interrupt",
+    "connecting": "Connecting to the {{agent}} session...",
+    "thinking": "Thinking",
+    "working": "working",
+    "message": "Message",
+    "placeholder": "ask anything",
+    "send": "Send",
+    "tool": {
+      "running": "Running {{name}}",
+      "failed": "Failed {{name}}",
+      "completed": "Completed {{name}}",
+      "fallbackName": "tool",
+      "exit": "exit {{code}}",
+      "runningNote": "running",
+      "output": "Output"
+    },
+    "question": {
+      "title": "Question",
+      "customPlaceholder": "Custom answer…",
+      "submit": "Submit answer"
+    },
+    "stream": {
+      "disconnected": "Conversation stream disconnected",
+      "malformed": "Received malformed conversation stream data",
+      "connectionFailed": "Conversation stream connection failed"
+    }
+  },
+  "terminal": {
+    "label": "Terminal",
+    "stale": "Terminal stale",
+    "refreshTitle": "Refresh agent terminal",
+    "refreshing": "Refreshing",
+    "refresh": "Refresh",
+    "drop": "Drop image(s) to upload",
+    "disconnected": "Disconnected",
+    "reconnected": "Reconnected",
+    "exited": "Process exited with code {{code}}",
+    "error": "Error: {{message}}",
+    "uploadError": "Upload error: {{message}}"
+  },
+  "sidebar": {
+    "search": "Search worktrees",
+    "clearSearch": "Clear worktree search",
+    "showArchivedLabel": "Show archived worktrees",
+    "showArchived": "Show archived",
+    "showArchivedCount": "Show archived ({{count}})",
+    "archivedMatchesHidden": "Archived matches are hidden.",
+    "noMatches": "No matches for \"{{query}}\".",
+    "noActive": "No active worktrees.",
+    "empty": "No worktrees found."
+  },
+  "view": {
+    "createTabFailed": "Failed to create tab: {{error}}",
+    "selectTabFailed": "Failed to switch tab: {{error}}",
+    "deleteTabFailed": "Failed to delete tab: {{error}}",
+    "diffLoadFailed": "Failed to load changes view.",
+    "profile": "Profile: {{profile}}",
+    "agent": "Agent: {{agent}}",
+    "terminalOnly": "This agent runs in the terminal only.",
+    "opening": "Opening...",
+    "openSession": "Open Session",
+    "selectPrompt": "Select a worktree from the sidebar to connect",
+    "terminalNotAllowed": "This session is open, but attaching its terminal needs terminal:attach on this project."
+  },
+  "actions": {
+    "loadWorkflowsFailed": "Failed to load workflows: {{error}}",
+    "inspectCheckoutFailed": "Failed to inspect current checkout: {{error}}",
+    "createFailed": "Failed to create: {{error}}",
+    "createRunFailed": "Failed to create Run: {{error}}",
+    "runCreated": "Run created",
+    "removeFailed": "Failed to remove: {{error}}",
+    "mergeFailed": "Failed to merge: {{error}}",
+    "closeFailed": "Failed to close worktree: {{error}}",
+    "archiveFailed": "Failed to archive worktree: {{error}}",
+    "restoreFailed": "Failed to restore worktree: {{error}}",
+    "openFailed": "Failed to open worktree: {{error}}",
+    "profileSwitched": "Switched {{branch}} to the \"{{profile}}\" profile",
+    "profileSwitchedNextOpen": "Switched {{branch}} to the \"{{profile}}\" profile — applies on next open",
+    "postedToLinear": "Posted to Linear: {{url}}",
+    "postToLinearFailed": "Failed to post to Linear: {{error}}",
+    "terminalRefreshed": "Agent terminal refreshed",
+    "refreshTerminalFailed": "Failed to refresh terminal: {{error}}",
+    "switchInterfaceFailed": "Failed to switch session interface: {{error}}",
+    "remove": {
+      "title": "Remove worktree",
+      "impact": "Remove worktree \"{{branch}}\"? This action cannot be undone.",
+      "confirm": "Remove",
+      "unsavedImpact": "Remove worktree \"{{branch}}\"? It has {{work}} that exist nowhere else, and they will be discarded. This action cannot be undone.",
+      "unsavedConfirm": "Discard and remove",
+      "unsavedChanges": "uncommitted changes",
+      "unsavedCommits": "commits that were never pushed"
+    },
+    "merge": {
+      "title": "Merge worktree",
+      "impact": "Merge worktree \"{{branch}}\" into main? The worktree will be removed after merging.",
+      "confirm": "Merge"
+    },
+    "pull": {
+      "title": "Pull {{branch}}",
+      "repoTitle": "Pull {{repo}}",
+      "impact": "Pull latest \"{{branch}}\" from remote?",
+      "forceImpact": "Force pull \"{{branch}}\"? This will discard any local commits on {{defaultBranch}}.",
+      "repoImpact": "Pull latest \"{{repo}}\" from remote?",
+      "forceRepoImpact": "Force pull \"{{repo}}\"? This will discard any local commits.",
+      "confirm": "Pull",
+      "forceConfirm": "Force Pull",
+      "updated": "Pulled latest \"{{branch}}\" from remote",
+      "upToDate": "\"{{branch}}\" is already up to date",
+      "fastForwardFailed": "Fast-forward failed: {{error}}.\nForce pull will reset main to match remote.",
+      "fastForwardFailedRepo": "Fast-forward failed: {{error}}.\nForce pull will reset to match remote.",
+      "unknownError": "unknown error"
+    },
+    "postLinked": {
+      "title": "Post to Linear",
+      "impact": "Post conversation to {{issue}}? This creates a new attachment and comment on the issue.",
+      "confirm": "Post"
+    },
+    "prsSynced": "Pull request status refreshed for {{branch}}",
+    "syncPrsFailed": "Failed to refresh pull requests: {{error}}",
+    "nativeTerminalCopied": "Terminal command copied",
+    "nativeTerminalFailed": "Failed to describe the terminal command: {{error}}"
+  }
+}

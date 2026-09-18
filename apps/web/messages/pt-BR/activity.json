@@ -1,0 +1,22 @@
+{
+  "title": "Atividade",
+  "description": "O que aconteceu no fluxo de desenvolvimento, do mais recente para o mais antigo. Logs ficam em cada environment.",
+  "recent": "Atividade recente",
+  "all": "Toda a atividade",
+  "empty": "Nada aconteceu ainda",
+  "emptyHint": "Tarefas, sessões, commits e operações de environment chegam aqui conforme acontecem.",
+  "loadMore": "Mais antigas",
+  "newer": "Mais recentes",
+  "kindFilter": "Tipo",
+  "anyKind": "Tudo",
+  "actorFilter": "Ator",
+  "repository": "repositório",
+  "entity": {
+    "issue": "Issues",
+    "session": "Sessões",
+    "repository": "Repositórios",
+    "environment": "Environments",
+    "service": "Serviços",
+    "project": "Projeto"
+  }
+}

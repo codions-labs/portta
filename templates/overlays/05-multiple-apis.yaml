@@ -1,0 +1,37 @@
+# ============================================================================
+# Several APIs in one project
+# ============================================================================
+# Each gets its own hostname from its own service name. They can all listen on
+# 8000 internally; nothing needs renumbering.
+#
+#   -> http://<COMPOSE_PROJECT_NAME>-api-auth.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>-api-billing.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>-api-search.localhost
+# ============================================================================
+
+services:
+  api-auth:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api-auth.loadbalancer.server.port=8000"
+
+  api-billing:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api-billing.loadbalancer.server.port=8000"
+
+  api-search:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api-search.loadbalancer.server.port=8000"
+
+networks:
+  portta:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}

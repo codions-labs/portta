@@ -1,0 +1,48 @@
+{
+  "name": "portta-db",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The panel's SQLite schema, migrations and database client",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./src/test-db.ts",
+      "development": "./src/test-db.ts",
+      "import": "./dist/test-db.js"
+    }
+  },
+  "files": [
+    "dist",
+    "drizzle"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "NODE_OPTIONS=--conditions=development drizzle-kit generate",
+    "db:check": "node --conditions=development scripts/check-schema.ts"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "drizzle-orm": "0.45.2",
+    "nanoid": "5.1.16",
+    "portta-core": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "24.13.3",
+    "drizzle-kit": "0.31.10",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

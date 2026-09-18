@@ -1,0 +1,16 @@
+{
+  "rowLabel": "Sessão de {{actor}}",
+  "status": {
+    "active": "ativa",
+    "ended": "encerrada",
+    "abandoned": "abandonada"
+  },
+  "noIssue": "sem issue",
+  "commits": "{{count}} commits",
+  "endedAgo": "encerrada {{time}}",
+  "active": "Sessões ({{count}} ativa(s))",
+  "none": "Ninguém está trabalhando aqui agora",
+  "noneHint": "Um agente se anuncia com portta sessions start --project {{slug}}.",
+  "lastActivity": "última {{time}}",
+  "duration": "Em execução há {{time}}"
+}

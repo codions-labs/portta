@@ -1,0 +1,25 @@
+# ============================================================================
+# RustFS: S3-compatible object storage in development
+# ============================================================================
+# The console (9001) is HTTP and joins the gateway. The S3 API (9000) stays on
+# the project's private network so sibling containers can talk to it as
+# `rustfs:9000` without publishing a host port.
+#
+# The base Compose file should declare the rustfs service itself; this overlay
+# only adds the network and labels for the console.
+#
+#   -> http://<COMPOSE_PROJECT_NAME>-rustfs.localhost
+# ============================================================================
+
+services:
+  rustfs:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-rustfs.loadbalancer.server.port=9001"
+
+networks:
+  portta:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}

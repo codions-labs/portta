@@ -1,0 +1,449 @@
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  expandTemplate,
+  getDefaultProfileName,
+  loadConfig,
+  persistLocalCustomAgent,
+  removeLocalCustomAgent,
+} from '../adapters/config.ts'
+
+describe('expandTemplate', () => {
+  it('replaces known placeholders', () => {
+    expect(expandTemplate('Hello ${NAME}', { NAME: 'world' })).toBe('Hello world')
+  })
+
+  it('leaves unknown placeholders as empty string', () => {
+    expect(expandTemplate('Hello ${MISSING}', {})).toBe('Hello ')
+  })
+
+  it('replaces multiple placeholders in one string', () => {
+    expect(expandTemplate('${A}-${B}', { A: 'foo', B: 'bar' })).toBe('foo-bar')
+  })
+
+  it('returns the string unchanged when there are no placeholders', () => {
+    expect(expandTemplate('no placeholders', {})).toBe('no placeholders')
+  })
+})
+
+describe('loadConfig', () => {
+  const tempDirs: string[] = []
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
+  })
+
+  it('loads the final .portta/taskflow.yaml shape into ProjectConfig', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.yaml'),
+      [
+        'name: Example',
+        'workspace:',
+        '  mainBranch: trunk',
+        '  worktrees:',
+        '    root: worktrees',
+        '  defaultAgent: codex',
+        'services:',
+        '  - name: API',
+        '    portEnv: API_PORT',
+        '    portStart: 4100',
+        'profiles:',
+        '  default:',
+        '    runtime: host',
+        '    yolo: true',
+        '    envPassthrough: [GITHUB_TOKEN]',
+        '    panes:',
+        '      - id: agent',
+        '        kind: agent',
+        '        focus: true',
+        '  sandbox:',
+        '    runtime: docker',
+        '    yolo: false',
+        '    image: ghcr.io/codions-labs/portta-sandbox:rolling',
+        '    envPassthrough: [AWS_ACCESS_KEY_ID]',
+        '    panes:',
+        '      - id: agent',
+        '        kind: agent',
+        '        focus: true',
+        'startupEnvs:',
+        '  FEATURE_FLAG: true',
+        'lifecycleHooks:',
+        '  postCreate: scripts/post-create.sh',
+        '  preRemove: scripts/pre-remove.sh',
+        'auto_name:',
+        '  provider: claude',
+        '  system_prompt: Generate a branch name',
+        'integrations:',
+        '  github:',
+        '    linkedRepos:',
+        '      - repo: acme/linked',
+        '        alias: linked',
+        '  linear:',
+        '    enabled: false',
+        '    createTicketOption: true',
+        '    watchTeams: [ENG, ops]',
+        '',
+      ].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+
+    expect(config.name).toBe('Example')
+    expect(config.workspace.mainBranch).toBe('trunk')
+    expect(config.workspace.worktreeRoot).toBe('worktrees')
+    expect(config.workspace.defaultAgent).toBe('codex')
+    expect(config.services).toEqual([{ name: 'API', portEnv: 'API_PORT', portStart: 4100 }])
+    expect(config.profiles.default!.runtime).toBe('host')
+    expect(config.profiles.default!.yolo).toBe(true)
+    expect(config.profiles.default!.envPassthrough).toEqual(['GITHUB_TOKEN'])
+    expect(config.profiles.sandbox?.runtime).toBe('docker')
+    expect(config.profiles.sandbox?.yolo).toBeUndefined()
+    expect(config.profiles.sandbox?.image).toBe('ghcr.io/codions-labs/portta-sandbox:rolling')
+    expect(config.startupEnvs).toEqual({ FEATURE_FLAG: true })
+    expect(config.lifecycleHooks).toEqual({
+      postCreate: 'scripts/post-create.sh',
+      preRemove: 'scripts/pre-remove.sh',
+    })
+    expect(config.autoName).toEqual({
+      provider: 'claude',
+      systemPrompt: 'Generate a branch name',
+    })
+    expect(config.integrations.github.linkedRepos).toEqual([{ repo: 'acme/linked', alias: 'linked' }])
+    expect(config.integrations.linear.enabled).toBe(false)
+    expect(config.integrations.linear.createTicketOption).toBe(true)
+    expect(config.integrations.linear.watchTeams).toEqual(['ENG', 'OPS'])
+  })
+
+  it('uses the first configured profile when no default profile exists', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.yaml'),
+      [
+        'profiles:',
+        '  slim:',
+        '    runtime: host',
+        '    envPassthrough: []',
+        '    panes:',
+        '      - id: agent',
+        '        kind: agent',
+        '        focus: true',
+        '  full:',
+        '    runtime: host',
+        '    envPassthrough: []',
+        '    panes:',
+        '      - id: agent',
+        '        kind: agent',
+        '        focus: true',
+        '',
+      ].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+
+    expect(getDefaultProfileName(config)).toBe('slim')
+  })
+
+  it('preserves command pane workingDir values from config', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.yaml'),
+      [
+        'profiles:',
+        '  default:',
+        '    runtime: host',
+        '    envPassthrough: []',
+        '    panes:',
+        '      - id: app',
+        '        kind: command',
+        '        cwd: repo',
+        '        workingDir: frontend',
+        '        command: bun run dev',
+        '',
+      ].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+
+    expect(config.profiles.default!.panes).toEqual([
+      {
+        id: 'app',
+        kind: 'command',
+        cwd: 'repo',
+        workingDir: 'frontend',
+        command: 'bun run dev',
+      },
+    ])
+  })
+
+  it('defaults Linear ticket creation option to false', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.yaml'),
+      ['integrations:', '  linear:', '    enabled: true', ''].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+
+    expect(config.integrations.linear.enabled).toBe(true)
+    expect(config.integrations.linear.createTicketOption).toBe(false)
+    expect(config.integrations.linear.watchTeams).toBeUndefined()
+  })
+
+  it('adds local profiles and appends local lifecycle hooks after project hooks', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.yaml'),
+      [
+        'profiles:',
+        '  default:',
+        '    runtime: host',
+        '    envPassthrough: []',
+        '    panes:',
+        '      - id: agent',
+        '        kind: agent',
+        '        focus: true',
+        '  shared:',
+        '    runtime: host',
+        '    envPassthrough: [GITHUB_TOKEN]',
+        '    panes:',
+        '      - id: agent',
+        '        kind: agent',
+        '        focus: true',
+        'lifecycleHooks:',
+        '  postCreate: scripts/project-post-create.sh',
+        '  preRemove: scripts/project-pre-remove.sh',
+        '',
+      ].join('\n'),
+    )
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.local.yaml'),
+      [
+        'profiles:',
+        '  shared:',
+        '    runtime: docker',
+        '    image: local-sandbox',
+        '    envPassthrough: [AWS_ACCESS_KEY_ID]',
+        '    panes:',
+        '      - id: agent',
+        '        kind: agent',
+        '        focus: true',
+        '  local:',
+        '    runtime: host',
+        '    envPassthrough: []',
+        '    panes:',
+        '      - id: local-agent',
+        '        kind: agent',
+        '        focus: true',
+        'lifecycleHooks:',
+        '  postCreate: scripts/local-post-create.sh',
+        '  preRemove: scripts/local-pre-remove.sh',
+        '',
+      ].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+
+    expect(Object.keys(config.profiles).sort()).toEqual(['default', 'local', 'shared'])
+    expect(config.profiles.default!.runtime).toBe('host')
+    expect(config.profiles.shared!.runtime).toBe('docker')
+    expect(config.profiles.shared!.image).toBe('local-sandbox')
+    expect(config.profiles.shared!.envPassthrough).toEqual(['AWS_ACCESS_KEY_ID'])
+    expect(config.profiles.local!.panes).toEqual([{ id: 'local-agent', kind: 'agent', focus: true }])
+    expect(config.lifecycleHooks).toEqual({
+      postCreate: ['set -e', 'scripts/project-post-create.sh', 'scripts/local-post-create.sh'].join('\n'),
+      preRemove: ['set -e', 'scripts/project-pre-remove.sh', 'scripts/local-pre-remove.sh'].join('\n'),
+    })
+  })
+
+  it('loads local profiles without a project config', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.local.yaml'),
+      [
+        'profiles:',
+        '  local:',
+        '    runtime: docker',
+        '    image: local-image',
+        '    envPassthrough: [OPENAI_API_KEY]',
+        '    panes:',
+        '      - id: local-agent',
+        '        kind: agent',
+        '        focus: true',
+        '',
+      ].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+
+    expect(config.name).toBe('Taskflow')
+    expect(Object.keys(config.profiles).sort()).toEqual(['default', 'local'])
+    expect(config.profiles.local!.runtime).toBe('docker')
+    expect(config.profiles.local!.image).toBe('local-image')
+    expect(config.profiles.local!.envPassthrough).toEqual(['OPENAI_API_KEY'])
+    expect(config.lifecycleHooks).toEqual({})
+
+    config.profiles.default!.envPassthrough.push('MUTATED')
+    expect(loadConfig(dir, { resolvedRoot: true }).profiles.default!.envPassthrough).toEqual([])
+  })
+
+  it('loads custom agents from local yaml', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.local.yaml'),
+      [
+        'agents:',
+        '  gemini:',
+        '    label: Gemini CLI',
+        '    startCommand: gemini --project . --prompt "${PROMPT}"',
+        '    resumeCommand: gemini resume --last',
+        '',
+      ].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+
+    expect(config.agents).toEqual({
+      gemini: {
+        label: 'Gemini CLI',
+        startCommand: 'gemini --project . --prompt "${PROMPT}"',
+        resumeCommand: 'gemini resume --last',
+      },
+    })
+  })
+
+  it('loads declared ACP providers, lets the local overlay replace a builtin, and drops invalid entries', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.yaml'),
+      [
+        'providers:',
+        '  gemini:',
+        '    command: gemini-acp',
+        '    args: [--experimental-acp, 3, --yolo]',
+        '  broken:',
+        '    label: No command',
+        '',
+      ].join('\n'),
+    )
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.local.yaml'),
+      ['providers:', '  codex:', '    label: Codex (local build)', '    command: /opt/codex/codex-acp', ''].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+
+    expect(config.providers).toEqual({
+      gemini: { label: 'gemini', command: 'gemini-acp', args: ['--experimental-acp', '--yolo'] },
+      codex: { label: 'Codex (local build)', command: '/opt/codex/codex-acp', args: [] },
+    })
+  })
+
+  it('persists and removes local custom agents', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+    nodeTest.spawnSync(['git', 'init'], { cwd: dir })
+
+    await persistLocalCustomAgent(dir, 'gemini', {
+      label: 'Gemini CLI',
+      startCommand: 'gemini --project . --prompt "${PROMPT}"',
+      resumeCommand: 'gemini resume --last',
+    })
+
+    let config = loadConfig(dir)
+    expect(config.agents).toEqual({
+      gemini: {
+        label: 'Gemini CLI',
+        startCommand: 'gemini --project . --prompt "${PROMPT}"',
+        resumeCommand: 'gemini resume --last',
+      },
+    })
+
+    await removeLocalCustomAgent(dir, 'gemini')
+
+    config = loadConfig(dir)
+    expect(config.agents).toEqual({})
+  })
+
+  it('overrides worktrees.root from local yaml', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.yaml'),
+      ['workspace:', '  worktrees:', '    root: ../worktrees', ''].join('\n'),
+    )
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.local.yaml'),
+      ['workspace:', '  worktrees:', '    root: /tmp/my-worktrees', ''].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+
+    expect(config.workspace.worktreeRoot).toBe('/tmp/my-worktrees')
+    expect(config.workspace.mainBranch).toBe('main')
+  })
+
+  it('merges hook-only local overlays and fails fast before running the local hook', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'taskflow-config-'))
+    tempDirs.push(dir)
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.yaml'),
+      [
+        'lifecycleHooks:',
+        '  postCreate: |',
+        "    printf 'project-start\\n' >> trace.log",
+        '    false',
+        "    printf 'project-after-fail\\n' >> trace.log",
+        '',
+      ].join('\n'),
+    )
+
+    await nodeTest.write(
+      join(dir, '.portta/taskflow.local.yaml'),
+      ['lifecycleHooks:', '  postCreate: |', "    printf 'local-ran\\n' >> trace.log", ''].join('\n'),
+    )
+
+    const config = loadConfig(dir, { resolvedRoot: true })
+    const command = config.lifecycleHooks.postCreate
+
+    expect(Object.keys(config.profiles)).toEqual(['default'])
+    expect(command).toBe(
+      [
+        'set -e',
+        "printf 'project-start\\n' >> trace.log\nfalse\nprintf 'project-after-fail\\n' >> trace.log",
+        "printf 'local-ran\\n' >> trace.log",
+      ].join('\n'),
+    )
+
+    const result = nodeTest.spawnSync(['bash', '-c', command ?? ''], {
+      cwd: dir,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    })
+
+    expect(result.exitCode).toBe(1)
+    expect(await nodeTest.file(join(dir, 'trace.log')).text()).toBe('project-start\n')
+  })
+})

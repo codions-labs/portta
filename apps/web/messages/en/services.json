@@ -1,0 +1,96 @@
+{
+  "title": "Services",
+  "description": "Every service of every integrated project, and how to reach it.",
+  "filterAria": "Filter services",
+  "searchPlaceholder": "Search service, image, hostname",
+  "searchAria": "Search services",
+  "empty": "No service matches the filters",
+  "table": {
+    "project": "Project",
+    "service": "Service",
+    "state": "State",
+    "health": "Health",
+    "image": "Image",
+    "uptime": "Uptime",
+    "actions": "Actions",
+    "type": "Type",
+    "ports": "Port",
+    "access": "Access",
+    "resources": "Resources",
+    "runtime": "Runtime",
+    "environment": "Environment"
+  },
+  "filters": {
+    "http": "HTTP",
+    "tcp": "TCP"
+  },
+  "connection": {
+    "show": "Connect",
+    "title": "Connection details · {{name}}"
+  },
+  "row": {
+    "label": "{{name}} service",
+    "hidden": "collapsed",
+    "primary": "primary",
+    "restarts": "{{count}} restarts",
+    "exitCode": "exit {{code}}",
+    "stopped": "no live address while {{state}}",
+    "noAddress": "no address",
+    "problem": {
+      "noHostname": "routing enabled, no hostname discovered",
+      "notRouted": "not routed through the gateway",
+      "offNetwork": "not on the shared network",
+      "noPort": "no exposed port",
+      "other": "unreachable"
+    },
+    "openDrawer": "Open {{name}}",
+    "actionsFor": "Actions for {{name}}",
+    "actionFailed": "The action failed",
+    "actionOk": "{{name}}: {{action}} sent"
+  },
+  "menu": {
+    "openTest": "Open / Test",
+    "open": "Open",
+    "copy": "Copy address",
+    "logs": "Logs",
+    "console": "Console",
+    "openAccess": "Open local access",
+    "closeAccess": "Close local access",
+    "bridge": "Bridge",
+    "copyHost": "Copy host",
+    "copyPort": "Copy port",
+    "copyConnectionString": "Copy connection string",
+    "connection": "Connection details…",
+    "share": "Share…",
+    "nothing": "Nothing to open yet",
+    "accessPage": "Access page",
+    "start": "Start",
+    "stop": "Stop",
+    "restart": "Restart",
+    "details": "Details"
+  },
+  "drawer": {
+    "summary": "Summary",
+    "access": "Access",
+    "runtime": "Runtime",
+    "logs": "Logs",
+    "console": "Console",
+    "labels": "Labels",
+    "container": "Container",
+    "environmentLink": "Open environment",
+    "noEndpoint": "No address to reach this service on",
+    "measuredAt": "measured {{time}}"
+  },
+  "console": {
+    "terminalLabel": "Interactive console for {{service}}",
+    "failed": "The console could not be opened.",
+    "state": {
+      "idle": "Idle",
+      "loading": "Loading terminal",
+      "connecting": "Connecting",
+      "open": "Connected",
+      "closed": "Closed",
+      "failed": "Failed"
+    }
+  }
+}

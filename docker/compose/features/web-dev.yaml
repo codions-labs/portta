@@ -1,0 +1,55 @@
+# ============================================================================
+# Portta: panel in development mode
+# ============================================================================
+# Applied when PORTTA_WEB_DEV=true, or by `portta web dev`.
+#
+# One container, one port. The panel is a single Node process — Next, the Hono
+# API, the event stream and the WebSocket upgrades all behind one dispatcher —
+# so HMR arrives on the same 8081 the API answers on.
+#
+# Only source directories are bind-mounted, so the image's node_modules stay in
+# place and the host never needs Node installed.
+# ============================================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+      args:
+        PORTTA_VERSION: ${PORTTA_VERSION:-}
+    image: codions-labs/portta:dev
+    # The package script, never a restated command line: it carries
+    # `--conditions=development`, without which the workspace packages resolve
+    # to a dist/ the dev image does not build.
+    command: ["npm", "run", "dev"]
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./apps/web/app:/app/apps/web/app
+      - ./apps/web/components:/app/apps/web/components
+      - ./apps/web/lib:/app/apps/web/lib
+      - ./apps/web/modules:/app/apps/web/modules
+      - ./apps/web/messages:/app/apps/web/messages
+      - ./apps/web/server:/app/apps/web/server
+      - ./apps/web/public:/app/apps/web/public
+      # The packages the panel composes, so editing one reloads it like its own
+      # source: the shared derivations, the contract, the schema, auth, and the
+      # services and API.
+      - ./packages/core/src:/app/packages/core/src
+      - ./packages/contracts/src:/app/packages/contracts/src
+      - ./packages/mcp/src:/app/packages/mcp/src
+      - ./packages/auth/src:/app/packages/auth/src
+      - ./packages/db/src:/app/packages/db/src
+      # The generated migrations the process applies on the next migrate.
+      # Without this a newly generated file stays in the image until the next
+      # rebuild, so `portta db migrate` and a restart would both see a stale set.
+      - ./packages/db/drizzle:/app/packages/db/drizzle
+      - ./packages/server/src:/app/packages/server/src
+      # The documentation itself: `app/docs` reads and renders it, so a change
+      # to a Markdown file is visible on the next request.
+      - ./docs:/app/docs:ro
+      - ./README.md:/app/README.md:ro
+      - ./CHANGELOG.md:/app/CHANGELOG.md:ro
+      - ./.env:/app/state/.env

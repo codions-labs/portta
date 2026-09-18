@@ -1,0 +1,41 @@
+# ============================================================================
+# An HTTP service on an unusual internal port
+# ============================================================================
+# Traefik guesses the backend port from the image's EXPOSE when only one port
+# is exposed. That guess is wrong whenever the image exposes one port and the
+# application listens on another: which is most of the time once a command or
+# an environment variable moves it.
+#
+# The symptom is a 502 from the gateway: the route matched, the backend did not
+# answer. Stating the port removes the guess.
+#
+# Anything is fine here: 4321, 9090, 1313. The port is internal, so it never
+# competes with another project.
+# ============================================================================
+
+services:
+  docs:
+    # e.g. a static site generator listening on 1313
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-docs.loadbalancer.server.port=1313"
+
+  # A service whose container serves HTTPS internally needs the scheme too,
+  # or Traefik will speak plaintext to a TLS port.
+  secure-backend:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-secure-backend.loadbalancer.server.port=8443"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-secure-backend.loadbalancer.server.scheme=https"
+      # Development backends usually have a self-signed certificate.
+      - "traefik.http.serverstransports.${COMPOSE_PROJECT_NAME}-insecure.insecureskipverify=true"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-secure-backend.loadbalancer.serverstransport=${COMPOSE_PROJECT_NAME}-insecure@docker"
+
+networks:
+  portta:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}

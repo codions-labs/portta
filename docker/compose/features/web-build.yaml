@@ -1,0 +1,21 @@
+# ============================================================================
+# Portta: build the panel image locally (development only)
+# ============================================================================
+# Applied when PORTTA_WEB_BUILD=true, which only makes sense inside a checkout:
+# the build context is the repository root, and an installed PORTTA_HOME holds
+# no application source at all.
+#
+# A normal installation pulls the published image instead, so a host never
+# needs a compiler, a lockfile or the panel's source to run the panel.
+# See docs/development/adr/0020-installer-and-portta-home.md.
+# ============================================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runtime
+      args:
+        PORTTA_VERSION: ${PORTTA_VERSION:-}
+    image: ${PORTTA_WEB_IMAGE:-codions-labs/portta:${PORTTA_VERSION}}

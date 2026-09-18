@@ -1,0 +1,535 @@
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import type { ProjectConfig } from 'portta-core/taskflow'
+import { afterEach, describe, expect, it } from 'vitest'
+import { writeWorktreeMeta, writeWorktreePrs } from '../adapters/fs.ts'
+import type {
+  GitGateway,
+  GitWorktreeEntry,
+  GitWorktreeStatus,
+  TryGitCommandResult,
+  UnpushedCommit,
+} from '../adapters/git.ts'
+import type { PortProbe } from '../adapters/port-probe.ts'
+import type { SessionGateway, SessionWindowSummary } from '../adapters/session-gateway.ts'
+import { buildProjectSessionName, buildWorktreeWindowName } from '../adapters/session-gateway.ts'
+import { ProjectRuntime } from '../services/project-runtime.ts'
+import { ReconciliationService } from '../services/reconciliation-service.ts'
+
+interface Deferred {
+  promise: Promise<void>
+  resolve: () => void
+}
+
+class FakeGitGateway implements GitGateway {
+  private readonly worktrees: GitWorktreeEntry[]
+  private readonly gitDirs: Map<string, string>
+  private readonly statuses: Map<string, GitWorktreeStatus>
+  private readonly liveWorktrees?: GitWorktreeEntry[]
+  constructor(
+    worktrees: GitWorktreeEntry[],
+    gitDirs: Map<string, string>,
+    statuses: Map<string, GitWorktreeStatus>,
+    liveWorktrees?: GitWorktreeEntry[],
+  ) {
+    this.worktrees = worktrees
+    this.gitDirs = gitDirs
+    this.statuses = statuses
+    this.liveWorktrees = liveWorktrees
+  }
+
+  resolveRepoRoot(dir: string): string | null {
+    return dir
+  }
+
+  resolveWorktreeRoot(cwd: string): string {
+    return cwd
+  }
+
+  resolveWorktreeGitDir(cwd: string): string {
+    const gitDir = this.gitDirs.get(cwd)
+    if (!gitDir) throw new Error(`Missing git dir for ${cwd}`)
+    return gitDir
+  }
+
+  listWorktrees(): GitWorktreeEntry[] {
+    return this.worktrees
+  }
+
+  listLiveWorktrees(): GitWorktreeEntry[] {
+    return this.liveWorktrees ?? this.worktrees
+  }
+
+  listLocalBranches(): string[] {
+    return []
+  }
+
+  listRemoteBranches(): string[] {
+    return []
+  }
+
+  readWorktreeStatus(cwd: string): GitWorktreeStatus {
+    return this.statuses.get(cwd) ?? { dirty: false, aheadCount: 0, currentCommit: null }
+  }
+
+  readStatus(): string {
+    return ''
+  }
+
+  createWorktree(): void {
+    throw new Error('not implemented')
+  }
+
+  removeWorktree(): void {
+    throw new Error('not implemented')
+  }
+
+  deleteBranch(): void {
+    throw new Error('not implemented')
+  }
+
+  mergeBranch(): void {
+    throw new Error('not implemented')
+  }
+
+  currentBranch(): string {
+    return 'main'
+  }
+
+  resolveCommit(): string {
+    return 'abc123'
+  }
+
+  createAndSwitchBranch(): void {}
+
+  readDiff(): string {
+    return ''
+  }
+
+  countUnsavedCommits(): number {
+    return 0
+  }
+
+  listUnpushedCommits(): UnpushedCommit[] {
+    return []
+  }
+
+  fetchBranch(_repoRoot: string, _remote: string, _branch: string): TryGitCommandResult {
+    return { ok: true, stdout: '' }
+  }
+
+  fastForwardMerge(_repoRoot: string, _ref: string): TryGitCommandResult {
+    return { ok: true, stdout: '' }
+  }
+
+  hardReset(_repoRoot: string, _ref: string): TryGitCommandResult {
+    return { ok: true, stdout: '' }
+  }
+}
+
+class FakeSessionGateway implements SessionGateway {
+  private readonly windows: SessionWindowSummary[]
+  constructor(windows: SessionWindowSummary[]) {
+    this.windows = windows
+  }
+
+  async getPaneId(_target: string): Promise<string> {
+    return '%0'
+  }
+
+  async createParkedPane(_opts: {
+    sessionName: string
+    parkingWindow: string
+    cwd: string
+    command: string
+  }): Promise<string> {
+    return '%99'
+  }
+
+  async swapPanes(_source: string, _destination: string): Promise<void> {}
+
+  async killPane(_target: string): Promise<void> {}
+
+  async ensureServer(): Promise<void> {
+    throw new Error('not implemented')
+  }
+
+  async ensureSession(): Promise<void> {
+    throw new Error('not implemented')
+  }
+
+  async hasWindow(): Promise<boolean> {
+    throw new Error('not implemented')
+  }
+
+  async killWindow(): Promise<void> {
+    throw new Error('not implemented')
+  }
+
+  async createWindow(): Promise<void> {
+    throw new Error('not implemented')
+  }
+
+  async splitWindow(): Promise<void> {
+    throw new Error('not implemented')
+  }
+
+  async runCommand(): Promise<void> {
+    throw new Error('not implemented')
+  }
+
+  async selectPane(): Promise<void> {
+    throw new Error('not implemented')
+  }
+
+  async focusWindow(_sessionName: string, _windowName: string): Promise<void> {}
+
+  async listWindows(): Promise<SessionWindowSummary[]> {
+    return this.windows
+  }
+}
+
+class FakePortProbe implements PortProbe {
+  readonly calls: number[] = []
+
+  private readonly listening: Set<number>
+  private readonly onProbe?: (port: number) => Promise<void> | void
+  constructor(listening = new Set<number>(), onProbe?: (port: number) => Promise<void> | void) {
+    this.listening = listening
+    this.onProbe = onProbe
+  }
+
+  async isListening(port: number): Promise<boolean> {
+    this.calls.push(port)
+    await this.onProbe?.(port)
+    return this.listening.has(port)
+  }
+}
+
+function deferred(): Deferred {
+  let resolve!: () => void
+  return {
+    promise: new Promise<void>((res) => {
+      resolve = res
+    }),
+    resolve,
+  }
+}
+
+const TEST_CONFIG: ProjectConfig = {
+  name: 'Project',
+  multiplexer: 'tmux',
+  workspace: {
+    mainBranch: 'main',
+    worktreeRoot: '__worktrees',
+    worktrees: { root: '__worktrees' },
+    defaultAgent: 'claude',
+    autoPull: { enabled: false, intervalSeconds: 300 },
+  },
+  exposure: { local: { provider: 'loopback', autoExpose: 'all' } },
+  profiles: {
+    default: {
+      runtime: 'host',
+      envPassthrough: [],
+      panes: [],
+    },
+  },
+  agents: {},
+  services: [
+    {
+      name: 'frontend',
+      portEnv: 'FRONTEND_PORT',
+      urlTemplate: 'http://127.0.0.1:${FRONTEND_PORT}',
+    },
+  ],
+  startupEnvs: {},
+  integrations: {
+    github: { linkedRepos: [], autoRemoveOnMerge: false },
+    linear: { enabled: true, autoCreateWorktrees: false, createTicketOption: false },
+  },
+  providers: {},
+  lifecycleHooks: {},
+  autoName: null,
+  oneshot: { systemPrompt: '' },
+}
+
+describe('ReconciliationService', () => {
+  const tempDirs: string[] = []
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
+  })
+
+  it('reconciles managed worktrees into the runtime and removes stale entries', async () => {
+    const repoRoot = '/repo/project'
+    const managedPath = '/repo/project/__worktrees/feature-search'
+    const managedGitDir = await mkdtemp(join(tmpdir(), 'taskflow-reconcile-managed-'))
+    tempDirs.push(managedGitDir)
+
+    await writeWorktreeMeta(managedGitDir, {
+      schemaVersion: 1,
+      worktreeId: 'wt_feature',
+      branch: 'feature/search',
+      baseBranch: 'main',
+      createdAt: '2026-03-06T00:00:00.000Z',
+      profile: 'default',
+      agent: 'claude',
+      runtime: 'host',
+      startupEnvValues: {},
+      allocatedPorts: { FRONTEND_PORT: 3010 },
+    })
+    await writeWorktreePrs(managedGitDir, [
+      {
+        repo: 'org/repo',
+        number: 77,
+        state: 'open',
+        isDraft: false,
+        url: 'https://github.com/org/repo/pull/77',
+        updatedAt: '2026-03-06T00:05:00.000Z',
+        ciStatus: 'success',
+        ciChecks: [],
+        comments: [],
+      },
+    ])
+
+    const runtime = new ProjectRuntime()
+    runtime.upsertWorktree({
+      worktreeId: 'wt_stale',
+      branch: 'feature/stale',
+      path: '/repo/project/__worktrees/feature-stale',
+      runtime: 'host',
+    })
+
+    const git = new FakeGitGateway(
+      [
+        { path: repoRoot, branch: 'main', head: 'aaa111', detached: false, bare: false },
+        { path: managedPath, branch: 'feature/search', head: 'bbb222', detached: false, bare: false },
+      ],
+      new Map([[managedPath, managedGitDir]]),
+      new Map([[managedPath, { dirty: true, aheadCount: 2, currentCommit: 'bbb222' }]]),
+    )
+    const tmux = new FakeSessionGateway([
+      {
+        sessionName: buildProjectSessionName(repoRoot),
+        windowName: buildWorktreeWindowName('feature/search'),
+        paneCount: 3,
+      },
+    ])
+
+    const service = new ReconciliationService({
+      config: TEST_CONFIG,
+      git,
+      sessions: tmux,
+      portProbe: new FakePortProbe(new Set([3010])),
+      runtime,
+    })
+
+    await service.reconcile(repoRoot)
+
+    const state = runtime.getWorktree('wt_feature')
+    expect(state).not.toBeNull()
+    expect(state?.branch).toBe('feature/search')
+    expect(state?.baseBranch).toBe('main')
+    expect(state?.profile).toBe('default')
+    expect(state?.git.dirty).toBe(true)
+    expect(state?.git.aheadCount).toBe(2)
+    expect(state?.git.currentCommit).toBe('bbb222')
+    expect(state?.session.exists).toBe(true)
+    expect(state?.session.paneCount).toBe(3)
+    expect(state?.services).toEqual([
+      {
+        name: 'frontend',
+        port: 3010,
+        running: true,
+        url: 'http://127.0.0.1:3010',
+      },
+    ])
+    expect(state?.prs).toEqual([
+      {
+        repo: 'org/repo',
+        number: 77,
+        state: 'open',
+        isDraft: false,
+        url: 'https://github.com/org/repo/pull/77',
+        updatedAt: '2026-03-06T00:05:00.000Z',
+        ciStatus: 'success',
+        ciChecks: [],
+        comments: [],
+      },
+    ])
+    expect(runtime.getWorktree('wt_stale')).toBeNull()
+  })
+
+  it('ignores stale worktree registrations whose directory no longer exists', async () => {
+    // Reproduces the ENOENT add-flow crash: a git registration points at a directory
+    // that's gone. The service must complete the reconcile, never call git against the
+    // stale path, and not surface it in runtime state.
+    const repoRoot = '/repo/project'
+    const stalePath = '/repo/project/__worktrees/feature-stale-on-disk'
+    const livePath = '/repo/project/__worktrees/feature-live'
+    const liveGitDir = await mkdtemp(join(tmpdir(), 'taskflow-reconcile-live-'))
+    tempDirs.push(liveGitDir)
+
+    await writeWorktreeMeta(liveGitDir, {
+      schemaVersion: 1,
+      worktreeId: 'wt_live',
+      branch: 'feature/live',
+      createdAt: '2026-05-13T00:00:00.000Z',
+      profile: 'default',
+      agent: 'claude',
+      runtime: 'host',
+      startupEnvValues: {},
+      allocatedPorts: { FRONTEND_PORT: 3010 },
+    })
+
+    const runtime = new ProjectRuntime()
+    const mainEntry = { path: repoRoot, branch: 'main', head: 'aaa111', detached: false, bare: false }
+    const liveEntry = { path: livePath, branch: 'feature/live', head: 'bbb222', detached: false, bare: false }
+    const staleEntry = {
+      path: stalePath,
+      branch: 'feature/stale-on-disk',
+      head: 'ccc333',
+      detached: false,
+      bare: false,
+    }
+
+    const git = new FakeGitGateway(
+      [mainEntry, liveEntry, staleEntry],
+      new Map([
+        [livePath, liveGitDir],
+        // No mapping for stalePath — if the service ever calls resolveWorktreeGitDir
+        // on it, the fake throws and the test fails.
+      ]),
+      new Map([[livePath, { dirty: false, aheadCount: 0, currentCommit: 'bbb222' }]]),
+      [mainEntry, liveEntry], // listLiveWorktrees excludes the stale entry
+    )
+
+    const service = new ReconciliationService({
+      config: TEST_CONFIG,
+      git,
+      sessions: new FakeSessionGateway([]),
+      portProbe: new FakePortProbe(new Set([3010])),
+      runtime,
+    })
+
+    await service.reconcile(repoRoot)
+
+    expect(runtime.getWorktree('wt_live')).not.toBeNull()
+    expect(runtime.getWorktreeByBranch('feature/stale-on-disk')).toBeNull()
+  })
+
+  it('creates synthetic ids for unmanaged worktrees', async () => {
+    const repoRoot = '/repo/project'
+    const unmanagedPath = '/repo/project/__worktrees/unmanaged'
+
+    const runtime = new ProjectRuntime()
+    const git = new FakeGitGateway(
+      [
+        { path: repoRoot, branch: 'main', head: 'aaa111', detached: false, bare: false },
+        { path: unmanagedPath, branch: 'feature/unmanaged', head: 'ccc333', detached: false, bare: false },
+      ],
+      new Map([[unmanagedPath, unmanagedPath]]),
+      new Map([[unmanagedPath, { dirty: false, aheadCount: 0, currentCommit: 'ccc333' }]]),
+    )
+    const tmux = new FakeSessionGateway([])
+
+    const service = new ReconciliationService({
+      config: TEST_CONFIG,
+      git,
+      sessions: tmux,
+      portProbe: new FakePortProbe(),
+      runtime,
+    })
+
+    await service.reconcile(repoRoot)
+
+    const state = runtime.getWorktreeByBranch('feature/unmanaged')
+    expect(state).not.toBeNull()
+    expect(state?.worktreeId.startsWith('unmanaged:')).toBe(true)
+    expect(state?.profile).toBeNull()
+    expect(state?.agentName).toBeNull()
+    expect(state?.services).toEqual([])
+  })
+
+  it('coalesces concurrent reconcile calls and skips fresh repeats', async () => {
+    const repoRoot = '/repo/project'
+    const managedPath = '/repo/project/__worktrees/feature-fresh'
+    const managedGitDir = await mkdtemp(join(tmpdir(), 'taskflow-reconcile-fresh-'))
+    tempDirs.push(managedGitDir)
+
+    await writeWorktreeMeta(managedGitDir, {
+      schemaVersion: 1,
+      worktreeId: 'wt_fresh',
+      branch: 'feature/fresh',
+      createdAt: '2026-03-06T00:00:00.000Z',
+      profile: 'default',
+      agent: 'claude',
+      runtime: 'host',
+      startupEnvValues: {},
+      allocatedPorts: { FRONTEND_PORT: 3010 },
+    })
+
+    let probeCount = 0
+    const firstProbeReached = deferred()
+    const firstProbeRelease = deferred()
+    const secondProbeReached = deferred()
+    const secondProbeRelease = deferred()
+    let nowMs = 10_000
+    const portProbe = new FakePortProbe(new Set([3010]), async () => {
+      probeCount += 1
+      if (probeCount === 1) {
+        firstProbeReached.resolve()
+        await firstProbeRelease.promise
+        return
+      }
+      if (probeCount === 2) {
+        secondProbeReached.resolve()
+        await secondProbeRelease.promise
+        return
+      }
+      throw new Error(`unexpected port probe ${probeCount}`)
+    })
+    const runtime = new ProjectRuntime()
+    const git = new FakeGitGateway(
+      [
+        { path: repoRoot, branch: 'main', head: 'aaa111', detached: false, bare: false },
+        { path: managedPath, branch: 'feature/fresh', head: 'bbb222', detached: false, bare: false },
+      ],
+      new Map([[managedPath, managedGitDir]]),
+      new Map([[managedPath, { dirty: false, aheadCount: 0, currentCommit: 'bbb222' }]]),
+    )
+    const service = new ReconciliationService(
+      {
+        config: TEST_CONFIG,
+        git,
+        sessions: new FakeSessionGateway([]),
+        portProbe,
+        runtime,
+      },
+      {
+        freshnessMs: 1000,
+        now: () => nowMs,
+      },
+    )
+
+    const first = service.reconcile(repoRoot)
+    const second = service.reconcile(repoRoot)
+    await firstProbeReached.promise
+
+    expect(portProbe.calls).toEqual([3010])
+    firstProbeRelease.resolve()
+    await Promise.all([first, second])
+    expect(portProbe.calls).toEqual([3010])
+
+    await service.reconcile(repoRoot)
+    expect(portProbe.calls).toEqual([3010])
+
+    nowMs += 1001
+    const third = service.reconcile(repoRoot)
+    await secondProbeReached.promise
+    expect(portProbe.calls).toEqual([3010, 3010])
+    secondProbeRelease.resolve()
+    await third
+  })
+})

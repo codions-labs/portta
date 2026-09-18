@@ -1,0 +1,219 @@
+{
+  "database": {
+    "title": "Panel persistence",
+    "pass": {
+      "detail": "{{count}} migration(s) applied"
+    },
+    "warn": {
+      "detail": "PostgreSQL is unreachable; stored preferences are unavailable",
+      "fix": "portta db status"
+    }
+  },
+  "docker": {
+    "title": "Docker API",
+    "fail": {
+      "detail": "the panel cannot reach its socket proxy",
+      "fix": "portta web restart"
+    },
+    "pass": {
+      "detail": "reachable through the panel socket proxy"
+    }
+  },
+  "traefik": {
+    "title": "Traefik",
+    "fail": {
+      "notFound": "no gateway container found",
+      "state": "container is {{state}}",
+      "unhealthy": "container is unhealthy"
+    },
+    "warn": {
+      "starting": "health check is still starting"
+    },
+    "pass": {
+      "detail": "running ({{health}})"
+    }
+  },
+  "socket-proxy": {
+    "title": "Traefik socket proxy",
+    "fail": {
+      "state": "container is {{state}}",
+      "missing": "missing",
+      "fix": "portta up {{profile}}"
+    },
+    "pass": {
+      "detail": "running"
+    }
+  },
+  "network": {
+    "title": "Shared network",
+    "fail": {
+      "detail": "{{network}} does not exist",
+      "fix": "portta bootstrap"
+    },
+    "pass": {
+      "detail": "{{network}}: {{count}} container(s) attached"
+    }
+  },
+  "routes-off-network": {
+    "title": "Routed services off the shared network",
+    "fail": {
+      "fix": "attach them to the {{network}} network; see docs/product/guides/adopting-projects.md"
+    },
+    "pass": {
+      "title": "Routed services",
+      "detail": "every routed service is on the shared network"
+    }
+  },
+  "hostname-collision": {
+    "title": "Hostname collisions",
+    "fail": {
+      "fix": "give the projects distinct COMPOSE_PROJECT_NAMEs: portta namespace"
+    },
+    "pass": {
+      "title": "Hostnames",
+      "detail": "no collisions"
+    }
+  },
+  "split-working-dir": {
+    "title": "Environment '{{name}}' runs from two directories",
+    "warn": {
+      "fix": "two checkouts share a COMPOSE_PROJECT_NAME; give one of them another name (portta namespace)"
+    }
+  },
+  "port-conflict": {
+    "title": "Published port conflicts",
+    "warn": {
+      "fix": "stop one of the containers, or move it off the port"
+    },
+    "pass": {
+      "title": "Published ports",
+      "detail": "no port is claimed twice"
+    }
+  },
+  "gateway-ports": {
+    "title": "Gateway ports taken by other containers",
+    "warn": {
+      "fix": "stop the container, or change PORTTA_HTTP_PORT / PORTTA_HTTPS_PORT"
+    }
+  },
+  "unhealthy": {
+    "title": "Unhealthy containers",
+    "warn": {
+      "fix": "open the container logs"
+    },
+    "pass": {
+      "title": "Container health",
+      "detail": "nothing is unhealthy"
+    }
+  },
+  "stale-bridges": {
+    "title": "Stale access bridges",
+    "warn": {
+      "detail": "{{count}} bridge(s) expired or stopped",
+      "fix": "portta access gc"
+    }
+  },
+  "public": {
+    "title": "Public access",
+    "warn": {
+      "detail": "HTTP services are reachable on {{domain}}",
+      "fix": "portta public disable turns this off"
+    }
+  },
+  "acme-email": {
+    "title": "ACME",
+    "fail": {
+      "detail": "TLS_MODE=acme without ACME_EMAIL",
+      "fix": "set ACME_EMAIL in Settings"
+    }
+  },
+  "bind-address": {
+    "title": "Bind address",
+    "fail": {
+      "detail": "the private profile is bound to every interface",
+      "fix": "set PORTTA_BIND_ADDRESS to the VPN address, or enable Tailscale"
+    }
+  },
+  "aliases": {
+    "title": "Hostname aliases",
+    "pass": {
+      "detail": "{{count}} routed beside their derived hostname"
+    }
+  },
+  "aliases-dangling": {
+    "title": "Aliases pointing at a container that is gone",
+    "warn": {
+      "fix": "remove the alias, or set it again once the environment is back"
+    }
+  },
+  "shares-expired": {
+    "title": "Expired shares",
+    "warn": {
+      "fix": "portta share gc"
+    }
+  },
+  "shares-dangling": {
+    "title": "Shares pointing at a container that is gone",
+    "warn": {
+      "fix": "revoke them, or recreate them against the new container"
+    }
+  },
+  "shares": {
+    "title": "Temporary shares",
+    "pass": {
+      "detail": "{{count}} active, all with an expiry"
+    }
+  },
+  "traefik-verdict": {
+    "title": "Traefik's own view",
+    "warn": {
+      "detail": "not available",
+      "fix": "set PORTTA_DASHBOARD=true to let the panel read Traefik directly"
+    },
+    "pass": {
+      "detail": "{{count}} router(s), every routed service among them"
+    }
+  },
+  "traefik-no-router": {
+    "title": "Services Traefik never routed",
+    "fail": {
+      "fix": "check traefik.docker.network and that the container is on the shared network"
+    }
+  },
+  "traefik-router-status": {
+    "title": "Routers Traefik refused",
+    "fail": {
+      "fix": "open the router in the Traefik dashboard"
+    }
+  },
+  "panel-auth": {
+    "title": "Panel authentication",
+    "pass": {
+      "exposure": "Panel exposure"
+    },
+    "fail": {
+      "detail": "the panel is routed (expose: {{expose}}) with no credential in front of it",
+      "fix": "portta web auth set"
+    }
+  },
+  "panel-read-only": {
+    "title": "Panel is routed and writable",
+    "warn": {
+      "detail": "anyone who gets past the credential can stop and remove containers",
+      "fix": "portta web up --read-only"
+    }
+  },
+  "panel-auth-file": {
+    "title": "Panel middleware is out of step",
+    "warn": {
+      "detail": "{{file}} does not match the current settings",
+      "fix": "portta web auth apply"
+    }
+  },
+  "taskflow-host": {
+    "title": "Taskflow host daemon",
+    "pass": {
+      "detail": "reachable at {{url}}, serving {{count}} project(s)"
+    }
+  }
+}

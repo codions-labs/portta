@@ -1,0 +1,112 @@
+{
+  "title": "Repositórios",
+  "rowLabel": "repositório {{name}}",
+  "private": "privado",
+  "archived": "arquivado",
+  "noPath": "sem diretório neste host",
+  "instructionCount": "{{count}} arquivo(s) de instrução",
+  "provider": {
+    "local": "local"
+  },
+  "git": {
+    "notCollected": "ainda não escaneado",
+    "detached": "HEAD desanexado",
+    "changed": "{{count}} sem commit",
+    "clean": "limpo",
+    "ahead": "{{count}} à frente",
+    "behind": "{{count}} atrás",
+    "collected": "coletado {{time}}",
+    "stale": "mais antigo que o limite do coletor"
+  },
+  "pulls": {
+    "title": "Pull requests abertos",
+    "none": "Nenhum pull request aberto",
+    "notCollected": "Nenhum pull request foi coletado",
+    "notCollectedHint": "Rode portta repos scan --with-prs no host com o gh instalado e autenticado.",
+    "collectedFrom": "Coletado {{time}} de {{kind}}",
+    "approved": "aprovado",
+    "changesRequested": "alterações solicitadas",
+    "reviewRequested": "revisão solicitada",
+    "draft": "rascunho",
+    "checksFailing": "checks falhando",
+    "checksPending": "checks pendentes",
+    "checksPassing": "checks passando"
+  },
+  "instructions": {
+    "title": "Instruções",
+    "description": "Os arquivos que um agente lê antes de trabalhar, como o scan do host os encontrou.",
+    "empty": "Nenhum arquivo de instrução",
+    "emptyHint": "AGENTS.md, CLAUDE.md, GEMINI.md, CONVENTIONS.md, .cursor/rules/*.mdc e afins são coletados quando existem na raiz do repositório.",
+    "dirty": "sem commit",
+    "truncated": "acima de 64 KiB",
+    "overBound": "Este arquivo tem {{size}}, acima do limite de coleta",
+    "overBoundHint": "Só arquivos de até 64 KiB são coletados por inteiro. Abra-o no host.",
+    "audience": {
+      "any": "qualquer agente",
+      "claude": "Claude",
+      "cursor": "Cursor",
+      "copilot": "Copilot",
+      "gemini": "Gemini",
+      "cline": "Cline",
+      "windsurf": "Windsurf"
+    }
+  },
+  "detail": {
+    "title": "Repositório",
+    "inside": "dentro do projeto em {{path}}",
+    "directory": "Diretório",
+    "remote": "Remoto",
+    "noPath": "registrado sem diretório; o scan o casou pelo remoto"
+  },
+  "page": {
+    "notFound": "Nenhum repositório '{{id}}'",
+    "tabs": {
+      "overview": "Visão geral",
+      "commits": "Commits",
+      "instructions": "Instruções"
+    },
+    "environments": {
+      "title": "Ambientes",
+      "description": "Projetos Compose rodando a partir deste repositório, segundo o scan do host.",
+      "empty": "Nada está rodando a partir deste repositório"
+    },
+    "commits": {
+      "title": "Commits recentes",
+      "description": "Os últimos vinte, como metadados. Um diff é um link para o forge.",
+      "empty": "Nenhum commit coletado ainda",
+      "stale": "A lista é mais antiga que o limite do coletor."
+    },
+    "notScanned": "Este repositório ainda não foi escaneado",
+    "notScannedHint": "O watcher escaneia uma vez por minuto. Para fazer agora:",
+    "remove": "Desregistrar",
+    "removeTitle": "Desregistrar este repositório?",
+    "removeDescription": "Só o registro vai embora. Nada no disco, no GitHub ou em qualquer ambiente é tocado.",
+    "running": "{{running}}/{{total}} em execução"
+  },
+  "add": {
+    "button": "Adicionar repositório",
+    "title": "Adicionar um repositório a {{name}}",
+    "description": "Um repositório é uma decisão: nomeie-o aqui e o scan do host preenche os fatos do Git.",
+    "tabs": {
+      "discovered": "Neste host",
+      "manual": "Manualmente"
+    },
+    "discovered": {
+      "empty": "Todo repositório escaneado já está registrado",
+      "emptyHint": "O scan lista raízes git sob o Projects Home e sob os ambientes em execução. Rode portta repos scan no host, ou adicione um manualmente.",
+      "unavailable": "O índice do scan não pôde ser lido",
+      "reading": "Lendo o scan do host"
+    },
+    "manual": {
+      "name": "Nome",
+      "localPath": "Diretório no host",
+      "localPathHint": "Absoluto. O scan o lê na próxima passada.",
+      "remoteUrl": "URL do remoto",
+      "role": "Papel"
+    },
+    "role": {
+      "none": "Sem papel"
+    },
+    "add": "Adicionar"
+  }
+}

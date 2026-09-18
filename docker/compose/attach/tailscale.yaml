@@ -1,0 +1,70 @@
+# ============================================================================
+# Attachment: Traefik inside the Tailscale container's network namespace
+# ============================================================================
+# The default for the `remote-private` profile.
+#
+# `network_mode: service:tailscale` merges the two containers' network
+# namespaces, so Traefik listens directly on the node's tailnet address. No
+# port is published on the host at all: the gateway is unreachable from the
+# VPS's public interface, and reachable from the tailnet subject to your
+# Tailscale ACLs. See docs/development/adr/0007-tailscale-sidecar.md.
+#
+# Traefik keeps its access to the shared and control networks because the
+# Tailscale container joins them and the two share a namespace.
+#
+# Kernel networking (TS_USERSPACE=false) is required: userspace mode has no
+# real interface in the namespace, so an inbound connection would never reach
+# Traefik. That is what /dev/net/tun and NET_ADMIN are for.
+# ============================================================================
+
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.102.3
+    restart: unless-stopped
+    hostname: ${TAILSCALE_HOSTNAME:-portta}
+    networks:
+      - gateway
+      - control
+    ports:
+      # Loopback by default, so `curl` on the VPS itself works for debugging.
+      # The remote-public profile raises PORTTA_BIND_ADDRESS to 0.0.0.0,
+      # and these become the public listeners: Traefik has none of its own.
+      - "${PORTTA_BIND_ADDRESS:-127.0.0.1}:${PORTTA_HTTP_PORT:-80}:80"
+      - "${PORTTA_BIND_ADDRESS:-127.0.0.1}:${PORTTA_HTTPS_PORT:-443}:443"
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      # Persisting state across restarts keeps the node identity: and so the
+      # tailnet address and any Tailscale-issued certificate: stable.
+      TS_STATE_DIR: /var/lib/tailscale
+      # Authenticate once, then rely on persisted state. Without this a restart
+      # re-runs `tailscale up` and burns a non-reusable key.
+      TS_AUTH_ONCE: "true"
+      TS_USERSPACE: "false"
+      # Never let MagicDNS rewrite resolv.conf: Traefik shares this namespace
+      # and must keep resolving container names through Docker's resolver.
+      TS_ACCEPT_DNS: "false"
+      TS_HOSTNAME: ${TAILSCALE_HOSTNAME:-portta}
+      TS_EXTRA_ARGS: ${TS_EXTRA_ARGS:-}
+    volumes:
+      - ./state/tailscale:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    healthcheck:
+      test: ["CMD", "tailscale", "status", "--peers=false"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    labels:
+      traefik.enable: "false"
+      portta.managed: "true"
+      portta.component: tailscale
+
+  traefik:
+    network_mode: service:tailscale
+    depends_on:
+      tailscale:
+        condition: service_healthy

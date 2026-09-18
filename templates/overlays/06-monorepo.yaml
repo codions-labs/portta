@@ -1,0 +1,63 @@
+# ============================================================================
+# Monorepo: apps/ and services/ in one repository
+# ============================================================================
+# A monorepo is one Compose project with more services in it. Nothing about the
+# contract changes, and the gateway needs to know nothing about the layout.
+#
+#   repo/
+#     apps/web/          -> web
+#     apps/admin/        -> admin
+#     services/api/      -> api
+#     services/worker/   -> worker      (no HTTP; not routed)
+#     services/importer/ -> importer    (no HTTP; not routed)
+#     compose.yaml
+#     compose.portta.yaml   <- this file
+#
+#   -> http://<COMPOSE_PROJECT_NAME>-web.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>-admin.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>-api.localhost
+#
+# Build contexts, Dockerfiles and volumes stay exactly where they are. The
+# gateway never centralises any of that.
+#
+# Splitting one monorepo into several namespaces is possible: run separate
+# Compose projects per app: but it is rarely worth it: one namespace keeps the
+# services on a single private network, which is usually what they expect.
+# ============================================================================
+
+services:
+  web:
+    networks: [default, portta]
+    labels:
+      # Optional, and only useful because inference cannot get them right here:
+      # `portta.git.root` says where the repository actually starts when
+      # the Compose file is not at its root, and `portta.repo` gives the
+      # panel a repository link with no host-side Git at all. Delete both and
+      # everything behaves exactly as it does now.
+      # - "portta.repo=owner/monorepo"
+      # - "portta.git.root=/srv/dev/monorepo"
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-web.loadbalancer.server.port=3000"
+
+  admin:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-admin.loadbalancer.server.port=3000"
+
+  api:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api.loadbalancer.server.port=8000"
+
+  # worker and importer are absent on purpose: they serve no HTTP, so they need
+  # no networks and no labels. They keep running exactly as they did.
+
+networks:
+  portta:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}

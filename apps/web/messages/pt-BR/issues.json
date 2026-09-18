@@ -1,0 +1,168 @@
+{
+  "title": {
+    "label": "Título",
+    "saving": "Salvando…"
+  },
+  "markdown": {
+    "edit": "Editar",
+    "preview": "Prévia",
+    "bold": "Negrito",
+    "italic": "Itálico",
+    "heading": "Título",
+    "heading1": "Título 1",
+    "heading2": "Título 2",
+    "heading3": "Título 3",
+    "strike": "Riscado",
+    "code": "Código",
+    "codeBlock": "Bloco de código",
+    "link": "Link",
+    "linkText": "texto do link",
+    "quote": "Citação",
+    "list": "Lista",
+    "orderedList": "Lista numerada",
+    "check": "Lista de tarefas"
+  },
+  "heading": "Issues",
+  "description": "Lidas ao vivo do {{provider}}. O Portta não guarda uma cópia.",
+  "descriptionUnknown": "O trabalho deste projeto, lido ao vivo do provedor.",
+  "provider": {
+    "github": "GitHub",
+    "linear": "Linear",
+    "unknown": "o provedor"
+  },
+  "new": "Nova issue",
+  "search": "Buscar issues",
+  "reading": "Lendo issues…",
+  "state": {
+    "label": "Estado",
+    "open": "Abertas",
+    "closed": "Fechadas",
+    "all": "Todas"
+  },
+  "stateReason": {
+    "completed": "Concluída",
+    "not_planned": "Fora do plano"
+  },
+  "table": {
+    "state": "Estado",
+    "key": "Chave",
+    "title": "Título",
+    "labels": "Labels",
+    "assignees": "Responsáveis",
+    "comments": "Comentários",
+    "updated": "Atualizada",
+    "caption": "Issues deste projeto"
+  },
+  "more": "+{{count}}",
+  "empty": {
+    "open": "Nenhuma issue aberta",
+    "closed": "Nenhuma issue fechada",
+    "all": "Nenhuma issue",
+    "hint": "O que for aberto no provedor aparece aqui.",
+    "searchHint": "Nenhuma issue corresponde a esta busca."
+  },
+  "openOnProvider": "Abrir no {{provider}}",
+  "backToIssues": "Voltar para as issues",
+  "create": {
+    "title": "Nova issue",
+    "description": "Ela é aberta no {{provider}}, não guardada aqui.",
+    "titleField": "Título",
+    "bodyField": "Descrição",
+    "bodyPlaceholder": "O que precisa acontecer, e como alguém saberia que está pronto.",
+    "labels": "Labels",
+    "assignees": "Responsáveis",
+    "milestone": "Milestone",
+    "noMilestone": "Sem milestone",
+    "submit": "Abrir issue",
+    "vocabularyUnavailable": "Não foi possível ler labels, responsáveis e milestones; a issue ainda pode ser aberta sem eles.",
+    "noVocabulary": "Este provedor não tem nenhum."
+  },
+  "detail": {
+    "body": "Descrição",
+    "bodyEmpty": "Sem descrição.",
+    "editBody": "Editar descrição",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "comments": "Comentários",
+    "noComments": "Nenhum comentário ainda.",
+    "edited": "editado",
+    "commentPlaceholder": "Deixe um comentário",
+    "comment": "Comentar",
+    "close": "Fechar issue",
+    "closeCompleted": "Fechar como concluída",
+    "closeNotPlanned": "Fechar como fora do plano",
+    "reopen": "Reabrir issue",
+    "labels": "Labels",
+    "addLabels": "Adicionar labels",
+    "assignees": "Responsáveis",
+    "addAssignees": "Adicionar responsáveis",
+    "milestone": "Milestone",
+    "noMilestone": "Nenhum",
+    "author": "Autor",
+    "created": "Criada",
+    "updated": "Atualizada",
+    "environments": "Environments rodando",
+    "environmentsHint": "O que o Portta sabe e o {{provider}} não.",
+    "noEnvironments": "Nenhum environment está rodando para esta issue.",
+    "environmentRunning": "{{running}}/{{total}} rodando",
+    "environmentStopped": "Parado",
+    "unhealthy": "{{count}} com problema",
+    "sessions_one": "{{count}} sessão ativa",
+    "sessions_other": "{{count}} sessões ativas",
+    "worktrees": "Worktrees",
+    "noWorktrees": "Nenhuma worktree está ligada a esta issue.",
+    "run": "Run",
+    "pr": "Pull request",
+    "source": {
+      "manual": "vinculado à mão",
+      "label": "por uma label",
+      "branch": "pelo branch",
+      "namespace": "pelo namespace"
+    }
+  },
+  "run": {
+    "cta": "Trabalhar nesta issue",
+    "title": "Trabalhar nesta issue",
+    "description": "Cria uma worktree e inicia uma Run ACP. Fechar esta página não a interrompe.",
+    "agent": "Agente",
+    "type": "Tipo da branch",
+    "branch": "Branch",
+    "branchHint": "De {{pattern}}. Altere se precisar.",
+    "submit": "Iniciar Run",
+    "unavailable": "Este projeto não tem workspace Taskflow, ou nenhum agente está configurado."
+  },
+  "failed": "A alteração foi recusada",
+  "trouble": {
+    "noProvider": {
+      "title": "Este projeto não tem provedor de issues",
+      "hint": "Adicione um repositório com remote do GitHub, ou escolha o Linear nas configurações do projeto."
+    },
+    "daemon": {
+      "title": "O host não consegue alcançar um provedor",
+      "hint": "O daemon do host precisa estar rodando, e o `gh` precisa estar instalado nele."
+    },
+    "signedOut": {
+      "title": "Ninguém está autenticado no host",
+      "hint": "Autentique-se no host onde o daemon roda."
+    },
+    "rateLimited": {
+      "title": "O provedor está limitando as chamadas deste host",
+      "hint": "Nada foi perdido. Tente de novo em instantes."
+    },
+    "notFound": {
+      "title": "Não existe, ou não está visível",
+      "hint": "O repositório ou a issue não existe, ou a conta autenticada não consegue vê-la."
+    }
+  },
+  "overview": {
+    "title": "Atribuídas a você",
+    "empty": "Nada está atribuído a você.",
+    "unknown": "Nenhum provedor pôde ser alcançado, então não dá para saber o que está atribuído a você.",
+    "unknownHint": "Isso não é o mesmo que não ter nada para fazer."
+  },
+  "projectCard": {
+    "title": "Issues abertas",
+    "all": "Todas as issues",
+    "empty": "Nenhuma issue aberta"
+  }
+}

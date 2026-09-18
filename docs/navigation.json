@@ -1,0 +1,682 @@
+{
+  "groups": [
+    {
+      "title": "Getting Started",
+      "category": "",
+      "audience": "user",
+      "sequential": true,
+      "pages": [
+        {
+          "source": "docs/product/getting-started/install.md",
+          "slug": "install",
+          "description": "Install Portta, start the gateway and open the panel."
+        },
+        {
+          "source": "docs/product/getting-started/first-environment.md",
+          "slug": "first-environment",
+          "description": "Integrate and start your first Compose environment."
+        },
+        {
+          "source": "docs/product/getting-started/first-project.md",
+          "slug": "first-project",
+          "description": "Find your Project and its running environment in the panel."
+        }
+      ]
+    },
+    {
+      "title": "Guides",
+      "category": "Projects and environments",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/product/guides/web-ui.md",
+          "slug": "web-ui",
+          "description": "Open the panel, navigate its pages and inspect live state."
+        },
+        {
+          "source": "docs/product/guides/adopting-projects.md",
+          "slug": "adopting-projects",
+          "description": "Add a Portta overlay to an existing Compose application."
+        },
+        {
+          "source": "docs/product/guides/projects.md",
+          "slug": "projects",
+          "description": "Organize repositories and environments into Projects."
+        },
+        {
+          "source": "docs/product/guides/environments.md",
+          "slug": "environments",
+          "description": "Inspect and operate an isolated Compose environment."
+        },
+        {
+          "source": "docs/product/guides/services.md",
+          "slug": "services",
+          "description": "Inspect HTTP services, containers and their endpoints."
+        },
+        {
+          "source": "docs/product/guides/container-console.md",
+          "slug": "container-console",
+          "description": "Open a scoped interactive shell in a running project container."
+        },
+        {
+          "source": "docs/product/guides/local-development.md",
+          "slug": "local-development",
+          "description": "Use the gateway for applications on your workstation."
+        },
+        {
+          "source": "docs/product/guides/host-daemon.md",
+          "slug": "host-daemon",
+          "description": "Run the host daemon that modules needing git, tmux or agents use, and let the panel reach it."
+        },
+        {
+          "source": "docs/product/guides/monorepos.md",
+          "slug": "monorepos",
+          "description": "Keep worktrees and multi-service repositories isolated."
+        }
+      ]
+    },
+    {
+      "title": "Guides",
+      "category": "Domains and networking",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/product/guides/dns-and-tls.md",
+          "slug": "dns-and-tls",
+          "description": "Configure DNS records and certificates for project hostnames."
+        },
+        {
+          "source": "docs/product/guides/local-domains.md",
+          "slug": "local-domains",
+          "description": "Resolve a custom local domain such as *.portta.test to this machine."
+        },
+        {
+          "source": "docs/product/guides/cloudflare.md",
+          "slug": "cloudflare",
+          "description": "Automate DNS records and DNS-01 challenges with scoped credentials."
+        },
+        {
+          "source": "docs/product/guides/firewall.md",
+          "slug": "firewall",
+          "description": "Control gateway listeners and understand Docker firewall rules."
+        }
+      ]
+    },
+    {
+      "title": "Guides",
+      "category": "Remote access",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/product/guides/remote-development.md",
+          "slug": "remote-development",
+          "description": "Choose private or public access for a remote host."
+        },
+        {
+          "source": "docs/product/guides/remote-bootstrap.md",
+          "slug": "remote-bootstrap",
+          "description": "Prepare a remote host over SSH."
+        },
+        {
+          "source": "docs/product/guides/ssh-keys.md",
+          "slug": "ssh-keys",
+          "description": "Generate, import, test and remove instance-owned SSH credentials."
+        },
+        {
+          "source": "docs/product/guides/tailscale.md",
+          "slug": "tailscale",
+          "description": "Attach the gateway to your private tailnet."
+        },
+        {
+          "source": "docs/product/guides/tailscale-services.md",
+          "slug": "tailscale-services",
+          "description": "Give selected services stable private addresses."
+        },
+        {
+          "source": "docs/product/guides/cloudflare-tunnel.md",
+          "slug": "cloudflare-tunnel",
+          "description": "Publish HTTPS routes through a Cloudflare Tunnel."
+        },
+        {
+          "source": "docs/product/guides/public-access.md",
+          "slug": "public-access",
+          "description": "Enable deliberate internet access to selected routes."
+        },
+        {
+          "source": "docs/product/guides/remote-tunnels.md",
+          "slug": "remote-tunnels",
+          "description": "Reach a remote host through SSH and private bridges."
+        }
+      ]
+    },
+    {
+      "title": "Guides",
+      "category": "Authentication and sharing",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/product/guides/authentication.md",
+          "slug": "authentication",
+          "description": "Choose disabled or required authentication, and manage accounts, sessions and tokens."
+        },
+        {
+          "source": "docs/product/guides/sharing.md",
+          "slug": "sharing",
+          "description": "Share a service with an expiry and optional protection."
+        }
+      ]
+    },
+    {
+      "title": "Guides",
+      "category": "Databases and TCP services",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/product/guides/database-access.md",
+          "slug": "database-access",
+          "description": "Connect to a project's database or cache from a terminal, a GUI bridge or a private address."
+        },
+        {
+          "source": "docs/product/guides/tcp-access.md",
+          "slug": "tcp-access",
+          "description": "Open temporary loopback bridges to private services."
+        },
+        {
+          "source": "docs/product/guides/tcp-routing.md",
+          "slug": "tcp-routing",
+          "description": "Route supported TCP protocols by hostname."
+        }
+      ]
+    },
+    {
+      "title": "Guides",
+      "category": "Issues and integrations",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/product/guides/issues.md",
+          "slug": "issues",
+          "description": "Read and write the issues a Project's work lives in, on GitHub or Linear."
+        },
+        {
+          "source": "docs/product/guides/github.md",
+          "slug": "github",
+          "description": "Connect GitHub through the gh CLI on the host."
+        },
+        {
+          "source": "docs/product/guides/use-api.md",
+          "slug": "use-api",
+          "description": "Authenticate API clients and find the endpoint contract."
+        }
+      ]
+    },
+    {
+      "title": "Guides",
+      "category": "Maintenance and troubleshooting",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/product/guides/panel-settings.md",
+          "slug": "panel-settings",
+          "description": "Configure gateway and panel settings through the interface."
+        },
+        {
+          "source": "docs/product/guides/update.md",
+          "slug": "update",
+          "description": "Update an installation while preserving its configuration and state."
+        },
+        {
+          "source": "docs/product/guides/backup-restore.md",
+          "slug": "backup-restore",
+          "description": "Back up and restore panel decisions and credentials."
+        },
+        {
+          "source": "docs/product/guides/troubleshooting.md",
+          "slug": "troubleshooting",
+          "description": "Diagnose routes, DNS, certificates and container reachability."
+        }
+      ]
+    },
+    {
+      "title": "Reference",
+      "category": "",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/product/reference/configuration.md",
+          "slug": "configuration",
+          "description": "Look up installation variables, defaults and configuration ownership."
+        },
+        {
+          "source": "docs/product/reference/installation-reference.md",
+          "slug": "installation-reference",
+          "description": "Look up unattended installation and version-selection options."
+        },
+        {
+          "source": "docs/product/reference/cli.md",
+          "slug": "cli",
+          "description": "Look up commands, flags, streams, exit codes and JSON output."
+        },
+        {
+          "slug": "api",
+          "kind": "api",
+          "title": "API reference",
+          "description": "Explore the OpenAPI contract and try requests against this panel."
+        },
+        {
+          "source": "docs/product/reference/mcp.md",
+          "slug": "mcp",
+          "description": "Connect agents over stdio and consult the tool contract."
+        },
+        {
+          "source": "docs/product/reference/host-metrics.md",
+          "slug": "host-metrics",
+          "description": "Inspect host and project resource collection and snapshots."
+        },
+        {
+          "source": "docs/product/reference/host-readiness.md",
+          "slug": "host-readiness",
+          "description": "Check which host tools are installed and whether they are usable."
+        },
+        {
+          "source": "docs/product/reference/compatibility.md",
+          "slug": "compatibility",
+          "description": "Check supported platforms, images and measured overhead."
+        },
+        {
+          "slug": "changelog",
+          "source": "CHANGELOG.md",
+          "description": "Released changes and upgrade notes."
+        },
+        {
+          "source": "docs/product/reference/portta-directory.md",
+          "slug": "portta-directory",
+          "description": "The project's own configuration: what travels with the repository and what belongs to the host."
+        }
+      ]
+    },
+    {
+      "title": "Concepts",
+      "category": "",
+      "audience": "user",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/product/concepts/architecture.md",
+          "slug": "architecture",
+          "description": "Understand the gateway components and lifecycle boundaries."
+        },
+        {
+          "source": "docs/product/concepts/project-model.md",
+          "slug": "project-model",
+          "description": "Understand Projects, repositories, environments, services and endpoints."
+        },
+        {
+          "source": "docs/product/concepts/addresses-and-access.md",
+          "slug": "addresses-and-access",
+          "description": "Understand project domains, panel addresses and exposure decisions."
+        },
+        {
+          "source": "docs/product/concepts/networking.md",
+          "slug": "networking",
+          "description": "Understand Docker networks, namespaces and hostname routing."
+        },
+        {
+          "source": "docs/product/concepts/persistence.md",
+          "slug": "persistence",
+          "description": "Understand durable panel decisions and live runtime observations."
+        },
+        {
+          "source": "docs/product/concepts/security.md",
+          "slug": "security",
+          "description": "Understand trust boundaries, isolation, secrets and residual risks."
+        },
+        {
+          "source": "docs/product/concepts/work-and-issues.md",
+          "slug": "work-and-issues",
+          "description": "Understand why work lives in an external provider and what Portta adds to it."
+        },
+        {
+          "source": "docs/product/concepts/working-agreement.md",
+          "slug": "working-agreement",
+          "description": "Understand the method agents and people share here, and how it is distributed as a skill."
+        }
+      ]
+    },
+    {
+      "title": "Development",
+      "category": "",
+      "audience": "developer",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/development/development-setup.md",
+          "slug": "development-setup",
+          "description": "Run a checkout and the demo with hot reload, with or without authentication."
+        },
+        {
+          "source": "docs/development/panel-architecture.md",
+          "slug": "panel-architecture",
+          "description": "Understand the Next.js panel and its server boundaries."
+        },
+        {
+          "source": "docs/development/monorepo.md",
+          "slug": "monorepo",
+          "description": "Find workspace ownership and learn where new code belongs."
+        },
+        {
+          "source": "docs/development/host-daemon.md",
+          "slug": "host-daemon-development",
+          "description": "The host daemon, the panel's module proxy and WebSocket bridge, and how to run them."
+        },
+        {
+          "source": "docs/development/database-development.md",
+          "slug": "database-development",
+          "description": "Change schemas and validate generated migrations."
+        },
+        {
+          "source": "docs/development/scripts.md",
+          "slug": "scripts",
+          "description": "Understand the remaining shell contract and how to add commands."
+        },
+        {
+          "source": "docs/development/testing.md",
+          "slug": "testing",
+          "description": "Choose targeted tests and integration or release validation."
+        },
+        {
+          "source": "docs/development/publish-cli.md",
+          "slug": "publish-cli",
+          "description": "Publish the Portta CLI to npm with release validation and verification."
+        },
+        {
+          "source": "docs/development/design-system.md",
+          "slug": "design-system",
+          "description": "Use the panel tokens, components and accessibility conventions."
+        },
+        {
+          "source": "docs/development/documentation.md",
+          "slug": "documentation",
+          "description": "Add canonical content and validate every documentation interface."
+        }
+      ]
+    },
+    {
+      "title": "Development",
+      "category": "Architecture decisions",
+      "audience": "developer",
+      "sequential": false,
+      "pages": [
+        {
+          "source": "docs/development/adr/0001-decoupled-infrastructure.md",
+          "slug": "adr/0001-decoupled-infrastructure",
+          "description": "0001. The gateway is infrastructure, not a parent project."
+        },
+        {
+          "source": "docs/development/adr/0002-docker-socket-proxy.md",
+          "slug": "adr/0002-docker-socket-proxy",
+          "description": "0002. Traefik reaches Docker through a filtered read-only proxy."
+        },
+        {
+          "source": "docs/development/adr/0003-traefik-static-config-via-env.md",
+          "slug": "adr/0003-traefik-static-config-via-env",
+          "description": "0003. Traefik static configuration lives in environment variables."
+        },
+        {
+          "source": "docs/development/adr/0004-pinned-versions.md",
+          "slug": "adr/0004-pinned-versions",
+          "description": "0004. Every component image pins an explicit version."
+        },
+        {
+          "source": "docs/development/adr/0005-hostname-convention.md",
+          "slug": "adr/0005-hostname-convention",
+          "description": "0005. Hostnames are derived from the labels Compose already injects."
+        },
+        {
+          "source": "docs/development/adr/0006-compose-project-name-as-namespace.md",
+          "slug": "adr/0006-compose-project-name-as-namespace",
+          "description": "0006. `COMPOSE_PROJECT_NAME` is the namespace for parallel environments."
+        },
+        {
+          "source": "docs/development/adr/0007-tailscale-sidecar.md",
+          "slug": "adr/0007-tailscale-sidecar",
+          "description": "0007. Traefik runs inside the Tailscale container's network namespace."
+        },
+        {
+          "source": "docs/development/adr/0008-web-panel-socket-proxy.md",
+          "slug": "adr/0008-web-panel-socket-proxy",
+          "description": "0008. The web panel gets its own Docker socket proxy."
+        },
+        {
+          "source": "docs/development/adr/0009-tcp-routing-by-hostname.md",
+          "slug": "adr/0009-tcp-routing-by-hostname",
+          "description": "0009. Databases are told apart by hostname, with TLS terminated at the gateway."
+        },
+        {
+          "source": "docs/development/adr/0010-git-collected-on-the-host.md",
+          "slug": "adr/0010-git-collected-on-the-host",
+          "description": "0010. Git is collected on the host, and the panel only reads the result."
+        },
+        {
+          "source": "docs/development/adr/0011-bounded-traefik-write-surface.md",
+          "slug": "adr/0011-bounded-traefik-write-surface",
+          "description": "0011. The panel has a bounded Traefik write surface."
+        },
+        {
+          "source": "docs/development/adr/0012-routed-panel-access-requires-authentication.md",
+          "slug": "adr/0012-routed-panel-access-requires-authentication",
+          "description": "0012. Routed panel access requires authentication."
+        },
+        {
+          "source": "docs/development/adr/0013-what-the-panel-persists.md",
+          "slug": "adr/0013-what-the-panel-persists",
+          "description": "0013. The panel persists decisions, not runtime observations."
+        },
+        {
+          "source": "docs/development/adr/0014-monorepo-and-the-typescript-cli.md",
+          "slug": "adr/0014-monorepo-and-the-typescript-cli",
+          "description": "0014. The repository is an npm workspace with one TypeScript CLI."
+        },
+        {
+          "source": "docs/development/adr/0015-node-is-required-on-the-host.md",
+          "slug": "adr/0015-node-is-required-on-the-host",
+          "description": "0015. Node 24 is required on the host."
+        },
+        {
+          "source": "docs/development/adr/0016-state-that-could-be-shared.md",
+          "slug": "adr/0016-state-that-could-be-shared",
+          "description": "0016. State that could be shared, and what must never be."
+        },
+        {
+          "source": "docs/development/adr/0017-no-docker-sdk.md",
+          "slug": "adr/0017-no-docker-sdk",
+          "description": "0017. The panel speaks the Docker Engine API directly."
+        },
+        {
+          "source": "docs/development/adr/0018-github-issues-through-the-gh-cli.md",
+          "slug": "adr/0018-github-issues-through-the-gh-cli",
+          "description": "0018. GitHub Issues go through the `gh` CLI on the host."
+        },
+        {
+          "source": "docs/development/adr/0019-compose-files-live-under-docker.md",
+          "slug": "adr/0019-compose-files-live-under-docker",
+          "description": "0019. The compose files live under `docker/compose/`, one directory per axis."
+        },
+        {
+          "source": "docs/development/adr/0020-installer-and-portta-home.md",
+          "slug": "adr/0020-installer-and-portta-home",
+          "description": "0020. An installation is one runtime directory."
+        },
+        {
+          "source": "docs/development/adr/0021-panel-access-modes.md",
+          "slug": "adr/0021-panel-access-modes",
+          "description": "0021. Panel access is an explicit decision."
+        },
+        {
+          "source": "docs/development/adr/0022-project-domain-modes.md",
+          "slug": "adr/0022-project-domain-modes",
+          "description": "0022. The base domain is a mode, and a host with no domain gets one from its address."
+        },
+        {
+          "source": "docs/development/adr/0023-flat-hostname-labels.md",
+          "slug": "adr/0023-flat-hostname-labels",
+          "description": "0023. A service's whole name lives in one DNS label."
+        },
+        {
+          "source": "docs/development/adr/0024-capabilities-providers-endpoints.md",
+          "slug": "adr/0024-capabilities-providers-endpoints",
+          "description": "0024. A service has endpoints, not an access mode."
+        },
+        {
+          "source": "docs/development/adr/0025-cloudflare-tunnel.md",
+          "slug": "adr/0025-cloudflare-tunnel",
+          "description": "0025. One tunnel, one wildcard rule, and Traefik keeps routing."
+        },
+        {
+          "source": "docs/development/adr/0026-applying-settings-from-the-panel.md",
+          "slug": "adr/0026-applying-settings-from-the-panel",
+          "description": "0026. Applying panel settings uses one isolated applier."
+        },
+        {
+          "source": "docs/development/adr/0027-forward-authentication-service.md",
+          "slug": "adr/0027-forward-authentication-service",
+          "description": "0027. Protected application hosts use ForwardAuth."
+        },
+        {
+          "source": "docs/development/adr/0028-operational-images-live-under-docker.md",
+          "slug": "adr/0028-operational-images-live-under-docker",
+          "description": "0028. Operational image contexts live under `docker/images/`."
+        },
+        {
+          "source": "docs/development/adr/0029-product-behavior-lives-in-typescript.md",
+          "slug": "adr/0029-product-behavior-lives-in-typescript",
+          "description": "0029. Product behavior lives in TypeScript."
+        },
+        {
+          "source": "docs/development/adr/0030-the-panel-and-a-project-lifecycle.md",
+          "slug": "adr/0030-the-panel-and-a-project-lifecycle",
+          "description": "0030. The panel may operate a project, without owning it."
+        },
+        {
+          "source": "docs/development/adr/0031-projects-home-and-project.md",
+          "slug": "adr/0031-projects-home-and-project",
+          "description": "0031. Projects, repositories and environments are distinct."
+        },
+        {
+          "source": "docs/development/adr/0032-portta-development-model.md",
+          "slug": "adr/0032-portta-development-model",
+          "description": "0032. The Portta development model."
+        },
+        {
+          "source": "docs/development/adr/0034-child-process-output.md",
+          "slug": "adr/0034-child-process-output",
+          "description": "0034. A child process is never silent for long."
+        },
+        {
+          "source": "docs/development/adr/0035-authentication-lives-in-the-panel.md",
+          "slug": "adr/0035-authentication-lives-in-the-panel",
+          "description": "0035. The panel authenticates its own requests."
+        },
+        {
+          "source": "docs/development/adr/0036-next-app-router-and-the-custom-server.md",
+          "slug": "adr/0036-next-app-router-and-the-custom-server",
+          "description": "0036. The panel is a Next application on a server of its own."
+        },
+        {
+          "source": "docs/development/adr/0037-sqlite-is-the-panel-database.md",
+          "slug": "adr/0037-sqlite-is-the-panel-database",
+          "description": "0037. The panel's database is SQLite, through Drizzle."
+        },
+        {
+          "source": "docs/development/adr/0038-roles-and-project-access.md",
+          "slug": "adr/0038-roles-and-project-access",
+          "description": "0038. Four roles, and access by Project."
+        },
+        {
+          "source": "docs/development/adr/0039-personal-api-tokens.md",
+          "slug": "adr/0039-personal-api-tokens",
+          "description": "0039. A token belongs to a person, and never exceeds them."
+        },
+        {
+          "source": "docs/development/adr/0040-installation-environment-contract.md",
+          "slug": "adr/0040-installation-environment-contract",
+          "description": "0040. The installation environment is the configuration contract."
+        },
+        {
+          "source": "docs/development/adr/0042-portta-owned-ssh-keys.md",
+          "slug": "adr/0042-portta-owned-ssh-keys",
+          "description": "0042. Portta-owned SSH keys use a narrow panel boundary."
+        },
+        {
+          "source": "docs/development/adr/0043-container-console-over-docker-exec.md",
+          "slug": "adr/0043-container-console-over-docker-exec",
+          "description": "0043. Container consoles use Docker exec through the panel proxy."
+        },
+        {
+          "source": "docs/development/adr/0044-example-projects-live-in-projects-home.md",
+          "slug": "adr/0044-example-projects-live-in-projects-home",
+          "description": "0044. Example projects live in Projects Home."
+        },
+        {
+          "source": "docs/development/adr/0046-official-modules-are-composed-at-build-time.md",
+          "slug": "adr/0046-official-modules-are-composed-at-build-time",
+          "description": "0046. Official modules are composed at build time."
+        },
+        {
+          "source": "docs/development/adr/0047-host-daemon-and-panel-proxy.md",
+          "slug": "adr/0047-host-daemon-and-panel-proxy",
+          "description": "0047. A host daemon does the host's work, and the panel reaches it through a proxy."
+        },
+        {
+          "source": "docs/development/adr/0048-module-endpoints-through-traefik.md",
+          "slug": "adr/0048-module-endpoints-through-traefik",
+          "description": "0048. A module exposes endpoints through Traefik, in one bounded file of its own."
+        },
+        {
+          "source": "docs/development/adr/0049-host-state-in-sqlite.md",
+          "slug": "adr/0049-host-state-in-sqlite",
+          "description": "0049. Host daemon state lives in SQLite under `PORTTA_HOME/state/host`."
+        },
+        {
+          "source": "docs/development/adr/0050-work-lives-in-an-external-provider.md",
+          "slug": "adr/0050-work-lives-in-an-external-provider",
+          "description": "0050. Work lives in an external provider, and Portta points at it."
+        },
+        {
+          "source": "docs/development/adr/0051-authentication-is-optional-inside-a-trusted-network.md",
+          "slug": "adr/0051-authentication-is-optional-inside-a-trusted-network",
+          "description": "0051. Authentication is optional inside a network that already authenticates."
+        },
+        {
+          "source": "docs/development/adr/0052-the-portta-directory-is-the-project-contract.md",
+          "slug": "adr/0052-the-portta-directory-is-the-project-contract",
+          "description": "0052. The `.portta` directory is the project's contract, and it never describes a host."
+        },
+        {
+          "source": "docs/development/adr/0053-portta-is-spec-aware-not-spec-owned.md",
+          "slug": "adr/0053-portta-is-spec-aware-not-spec-owned",
+          "description": "0053. Portta is spec-aware, not spec-owned."
+        },
+        {
+          "source": "docs/development/adr/0054-mcp-tools-are-shared-and-served-over-http.md",
+          "slug": "adr/0054-mcp-tools-are-shared-and-served-over-http",
+          "description": "0054. The MCP tools are shared, and the panel serves them over HTTP."
+        },
+        {
+          "source": "docs/development/adr/README.md",
+          "slug": "adr",
+          "description": "Architecture decision records."
+        }
+      ]
+    }
+  ],
+  "aliases": {}
+}

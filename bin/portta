@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+
+import { existsSync, readdirSync, statSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { spawnSync } from 'node:child_process'
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const cli = join(root, 'packages/cli/dist/cli.js')
+const watched = [
+  'packages/cli/src',
+  'packages/cli/scripts',
+  'packages/cli/package.json',
+  'packages/core/src',
+  'packages/contracts/src',
+  'packages/host/src',
+].map((entry) => join(root, entry))
+
+function newest(path) {
+  if (!existsSync(path)) return 0
+  const stat = statSync(path)
+  if (!stat.isDirectory()) return stat.mtimeMs
+  return Math.max(stat.mtimeMs, ...readdirSync(path).map((entry) => newest(join(path, entry))))
+}
+
+// A fresh clone has no dependencies yet, and the build below needs them
+// (esbuild and tsx). Installing them here is what lets `just dev` be the first
+// command after `git clone`.
+if (!existsSync(join(root, 'node_modules/.package-lock.json'))) {
+  process.stderr.write('installing dependencies (npm ci)\n')
+  const installed = spawnSync('npm', ['ci'], { cwd: root, stdio: 'inherit' })
+  if (installed.error) throw installed.error
+  if (installed.status !== 0) process.exit(installed.status ?? 1)
+}
+
+if (!existsSync(cli) || watched.some((path) => newest(path) > newest(cli))) {
+  process.stderr.write('building the TypeScript CLI\n')
+  const built = spawnSync('npm', ['run', 'build', '--workspace=@codions/portta'], { cwd: root, stdio: 'inherit' })
+  if (built.error) throw built.error
+  if (built.status !== 0) process.exit(built.status ?? 1)
+}
+
+const child = spawnSync(process.execPath, [cli, ...process.argv.slice(2)], {
+  stdio: 'inherit',
+  env: { ...process.env, PORTTA_ROOT: process.env.PORTTA_ROOT ?? root },
+})
+if (child.error) throw child.error
+if (child.signal) process.kill(process.pid, child.signal)
+process.exit(child.status ?? 1)

@@ -1,0 +1,17 @@
+{
+  "protectedAccess": "Acesso protegido",
+  "heading": "Uma porta privada para seu ambiente.",
+  "explanation": "Este serviço é protegido na borda do Portta. Entre por aqui; a aplicação atrás dela nunca recebe sua senha.",
+  "proxyBoundary": "Credencial verificada antes do serviço protegido",
+  "destination": "Destino",
+  "project": "Projeto",
+  "service": "Serviço",
+  "username": "Usuário",
+  "password": "Senha",
+  "showPassword": "Mostrar senha",
+  "hidePassword": "Ocultar senha",
+  "signIn": "Entrar",
+  "signingIn": "Verificando acesso…",
+  "invalid": "Usuário ou senha inválidos.",
+  "protectedBy": "Protegido pelo Portta"
+}

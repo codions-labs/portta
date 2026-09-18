@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "rootDir": "src"
+  },
+  // Tests live beside the source they cover, so `include` picks them up and the
+  // build fails on the one thing tsconfig.json adds and this file drops: DOM.
+  // Excluding them is what makes "proven against Node alone" true — and keeps
+  // suites out of `dist`, which shipped them until now.
+  "include": ["src"],
+  "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.node.ts", "**/test-globals.d.ts"]
+}

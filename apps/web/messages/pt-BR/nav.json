@@ -1,0 +1,50 @@
+{
+  "access": "Acesso",
+  "appName": "Portta",
+  "collapseSidebar": "Recolher barra lateral",
+  "connection": {
+    "offline": "Sem conexão com o painel. As atualizações ao vivo estão pausadas.",
+    "reconnecting": "Reconectando…"
+  },
+  "docker": "Docker",
+  "documentation": "Documentação",
+  "expandSidebar": "Expandir barra lateral",
+  "gateway": "Gateway",
+  "gatewayDown": "Gateway inativo",
+  "gatewayUp": "Gateway ativo",
+  "live": {
+    "connecting": "conectando",
+    "live": "ao vivo",
+    "offline": "offline"
+  },
+  "network": "Rede",
+  "overview": "Visão geral",
+  "projects": "Projetos",
+  "sections": "Seções",
+  "services": "Serviços",
+  "settings": "Configurações",
+  "toggleTheme": "Alternar tema",
+  "groups": {
+    "development": "Desenvolvimento",
+    "infrastructure": "Infraestrutura"
+  },
+  "environments": "Ambientes",
+  "commandPalette": "Menu de comandos",
+  "commandPlaceholder": "Digite um comando ou busque…",
+  "commandNoResults": "Nada corresponde",
+  "commandGroups": {
+    "navigate": "Ir para",
+    "projects": "Projetos",
+    "actions": "Ações",
+    "preferences": "Preferências"
+  },
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema"
+  },
+  "shortcuts": {
+    "sidebar": "Mostrar ou ocultar a barra lateral"
+  }
+}

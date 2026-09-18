@@ -1,0 +1,143 @@
+name: Publish Portta
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: publish-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Resolve publication identity
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      channel: ${{ steps.resolve.outputs.channel }}
+      npm_tag: ${{ steps.resolve.outputs.npmTag }}
+      ref: ${{ steps.resolve.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name || github.sha }}
+          fetch-depth: 0
+      - name: Require an official release tag to be in main
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: git merge-base --is-ancestor "$RELEASE_TAG^{commit}" origin/main
+      - id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: node tooling/publish-identity.mjs >> "$GITHUB_OUTPUT"
+
+  validation:
+    needs: version
+    uses: ./.github/workflows/validation.yaml
+    with:
+      mode: ${{ needs.version.outputs.channel == 'release' && 'release' || 'light' }}
+
+  images:
+    needs: [version, validation]
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-images.yaml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      channel: ${{ needs.version.outputs.channel }}
+      ref: ${{ needs.version.outputs.ref }}
+    secrets: inherit
+
+  # Inline, not a reusable workflow: npm trusted publishing checks the workflow
+  # file named on the package, and that must be this one.
+  npm:
+    name: Publish @codions/portta
+    needs: [version, validation]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.ref }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - name: Require npm with trusted publishing
+        run: |
+          set -euo pipefail
+          version=$(npm --version)
+          if [ "$(printf '%s\n' 11.5.1 "$version" | sort -V | head -n1)" != 11.5.1 ]; then
+            echo "npm $version cannot publish with OIDC; trusted publishing needs npm 11.5.1 or later" >&2
+            exit 1
+          fi
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate the publication version
+        env:
+          PUBLISH_VERSION: ${{ needs.version.outputs.version }}
+        run: node tooling/prepare-publication.mjs "$PUBLISH_VERSION"
+      - name: Build package
+        run: npm run build --workspace=@codions/portta
+      - name: Smoke-test the packed CLI
+        env:
+          PORTTA_EXPECTED_VERSION: ${{ needs.version.outputs.version }}
+        run: npm run test:package
+      - name: Skip an existing version
+        id: existing
+        env:
+          PUBLISH_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/npm-view.log"
+          if npm view "@codions/portta@$PUBLISH_VERSION" version --registry=https://registry.npmjs.org/ > "$output" 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif grep -q 'E404' "$output"; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$output" >&2
+            exit 1
+          fi
+      # The gate already validated this commit; build and smoke ran above.
+      - name: Publish to npm
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          NPM_TAG: ${{ needs.version.outputs.npm_tag }}
+        run: |
+          set -euo pipefail
+          set +e
+          npm publish --workspace=@codions/portta --tag="$NPM_TAG" --ignore-scripts
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          cat <<'EOF' >&2
+          npm publish failed. For scoped packages an E404/E403 on PUT almost always
+          means Trusted Publisher is missing or still points at an old workflow file.
+
+          On npmjs.com → @codions/portta → Settings → Trusted publishing, set:
+            GitHub owner:       codions-labs
+            Repository:         portta
+            Workflow filename:  publish.yaml
+            Environment:        (empty)
+
+          See docs/development/publish-cli.md. Do not add a permanent NPM_TOKEN
+          as the first response.
+          EOF
+          exit "$status"

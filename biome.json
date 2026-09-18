@@ -1,0 +1,102 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.12/schema.json",
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "apps/**",
+      "packages/**",
+      "tests/**",
+      "tooling/**",
+      "package.json",
+      "biome.json",
+      "!!**/node_modules",
+      "!!apps/**/dist",
+      "!!apps/web/.next",
+      "!!apps/web/public",
+      "!!apps/**/test-results",
+      "!!apps/web/playwright-report",
+      "!!test-results",
+      "!!state",
+      "!!docs/.generated",
+      "!!package-lock.json",
+      "!!packages/contracts/openapi.json",
+      "!!packages/contracts/taskflow.openapi.json",
+      "!!packages/contracts/src/docs-paths.generated.ts",
+      "!!packages/db/drizzle/meta",
+      "!!packages/host/workflows"
+    ]
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "develop"
+  },
+  "formatter": {
+    "enabled": true,
+    "useEditorconfig": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 120,
+    "trailingNewline": true
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "a11y": {
+        "noLabelWithoutControl": {
+          "level": "error",
+          "options": {
+            "inputComponents": ["Checkbox", "Input", "Select", "Switch", "Textarea"]
+          }
+        },
+        "noNoninteractiveTabindex": "off",
+        "useSemanticElements": "off"
+      },
+      "complexity": {
+        "noImportantStyles": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noTemplateCurlyInString": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.*", "**/tests/**", "**/__tests__/**", "**/e2e/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ],
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "preset": "recommended",
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  }
+}

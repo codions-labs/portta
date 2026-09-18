@@ -1,0 +1,636 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+@import "@xterm/xterm/css/xterm.css";
+
+/* The theme script puts `class="dark"` on <html>; every `dark:` utility in the
+ * panel resolves against it. */
+@custom-variant dark (&:is(.dark *));
+
+/* Tailwind v4 scans what it is told to. Through the PostCSS plugin there is no
+ * config file to read a `content` list from, so the sources are named here. */
+@source "../app";
+@source "../components";
+@source "../lib";
+@source "../modules";
+
+/* Portta's surface language.
+ *
+ * A near-black canvas, a ladder of four graphite surfaces, hairline borders
+ * and one lavender accent. Hierarchy comes from surface and border, almost
+ * never from shadow: the panel is read for hours at a time, and a flat page
+ * with clear edges tires the eye less than a stack of floating cards.
+ *
+ * The same token names exist in both themes, so a component never needs to
+ * know which one is active.
+ *
+ * Colour carries meaning here. Before adding a shade, check it is not one of:
+ *   neutral  structure, labels, anything the eye should skip
+ *   accent   the primary action, focus, a live link, a selected control
+ *   ok       healthy, running, done
+ *   warn     needs a look, degraded, stale, pending
+ *   danger   failed, blocked, destructive
+ *   info     informational state that is neither good nor bad
+ *   agent    an agent is doing this (violet; the one product-specific tone)
+ */
+:root {
+  /* Canvas and the surface ladder. */
+  --portta-bg: oklch(0.965 0.002 270);
+  --portta-surface: oklch(1 0 0);
+  --portta-surface-2: oklch(0.965 0.003 270);
+  --portta-surface-3: oklch(0.935 0.004 270);
+  --portta-surface-4: oklch(0.905 0.005 270);
+
+  /* Hairlines. */
+  --portta-border-subtle: oklch(0.93 0.003 270);
+  --portta-border: oklch(0.895 0.004 270);
+  --portta-border-strong: oklch(0.83 0.006 270);
+
+  /* Four levels of text. */
+  --portta-text: oklch(0.2 0.01 270);
+  --portta-muted: oklch(0.42 0.012 270);
+  --portta-subtle: oklch(0.56 0.012 270);
+  --portta-faint: oklch(0.7 0.01 270);
+
+  /* The one chromatic accent: lavender. */
+  --portta-accent: oklch(0.54 0.17 278);
+  --portta-accent-hover: oklch(0.49 0.18 278);
+  --portta-accent-fg: oklch(0.995 0 0);
+  --portta-selection: color-mix(in oklch, var(--portta-accent) 10%, transparent);
+  --portta-focus: var(--portta-accent);
+
+  /* A neutral tint made from the text colour, so a hover or a selected
+     control lifts in the same direction on every surface of both themes. */
+  --portta-fill: color-mix(in oklch, var(--portta-text) 6%, transparent);
+  --portta-fill-strong: color-mix(in oklch, var(--portta-text) 11%, transparent);
+
+  /* Floating surfaces: a menu, a popover, a tooltip. */
+  --portta-overlay: var(--portta-surface);
+  --portta-tooltip: oklch(0.24 0.01 270);
+  --portta-tooltip-fg: oklch(0.97 0.003 270);
+
+  /* Semantic tones. */
+  --portta-ok: oklch(0.6 0.15 152);
+  --portta-warn: oklch(0.66 0.15 68);
+  --portta-danger: oklch(0.58 0.2 24);
+  --portta-info: oklch(0.58 0.13 240);
+  --portta-agent: oklch(0.56 0.17 300);
+
+  /* What sits behind a dialog. */
+  --portta-scrim: oklch(0.2 0.01 270 / 0.4);
+
+  /* Elevation. Two steps and no more: the page is flat, an overlay floats
+     a little, a dialog owns the screen. */
+  --portta-shadow-raised: none;
+  --portta-shadow-overlay: 0 4px 16px oklch(0.2 0.01 270 / 0.1), 0 1px 3px oklch(0.2 0.01 270 / 0.06);
+  --portta-shadow-modal: 0 16px 48px oklch(0.2 0.01 270 / 0.18), 0 2px 8px oklch(0.2 0.01 270 / 0.08);
+}
+
+.dark {
+  --portta-bg: oklch(0.15 0.004 270);
+  --portta-surface: oklch(0.195 0.005 270);
+  --portta-surface-2: oklch(0.23 0.006 270);
+  --portta-surface-3: oklch(0.265 0.007 270);
+  --portta-surface-4: oklch(0.3 0.008 270);
+
+  --portta-border-subtle: oklch(0.245 0.006 270);
+  --portta-border: oklch(0.28 0.006 270);
+  --portta-border-strong: oklch(0.36 0.008 270);
+
+  --portta-text: oklch(0.96 0.003 270);
+  --portta-muted: oklch(0.8 0.008 270);
+  --portta-subtle: oklch(0.64 0.01 270);
+  --portta-faint: oklch(0.48 0.01 270);
+
+  --portta-accent: oklch(0.66 0.15 278);
+  --portta-accent-hover: oklch(0.71 0.15 278);
+  --portta-accent-fg: oklch(0.995 0 0);
+  --portta-selection: color-mix(in oklch, var(--portta-accent) 14%, transparent);
+  --portta-fill: color-mix(in oklch, var(--portta-text) 7%, transparent);
+  --portta-fill-strong: color-mix(in oklch, var(--portta-text) 12%, transparent);
+  --portta-overlay: oklch(0.225 0.006 270);
+  --portta-tooltip: oklch(0.3 0.008 270);
+  --portta-tooltip-fg: oklch(0.96 0.003 270);
+
+  --portta-ok: oklch(0.73 0.15 152);
+  --portta-warn: oklch(0.79 0.15 72);
+  --portta-danger: oklch(0.7 0.18 24);
+  --portta-info: oklch(0.73 0.12 240);
+  --portta-agent: oklch(0.74 0.14 300);
+
+  --portta-scrim: oklch(0 0 0 / 0.55);
+
+  --portta-shadow-raised: none;
+  --portta-shadow-overlay: 0 6px 20px oklch(0 0 0 / 0.45), 0 1px 3px oklch(0 0 0 / 0.35);
+  --portta-shadow-modal: 0 20px 56px oklch(0 0 0 / 0.6), 0 2px 8px oklch(0 0 0 / 0.4);
+}
+
+@theme inline {
+  --color-bg: var(--portta-bg);
+  --color-surface: var(--portta-surface);
+  --color-surface-2: var(--portta-surface-2);
+  --color-surface-3: var(--portta-surface-3);
+  --color-surface-4: var(--portta-surface-4);
+  --color-line-subtle: var(--portta-border-subtle);
+  --color-line: var(--portta-border);
+  --color-line-strong: var(--portta-border-strong);
+  --color-ink: var(--portta-text);
+  --color-muted: var(--portta-muted);
+  --color-subtle: var(--portta-subtle);
+  --color-faint: var(--portta-faint);
+  --color-accent: var(--portta-accent);
+  --color-accent-hover: var(--portta-accent-hover);
+  --color-accent-fg: var(--portta-accent-fg);
+  --color-selection: var(--portta-selection);
+  --color-focus: var(--portta-focus);
+  --color-scrim: var(--portta-scrim);
+  --color-fill: var(--portta-fill);
+  --color-fill-strong: var(--portta-fill-strong);
+  --color-overlay: var(--portta-overlay);
+  --color-tooltip: var(--portta-tooltip);
+  --color-tooltip-fg: var(--portta-tooltip-fg);
+  --color-ok: var(--portta-ok);
+  --color-warn: var(--portta-warn);
+  --color-danger: var(--portta-danger);
+  --color-info: var(--portta-info);
+  --color-agent: var(--portta-agent);
+
+  --shadow-raised: var(--portta-shadow-raised);
+  --shadow-overlay: var(--portta-shadow-overlay);
+  --shadow-modal: var(--portta-shadow-modal);
+
+  --font-sans:
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+@theme {
+  /* The type scale of a tool, not a website: one pixel apart at the bottom,
+     because a row of a list and the label above it are different things. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.375rem;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.5rem;
+  --text-lg--letter-spacing: -0.01em;
+  --text-xl: 1.125rem;
+  --text-xl--line-height: 1.5rem;
+  --text-xl--letter-spacing: -0.012em;
+  --text-2xl: 1.375rem;
+  --text-2xl--line-height: 1.75rem;
+  --text-2xl--letter-spacing: -0.015em;
+  --text-3xl: 1.75rem;
+  --text-3xl--line-height: 2rem;
+  --text-3xl--letter-spacing: -0.02em;
+
+  /* Small corners. A pill is for a badge, never for a card. */
+  --radius-xs: 0.1875rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  /* The interface should feel immediate. */
+  --ease-out-quick: cubic-bezier(0.2, 0, 0, 1);
+  --animate-fade-in: fade-in 120ms var(--ease-out-quick);
+  --animate-fade-out: fade-out 100ms var(--ease-out-quick);
+  --animate-pop-in: pop-in 140ms var(--ease-out-quick);
+  --animate-pop-out: fade-out 100ms var(--ease-out-quick);
+  --animate-dialog-in: dialog-in 160ms var(--ease-out-quick);
+  --animate-slide-in-right: slide-in-right 180ms var(--ease-out-quick);
+  --animate-slide-out-right: slide-out-right 140ms var(--ease-out-quick);
+  --animate-toast-in: toast-in 160ms var(--ease-out-quick);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.98) translateY(-2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(16px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes slide-out-right {
+    from {
+      transform: none;
+      opacity: 1;
+    }
+    to {
+      transform: translateX(16px);
+      opacity: 0;
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--portta-border);
+  }
+  html {
+    background: var(--portta-bg);
+    color: var(--portta-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  /* The page reads at 14px: the size of a tool, not of an article. */
+  body {
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+  }
+  /* Numbers that change in place — metrics, counts, durations — must not make
+     the layout twitch while they update. */
+  [data-numeric],
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--portta-accent) 30%, transparent);
+  }
+  /* Keyboard focus is unmistakable everywhere, and only for the keyboard. */
+  :focus-visible {
+    outline: 2px solid var(--portta-focus);
+    outline-offset: 1px;
+  }
+  ::placeholder {
+    color: var(--portta-faint);
+  }
+  kbd {
+    font-family: var(--font-sans);
+  }
+  /* Lucide draws at stroke 2, which is heavy beside 13px text. */
+  svg.lucide {
+    stroke-width: 1.75;
+  }
+}
+
+@layer utilities {
+  .scroll-thin::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .scroll-thin::-webkit-scrollbar-thumb {
+    background: var(--portta-border-strong);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 9999px;
+  }
+  .scroll-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* The focus ring, for a control that had to switch the outline off (a Radix
+     item that paints its own highlight) and still wants one when tabbed to. */
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--portta-focus);
+    outline-offset: 1px;
+  }
+  .focus-ring-inset:focus-visible {
+    outline: 2px solid var(--portta-focus);
+    outline-offset: -2px;
+  }
+
+  /* A row that reveals its actions on hover still has to reveal them on
+     keyboard focus, and on a touch screen that has no hover at all. */
+  .row-actions {
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+  .group:hover .row-actions,
+  .group:focus-within .row-actions,
+  .row-actions:focus-within {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .row-actions {
+      opacity: 1;
+    }
+  }
+
+  /* A horizontal scroller that actually contains what it scrolls.
+     A wide <table> propagates its intrinsic width past an `overflow-x: auto`
+     ancestor all the way to the viewport in Chromium, so the page itself
+     scrolls sideways while the table scrolls correctly inside its box. Paint
+     containment is what stops that, and it is also the cheaper thing to
+     repaint. Every wide-content scroller in the panel carries it. */
+  .scroll-contain {
+    contain: paint;
+  }
+
+  /* The column that says which row this is stays put while the rest scrolls
+     sideways. The only way a wide table stays usable on a tablet: without it,
+     scrolling to the actions loses the name of what you are acting on.
+
+     `background: inherit` rather than a fixed surface, so a hovered or
+     selected row keeps its tint under the pinned cells; the row carries the
+     background for both to inherit. */
+  .table-sticky-first th:first-child,
+  .table-sticky-first td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: inherit;
+  }
+
+  /* With a selection column the checkbox is first, so the identity column is
+     the second one and pins beside it. 2.25rem is the checkbox column's width. */
+  .table-sticky-select th:nth-child(2),
+  .table-sticky-select td:nth-child(2) {
+    position: sticky;
+    left: 2.25rem;
+    z-index: 1;
+    background: inherit;
+  }
+}
+
+/* Documentation prose. The panel never uses `.prose`; these rules only apply
+ * to the Markdown the docs site injects. */
+.prose {
+  color: var(--portta-text);
+  line-height: 1.7;
+}
+
+.prose > *:first-child {
+  margin-top: 0;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  color: var(--portta-text);
+  font-weight: 600;
+  line-height: 1.25;
+  scroll-margin-top: 5rem;
+}
+
+.prose h1 {
+  font-size: 1.875rem;
+  margin: 0 0 1.25rem;
+  letter-spacing: -0.02em;
+}
+.prose h2 {
+  font-size: 1.5rem;
+  margin: 2.75rem 0 1rem;
+  letter-spacing: -0.01em;
+}
+.prose h3 {
+  font-size: 1.125rem;
+  margin: 2.25rem 0 0.75rem;
+}
+.prose h4 {
+  font-size: 0.9375rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.prose h2 + h3 {
+  margin-top: 1rem;
+}
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose pre,
+.prose table {
+  margin: 0 0 1rem;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.375rem;
+}
+.prose li {
+  margin: 0.25rem 0;
+}
+.prose li > ul,
+.prose li > ol {
+  margin: 0.25rem 0;
+}
+
+.prose a {
+  color: var(--portta-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.prose a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* A link that leaves the panel is marked, because it needs the network and the
+ * rest of this site does not. */
+.prose a[data-external]::after {
+  content: "↗";
+  font-size: 0.75em;
+  margin-left: 0.15em;
+  vertical-align: super;
+  opacity: 0.6;
+}
+
+.prose code {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125em;
+  background: var(--portta-surface-2);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+}
+
+.prose pre {
+  background: var(--portta-surface-2);
+  border: 1px solid var(--portta-border);
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+.prose pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+.prose blockquote {
+  border-left: 3px solid var(--portta-accent);
+  padding: 0.25rem 0 0.25rem 1rem;
+  color: var(--portta-muted);
+}
+.prose blockquote > *:last-child {
+  margin-bottom: 0;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  display: block;
+  overflow-x: auto;
+  border: 1px solid var(--portta-border);
+  border-radius: 12px;
+}
+.prose th,
+.prose td {
+  border: 1px solid var(--portta-border);
+  padding: 0.4rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+.prose th {
+  background: var(--portta-surface-2);
+  font-weight: 600;
+}
+
+/* The overview screenshot grid is a table for GitHub, not a spreadsheet. */
+.prose table:has(img) {
+  display: table;
+  table-layout: fixed;
+  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.prose table:has(img) td {
+  width: 50%;
+  padding: 0.75rem;
+  border: 0;
+  border-right: 1px solid var(--portta-border);
+  border-bottom: 1px solid var(--portta-border);
+}
+.prose table:has(img) td:last-child {
+  border-right: 0;
+}
+.prose table:has(img) tr:last-child td {
+  border-bottom: 0;
+}
+.prose img {
+  max-width: 100%;
+  border: 1px solid var(--portta-border);
+  border-radius: 12px;
+}
+.prose table:has(img) img {
+  border: 0;
+  border-radius: 8px;
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--portta-border);
+  margin: 2rem 0;
+}
+
+.prose .mermaid-diagram {
+  margin: 0 0 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--portta-border);
+  border-radius: 12px;
+  background: var(--portta-surface);
+  padding: 1rem;
+}
+.prose .mermaid-diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Documentation uses the same semantic tokens and focus ring as the panel. */
+.docs-root .prose {
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+.docs-root .prose pre {
+  overflow-wrap: normal;
+}
+.docs-root .prose .docs-alert {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: var(--portta-surface-2);
+}
+.docs-root .prose .docs-alert-warning,
+.docs-root .prose .docs-alert-important {
+  border-color: var(--portta-warn);
+}
+.docs-root .prose .docs-alert-caution {
+  border-color: var(--portta-danger);
+}
+.docs-copy {
+  display: block;
+  margin: 0 0 0.35rem auto;
+  border: 1px solid var(--portta-border);
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  color: var(--portta-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.docs-copy:hover {
+  color: var(--portta-accent);
+}

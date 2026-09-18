@@ -1,0 +1,51 @@
+{
+  "name": "portta-auth-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Who is asking, and what they may do",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
+    "./access-control": {
+      "types": "./src/access-control.ts",
+      "development": "./src/access-control.ts",
+      "import": "./dist/access-control.js"
+    },
+    "./hono": {
+      "types": "./src/hono.ts",
+      "development": "./src/hono.ts",
+      "import": "./dist/hono.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@better-auth/api-key": "1.7.2",
+    "better-auth": "1.7.2",
+    "drizzle-orm": "0.45.2",
+    "hono": "4.13.5",
+    "nanoid": "5.1.16",
+    "portta-core": "0.1.0",
+    "portta-db": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

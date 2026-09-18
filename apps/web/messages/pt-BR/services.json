@@ -1,0 +1,96 @@
+{
+  "title": "Serviços",
+  "description": "Todos os serviços de cada projeto integrado e como alcançá-los.",
+  "filterAria": "Filtrar serviços",
+  "searchPlaceholder": "Buscar serviço, imagem, hostname",
+  "searchAria": "Buscar serviços",
+  "empty": "Nenhum serviço corresponde aos filtros",
+  "table": {
+    "project": "Projeto",
+    "service": "Serviço",
+    "state": "Estado",
+    "health": "Saúde",
+    "image": "Imagem",
+    "uptime": "Tempo ativo",
+    "actions": "Ações",
+    "type": "Tipo",
+    "ports": "Porta",
+    "access": "Acesso",
+    "resources": "Recursos",
+    "runtime": "Runtime",
+    "environment": "Ambiente"
+  },
+  "filters": {
+    "http": "HTTP",
+    "tcp": "TCP"
+  },
+  "connection": {
+    "show": "Conectar",
+    "title": "Detalhes de conexão · {{name}}"
+  },
+  "row": {
+    "label": "serviço {{name}}",
+    "hidden": "recolhido",
+    "primary": "principal",
+    "restarts": "{{count}} reinícios",
+    "exitCode": "saída {{code}}",
+    "stopped": "sem endereço ativo enquanto {{state}}",
+    "noAddress": "sem endereço",
+    "problem": {
+      "noHostname": "roteamento ativo, nenhum hostname descoberto",
+      "notRouted": "não roteado pelo gateway",
+      "offNetwork": "fora da rede compartilhada",
+      "noPort": "nenhuma porta exposta",
+      "other": "inacessível"
+    },
+    "openDrawer": "Abrir {{name}}",
+    "actionsFor": "Ações para {{name}}",
+    "actionFailed": "A ação falhou",
+    "actionOk": "{{name}}: {{action}} enviado"
+  },
+  "menu": {
+    "openTest": "Acessar",
+    "open": "Abrir",
+    "copy": "Copiar endereço",
+    "logs": "Logs",
+    "console": "Console",
+    "openAccess": "Abrir acesso local",
+    "closeAccess": "Fechar acesso local",
+    "bridge": "Ponte",
+    "copyHost": "Copiar host",
+    "copyPort": "Copiar porta",
+    "copyConnectionString": "Copiar connection string",
+    "connection": "Detalhes de conexão…",
+    "share": "Compartilhar…",
+    "nothing": "Nada para abrir ainda",
+    "accessPage": "Página de Acesso",
+    "start": "Iniciar",
+    "stop": "Parar",
+    "restart": "Reiniciar",
+    "details": "Detalhes"
+  },
+  "drawer": {
+    "summary": "Resumo",
+    "access": "Acesso",
+    "runtime": "Runtime",
+    "logs": "Logs",
+    "console": "Console",
+    "labels": "Labels",
+    "container": "Container",
+    "environmentLink": "Abrir ambiente",
+    "noEndpoint": "Nenhum endereço para alcançar este serviço",
+    "measuredAt": "medido {{time}}"
+  },
+  "console": {
+    "terminalLabel": "Console interativo de {{service}}",
+    "failed": "Não foi possível abrir o console.",
+    "state": {
+      "idle": "Inativo",
+      "loading": "Carregando terminal",
+      "connecting": "Conectando",
+      "open": "Conectado",
+      "closed": "Fechado",
+      "failed": "Falhou"
+    }
+  }
+}

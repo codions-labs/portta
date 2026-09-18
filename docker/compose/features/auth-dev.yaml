@@ -1,0 +1,20 @@
+# =============================================================================
+# Portta ForwardAuth in development mode
+# =============================================================================
+# The dev image supplies Node and dependencies. Source and UI files come from
+# the checkout, so ordinary edits never require another image build.
+# =============================================================================
+
+services:
+  portta-auth:
+    image: codions-labs/portta:dev
+    working_dir: /app/apps/auth
+    command: ["npm", "run", "dev"]
+    volumes:
+      - ./apps/auth/src:/app/apps/auth/src:ro
+      - ./apps/auth/ui:/app/apps/auth/ui:ro
+      - ./apps/auth/vite.config.ts:/app/apps/auth/vite.config.ts:ro
+      - ./packages/core/src:/app/packages/core/src:ro
+    tmpfs:
+      - /app/apps/auth/dist
+      - /app/apps/auth/node_modules

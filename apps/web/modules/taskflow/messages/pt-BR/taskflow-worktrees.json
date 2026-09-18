@@ -1,0 +1,431 @@
+{
+  "linear": {
+    "title": "Linear",
+    "missingApiKey": "Defina <code>LINEAR_API_KEY</code> para ver aqui as issues do Linear atribuídas a você.",
+    "empty": "Nenhuma issue do Linear atribuída a você no momento.",
+    "disabled": "A integração com o Linear está desativada neste projeto.",
+    "searchPlaceholder": "Buscar issues…",
+    "implement": "Implementar",
+    "noDescription": "Sem descrição",
+    "due": "Prazo {{date}}",
+    "post": {
+      "title": "Publicar no Linear",
+      "description": "Cria uma nova issue no Linear para a branch <mono>{{branch}}</mono> e anexa a conversa como JSON + um comentário de resumo. Para publicar em uma issue existente, inicie a worktree pelo painel do Linear (canto inferior esquerdo) — escolher uma issue ali alimenta a sessão e direciona a publicação para essa issue automaticamente.",
+      "teamKey": "Chave do time",
+      "looksLikeIssue": "Parece o id de uma issue. Inicie a worktree pelo painel do Linear (canto inferior esquerdo) para associá-la a essa issue — o menu da worktree passará a oferecer a ação direta \"Publicar conversa em {{issue}}\".",
+      "invalidTeamKey": "Esperava uma chave de time como ENG (apenas letras maiúsculas).",
+      "issueTitle": "Título da nova issue",
+      "optional": "(opcional)",
+      "titlePlaceholder": "Sessão do {{app}}: {{branch}}",
+      "submit": "Publicar"
+    }
+  },
+  "labelDialog": {
+    "title": "Rótulo do workspace",
+    "label": "Rótulo"
+  },
+  "profileDialog": {
+    "title": "Perfil da worktree",
+    "switch": "Trocar",
+    "restartHint": "Trocar reinicia a sessão com o novo layout de painéis e comandos. A conversa do agente é retomada.",
+    "nextOpenHint": "O novo layout e os comandos valem na próxima vez que esta worktree for aberta."
+  },
+  "openInCursor": "Abrir no Cursor",
+  "agentStatus": {
+    "idle": "ocioso",
+    "working": "trabalhando",
+    "waiting": "aguardando",
+    "done": "concluído",
+    "error": "erro"
+  },
+  "pr": {
+    "draft": "rascunho",
+    "state": {
+      "open": "aberto",
+      "closed": "fechado",
+      "merged": "mesclado"
+    },
+    "open": "Abrir PR",
+    "openDraft": "Abrir PR em rascunho",
+    "ci": "CI",
+    "viewChecks": "Ver verificações de CI",
+    "viewChecksFor": "Ver verificações de CI de {{pr}}",
+    "reviewComments": "Revisar comentários do PR",
+    "reviewCommentsFor_one": "Revisar {{count}} comentário de {{pr}}",
+    "reviewCommentsFor_other": "Revisar {{count}} comentários de {{pr}}"
+  },
+  "startupEnv": {
+    "title": "Ambiente de inicialização",
+    "optional": "(opcional)"
+  },
+  "workspaceStrategy": {
+    "legend": "Workspace",
+    "recommended": "Recomendado",
+    "currentBranchWarning": "O agente pode modificar e fazer commits diretamente em <mono>{{branch}}</mono>.",
+    "currentBranchWarningActive": "O agente pode modificar e fazer commits diretamente na branch ativa.",
+    "options": {
+      "isolated_worktree": {
+        "label": "Worktree isolada",
+        "detail": "Melhor para mudanças de código e trabalho em paralelo."
+      },
+      "new_branch": {
+        "label": "Nova branch",
+        "detail": "Cria uma branch no checkout atual."
+      },
+      "current_branch": {
+        "label": "Branch atual",
+        "detail": "Trabalha direto no checkout ativo."
+      }
+    }
+  },
+  "branchSelector": {
+    "placeholder": "Selecione uma branch",
+    "searchLabel": "Busca em {{label}}",
+    "searchPlaceholder": "Buscar branches...",
+    "loadingShort": "Carregando...",
+    "loadFailed": "Falha ao carregar",
+    "available": "{{count}} disponíveis",
+    "updating": "Atualizando...",
+    "updateFailed": "Falha ao atualizar",
+    "loading": "Carregando branches...",
+    "failed": "Falha ao carregar branches: {{error}}",
+    "noMatches": "Nenhuma branch corresponde",
+    "selected": "Selecionada"
+  },
+  "createDialog": {
+    "title": "Nova execução",
+    "description": "Inicie uma sessão direta com um agente ou execute um workflow estruturado.",
+    "runType": "Tipo de execução",
+    "create": "Criar",
+    "startWorkflow": "Iniciar workflow",
+    "direct": {
+      "title": "Sessão direta",
+      "description": "Cria uma worktree e inicia o agente que você escolher."
+    },
+    "workflow": {
+      "title": "Workflow",
+      "description": "Executa um processo de agente repetível em várias etapas."
+    },
+    "prompt": "Prompt",
+    "required": "(obrigatório)",
+    "optional": "(opcional)",
+    "promptPlaceholder": "Descreva a tarefa para o agente...",
+    "promptPlaceholderLinear": "Descreva a tarefa para o agente. Isso também será usado como descrição do ticket no Linear...",
+    "workspaceReason": "Worktrees isoladas são recomendadas para mudanças de código seguras e em paralelo.",
+    "branchName": "Nome da branch",
+    "branchPlaceholderLinear": "Gerado a partir do ticket do Linear",
+    "branchPlaceholderPrompt": "gerado a partir do prompt se vazio",
+    "branchPlaceholderAuto": "gerado automaticamente se vazio",
+    "linearBranchHint": "A branch da worktree usará o nome de branch do ticket do Linear.",
+    "multiAgentBranchHint": "Uma branch separada, com prefixo, será criada para cada agente selecionado.",
+    "useExistingBranch": "Usar branch existente",
+    "existingBranch": "Branch existente",
+    "includeRemote": "incluir remotas",
+    "includeRemoteBranches": "Incluir branches remotas",
+    "createNewBranchInstead": "Criar uma nova branch",
+    "existingBranchRemovalHint": "Remover esta worktree também exclui a branch.",
+    "baseBranch": "Branch base",
+    "baseBranchPlaceholder": "Branch principal do projeto (padrão)",
+    "subworktreeBase": "Criando uma sub-worktree a partir de",
+    "useDefaultBase": "Usar a branch padrão do projeto",
+    "dirtyCheckout": "O checkout atual tem alterações não commitadas. O {{app}} vai bloquear a troca de branch até que ele esteja limpo.",
+    "agent": "Agente",
+    "agentsSelected": "Agentes ({{count}} selecionados)",
+    "multipleSelection": "Seleção múltipla",
+    "enableMultipleAgents": "Ativar seleção de vários agentes",
+    "onePerAgent": "Cria uma worktree por agente.",
+    "multipleNeedIsolated": "Vários agentes exigem worktrees isoladas.",
+    "noAgents": "Nenhum agente disponível.",
+    "saveDefault": "Salvar como padrão",
+    "linear": {
+      "create": "Criar ticket no Linear",
+      "createHint": "Cria o ticket primeiro, usa o prompt como descrição do ticket e usa o nome de branch do ticket para a worktree.",
+      "teamKey": "Chave do time",
+      "looksLikeIssue": "Parece o id de uma issue. Informe apenas a chave do time (ex.: ENG).",
+      "invalidTeamKey": "Esperava uma chave de time como ENG (apenas letras maiúsculas).",
+      "title": "Título do ticket no Linear",
+      "titlePlaceholder": "Gerado a partir do prompt quando deixado em branco"
+    }
+  },
+  "environment": {
+    "label": "Ambiente",
+    "loading": "Carregando ambiente…",
+    "runtime": "Runtime",
+    "hostCommand": "Comando no host",
+    "reviewConfiguration": "Revisar configuração",
+    "rebuild": "Reconstruir",
+    "destroy": "Destruir",
+    "actions": {
+      "start": "Iniciar",
+      "stop": "Parar",
+      "restart": "Reiniciar"
+    },
+    "status": {
+      "detected": "Pronto para iniciar",
+      "resolving": "Resolvendo",
+      "building": "Construindo",
+      "starting": "Iniciando",
+      "ready": "Em execução",
+      "stopping": "Parando",
+      "stopped": "Parado",
+      "failed": "Falhou",
+      "missing": "Indisponível",
+      "awaiting_trust": "Revisão necessária"
+    },
+    "reviewAccess": "Revise o que este projeto pode acessar",
+    "policyValidated": "Política de runtime validada",
+    "policyUnvalidated": "Política de runtime não validada",
+    "noServices": "Nenhum serviço descoberto",
+    "serviceCount_one": "{{count}} serviço",
+    "serviceCount_other": "{{count}} serviços",
+    "servicesAndControls": "Serviços e controles",
+    "noPorts": "Nenhuma porta de serviço foi descoberta neste runtime.",
+    "startToDiscover": "Inicie o ambiente para descobrir seus serviços e endpoints.",
+    "noObservedPorts": "Nenhuma porta observada",
+    "serviceActionLabel": "{{action}} {{service}}",
+    "expose": "Expor",
+    "copyUrl": "Copiar URL",
+    "copyAddress": "Copiar endereço",
+    "revoke": "Revogar",
+    "containers": "Containers: {{ids}}",
+    "hostService": "Serviço do host",
+    "trust": {
+      "title": "Revisar configuração do runtime",
+      "description": "As seguintes operações controladas pelo projeto podem rodar com as permissões do seu usuário:",
+      "noElevated": "Nenhuma opção elevada foi detectada na configuração resolvida.",
+      "confirm": "Revisar e iniciar"
+    },
+    "destroyDialog": {
+      "title": "Destruir o ambiente?",
+      "impact": "Containers próprios, redirecionamentos locais e endpoints serão removidos."
+    },
+    "errors": {
+      "load": "Não foi possível carregar o ambiente",
+      "action": "A ação no ambiente falhou",
+      "expose": "Não foi possível expor o serviço",
+      "service": "A ação no serviço falhou",
+      "revoke": "Não foi possível revogar o endpoint",
+      "destroy": "Não foi possível destruir o ambiente",
+      "exec": "O comando não pôde ser executado"
+    },
+    "commands": {
+      "title": "Comandos",
+      "exec": "Executar no ambiente",
+      "execPlaceholder": "ex.: npm test",
+      "run": "Executar",
+      "exitCode": "saída {{code}}",
+      "timedOut": "tempo esgotado",
+      "copyTerminal": "Copiar comando de terminal",
+      "copyLogs": "Copiar comando de logs",
+      "copied": "Comando copiado"
+    }
+  },
+  "tabs": {
+    "close": "Fechar {{label}}",
+    "newFork": "Nova aba de fork"
+  },
+  "creationPhase": {
+    "creating_worktree": "Criando worktree",
+    "preparing_runtime": "Preparando o runtime",
+    "running_post_create_hook": "Executando o hook pós-criação",
+    "starting_session": "Iniciando a sessão",
+    "reconciling": "Reconciliando",
+    "creating": "Criando"
+  },
+  "diff": {
+    "title": "Alterações",
+    "loading": "Carregando diff...",
+    "empty": "Nenhuma alteração",
+    "currentDiff": "Diff atual",
+    "gitStatus": "Git status ({{count}})",
+    "unpushed": "Commits não enviados ({{count}})",
+    "truncated": "Truncado (passou de 200KB)"
+  },
+  "ci": {
+    "title": "Verificações de CI — {{pr}}",
+    "status": {
+      "pending": "pendente",
+      "success": "sucesso",
+      "failed": "falhou",
+      "skipped": "ignorada"
+    },
+    "hideLogs": "Ocultar logs",
+    "showLogs": "Mostrar logs",
+    "viewLogs": "Ver logs",
+    "loadingLogs": "Carregando logs...",
+    "copyLogs": "Copiar logs",
+    "askFix": "Pedir correção ao agente",
+    "fixRequested": "Pedimos ao agente que corrija {{check}}",
+    "copied": "Logs copiados"
+  },
+  "comments": {
+    "title": "Comentários do PR — {{pr}}",
+    "send": "Enviar {{count}} ao agente",
+    "deselectAll": "Desmarcar todos",
+    "selectAll": "Selecionar todos",
+    "selectedCount": "{{selected}} de {{total}} selecionados",
+    "reply": "(resposta)",
+    "review": "revisão",
+    "sent_one": "{{count}} comentário enviado ao agente",
+    "sent_other": "{{count}} comentários enviados ao agente"
+  },
+  "list": {
+    "empty": "Nenhuma worktree encontrada.",
+    "oneshot": "oneshot",
+    "oneshotHint": "Execução autônoma — fecha sozinha ao terminar",
+    "archived": "arquivada",
+    "opening": "abrindo...",
+    "closed": "fechada",
+    "actionsTitle": "Ações da worktree",
+    "actionsFor": "Ações de {{branch}}",
+    "restore": "Restaurar",
+    "archive": "Arquivar",
+    "changeProfile": "Trocar perfil…",
+    "merge": "Mesclar",
+    "createSubworktree": "Criar sub-worktree",
+    "postingToLinear": "Publicando no Linear…",
+    "postToIssue": "Publicar conversa em {{issue}}",
+    "postToLinear": "Publicar conversa no Linear…",
+    "scrollTo": {
+      "above": {
+        "waiting": "Ir para a próxima worktree aguardando acima",
+        "error": "Ir para a próxima worktree com erro acima",
+        "done-unread": "Ir para a próxima worktree não lida acima"
+      },
+      "below": {
+        "waiting": "Ir para a próxima worktree aguardando abaixo",
+        "error": "Ir para a próxima worktree com erro abaixo",
+        "done-unread": "Ir para a próxima worktree não lida abaixo"
+      }
+    }
+  },
+  "chat": {
+    "processing": "{{agent}} está processando",
+    "unavailable": "O chat ainda não está disponível para esta worktree.",
+    "openFirst": "Abra esta worktree primeiro para usar o chat.",
+    "empty": "Nenhuma mensagem ainda. Envie o primeiro prompt para começar este chat.",
+    "reconnect": "Reconectar",
+    "attach": "Conectar",
+    "interrupt": "Interromper",
+    "connecting": "Conectando à sessão do {{agent}}...",
+    "thinking": "Pensando",
+    "working": "trabalhando",
+    "message": "Mensagem",
+    "placeholder": "pergunte qualquer coisa",
+    "send": "Enviar",
+    "tool": {
+      "running": "Executando {{name}}",
+      "failed": "Falhou {{name}}",
+      "completed": "Concluído {{name}}",
+      "fallbackName": "ferramenta",
+      "exit": "saída {{code}}",
+      "runningNote": "em execução",
+      "output": "Saída"
+    },
+    "question": {
+      "title": "Pergunta",
+      "customPlaceholder": "Resposta personalizada…",
+      "submit": "Enviar resposta"
+    },
+    "stream": {
+      "disconnected": "A conexão da conversa caiu",
+      "malformed": "Chegaram dados inválidos da conversa",
+      "connectionFailed": "Falha ao conectar à conversa"
+    }
+  },
+  "terminal": {
+    "label": "Terminal",
+    "stale": "Terminal desatualizado",
+    "refreshTitle": "Atualizar o terminal do agente",
+    "refreshing": "Atualizando",
+    "refresh": "Atualizar",
+    "drop": "Solte imagens para enviar",
+    "disconnected": "Desconectado",
+    "reconnected": "Reconectado",
+    "exited": "O processo terminou com o código {{code}}",
+    "error": "Erro: {{message}}",
+    "uploadError": "Erro no envio: {{message}}"
+  },
+  "sidebar": {
+    "search": "Buscar worktrees",
+    "clearSearch": "Limpar a busca de worktrees",
+    "showArchivedLabel": "Mostrar worktrees arquivadas",
+    "showArchived": "Mostrar arquivadas",
+    "showArchivedCount": "Mostrar arquivadas ({{count}})",
+    "archivedMatchesHidden": "Há resultados arquivados ocultos.",
+    "noMatches": "Nada encontrado para \"{{query}}\".",
+    "noActive": "Nenhuma worktree ativa.",
+    "empty": "Nenhuma worktree encontrada."
+  },
+  "view": {
+    "createTabFailed": "Falha ao criar a aba: {{error}}",
+    "selectTabFailed": "Falha ao trocar de aba: {{error}}",
+    "deleteTabFailed": "Falha ao excluir a aba: {{error}}",
+    "diffLoadFailed": "Falha ao carregar a visualização de alterações.",
+    "profile": "Perfil: {{profile}}",
+    "agent": "Agente: {{agent}}",
+    "terminalOnly": "Este agente roda apenas no terminal.",
+    "opening": "Abrindo...",
+    "openSession": "Abrir sessão",
+    "selectPrompt": "Selecione uma worktree na barra lateral para conectar",
+    "terminalNotAllowed": "Esta sessão está aberta, mas conectar ao terminal exige terminal:attach neste projeto."
+  },
+  "actions": {
+    "loadWorkflowsFailed": "Falha ao carregar os workflows: {{error}}",
+    "inspectCheckoutFailed": "Falha ao inspecionar o checkout atual: {{error}}",
+    "createFailed": "Falha ao criar: {{error}}",
+    "createRunFailed": "Falha ao criar a execução: {{error}}",
+    "runCreated": "Execução criada",
+    "removeFailed": "Falha ao remover: {{error}}",
+    "mergeFailed": "Falha ao mesclar: {{error}}",
+    "closeFailed": "Falha ao fechar a worktree: {{error}}",
+    "archiveFailed": "Falha ao arquivar a worktree: {{error}}",
+    "restoreFailed": "Falha ao restaurar a worktree: {{error}}",
+    "openFailed": "Falha ao abrir a worktree: {{error}}",
+    "profileSwitched": "{{branch}} passou a usar o perfil \"{{profile}}\"",
+    "profileSwitchedNextOpen": "{{branch}} passou a usar o perfil \"{{profile}}\" — vale na próxima abertura",
+    "postedToLinear": "Publicado no Linear: {{url}}",
+    "postToLinearFailed": "Falha ao publicar no Linear: {{error}}",
+    "terminalRefreshed": "Terminal do agente atualizado",
+    "refreshTerminalFailed": "Falha ao atualizar o terminal: {{error}}",
+    "switchInterfaceFailed": "Falha ao trocar a interface da sessão: {{error}}",
+    "remove": {
+      "title": "Remover worktree",
+      "impact": "Remover a worktree \"{{branch}}\"? Esta ação não pode ser desfeita.",
+      "confirm": "Remover",
+      "unsavedImpact": "Remover o worktree \"{{branch}}\"? Ele tem {{work}} que não existem em nenhum outro lugar, e isso será descartado. Esta ação não pode ser desfeita.",
+      "unsavedConfirm": "Descartar e remover",
+      "unsavedChanges": "alterações não commitadas",
+      "unsavedCommits": "commits que nunca foram enviados"
+    },
+    "merge": {
+      "title": "Mesclar worktree",
+      "impact": "Mesclar a worktree \"{{branch}}\" na main? A worktree será removida após a mesclagem.",
+      "confirm": "Mesclar"
+    },
+    "pull": {
+      "title": "Pull de {{branch}}",
+      "repoTitle": "Pull de {{repo}}",
+      "impact": "Trazer as últimas mudanças de \"{{branch}}\" do remoto?",
+      "forceImpact": "Forçar o pull de \"{{branch}}\"? Isso descarta quaisquer commits locais em {{defaultBranch}}.",
+      "repoImpact": "Trazer as últimas mudanças de \"{{repo}}\" do remoto?",
+      "forceRepoImpact": "Forçar o pull de \"{{repo}}\"? Isso descarta quaisquer commits locais.",
+      "confirm": "Pull",
+      "forceConfirm": "Forçar pull",
+      "updated": "Últimas mudanças de \"{{branch}}\" trazidas do remoto",
+      "upToDate": "\"{{branch}}\" já está atualizada",
+      "fastForwardFailed": "O fast-forward falhou: {{error}}.\nForçar o pull vai redefinir a main para igualar ao remoto.",
+      "fastForwardFailedRepo": "O fast-forward falhou: {{error}}.\nForçar o pull vai redefinir para igualar ao remoto.",
+      "unknownError": "erro desconhecido"
+    },
+    "postLinked": {
+      "title": "Publicar no Linear",
+      "impact": "Publicar a conversa em {{issue}}? Isso cria um novo anexo e um comentário na issue.",
+      "confirm": "Publicar"
+    },
+    "prsSynced": "Status dos pull requests atualizado para {{branch}}",
+    "syncPrsFailed": "Falha ao atualizar os pull requests: {{error}}",
+    "nativeTerminalCopied": "Comando de terminal copiado",
+    "nativeTerminalFailed": "Falha ao obter o comando de terminal: {{error}}"
+  }
+}

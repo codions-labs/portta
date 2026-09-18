@@ -1,0 +1,271 @@
+import { basename, resolve } from 'node:path'
+import type {
+  AgentId,
+  OneshotMeta,
+  PrEntry,
+  ProjectConfig,
+  ServiceRuntimeState,
+  SessionInterfaceMode,
+  WorktreeSource,
+  WorktreeTab,
+} from 'portta-core/taskflow'
+import { expandTemplate } from '../adapters/config.ts'
+import { buildRuntimeEnvMap, readWorktreeMeta, readWorktreePrs } from '../adapters/fs.ts'
+import { type GitGateway, type GitWorktreeEntry, sameFsPath } from '../adapters/git.ts'
+import type { PortProbe } from '../adapters/port-probe.ts'
+import {
+  buildProjectSessionName,
+  buildWorktreeWindowName,
+  type SessionGateway,
+  type SessionWindowSummary,
+} from '../adapters/session-gateway.ts'
+import { mapWithConcurrency } from '../lib/async.ts'
+import type { ProjectRuntime } from './project-runtime.ts'
+
+function makeUnmanagedWorktreeId(path: string): string {
+  return `unmanaged:${resolve(path)}`
+}
+
+function isValidPort(port: number | null): port is number {
+  return port !== null && Number.isInteger(port) && port >= 1 && port <= 65535
+}
+
+async function buildServiceStates(
+  deps: Pick<ReconciliationServiceDependencies, 'config' | 'portProbe'>,
+  input: {
+    allocatedPorts: Record<string, number>
+    startupEnvValues: Record<string, string>
+    worktreeId: string
+    branch: string
+    profile: string
+    agent: AgentId
+    runtime: 'host' | 'docker'
+  },
+): Promise<ServiceRuntimeState[]> {
+  const runtimeEnv = buildRuntimeEnvMap({
+    schemaVersion: 1,
+    worktreeId: input.worktreeId,
+    branch: input.branch,
+    createdAt: '',
+    profile: input.profile,
+    agent: input.agent,
+    runtime: input.runtime,
+    startupEnvValues: input.startupEnvValues,
+    allocatedPorts: input.allocatedPorts,
+  })
+
+  return Promise.all(
+    deps.config.services.map(async (service) => {
+      const port = input.allocatedPorts[service.portEnv] ?? null
+      const running = isValidPort(port) ? await deps.portProbe.isListening(port) : false
+      return {
+        name: service.name,
+        port,
+        running,
+        url: port !== null && service.urlTemplate ? expandTemplate(service.urlTemplate, runtimeEnv) : null,
+      }
+    }),
+  )
+}
+
+function findWindow(windows: SessionWindowSummary[], sessionName: string, branch: string): SessionWindowSummary | null {
+  const windowName = buildWorktreeWindowName(branch)
+  return windows.find((window) => window.sessionName === sessionName && window.windowName === windowName) ?? null
+}
+
+function resolveBranch(entry: GitWorktreeEntry, metaBranch: string | null): string {
+  const fallback = basename(entry.path)
+  return entry.branch ?? metaBranch ?? (fallback.length > 0 ? fallback : 'unknown')
+}
+
+export interface ReconciliationServiceDependencies {
+  config: ProjectConfig
+  git: GitGateway
+  sessions: SessionGateway
+  portProbe: PortProbe
+  runtime: ProjectRuntime
+}
+
+export interface ReconciliationServiceOptions {
+  freshnessMs?: number
+  now?: () => number
+  concurrency?: number
+}
+
+export interface ReconcileOptions {
+  force?: boolean
+}
+
+interface ReconciledWorktreeState {
+  worktreeId: string
+  branch: string
+  label: string | null
+  baseBranch: string | null
+  path: string
+  profile: string | null
+  agentName: AgentId | null
+  interfaceMode: SessionInterfaceMode
+  agentTerminalStale: boolean
+  runtime: 'host' | 'docker'
+  source: WorktreeSource
+  oneshot: OneshotMeta | null
+  issueRef: string | null
+  tabs: WorktreeTab[]
+  activeTabId: string | null
+  git: {
+    dirty: boolean
+    aheadCount: number
+    currentCommit: string | null
+  }
+  session: {
+    exists: boolean
+    sessionName: string | null
+    paneCount: number
+  }
+  services: ServiceRuntimeState[]
+  prs: PrEntry[]
+}
+
+export class ReconciliationService {
+  private readonly freshnessMs: number
+  private readonly now: () => number
+  private readonly concurrency: number
+  private inFlight: Promise<void> | null = null
+  private lastReconciledAt = 0
+
+  private readonly deps: ReconciliationServiceDependencies
+  constructor(deps: ReconciliationServiceDependencies, options: ReconciliationServiceOptions = {}) {
+    this.deps = deps
+    this.freshnessMs = options.freshnessMs ?? 500
+    this.now = options.now ?? Date.now
+    this.concurrency = options.concurrency ?? 4
+  }
+
+  async reconcile(repoRoot: string, options: ReconcileOptions = {}): Promise<void> {
+    if (this.inFlight) {
+      return await this.inFlight
+    }
+
+    if (!options.force && this.now() - this.lastReconciledAt < this.freshnessMs) {
+      return
+    }
+
+    const normalizedRepoRoot = resolve(repoRoot)
+    const reconcilePromise = this.runReconcile(normalizedRepoRoot).then(() => {
+      this.lastReconciledAt = this.now()
+    })
+    this.inFlight = reconcilePromise.finally(() => {
+      this.inFlight = null
+    })
+    return await this.inFlight
+  }
+
+  private async runReconcile(normalizedRepoRoot: string): Promise<void> {
+    const worktrees = this.deps.git.listLiveWorktrees(normalizedRepoRoot)
+    const sessionName = buildProjectSessionName(normalizedRepoRoot)
+
+    let windows: SessionWindowSummary[] = []
+    try {
+      windows = await this.deps.sessions.listWindows()
+    } catch {
+      windows = []
+    }
+
+    const seenWorktreeIds = new Set<string>()
+
+    const candidateEntries = worktrees.filter((entry) => !entry.bare && !sameFsPath(entry.path, normalizedRepoRoot))
+    const reconciledStates = await mapWithConcurrency(candidateEntries, this.concurrency, async (entry) => {
+      const gitDir = this.deps.git.resolveWorktreeGitDir(entry.path)
+      const meta = await readWorktreeMeta(gitDir)
+      const branch = resolveBranch(entry, meta?.branch ?? null)
+      const worktreeId = meta?.worktreeId ?? makeUnmanagedWorktreeId(entry.path)
+      const gitStatus = this.deps.git.readWorktreeStatus(entry.path)
+      const window = findWindow(windows, sessionName, branch)
+
+      return {
+        worktreeId,
+        branch,
+        label: meta?.label ?? null,
+        baseBranch: meta?.baseBranch ?? null,
+        path: entry.path,
+        profile: meta?.profile ?? null,
+        agentName: meta?.agent ?? null,
+        interfaceMode: (meta?.interfaceMode ?? 'terminal') as SessionInterfaceMode,
+        agentTerminalStale: meta?.agentTerminalStale === true,
+        runtime: meta?.runtime ?? 'host',
+        source: meta?.source ?? 'ui',
+        oneshot: meta?.oneshot ?? null,
+        issueRef: meta?.issueRef ?? null,
+        tabs: meta?.tabs ?? [],
+        activeTabId: meta?.activeTabId ?? null,
+        git: {
+          dirty: gitStatus.dirty,
+          aheadCount: gitStatus.aheadCount,
+          currentCommit: gitStatus.currentCommit,
+        },
+        session: {
+          exists: window !== null,
+          sessionName: window?.sessionName ?? null,
+          paneCount: window?.paneCount ?? 0,
+        },
+        services: meta
+          ? await buildServiceStates(this.deps, {
+              allocatedPorts: meta.allocatedPorts,
+              startupEnvValues: meta.startupEnvValues,
+              worktreeId: meta.worktreeId,
+              branch,
+              profile: meta.profile,
+              agent: meta.agent,
+              runtime: meta.runtime,
+            })
+          : [],
+        prs: await readWorktreePrs(gitDir),
+      } satisfies ReconciledWorktreeState
+    })
+
+    for (const state of reconciledStates) {
+      seenWorktreeIds.add(state.worktreeId)
+
+      this.deps.runtime.upsertWorktree({
+        worktreeId: state.worktreeId,
+        branch: state.branch,
+        label: state.label,
+        baseBranch: state.baseBranch,
+        path: state.path,
+        profile: state.profile,
+        agentName: state.agentName,
+        interfaceMode: state.interfaceMode,
+        agentTerminalStale: state.agentTerminalStale,
+        runtime: state.runtime,
+        source: state.source,
+        oneshot: state.oneshot,
+        issueRef: state.issueRef,
+        tabs: state.tabs,
+        activeTabId: state.activeTabId,
+      })
+
+      this.deps.runtime.setGitState(state.worktreeId, {
+        exists: true,
+        branch: state.branch,
+        dirty: state.git.dirty,
+        aheadCount: state.git.aheadCount,
+        currentCommit: state.git.currentCommit,
+      })
+
+      this.deps.runtime.setSessionState(state.worktreeId, {
+        exists: state.session.exists,
+        sessionName: state.session.sessionName,
+        paneCount: state.session.paneCount,
+      })
+
+      this.deps.runtime.setServices(state.worktreeId, state.services)
+      this.deps.runtime.setPrs(state.worktreeId, state.prs)
+    }
+
+    for (const state of this.deps.runtime.listWorktrees()) {
+      if (!seenWorktreeIds.has(state.worktreeId)) {
+        this.deps.runtime.removeWorktree(state.worktreeId)
+      }
+    }
+  }
+}

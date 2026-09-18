@@ -1,0 +1,42 @@
+# ============================================================================
+# Portta: the panel's way to the host daemon
+# ============================================================================
+# Applied whenever the panel is on.
+#
+# The panel is a container with no `gh`, no git, no tmux, no agent CLI and no
+# project directory, and ADR 0001 keeps it that way. Work that needs the host
+# runs in `portta host serve` instead, and the panel reaches it over HTTP and
+# WebSocket through its authorised proxy
+# (docs/development/adr/0047-host-daemon-and-panel-proxy.md).
+#
+# Issues are the panel's work surface and are read through the daemon
+# (docs/development/adr/0018-github-issues-through-the-gh-cli.md), so the
+# connection is part of having a panel, and Taskflow's routes ride on it.
+#
+# What this adds to the panel, and nothing else
+# ----------------------------------------------
+#   host.docker.internal  a name for the host. Docker Desktop resolves it on
+#                         its own; on Linux `host-gateway` maps it to the
+#                         bridge gateway, which is where the daemon must bind
+#                         (PORTTA_HOST_BIND=172.17.0.1, or the address of the
+#                         bridge in use). The daemon's loopback default is not
+#                         reachable from a container on Linux.
+#   state/host/token      the daemon's token, read-only. `portta up` and
+#                         `portta web up` create it first: a bind mount of a
+#                         file that does not exist would become a directory.
+#
+# The panel never receives a project directory, a socket or the daemon's own
+# databases: only a URL and a secret. A daemon that is not running is not a
+# failure to start — it is a panel that reports which of its surfaces are
+# unavailable and why.
+# ============================================================================
+
+services:
+  web:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      PORTTA_HOST_URL: ${PORTTA_HOST_URL:-http://host.docker.internal:${PORTTA_HOST_PORT:-5111}}
+      PORTTA_RUNTIME_HOST_TOKEN_FILE: /app/state/host/token
+    volumes:
+      - ./state/host/token:/app/state/host/token:ro

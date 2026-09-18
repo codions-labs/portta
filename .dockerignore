@@ -1,0 +1,45 @@
+# Build context is the repository root. The panel image must never receive
+# secrets, runtime state, TLS material or the git directory.
+
+.git
+.github
+.env
+.env.*
+.env-lock
+!.env.example
+
+state
+config/tls
+secrets
+*.pem
+*.key
+*.crt
+*.p12
+acme.json
+tailscaled.state
+*.authkey
+
+node_modules
+**/node_modules
+**/dist
+**/test-results
+**/playwright-report
+
+apps/web/e2e
+apps/web/tests
+apps/web/playwright.config.ts
+apps/web/vitest.config.ts
+
+# `docs`, `README.md` and `CHANGELOG.md` are build *input*: the docs bundle is
+# compiled with tooling/docs.mjs and consumed by the Next.js application.
+tests
+bin
+*.md
+!README.md
+!CHANGELOG.md
+AGENTS.md
+LICENSE
+justfile
+
+docs/research
+docs/.generated

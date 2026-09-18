@@ -1,0 +1,48 @@
+{
+  "name": "portta-auth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ForwardAuth and browser session boundary for Portta",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "npm run build:ui && concurrently --kill-others-on-fail --names server,ui \"npm:dev:server\" \"npm:dev:ui\"",
+    "dev:server": "node --conditions=development --watch src/index.ts",
+    "dev:ui": "vite build --watch",
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.ui.json",
+    "test": "vitest run",
+    "build:ui": "vite build"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.1",
+    "hono": "4.13.5",
+    "portta-core": "0.1.0"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "@vitejs/plugin-react": "6.1.1",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "concurrently": "9.2.1",
+    "i18next": "^26.4.1",
+    "lucide-react": "1.38.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-i18next": "^17.0.13",
+    "tailwind-merge": "3.6.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
+  }
+}

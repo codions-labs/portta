@@ -1,0 +1,112 @@
+{
+  "title": "Repositories",
+  "rowLabel": "{{name}} repository",
+  "private": "private",
+  "archived": "archived",
+  "noPath": "no directory on this host",
+  "instructionCount": "{{count}} instruction file(s)",
+  "provider": {
+    "local": "local"
+  },
+  "git": {
+    "notCollected": "not scanned yet",
+    "detached": "detached HEAD",
+    "changed": "{{count}} uncommitted",
+    "clean": "clean",
+    "ahead": "{{count}} ahead",
+    "behind": "{{count}} behind",
+    "collected": "collected {{time}}",
+    "stale": "older than the collector's threshold"
+  },
+  "pulls": {
+    "title": "Open pull requests",
+    "none": "No open pull requests",
+    "notCollected": "No pull requests were collected",
+    "notCollectedHint": "Run portta repos scan --with-prs on the host with gh installed and signed in.",
+    "collectedFrom": "Collected {{time}} from {{kind}}",
+    "approved": "approved",
+    "changesRequested": "changes requested",
+    "reviewRequested": "review requested",
+    "draft": "draft",
+    "checksFailing": "checks failing",
+    "checksPending": "checks pending",
+    "checksPassing": "checks passing"
+  },
+  "instructions": {
+    "title": "Instructions",
+    "description": "The files an agent reads before it works, as the host scan found them.",
+    "empty": "No instruction file",
+    "emptyHint": "AGENTS.md, CLAUDE.md, GEMINI.md, CONVENTIONS.md, .cursor/rules/*.mdc and the like are collected when they exist at the repository root.",
+    "dirty": "uncommitted",
+    "truncated": "over 64 KiB",
+    "overBound": "This file is {{size}}, over the collection bound",
+    "overBoundHint": "Only files up to 64 KiB are collected in full. Open it on the host.",
+    "audience": {
+      "any": "any agent",
+      "claude": "Claude",
+      "cursor": "Cursor",
+      "copilot": "Copilot",
+      "gemini": "Gemini",
+      "cline": "Cline",
+      "windsurf": "Windsurf"
+    }
+  },
+  "detail": {
+    "title": "Repository",
+    "inside": "inside the project at {{path}}",
+    "directory": "Directory",
+    "remote": "Remote",
+    "noPath": "not registered with a directory; the scan matched it by its remote"
+  },
+  "page": {
+    "notFound": "No repository '{{id}}'",
+    "tabs": {
+      "overview": "Overview",
+      "commits": "Commits",
+      "instructions": "Instructions"
+    },
+    "environments": {
+      "title": "Environments",
+      "description": "Compose projects running from this repository, per the host scan.",
+      "empty": "Nothing is running from this repository"
+    },
+    "commits": {
+      "title": "Recent commits",
+      "description": "The last twenty, as metadata. A diff is a link to the forge.",
+      "empty": "No commit collected yet",
+      "stale": "The list is older than the collector's threshold."
+    },
+    "notScanned": "This repository has not been scanned yet",
+    "notScannedHint": "The watcher scans once a minute. To do it now:",
+    "remove": "Unregister",
+    "removeTitle": "Unregister this repository?",
+    "removeDescription": "Only the registration goes. Nothing on disk, on GitHub or in any environment is touched.",
+    "running": "{{running}}/{{total}} running"
+  },
+  "add": {
+    "button": "Add repository",
+    "title": "Add a repository to {{name}}",
+    "description": "A repository is a decision: name it here and the host scan fills in the Git facts.",
+    "tabs": {
+      "discovered": "On this host",
+      "manual": "By hand"
+    },
+    "discovered": {
+      "empty": "Every scanned repository is already registered",
+      "emptyHint": "The scan lists git roots under Projects Home and under running environments. Run portta repos scan on the host, or add one by hand.",
+      "unavailable": "The scan index could not be read",
+      "reading": "Reading the host scan"
+    },
+    "manual": {
+      "name": "Name",
+      "localPath": "Directory on the host",
+      "localPathHint": "Absolute. The scan reads it on the next pass.",
+      "remoteUrl": "Remote URL",
+      "role": "Role"
+    },
+    "role": {
+      "none": "No role"
+    },
+    "add": "Add"
+  }
+}

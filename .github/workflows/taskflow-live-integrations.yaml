@@ -1,0 +1,42 @@
+name: Taskflow live integration certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: Comma-separated targets (github,linear,docker)
+        required: true
+        default: github,linear,docker
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: live-integration-certification
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # The docker target inspects the image before running it; a fresh runner holds nothing.
+      - name: Pull the sandbox image
+        if: contains(inputs.targets, 'docker')
+        env:
+          PORTTA_FLOW_E2E_DOCKER_IMAGE: ${{ vars.PORTTA_FLOW_E2E_DOCKER_IMAGE || 'ghcr.io/codions-labs/portta-sandbox:rolling' }}
+        run: docker pull "$PORTTA_FLOW_E2E_DOCKER_IMAGE"
+      - name: Certify selected integrations
+        env:
+          PORTTA_FLOW_LIVE_E2E: "1"
+          PORTTA_FLOW_LIVE_TARGETS: ${{ inputs.targets }}
+          GH_TOKEN: ${{ secrets.PORTTA_FLOW_E2E_GITHUB_TOKEN || github.token }}
+          PORTTA_FLOW_E2E_GITHUB_REPO: ${{ vars.PORTTA_FLOW_E2E_GITHUB_REPO }}
+          PORTTA_FLOW_E2E_GITHUB_BASE: ${{ vars.PORTTA_FLOW_E2E_GITHUB_BASE }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          PORTTA_FLOW_E2E_LINEAR_TEAM: ${{ vars.PORTTA_FLOW_E2E_LINEAR_TEAM }}
+          PORTTA_FLOW_E2E_DOCKER_IMAGE: ${{ vars.PORTTA_FLOW_E2E_DOCKER_IMAGE || 'ghcr.io/codions-labs/portta-sandbox:rolling' }}
+          PORTTA_FLOW_E2E_DOCKER_AGENT: ${{ vars.PORTTA_FLOW_E2E_DOCKER_AGENT }}
+        run: node tests/tooling/certify-taskflow-integrations.mjs

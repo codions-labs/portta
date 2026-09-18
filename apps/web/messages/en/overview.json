@@ -1,0 +1,142 @@
+{
+  "title": "Overview",
+  "reading": "Reading what is happening",
+  "gatewayRunning": "Gateway running",
+  "gatewayDown": "Gateway down",
+  "problems_one": "{{count}} problem",
+  "problems_other": "{{count}} problems",
+  "sessions": {
+    "description": "Who is working, on what, since when.",
+    "title": "Agents and sessions",
+    "empty": "No agent is working right now",
+    "emptyHint": "A session appears here when an agent or a person starts one against an issue.",
+    "none": "No active session"
+  },
+  "attention": {
+    "title": "Needs attention",
+    "description": "Unhealthy services, degraded environments, conflicts, a host under pressure, and what the gateway checks.",
+    "diagnostics": "Diagnostics",
+    "none": "Nothing needs attention.",
+    "count": "{{count}} to act on",
+    "count_one": "{{count}} to act on",
+    "count_other": "{{count}} to act on",
+    "hostPressure": "Host under pressure: {{reasons}}",
+    "serviceUnhealthy": "{{environment}}/{{service}} is unhealthy"
+  },
+  "projects": {
+    "title": "Projects",
+    "all": "All projects",
+    "empty": "No project yet",
+    "emptyHint": "Create one under Projects; environments on this host stay listed regardless."
+  },
+  "code": {
+    "title": "Code",
+    "description": "Recent commits across every repository, and the repositories with local changes.",
+    "uncommitted": "{{count}} uncommitted",
+    "empty": "No commit collected yet",
+    "emptyHint": "The host collector scans every repository once a minute; portta repos scan does it now.",
+    "dirty": "Local changes",
+    "recent": "Recent commits",
+    "emptyHintShort": "The host collector scans every repository once a minute; to do it now, run"
+  },
+  "resources": {
+    "top": "Using this host",
+    "topDescription": "Environments by memory. Stop one from here when the host is under pressure.",
+    "none": "Nothing measured",
+    "environments": "Environments"
+  },
+  "reduced": {
+    "needsDatabase": "The development dashboard needs the panel's database",
+    "unavailable": "The development dashboard is not available on this panel",
+    "hint": "The gateway's own status and its problems are still here."
+  },
+  "host": {
+    "title": "This host",
+    "description": "How this machine looks right now.",
+    "kind": {
+      "notebook": "Notebook",
+      "desktop": "Desktop",
+      "server": "Server",
+      "vm": "Virtual machine"
+    },
+    "system": "System",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "gpu": "GPU",
+    "swap": "Swap",
+    "storage": {
+      "label": "Storage",
+      "path": "Portta",
+      "docker": "Docker",
+      "portta": "Portta",
+      "both": "Disk"
+    },
+    "cores": "{{count}} cores",
+    "load": "load {{one}} {{five}} {{fifteen}}",
+    "up": "up {{time}}",
+    "high": "high",
+    "updated": "updated {{time}}",
+    "stale": "collected {{age}}s ago",
+    "collectorInactive": "Collector inactive",
+    "unavailable": "Unavailable",
+    "unavailableHint": "The host collector is not writing snapshots. Start the gateway with portta up.",
+    "runtime": {
+      "label": "Runtime",
+      "orbstack": "OrbStack",
+      "docker-desktop": "Docker Desktop",
+      "docker-engine": "Docker Engine",
+      "unknown": "Unknown"
+    },
+    "summary": "Host",
+    "details": "Host details",
+    "showDetails": "Show host details",
+    "hideDetails": "Hide host details",
+    "temperature": "Temp",
+    "battery": "Battery",
+    "loadLabel": "Load",
+    "loadPerCore": "{{value}} per core",
+    "charging": "charging",
+    "onMains": "on mains",
+    "onBattery": "on battery",
+    "remaining": "{{time}} left",
+    "cycles": "{{count}} cycles",
+    "uptime": "Uptime",
+    "gpuMemory": "GPU memory",
+    "kernel": "Kernel",
+    "architecture": "Architecture",
+    "virtual": "Virtual machine",
+    "history": "{{label}} over the last {{minutes}} minutes"
+  },
+  "consumption": {
+    "title": "Project consumption",
+    "description": "What is using CPU and memory on this host right now.",
+    "cpu": "CPU",
+    "memory": "RAM",
+    "containers": "{{count}} containers",
+    "open": "Open"
+  },
+  "pressure": {
+    "label": "Host",
+    "normal": "Normal",
+    "watch": "Watch",
+    "pressured": "Under pressure",
+    "critical": "Critical",
+    "unmeasured": "Not measured",
+    "because": "Because: {{reasons}}",
+    "normalHint": "Every resource this host reports is within its comfortable range.",
+    "unmeasuredHint": "No recent snapshot, so the host's state is unknown.",
+    "reason": {
+      "cpu": "CPU at {{value}}",
+      "memory": "RAM at {{value}}",
+      "swap": "swap at {{value}}",
+      "storage": "disk at {{value}}",
+      "gpu": "GPU at {{value}}",
+      "temperature": "CPU at {{value}}",
+      "load": "load {{value}} per core",
+      "battery": "battery at {{value}}"
+    }
+  },
+  "gateway": {
+    "label": "Gateway"
+  }
+}

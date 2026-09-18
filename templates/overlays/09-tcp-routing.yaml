@@ -1,0 +1,70 @@
+# ============================================================================
+# Template 09: reach this project's database by hostname
+# ============================================================================
+# Add this on top of your project's own compose file, alongside whichever HTTP
+# overlay you already use. It opts a datastore into hostname routing, so it is
+# reachable on the gateway's shared port without publishing one of its own:
+#
+#   psql "postgresql://user@<project>-postgres.<domain>:5432/db?sslmode=require"
+#
+# Requires PORTTA_TCP=true on the gateway. Read docs/product/guides/tcp-routing.md first:
+# PostgreSQL and Redis work, MySQL cannot, and TLS is not optional.
+#
+#   docker compose -f compose.yaml -f compose.portta.yaml \
+#                  -f compose.portta-tcp.yaml up -d
+#
+# Three details worth copying verbatim:
+#
+# 1. The datastore joins `portta-access`, NOT the shared `portta`
+#    network. Databases have never been on the HTTP network and still are not.
+#
+# 2. The rule is HostSNIRegexp, not HostSNI, so this file does not have to know
+#    the gateway's domain. The same overlay then works unchanged against
+#    `.localhost` on a workstation and `.vpn.example.com` on a VPS. It grants
+#    nothing extra: whoever knows the project name can reach the entrypoint
+#    with the exact hostname anyway, and authentication is still PostgreSQL's.
+#
+# 3. Router and service names carry the project name, because they share one
+#    namespace across every project on the host. `portta doctor` reports
+#    a collision if two projects ever pick the same one.
+# ============================================================================
+
+services:
+  postgres:
+    networks:
+      - default        # keep talking to the rest of the project privately
+      - portta-access
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_ACCESS_NETWORK:-portta-access}"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-postgres.entrypoints=postgres"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-postgres.rule=HostSNIRegexp(`^${COMPOSE_PROJECT_NAME}-postgres\\..+$`)"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-postgres.tls=true"
+      # libpq 17+ offers ALPN `postgresql`; without this option the TLS
+      # handshake is rejected before any Postgres traffic happens.
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-postgres.tls.options=postgres@file"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-postgres.service=${COMPOSE_PROJECT_NAME}-postgres"
+      - "traefik.tcp.services.${COMPOSE_PROJECT_NAME}-postgres.loadbalancer.server.port=5432"
+
+  redis:
+    networks:
+      - default
+      - portta-access
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_ACCESS_NETWORK:-portta-access}"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-redis.entrypoints=redis"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-redis.rule=HostSNIRegexp(`^${COMPOSE_PROJECT_NAME}-redis\\..+$`)"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-redis.tls=true"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-redis.service=${COMPOSE_PROJECT_NAME}-redis"
+      - "traefik.tcp.services.${COMPOSE_PROJECT_NAME}-redis.loadbalancer.server.port=6379"
+
+  # MySQL and MariaDB are deliberately absent. The MySQL protocol has the
+  # server speak first, so there is no SNI for the gateway to route on before
+  # it must choose a backend. Reach them with `portta access open`, which
+  # works for every protocol. docs/product/guides/tcp-routing.md explains why in full.
+
+networks:
+  portta-access:
+    external: true
+    name: ${PORTTA_ACCESS_NETWORK:-portta-access}

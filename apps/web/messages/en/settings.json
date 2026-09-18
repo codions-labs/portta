@@ -1,0 +1,590 @@
+{
+  "title": "Settings",
+  "description": "How Portta names projects, who can reach them, and how this panel is reached.",
+  "saved": "Saved. Traefik reads its static configuration at startup, so these values take effect once the gateway containers are recreated on the host:",
+  "notWritable": "The panel cannot write {{path}}. Edit it on the host instead.",
+  "sectionNotFound": "Settings section “{{group}}” does not exist",
+  "chooseGroup": "Choose one of the available groups.",
+  "secretsNote": "Secrets are never returned by the API: the panel only reports whether a token is set. Values are written to {{path}} with mode 600.",
+  "learnMore": "Learn more",
+  "configureDns": "Configure DNS",
+  "configureTls": "Configure TLS",
+  "valueDefault": "Portta default",
+  "valueDetected": "Detected automatically",
+  "valueDerived": "Derived automatically",
+  "valueEnvironment": "Set by the running environment",
+  "envVar": "Environment variable",
+  "restartPending": "These changes take effect after the gateway is recreated. Save now, then use the apply bar.",
+  "dashboard": {
+    "title": "Traefik dashboard",
+    "description": "The address this host is serving right now. Apply saved settings from the bar at the bottom.",
+    "loopbackOnly": "this machine only",
+    "loopbackHint": "This loopback address only works on this machine. The dashboard has no login of its own, so it is never published on a domain.",
+    "tailnetWarning": "On a Tailscale attachment, :8080 is also reachable on the tailnet with no login while the loopback overlay is active.",
+    "copyAddress": "Copy address",
+    "open": "Open the Traefik dashboard",
+    "openDisabled": "No usable address from here. The loopback URL only works on the host."
+  },
+  "projectDomain": {
+    "title": "Resulting addresses",
+    "description": "Portta builds each project hostname from this base.",
+    "formula": "How a hostname is formed",
+    "formulaPattern": "<project>-<service>.<base>",
+    "base": "Base domain",
+    "provider": "Automatic DNS",
+    "examples": "A project called loja would answer on:",
+    "stateOk": "usable",
+    "stateLimited": "needs attention",
+    "stateBroken": "not resolvable",
+    "note": "This chooses the name only. Who can reach Traefik is decided under Project access."
+  },
+  "panel": {
+    "network": "Panel network",
+    "networkHelp": "The host port and interface used to publish the panel. These are separate from the browser URL; routed modes derive and lock the bind.",
+    "access": "Panel address",
+    "kinds": {
+      "local": "This machine only",
+      "tailscale": "Over the VPN",
+      "public": "On the panel port, from the internet",
+      "hostname": "On a hostname"
+    },
+    "kindHelp": {
+      "local": "http://127.0.0.1 and the port above. The default, and the safest.",
+      "tailscale": "Bind the panel to this node’s tailnet address. Sign-in becomes required.",
+      "public": "Publish the panel on its own port. Does not publish your projects. Sign-in becomes required.",
+      "hostname": "Reach the panel at a name. Sign-in becomes required. Projects stay as they are."
+    },
+    "addressMode": "Which hostname",
+    "hostnameKinds": {
+      "subdomain": "Subdomain of the configured domain",
+      "custom": "A domain of your own"
+    },
+    "subdomain": "Subdomain",
+    "subdomainHelp": "Only the label. The base comes from the project addresses already configured.",
+    "customDomain": "Domain",
+    "customDomainHelp": "This name must resolve to this server. Configure DNS and TLS if they are not already set.",
+    "publicAddress": "Public address of this server",
+    "publicAddressHelp": "The IP address or hostname people type before the panel port. The protocol and port are added automatically.",
+    "publicAddressNeeded": "Enter an address reachable from the internet so Portta can build the sign-in URL.",
+    "authRequired": "The panel will ask people to sign in. Changing this does not publish your projects.",
+    "tlsNeeded": "A hostname on HTTPS needs TLS to be enabled. docs/product/concepts/addresses-and-access.md#tls",
+    "tailnetBindNeeded": "Enter this node's Tailscale address under Panel network before saving.",
+    "result": "Resulting URL",
+    "open": "Open the panel",
+    "security": "Security",
+    "securityHelp": "Who may use the panel, and from which origins.",
+    "features": "Panel features",
+    "featuresHelp": "Documentation shipped with this image."
+  },
+  "projectAccess": {
+    "title": "Who can reach projects",
+    "kinds": {
+      "local": "This machine only",
+      "private": "Over the VPN",
+      "public": "From the internet"
+    },
+    "kindHelp": {
+      "local": "Traefik listens only on 127.0.0.1. This is the safest default.",
+      "private": "Traefik joins the Tailscale tailnet; public access stays off.",
+      "public": "Publishes HTTP and HTTPS on every interface. Only services that opted into routing answer."
+    },
+    "vpn": "VPN configuration",
+    "vpnHelp": "Choose a Portta-managed tailnet or bind an existing VPN interface. A private domain may override the project base.",
+    "privateKinds": {
+      "tailscale": "Portta-managed Tailscale",
+      "interface": "VPN already installed on this host"
+    },
+    "privateKindHelp": {
+      "tailscale": "The self-contained default. Traefik joins the Tailscale container's network.",
+      "interface": "Bind Traefik to the private address of a host-native Tailscale or another VPN."
+    },
+    "privateBindNeeded": "Enter the private address of this host's VPN interface. Portta will still refuse 0.0.0.0.",
+    "privateDomainNeeded": "localhost resolves to each person's own machine. Choose automatic project addresses or enter a private domain that resolves to this server.",
+    "publicDomain": "Project domain on the internet",
+    "publicDomainKinds": {
+      "base": "Use the configured base domain ({{domain}})",
+      "custom": "Use another domain"
+    },
+    "customDomain": "Other public domain",
+    "customDomainHelp": "A wildcard record for this domain must point to this server.",
+    "needsDomain": "localhost cannot work over the internet. Configure automatic addresses or your own domain, or enter another public domain.",
+    "noTls": "Traffic will use unencrypted HTTP. Configure TLS before using this access in production.",
+    "bind": "Bind:",
+    "ports": "HTTP/HTTPS ports:",
+    "result": "Example:",
+    "network": "Gateway network and operation",
+    "networkHelp": "Traefik ports and logs. The bind address is derived from the access mode above.",
+    "confirmTitle": "Make projects reachable from the internet?",
+    "confirmDescription": "This change recreates the gateway in a configuration reachable from public networks.",
+    "confirm": "Enable public access",
+    "confirmWarning": "The panel, datastores, and unrouted services remain outside this access. Routed projects without protection may be reached by anyone."
+  },
+  "publicAccess": {
+    "result": "Opted-in projects will be reachable as <project>-<service>.{{domain}}."
+  },
+  "groups": {
+    "Gateway": "Gateway",
+    "Project access": "Project access",
+    "Traefik": "Traefik",
+    "TLS": "TLS",
+    "VPN": "VPN",
+    "Public access": "Public access",
+    "DNS": "DNS",
+    "Panel": "Panel",
+    "GitHub": "GitHub",
+    "Project domain": "Project addresses",
+    "Projects": "Projects"
+  },
+  "groupIntro": {
+    "Projects": "The directory this installation treats as home for Projects.",
+    "Project domain": "How Portta names projects and services. A name is not an exposure.",
+    "Gateway": "Where Traefik listens. Independent of the panel address.",
+    "Project access": "Where Traefik listens and whether projects answer only here, over the VPN, or on the internet. This does not publish the panel.",
+    "Public access": "Whether the internet can reach Traefik. It does not change how projects are named, and it does not publish this panel.",
+    "VPN": "Reach projects on a tailnet instead of the public network.",
+    "TLS": "Certificates for project hostnames. Not assumed just because a domain is set.",
+    "DNS": "Optional Cloudflare automation for the wildcard record and DNS-01. It does not choose the project domain.",
+    "Panel": "How you reach this panel. Independent of whether projects are public.",
+    "Traefik": "The reverse proxy that routes every hostname. Its unauthenticated dashboard stays on loopback, except when Traefik shares the Tailscale namespace."
+  },
+  "fields": {
+    "ACME_CA_SERVER": {
+      "label": "ACME directory",
+      "help": "Point at the staging endpoint while testing to avoid rate limits."
+    },
+    "ACME_CHALLENGE": {
+      "label": "How to prove the domain",
+      "help": "DNS issues one wildcard and needs a provider credential. HTTP issues one certificate per hostname and needs port 80 reachable from the internet.",
+      "choices": {
+        "dns": "DNS (one wildcard)",
+        "http": "HTTP (one certificate per hostname)"
+      }
+    },
+    "ACME_DNS_PROVIDER": {
+      "label": "DNS-01 provider",
+      "help": "Provider name as understood by Traefik/lego. Needed when the challenge is DNS."
+    },
+    "ACME_EMAIL": {
+      "label": "Let’s Encrypt contact",
+      "help": "Required when certificates come from Let’s Encrypt."
+    },
+    "CF_DNS_API_TOKEN": {
+      "label": "Cloudflare API token",
+      "help": "A scoped token (Zone:DNS:Edit), never the global API key."
+    },
+    "CLOUDFLARE_ENABLED": {
+      "label": "Cloudflare DNS",
+      "help": "Create the wildcard record and answer DNS-01 challenges through Cloudflare. This does not choose the project domain."
+    },
+    "CLOUDFLARE_ZONE": {
+      "label": "Cloudflare zone",
+      "help": "The zone the wildcard record lives in."
+    },
+    "PORTTA_ACCESS_LOG": {
+      "label": "Traefik access log",
+      "help": "Useful while debugging routing, noisy otherwise."
+    },
+    "PORTTA_AUTH_MODE": {
+      "label": "Authentication",
+      "help": "Required makes the panel ask who you are. Disabled makes every request the local operator, and is only allowed on this machine.",
+      "choices": {
+        "disabled": "Not required (this machine only)",
+        "required": "Required"
+      }
+    },
+    "PORTTA_AUTH_SECRET": {
+      "label": "Session signing secret",
+      "help": "What sessions and tokens are signed with. Generated during bootstrap; rotating it signs everybody out."
+    },
+    "PORTTA_AUTO_DOMAIN_PROVIDER": {
+      "label": "Automatic DNS service",
+      "help": "sslip.io and nip.io both resolve any name that embeds this host address, so neither needs a record or an account."
+    },
+    "PORTTA_BIND_ADDRESS": {
+      "label": "Listen on",
+      "help": "Interface Traefik publishes on. 127.0.0.1 keeps project traffic off the local network."
+    },
+    "PORTTA_DASHBOARD": {
+      "label": "Traefik dashboard",
+      "help": "Traefik's own dashboard. It stays on loopback normally; a Tailscale attachment can also make it reachable on the tailnet without login."
+    },
+    "PORTTA_DASHBOARD_PORT": {
+      "label": "Dashboard port",
+      "help": "Host port for the Traefik dashboard."
+    },
+    "PORTTA_DOMAIN": {
+      "label": "Your domain",
+      "help": "The base Portta uses to build project addresses. A wildcard *.<domain> must resolve to this host."
+    },
+    "PORTTA_DOMAIN_MODE": {
+      "label": "How addresses are built",
+      "help": "This machine uses localhost. Automatic builds a name from this host address, with no DNS record. Your own domain needs a wildcard pointing here.",
+      "choices": {
+        "local": "This machine (localhost)",
+        "auto": "Automatic (from this host address)",
+        "custom": "A domain you own"
+      }
+    },
+    "PORTTA_HTTPS_PORT": {
+      "label": "HTTPS port",
+      "help": "Host port for HTTPS."
+    },
+    "PORTTA_HTTP_PORT": {
+      "label": "HTTP port",
+      "help": "Host port for plain HTTP."
+    },
+    "PORTTA_LOG_LEVEL": {
+      "label": "Log level",
+      "help": "Log level for the gateway components."
+    },
+    "PORTTA_PANEL_TRUSTED_ORIGINS": {
+      "label": "Extra trusted origins",
+      "help": "Other origins a browser may sign in from, comma-separated: a VPN name, a public domain. Loopback and the panel URL are always trusted."
+    },
+    "PORTTA_PANEL_URL": {
+      "label": "Panel URL",
+      "help": "The address a browser reaches the panel on. It decides where sign-in redirects to, and whether the session cookie may be `Secure`."
+    },
+    "PORTTA_PROFILE": {
+      "label": "Gateway profile",
+      "help": "Where Traefik listens: this machine, a private network, or the internet. Independent of the panel.",
+      "choices": {
+        "local": "This machine",
+        "remote-private": "Private remote",
+        "remote-public": "Public remote"
+      }
+    },
+    "PORTTA_PROJECTS_HOME": {
+      "label": "Projects Home",
+      "help": "The one directory this installation manages Projects in. Changing it changes the reference; files are not moved. Existing environments outside this path stay visible as unmanaged."
+    },
+    "PORTTA_PUBLIC_IP": {
+      "label": "Host address",
+      "help": "The IPv4 address automatic mode embeds in the hostname. Detected during installation."
+    },
+    "PORTTA_RUNTIME_API_DOCS": {
+      "label": "API reference",
+      "help": "Serve the API reference and its console at /docs/api. It issues real requests against this panel, so empty uses the safe default: on for loopback, off when routed."
+    },
+    "PORTTA_RUNTIME_DOCS": {
+      "label": "Documentation",
+      "help": "Serve the project's documentation at /docs, from this image. Static text with no host information in it, so a routed panel may serve it."
+    },
+    "PORTTA_WEB_BIND_ADDRESS": {
+      "label": "Bind",
+      "help": "Host interface used to publish the panel. Keep 127.0.0.1 unless it is a tailnet address or you explicitly enable the public entrypoint."
+    },
+    "PORTTA_WEB_EXPOSE": {
+      "label": "How the panel is reached",
+      "help": "This machine is loopback only. The other modes put the panel beyond this host and require sign-in. None of them publishes your projects."
+    },
+    "PORTTA_WEB_HOST": {
+      "label": "Panel subdomain",
+      "help": "The label in front of the project domain when the panel is reached as a subdomain."
+    },
+    "PORTTA_PANEL_ADVERTISED_HOST": {
+      "label": "Panel hostname",
+      "help": "The hostname Traefik routes to the panel when it is reached by a domain."
+    },
+    "PORTTA_WEB_PORT": {
+      "label": "Port",
+      "help": "Host port used to publish the panel."
+    },
+    "PORTTA_WEB_READ_ONLY": {
+      "label": "Read-only",
+      "help": "Refuse every mutating endpoint. The default whenever the panel is routed."
+    },
+    "PRIVATE_DOMAIN": {
+      "label": "Private domain",
+      "help": "Optional wildcard served only over the VPN. Leave empty to reuse the project domain base."
+    },
+    "PUBLIC_DOMAIN": {
+      "label": "Public project domain",
+      "help": "Domain used to publish opted-in projects on the internet, for example dev.example.com. A wildcard must point at this host."
+    },
+    "PUBLIC_ENABLED": {
+      "label": "Internet access",
+      "help": "Lets the internet reach Traefik on ports 80 and 443. It does not change how projects are named, and it does not publish the panel. Only services that opt in are routed."
+    },
+    "TAILSCALE_ENABLED": {
+      "label": "Tailscale",
+      "help": "Run Traefik inside the Tailscale network namespace so projects are reachable on the tailnet, not the public NIC."
+    },
+    "TAILSCALE_HOSTNAME": {
+      "label": "Tailscale hostname",
+      "help": "Name this node takes on the tailnet."
+    },
+    "TLS_ENABLED": {
+      "label": "HTTPS",
+      "help": "Issue certificates for project hostnames. Off, only HTTP is served."
+    },
+    "TLS_MODE": {
+      "label": "Certificate source",
+      "help": "This machine uses a local CA. Let’s Encrypt uses ACME.",
+      "choices": {
+        "local": "Local CA",
+        "acme": "Let’s Encrypt"
+      }
+    },
+    "TS_AUTHKEY": {
+      "label": "Tailscale auth key",
+      "help": "Prefer an ephemeral, tagged, pre-authorised key. Never leaves the host."
+    }
+  },
+  "validation": {
+    "mustBeHostname": "must be a hostname, for example dev.example.com",
+    "mustBePort": "must be a port between 1 and 65535",
+    "mustBeIpv4": "must be an IPv4 address",
+    "mustBeEmail": "must be an email address",
+    "mustBeHttpsUrl": "must be an https URL",
+    "mustBeUrl": "must be a URL",
+    "notManaged": "is not a setting the panel manages",
+    "mustBeBoolean": "must be true or false",
+    "mustBeOneOf": "must be one of {{choices}}",
+    "publicDomainRequired": "is required by the remote-public profile",
+    "bindAddressPrivate": "the remote-private profile must not bind 0.0.0.0",
+    "acmeEmailRequired": "is required when TLS_MODE is acme",
+    "tailscaleHostnameRequired": "is required when Tailscale is enabled",
+    "panelNotOnEveryInterface": "the panel is not published on every interface; reach it over the VPN instead"
+  },
+  "savedShort": "Saved.",
+  "restartRequired": "Needs a restart",
+  "restartHint": "Changing this takes effect after the gateway restarts, not when it is saved.",
+  "pendingHint": "Saved, but the running process still has {{value}}.",
+  "sectionsLabel": "Settings sections",
+  "sections": {
+    "general": "General",
+    "environment": "Environment",
+    "users": "Users",
+    "tokens": "API tokens",
+    "security": "Security",
+    "integrations": "Integrations",
+    "audit": "Audit"
+  },
+  "roleHints": {
+    "owner": "Owns this panel. There is exactly one, and the role moves by transfer.",
+    "admin": "Everything except taking ownership. Sees every Project.",
+    "developer": "Works on the Projects they are a member of: issues, environments, repositories.",
+    "viewer": "Reads the Projects they are a member of, and changes nothing."
+  },
+  "localMode": {
+    "title": "This panel does not sign people in",
+    "users": "Authentication is disabled: everybody who reaches this panel is the local operator, so there are no accounts to manage. Set PORTTA_AUTH_MODE=required on the host to turn accounts on.",
+    "tokens": "A token belongs to a person, and this panel has none. Set PORTTA_AUTH_MODE=required on the host to turn accounts and tokens on.",
+    "security": "There is no account to secure: this panel does not ask who is asking. Set PORTTA_AUTH_MODE=required on the host to turn accounts on.",
+    "audit": "The audit log records who did what, and here everybody is the local operator. Set PORTTA_AUTH_MODE=required on the host to turn accounts on."
+  },
+  "agentPermissions": {
+    "title": "What a local agent may do",
+    "description": "The ceiling over a request that announces itself with X-Portta-Actor. It narrows what the person behind it holds; it never grants anything extra.",
+    "restoreDefault": "Restore the default",
+    "usingDefault": "Using the default"
+  },
+  "users": {
+    "title": "Users",
+    "description": "Who can sign in, what each of them may do, and which Projects they reach.",
+    "create": "New user",
+    "createDescription": "The account exists as soon as you create it. Hand over the first password yourself: this panel sends no email.",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 10 characters.",
+    "repeatPassword": "Repeat the password",
+    "passwordMismatch": "The two do not match.",
+    "passwordSignsOut": "Changing a password signs that account out of every other browser.",
+    "role": "Role",
+    "status": "Status",
+    "projects": "Projects",
+    "created": "Created",
+    "you": "you",
+    "active": "Active",
+    "banned": "Banned",
+    "twoFactor": "2FA",
+    "everyProject": "Every Project",
+    "noProject": "No Project yet",
+    "noProjectsYet": "This panel has no Projects yet.",
+    "actionsFor": "Actions for {{name}}",
+    "makeRole": "Make {{role}}",
+    "setPassword": "Set a password",
+    "setPasswordFor": "Set a password for {{name}}",
+    "projectAccess": "Project access",
+    "projectAccessFor": "Project access for {{name}}",
+    "projectAccessHint": "A developer or a viewer sees the Projects they are a member of, and nothing else.",
+    "sessions": "Open sessions",
+    "sessionsFor": "{{name}}’s open sessions",
+    "sessionsDescription": "The browsers this account is signed in on right now.",
+    "revokeAll": "Sign out everywhere",
+    "noSessions": "This account is not signed in anywhere.",
+    "transfer": "Transfer ownership",
+    "transferTitle": "Transfer ownership to {{name}}?",
+    "transferImpact": "{{name}} becomes the owner and you become an administrator, in one step. There is no way back except asking them to transfer it again.",
+    "ban": "Ban",
+    "unban": "Lift the ban",
+    "banTitle": "Ban {{name}}?",
+    "banImpact": "The account stops working on its next request. Nothing is deleted, and the ban can be lifted.",
+    "removeTitle": "Remove {{name}}?",
+    "removeImpact": "The account, its sessions and its tokens are deleted. What the account did stays in the audit log.",
+    "removeTypeHint": "Type {{email}} to confirm.",
+    "empty": "Nobody but you, so far."
+  },
+  "tokens": {
+    "title": "API tokens",
+    "description": "Credentials for what is not a browser: the CLI on a laptop, an agent in a terminal, a job in CI.",
+    "whose": "Whose tokens",
+    "mine": "Mine",
+    "everybody": "Everybody’s",
+    "create": "New token",
+    "createDescription": "A token can never do more than your role does. Lowering your role lowers every token you made.",
+    "name": "Name",
+    "nameHint": "What this credential is for: the laptop, the CI job, the agent.",
+    "prefix": "Starts with",
+    "owner": "Owner",
+    "actor": "Actor",
+    "actorKind": "Used by",
+    "agent": "An agent",
+    "human": "A person",
+    "actorHint": {
+      "agent": "Narrowed further by what agents may do on this panel.",
+      "human": "Holds what your role holds, as if it were you at the keyboard."
+    },
+    "lastUsed": "Last used",
+    "neverUsed": "Never",
+    "expires": "Expires",
+    "expiresHint": "A credential with no end is one nobody remembers to end.",
+    "noExpiry": "No expiry",
+    "days": "{{count}} days",
+    "scopeCount": "{{count}} permissions",
+    "scopeNote": "The token holds the intersection of its scopes and your role, computed on every request.",
+    "revoke": "Revoke",
+    "revoked": "Revoked",
+    "revokeTitle": "Revoke {{name}}?",
+    "revokeImpact": "Whatever carries this token stops working on its next request. The row stays, so the listing can still say what was revoked.",
+    "empty": "No tokens yet.",
+    "emptyHint": "Create one to sign in from the CLI or to let an agent act on your behalf.",
+    "createdTitle": "Your new token",
+    "createdDescription": "Copy it now: the panel keeps a hash, not the secret.",
+    "copySecret": "Copy the token",
+    "copied": "I copied it",
+    "onlyOnce": "This is the only time this secret is shown. If it is lost, revoke this token and make another.",
+    "useHint": "Send it as Authorization: Bearer <token>, or run portta auth login and paste it."
+  },
+  "security": {
+    "title": "Security",
+    "description": "Your own account: your password, your second factor, and where you are signed in.",
+    "profile": "Profile",
+    "password": "Password",
+    "passwordDescription": "There is no reset by email. An administrator sets a new one, or you run portta auth reset-password on the host.",
+    "changePassword": "Change password",
+    "changePasswordDescription": "You will stay signed in here, and be signed out everywhere else.",
+    "passwordRefused": "That password was not accepted.",
+    "currentPassword": "Current password",
+    "twoFactor": "Second factor",
+    "twoFactorDescription": "An authenticator app, asked for after your password.",
+    "twoFactorHint": "Turning it on adds one step to your sign-in and nothing else. Backup codes are shown once, when you turn it on.",
+    "on": "On",
+    "off": "Off",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "confirmPassword": "Your password, to be sure it is you.",
+    "wrongPassword": "That password was not accepted.",
+    "scanTitle": "Scan this with your app",
+    "scanDescription": "Then type the six-digit code it shows, so the panel knows the app works.",
+    "qrLabel": "QR code for your authenticator app",
+    "cannotScan": "If the app cannot scan, type this secret instead:",
+    "codeFromApp": "Code from the app",
+    "verify": "Verify",
+    "invalidCode": "That code was not accepted. Codes change every 30 seconds.",
+    "backupTitle": "Your backup codes",
+    "backupDescription": "Each works once, in place of a code from the app.",
+    "backupOnce": "This is the only time they are shown. Keep them somewhere you can reach without this panel.",
+    "copyCodes": "Copy the codes",
+    "sessions": "Where you are signed in",
+    "sessionsDescription": "Every browser holding a session for this account.",
+    "sessionsRefused": "The panel would not answer about your sessions.",
+    "noSessions": "No other session.",
+    "thisBrowser": "This browser",
+    "signOut": "Sign out",
+    "unknownAddress": "unknown address",
+    "unknownBrowser": "unknown browser",
+    "startedAt": "started {{when}}",
+    "expires": "expires {{when}}",
+    "totpUnavailable": "This panel could not turn on an authenticator app."
+  },
+  "integrations": {
+    "title": "Integrations",
+    "description": "What the panel talks to that is not the host."
+  },
+  "environment": {
+    "title": "Environment",
+    "description": "What this host has installed, and whether each tool is usable from Portta's non-interactive shell.",
+    "neverCollected": "Environment readiness has never been collected.",
+    "runCommand": "Run portta env report on the host. The panel never probes the host from its container.",
+    "summary": "{{passed}} passed · {{recommendations}} recommendations · {{problems}} problems",
+    "collected": "Collected {{when}}",
+    "stale": "Stale",
+    "refreshHint": "Refresh on the host:",
+    "fix": "Suggestion",
+    "hostSecurity": "Host security",
+    "hostSecurityDescription": "Read-only observations collected {{when}}. Portta changes nothing.",
+    "hostSecurityMissing": "Host security has not been collected yet; run portta env report on the host.",
+    "categories": {
+      "infrastructure": "Infrastructure",
+      "development": "Development",
+      "agents": "Agents"
+    },
+    "status": {
+      "pass": "Usable",
+      "info": "Optional",
+      "warn": "Recommendation",
+      "fail": "Problem"
+    }
+  },
+  "ssh": {
+    "title": "SSH keys",
+    "description": "Credentials owned by this Portta instance. Private keys stay in owner-only host storage and never appear in the API.",
+    "empty": "No Portta-owned SSH keys.",
+    "emptyHint": "Generate a new key or import an existing unencrypted private key.",
+    "generate": "Generate key",
+    "import": "Import key",
+    "generateTitle": "Generate an SSH key",
+    "generateDescription": "ED25519 is the recommended default. RSA keys are generated at 4096 bits.",
+    "importTitle": "Import an SSH key",
+    "importDescription": "The private input is written directly to owner-only storage and is never returned.",
+    "name": "Name",
+    "descriptionLabel": "Description",
+    "algorithm": "Algorithm",
+    "privateKey": "Private key",
+    "privateKeyHint": "Unencrypted OpenSSH or PEM private key. It will not be shown again.",
+    "publicKey": "Show public key",
+    "copyPublicKey": "Copy public key",
+    "forge": "Forge",
+    "test": "Test",
+    "remove": "Remove",
+    "removeTitle": "Remove {{name}}",
+    "removeImpact": "The private and public files will be permanently removed from this Portta instance.",
+    "cancel": "Cancel",
+    "origin": {
+      "generated": "generated",
+      "imported": "imported"
+    }
+  },
+  "audit": {
+    "title": "Audit",
+    "description": "Who did what: accounts, roles, tokens, Project membership and settings. Development activity lives on the Activity page.",
+    "filterByUser": "Filter by user",
+    "everybody": "Everybody",
+    "when": "When",
+    "who": "Who",
+    "action": "Action",
+    "resource": "Resource",
+    "where": "Where",
+    "kind": {
+      "local": "local",
+      "user": "signed in",
+      "token": "token"
+    },
+    "empty": "Nothing recorded yet.",
+    "emptyHint": "Entries appear as accounts, tokens and settings are changed.",
+    "older": "Older entries"
+  }
+}

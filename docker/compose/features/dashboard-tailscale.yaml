@@ -1,0 +1,21 @@
+# ============================================================================
+# Traefik dashboard overlay for the Tailscale attachment
+# ============================================================================
+# Same as docker/compose/features/dashboard.yaml, but the port is published by the
+# Tailscale container, because Traefik has no network namespace of its own here.
+#
+# Note that the dashboard also becomes reachable over the tailnet at
+# http://<tailscale-hostname>:8080 without being published at all. Restrict it
+# with a Tailscale ACL, or leave PORTTA_DASHBOARD=false.
+# ============================================================================
+
+services:
+  tailscale:
+    ports:
+      - "${PORTTA_DASHBOARD_BIND_ADDRESS:-127.0.0.1}:${PORTTA_DASHBOARD_PORT:-8080}:8080"
+
+  traefik:
+    environment:
+      TRAEFIK_API: "true"
+      TRAEFIK_API_DASHBOARD: "true"
+      TRAEFIK_API_INSECURE: "true"

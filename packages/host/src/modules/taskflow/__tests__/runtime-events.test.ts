@@ -1,0 +1,54 @@
+import { parseRuntimeEvent } from 'portta-core/taskflow'
+import { describe, expect, it } from 'vitest'
+
+describe('parseRuntimeEvent', () => {
+  it('parses valid runtime events', () => {
+    expect(
+      parseRuntimeEvent({
+        worktreeId: 'wt_search',
+        branch: 'feature/search',
+        type: 'agent_status_changed',
+        lifecycle: 'idle',
+      }),
+    ).toEqual({
+      worktreeId: 'wt_search',
+      branch: 'feature/search',
+      type: 'agent_status_changed',
+      lifecycle: 'idle',
+    })
+  })
+
+  it('rejects malformed runtime events', () => {
+    expect(parseRuntimeEvent(null)).toBeNull()
+    expect(
+      parseRuntimeEvent({
+        worktreeId: 'wt_search',
+        branch: 'feature/search',
+        type: 'agent_started',
+      }),
+    ).toBeNull()
+    expect(
+      parseRuntimeEvent({
+        worktreeId: 'wt_search',
+        branch: 'feature/search',
+        type: 'title_changed',
+        title: 'ignored',
+      }),
+    ).toBeNull()
+    expect(
+      parseRuntimeEvent({
+        worktreeId: 'wt_search',
+        branch: 'feature/search',
+        type: 'agent_status_changed',
+        lifecycle: 'closed',
+      }),
+    ).toBeNull()
+    expect(
+      parseRuntimeEvent({
+        worktreeId: 'wt_search',
+        branch: 'feature/search',
+        type: 'runtime_error',
+      }),
+    ).toBeNull()
+  })
+})

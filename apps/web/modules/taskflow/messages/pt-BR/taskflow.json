@@ -1,0 +1,231 @@
+{
+  "agents": {
+    "transport": {
+      "transport": "Transporte do agente",
+      "native": "Nativo",
+      "permissionPolicy": "Política de permissões",
+      "interactive": "Interativa",
+      "workspace": "Política do workspace",
+      "deny": "Negar ferramentas",
+      "acpHint": "O ACP usa sessões estruturadas de agente. O terminal do shell continua sendo uma sessão tmux separada no mesmo workspace."
+    },
+    "editor": {
+      "name": "Nome do agente",
+      "namePlaceholder": "ex.: Gemini CLI",
+      "startCommand": "Comando de início",
+      "example": "ex.: {{command}}",
+      "resumeCommand": "Comando de retomada",
+      "optional": "(opcional)",
+      "placeholders": "Placeholders suportados",
+      "placeholdersHint": "O {{app}} exporta os valores dos placeholders com segurança antes de executar seu comando.",
+      "agentId": "Id do agente:",
+      "looksGood": "A configuração parece correta.",
+      "test": "Testar"
+    }
+  },
+  "settings": {
+    "diagnostics": {
+      "title": "Prontidão do projeto",
+      "description": "Verifica ferramentas locais, agentes, credenciais e perfis do Docker.",
+      "run": "Executar diagnóstico",
+      "ready": "Pronto para os recursos configurados",
+      "actionRequired": "Ação necessária",
+      "status": {
+        "ok": "ok",
+        "warning": "aviso",
+        "error": "erro",
+        "skipped": "ignorado"
+      },
+      "section": "Diagnóstico do ambiente"
+    },
+    "title": "Configurações do Taskflow",
+    "interface": {
+      "title": "Interface",
+      "webChat": "Usar a interface de chat web",
+      "webChatHint": "Mostra a conversa com o agente no próprio app em vez do terminal, para agentes compatíveis."
+    },
+    "agents": {
+      "title": "Agentes",
+      "description": "Adicione agentes de terminal que o {{app}} pode iniciar pelo dashboard.",
+      "add": "Adicionar agente",
+      "addTitle": "Adicionar agente personalizado",
+      "loading": "Carregando agentes...",
+      "empty": "Nenhum agente personalizado configurado",
+      "resume": "Retomada: {{command}}",
+      "edit": "Editar {{name}}",
+      "editAction": "Editar",
+      "duplicate": "Duplicar {{name}}",
+      "duplicateAction": "Duplicar",
+      "copyName": "{{name}} Cópia",
+      "deleteTitle": "Excluir agente",
+      "deleteImpact": "Excluir o agente \"{{name}}\"?"
+    },
+    "linear": {
+      "title": "Linear",
+      "autoCreate": "Criar worktrees automaticamente",
+      "autoCreateHint": "Cria worktrees automaticamente para tickets Todo do Linear com o rótulo \"{{label}}\".",
+      "autoCreateLabel": "Criar worktrees automaticamente para tickets do Linear"
+    },
+    "terminal": {
+      "title": "Terminal",
+      "multiplexer": "Multiplexador",
+      "herdr": "Os painéis rodam no herdr, que não ajusta o tamanho por cliente — o terminal no navegador fica indisponível. Conecte-se pelo seu próprio terminal com <code>herdr</code>.",
+      "tmux": "Os painéis rodam no tmux.",
+      "change": "Altere com"
+    },
+    "github": {
+      "title": "GitHub",
+      "autoRemove": "Remover automaticamente ao mesclar",
+      "autoRemoveHint": "Remove worktrees automaticamente quando o PR delas é mesclado no GitHub.",
+      "autoRemoveLabel": "Remover worktrees automaticamente ao mesclar o PR"
+    },
+    "ssh": {
+      "label": "Host SSH",
+      "qualifier": "(para \"Abrir no Cursor\")",
+      "placeholder": "ex.: devbox ou 10.0.0.5",
+      "hint": "Precisa corresponder a uma entrada do seu <code>~/.ssh/config</code> local. Deixe vazio para o modo local.",
+      "title": "Abrir no Cursor",
+      "saved": "Host SSH salvo"
+    },
+    "description": "Como este projeto executa worktrees, agentes e integrações no host.",
+    "project": {
+      "title": "Projeto Taskflow",
+      "prefix": "Prefixo",
+      "name": "Nome",
+      "mainBranch": "Branch principal",
+      "directory": "Diretório",
+      "worktrees": "Worktrees"
+    },
+    "autoName": {
+      "title": "Nomes automáticos de branch",
+      "off": "Desligado: novos worktrees precisam de um nome de branch.",
+      "provider": "Nomeado por {{provider}}",
+      "model": "Modelo {{model}}"
+    },
+    "browser": {
+      "title": "Este navegador",
+      "description": "Guardado apenas neste navegador, para todos os projetos Taskflow."
+    }
+  },
+  "sidebar": {
+    "pull": "Pull",
+    "pullTitle": "Trazer as últimas mudanças do remoto"
+  },
+  "projects": {
+    "title": "Projetos",
+    "switch": "Trocar de projeto",
+    "current": "atual",
+    "remove": "Remover projeto",
+    "initPhase": {
+      "creating_config": "Criando {{path}}",
+      "analyzing": "Analisando a estrutura do projeto",
+      "ready": "Projeto pronto",
+      "failed": "A configuração falhou",
+      "settingUp": "Configurando"
+    },
+    "empty": {
+      "title": "Nenhum projeto ainda",
+      "description": "O {{app}} serve todos os projetos a partir deste único dashboard. Adicione um repositório git abaixo e o {{app}} o configura para você — criando um <code>{{path}}</code> e analisando o projeto para preenchê-lo.",
+      "placeholder": "Caminho de um repositório git"
+    },
+    "setupError": {
+      "no-project": "O servidor aceitou o projeto, mas não devolveu nada para abrir.",
+      "failed": "A configuração do projeto falhou.",
+      "timeout": "A configuração do projeto excedeu o tempo limite."
+    }
+  },
+  "topBar": {
+    "toggleSidebar": "Mostrar ou ocultar a barra lateral",
+    "selectWorktree": "Selecione uma worktree",
+    "editLabel": "Editar rótulo do workspace",
+    "archived": "Arquivada",
+    "dirty": "modificada",
+    "unpushed": "não enviada",
+    "closeTitle": "Fechar a janela da worktree",
+    "restoreTitle": "Restaurar worktree arquivada",
+    "archiveTitle": "Arquivar worktree",
+    "restore": "Restaurar",
+    "archive": "Arquivar",
+    "mergeTitle": "Mesclar worktree",
+    "merge": "Mesclar",
+    "removeTitle": "Remover worktree",
+    "moreInfo": "Mais informações",
+    "documentation": "Documentação",
+    "noNotifications": "Nenhuma notificação ainda",
+    "settings": "Configurações",
+    "moreActions": "Mais ações do worktree",
+    "syncPrs": "Atualizar pull requests",
+    "copyTerminalCommand": "Copiar comando de terminal"
+  },
+  "shell": {
+    "dashboard": "Dashboard",
+    "closeSidebar": "Fechar a barra lateral",
+    "newRunTitle": "Nova execução (Cmd+Shift+K)",
+    "new": "Nova",
+    "creating_one": "Criando...",
+    "creating_other": "Criando {{count}}...",
+    "sections": "Seções do projeto",
+    "nav": {
+      "worktrees": "Worktrees",
+      "runs": "Execuções",
+      "workflows": "Workflows",
+      "settings": "Configurações"
+    },
+    "resizeSidebar": "Redimensionar a barra lateral",
+    "settings": "Configurações",
+    "documentation": "Documentação",
+    "shortcuts": {
+      "navigate": "Navegar",
+      "newRun": "Nova execução",
+      "merge": "Mesclar",
+      "remove": "Remover"
+    },
+    "sidebar": "Barra lateral do Taskflow",
+    "openSidebar": "Abrir barra lateral"
+  },
+  "gate": {
+    "loading": "Procurando este projeto no host",
+    "unreachable": "O daemon de host não respondeu",
+    "unreachableHint": "O Taskflow roda em `portta host serve` no host. Inicie-o lá e recarregue esta página; `portta doctor` verifica o resto.",
+    "missing": "Este projeto ainda não está no Taskflow",
+    "missingHint": "Adicioná-lo registra o diretório no daemon de host. Um repositório sem `.portta/taskflow.yaml` é configurado antes.",
+    "noDirectory": "Este projeto não tem diretório no host",
+    "noDirectoryHint": "O Taskflow trabalha sobre um diretório. Dê ao projeto um caminho no Projects Home, ou a um repositório um caminho local, e volte aqui.",
+    "directory": "Diretório",
+    "add": "Adicionar este projeto ao Taskflow",
+    "notAllowed": "Peça a alguém que pode criar projetos para adicioná-lo."
+  },
+  "module": {
+    "name": "Taskflow"
+  },
+  "home": {
+    "title": "Taskflow",
+    "description": "Os diretórios que o daemon de host atende para worktrees, terminais, agentes e execuções, e o projeto de cada um.",
+    "add": "Adicionar diretório",
+    "addTitle": "Adicionar um diretório ao Taskflow",
+    "addHint": "Um caminho absoluto para um repositório git no host. Um sem `.portta/taskflow.yaml` é gerado e analisado antes.",
+    "path": "Caminho no host",
+    "empty": "O Taskflow ainda não atende nenhum diretório",
+    "emptyHint": "Adicione um repositório aqui, ou abra um projeto e adicione-o pela aba Worktrees.",
+    "columns": {
+      "name": "Nome",
+      "path": "Diretório",
+      "prefix": "Prefixo",
+      "project": "Projeto",
+      "state": "Estado"
+    },
+    "noProject": "Sem projeto",
+    "active": "aberto em um navegador",
+    "idle": "ocioso",
+    "open": "Abrir worktrees",
+    "remove": "Remover",
+    "removeTitle": "Remover do Taskflow",
+    "removeImpact": "O Taskflow deixa de atender {{path}}. O repositório, seus worktrees e o projeto do Portta ficam como estão.",
+    "removed": "Removido do Taskflow",
+    "added": "Adicionado ao Taskflow"
+  },
+  "preferences": {
+    "title": "Taskflow",
+    "description": "Como o Taskflow se comporta neste navegador."
+  }
+}

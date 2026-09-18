@@ -1,0 +1,19 @@
+# ============================================================================
+# `remote-public` profile: the internet can reach this
+# ============================================================================
+# Opt-in, and deliberately never the default. Enabling it only changes who can
+# reach Traefik; it does not publish anything new. A service is still routed
+# only when it sets traefik.enable=true, and databases and caches are still
+# never on the shared network.
+#
+# PORTTA_BIND_ADDRESS is forced to 0.0.0.0 by the CLI for this profile.
+# ============================================================================
+
+services:
+  traefik:
+    environment:
+      # Facing the open internet, header aliasing stops being theoretical: a
+      # client can spoof a header Traefik manages if a backend normalises
+      # underscores. Strip them here rather than trusting every backend.
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_ALIASHEADERSSTRATEGY: ${PORTTA_ALIAS_HEADERS_STRATEGY:-delete}
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ALIASHEADERSSTRATEGY: ${PORTTA_ALIAS_HEADERS_STRATEGY:-delete}

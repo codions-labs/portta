@@ -1,0 +1,30 @@
+# ============================================================================
+# Web + API
+# ============================================================================
+# Both keep their internal ports. Other projects on this host use the same
+# 3000 and 8000 at the same time, and nothing collides, because neither
+# publishes a host port.
+#
+#   -> http://<COMPOSE_PROJECT_NAME>-web.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>-api.localhost
+# ============================================================================
+
+services:
+  web:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-web.loadbalancer.server.port=3000"
+
+  api:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api.loadbalancer.server.port=8000"
+
+networks:
+  portta:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}

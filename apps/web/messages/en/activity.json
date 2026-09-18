@@ -1,0 +1,22 @@
+{
+  "title": "Activity",
+  "description": "What happened in the development flow, newest first. Logs are on each environment.",
+  "recent": "Recent activity",
+  "all": "All activity",
+  "empty": "Nothing happened yet",
+  "emptyHint": "Issues, sessions, commits and environment operations land here as they happen.",
+  "loadMore": "Older",
+  "newer": "Newer",
+  "kindFilter": "Kind",
+  "anyKind": "Everything",
+  "actorFilter": "Actor",
+  "repository": "repository",
+  "entity": {
+    "issue": "Issues",
+    "session": "Sessions",
+    "repository": "Repositories",
+    "environment": "Environments",
+    "service": "Services",
+    "project": "Project"
+  }
+}

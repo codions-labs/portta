@@ -1,0 +1,24 @@
+# ============================================================================
+# Attachment: Traefik in its own network namespace, ports on the host
+# ============================================================================
+# Used by the `local` profile, and by remote profiles when Tailscale is not
+# managed by the gateway (a host-native Tailscale, WireGuard, or a plain
+# public VPS).
+#
+# PORTTA_BIND_ADDRESS decides who can reach it:
+#   127.0.0.1   this machine only              (local default)
+#   100.x.y.z   the tailnet only               (host-native Tailscale)
+#   0.0.0.0     everyone                       (remote-public, opt-in)
+#
+# `doctor` fails if the local profile binds to anything but loopback, or if
+# the private profile binds to 0.0.0.0.
+# ============================================================================
+
+services:
+  traefik:
+    networks:
+      - gateway
+      - control
+    ports:
+      - "${PORTTA_BIND_ADDRESS:-127.0.0.1}:${PORTTA_HTTP_PORT:-80}:80"
+      - "${PORTTA_BIND_ADDRESS:-127.0.0.1}:${PORTTA_HTTPS_PORT:-443}:443"

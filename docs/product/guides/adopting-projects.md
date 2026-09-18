@@ -1,0 +1,301 @@
+# Add an existing project
+
+Your project stays where it is, in its own repository, started from its own
+directory. Adoption does not modify it: Portta keeps its generated runtime
+overlay under its own installation state.
+
+## Start here
+
+```bash
+portta envs analyze /path/to/project
+```
+
+It reads the project and reports what adoption would take: every service and
+what it looks like, the host ports it publishes and what already holds them,
+fixed container names and whether the host already holds them, datastores that
+are published, whether the namespace is implicit, and whether the namespace is
+already in use by another checkout. It writes nothing. When the Compose file is
+not `compose.yaml` in that directory, name it with `--file deploy/compose.yaml`
+(relative to the path, or absolute): the file's directory becomes the project
+directory.
+
+Then adopt it through the canonical workflow:
+
+```bash
+portta adopt /path/to/project --dry-run --json
+portta adopt /path/to/project
+portta runtime up /path/to/project
+```
+
+`adopt` records an audited Runtime Plan outside the source repository. It
+resolves the complete ordered Compose input set, validates it once before and
+once after rendering the overlay, and derives a unique Compose project name
+from the workspace and current branch. `runtime up`, `runtime down`, `runtime status`, `runtime logs` and
+`runtime config` reuse exactly that plan.
+
+```bash
+portta adopt /path/to/project --dry-run --json # see the plan and pending choices
+portta adopt /path/to/project --service web:3000
+portta runtime status /path/to/project
+```
+
+An agent can drive this flow with the `portta-adopt-compose` skill
+(`npx skills add codions-labs/portta --skill portta-adopt-compose -g`), which
+orders these verbs and says what to ask before each pending decision; see
+[the working agreement](../concepts/working-agreement.md).
+
+`adopt` persists optional exposure intent in Portta state. A project that wants
+to version this intent may instead provide `.portta/runtime.json`; it contains
+only files, profiles, manual/auto mode and service ports — never gateway
+domains, networks, labels, URLs or a concrete Compose namespace. That rule
+is the project contract in [ADR 0052](../../development/adr/0052-the-portta-directory-is-the-project-contract.md),
+and the file is specified in [The `.portta` directory](../reference/portta-directory.md).
+
+`adopt` is the one closed interface for inspection, explicit decisions and
+plan materialization. The lower-level `prepare` and `init` are its two steps
+and are listed in the [CLI reference](../reference/cli.md).
+
+## Decisions that need confirmation
+
+The dry run returns `outcome: "isolated"`, `"manual"`, or `"not_supported"`.
+It also lists every unresolved choice under `pending`; no Compose or Portta
+runtime file is written in this mode. A project with no HTTP surface is still
+an isolated private environment. A multi-port service stays private until a
+specific HTTP surface is named with `--service name:port`.
+
+Fixed resource names need an explicit acknowledgement because they can cross
+the Compose namespace boundary:
+
+```bash
+# The fixed name is reset only for this service and only after this declaration.
+portta adopt /path/to/project --remove-container-name web
+
+# These retain the source resource names; use only when sharing is intentional.
+portta adopt /path/to/project --allow-shared-networks --allow-shared-volumes
+
+# A project-owned integration that Portta must not modify.
+portta adopt /path/to/project --manual
+```
+
+`network_mode` on a routed service is not supported, because Compose cannot
+also attach it to the Portta network. `container_name` is never reset silently.
+Bind mounts and privileged settings remain visible findings: they are not
+rewritten by Portta and should be reviewed against the host's security policy.
+
+## The contract
+
+A compatible project:
+
+1. uses Docker Compose 2.24.4 or newer;
+2. keeps its own private network and normal internal ports;
+3. avoids `container_name:` for isolated environments;
+4. does not route services that use `network_mode`;
+5. lets Portta remove inherited host `ports:` in auto mode.
+
+Nothing else. No Dockerfile changes, no directory moves, no shared base image.
+
+## Optional Portta login
+
+The project owns its router labels, so Portta never adds authentication behind
+your back. To protect a hostname, create its credential and opt the router into
+the generated middleware with a label:
+
+```bash
+portta protect host demo-shop-web.example.com --project demo-shop --service web
+```
+
+See [Protecting a project hostname](authentication.md#protecting-a-project-hostname)
+for the label, rotation, removal and API clients.
+
+## The overlay
+
+Portta derives its runtime overlay outside the repository, so `compose.yaml`
+still describes the application and the project still runs standalone without
+the gateway:
+
+```yaml
+# generated by Portta, outside the project repository
+services:
+  web:
+    ports: !reset []
+    networks:
+      - default        # keep reaching postgres/redis privately
+      - portta    # accept traffic from the gateway
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=portta"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-web.loadbalancer.server.port=3000"
+
+  api:
+    ports: !reset []
+    networks:
+      - default
+      - portta
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=portta"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api.loadbalancer.server.port=8000"
+
+networks:
+  portta:
+    external: true
+    name: portta
+```
+
+```bash
+portta runtime up /path/to/project
+```
+
+`runtime up` supplies the project's Compose files, this overlay and
+`-p <namespace>`; do not add the overlay to the project's `.env` or
+`COMPOSE_FILE`. Inside the project directory, `portta up` is the same command.
+
+When Compose reports only plain network names, Portta uses `!override` to make
+the final routed-network set explicit. If the source has aliases or other
+network metadata, it uses Compose's normal merge so that metadata is preserved.
+
+Working examples are independent repositories:
+[`portta-demo-a`](https://github.com/fabioassuncao/portta-demo-a) and
+[`portta-demo-b`](https://github.com/fabioassuncao/portta-demo-b) for the CI pair;
+also [`portta-demo-site`](https://github.com/fabioassuncao/portta-demo-site)
+(single web), [`portta-demo-shop`](https://github.com/fabioassuncao/portta-demo-shop)
+(full stack with MySQL, Mailpit and RustFS),
+[`portta-demo-monorepo`](https://github.com/fabioassuncao/portta-demo-monorepo), and
+[`portta-demo-external`](https://github.com/fabioassuncao/portta-demo-external) (never adopted, for the panel's
+External Docker section). Templates for the usual project shapes are in
+[`templates/`](../../../templates/README.md).
+
+## Two rules that are easy to get wrong
+
+**Generated labels use list form.** Compose interpolates `${VAR}` inside a list entry
+but **not** inside a mapping key. In map form the Traefik service name stays the
+literal `${COMPOSE_PROJECT_NAME}` and every worktree of the project collapses
+onto one load balancer.
+
+**Prefix Traefik service names with the namespace.** Those names are flat across
+the whole host; two projects both declaring `web` get merged into one load
+balancer and start receiving each other's traffic.
+
+`portta doctor` reports both.
+
+## Checklist
+
+- [ ] Docker Compose is at least 2.24.4
+- [ ] no routed service has `network_mode` or `container_name:`
+- [ ] HTTP services join their private networks and `portta`
+- [ ] datastores stay out of `portta`
+- [ ] Portta's generated overlay resets inherited host `ports:`
+- [ ] `portta adopt --dry-run` prints a valid Runtime Plan
+- [ ] `portta urls` lists the expected hostnames
+- [ ] a second copy with a different `COMPOSE_PROJECT_NAME` runs alongside the first
+- [ ] `portta doctor` is clean
+
+## Verifying
+
+```bash
+portta urls --project <name>
+curl -sI http://<name>-web.localhost | head -1
+
+# the real test: a second environment, in parallel
+git worktree add ../<name>-issue1 -b issue1
+cd ../<name>-issue1
+portta up
+portta urls
+```
+
+Both environments should be listed and both should answer.
+
+## Documenting it in the project
+
+Copy [`templates/project/PORTTA.md`](../../../templates/project/PORTTA.md)
+into the project and adjust the names. It covers only what someone working on
+that project needs: how to start it, its URLs, how to reach its database, how
+to run a second copy. The rules stay here.
+
+## Monorepos
+
+Nothing changes: a monorepo is one Compose project with more services in it.
+See [Use monorepos and worktrees](monorepos.md).
+
+## Optional: declaring what cannot be inferred
+
+The panel works out a project's identity from the labels Compose already
+injects: the project name, the working directory, and a worktree namespace when
+the directory basename disagrees with the project name. Three optional labels
+settle what that inference cannot. All of them are optional.
+
+| Label | When it helps |
+|---|---|
+| `portta.project` | `COMPOSE_PROJECT_NAME` is a per-worktree namespace and five worktrees should group under one heading |
+| `portta.repo` | `owner/name` or a remote URL. Gives repository and commit links with no host-side Git at all |
+| `portta.git.root` | The repository root, when the Compose file is not at it (see [Use monorepos and worktrees](monorepos.md)) |
+
+```yaml
+services:
+  web:
+    labels:
+      - "portta.project=demo-shop"
+      - "portta.repo=owner/demo-shop"
+```
+
+Declare them on any one service; the first that does wins for the whole
+project. `portta envs analyze` reports which ones a project sets, and says
+"none (inferred from the Compose labels)" when it sets none, because that is
+the normal answer rather than a finding.
+
+See [ADR 0010](../../development/adr/0010-git-collected-on-the-host.md).
+
+## Runtime manifest
+
+For an ambiguous project, `portta adopt --service web:3000` stores the intent
+outside Git. A maintained project may commit the optional equivalent,
+`.portta/runtime.json`, specified in
+[The `.portta` directory](../reference/portta-directory.md#runtimejson).
+
+## Manual mode
+
+A project may own its whole integration instead of letting Portta generate
+the overlay: a `compose.portta.yaml` beside its Compose file, with the
+networks, labels and port resets written by hand from the
+[templates](../../../templates/README.md), or generated once with
+`portta envs init <path>`. Record that choice in `.portta/runtime.json` with
+`"mode": "manual"` and the overlay listed in `compose.files`: `portta runtime
+up` then validates and operates the project's own files and adds no routing
+mutation of its own. `portta adopt --manual` records the same mode for the
+Compose files it finds (`compose.yaml` and its variants), so the overlay has to
+be named in `runtime.json` for the plan to include it. Without a recorded plan,
+such a project runs with plain Compose:
+
+```bash
+docker compose -f compose.yaml -f compose.portta.yaml up -d
+```
+
+## Keeping the project runnable without the gateway
+
+The overlay adds only networks, labels and port resets, so `docker compose up -d` on its own
+still works; you just lose hostname routing. If a developer needs a published
+port for a one-off, that is their `compose.override.yaml`, not the shared file.
+
+## Optional: reaching this project's database by hostname
+
+Everything above is about HTTP. A project can additionally opt its datastores
+into hostname routing, so they are reachable on the gateway's shared port
+without publishing one:
+
+The datastore labels come from
+[`templates/overlays/09-tcp-routing.yaml`](../../../templates/overlays/09-tcp-routing.yaml)
+and belong to the project's own overlay, so this is a [manual mode](#manual-mode)
+integration. It needs `PORTTA_TCP=true` on the gateway, works for PostgreSQL
+and Redis, and requires TLS on the client. Read
+[Configure TCP routing](tcp-routing.md) first: it explains what each protocol
+can and cannot do, and why MySQL is not on the list.
+
+## Presentation needs no change to the project
+
+Once a project is running, its name, description, primary service, collapsed
+services, ordering and a short hostname are all adjustable from the panel's
+**Settings** control, and none of it touches the project. The values live in the
+gateway's own database, and a hostname alias becomes one router in a file the
+gateway owns. `git status` inside the clone stays clean.
+
+See [Manage environments](environments.md).

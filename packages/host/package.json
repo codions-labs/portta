@@ -1,0 +1,97 @@
+{
+  "name": "portta-host",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The long-running Portta process on the host, and the modules it serves",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
+    "./taskflow": {
+      "types": "./src/modules/taskflow/runtime.ts",
+      "development": "./src/modules/taskflow/runtime.ts",
+      "import": "./dist/modules/taskflow/runtime.js"
+    },
+    "./taskflow/assets": {
+      "types": "./src/modules/taskflow/assets.ts",
+      "development": "./src/modules/taskflow/assets.ts",
+      "import": "./dist/modules/taskflow/assets.js"
+    },
+    "./taskflow/adapters/*": {
+      "types": "./src/modules/taskflow/adapters/*.ts",
+      "development": "./src/modules/taskflow/adapters/*.ts",
+      "import": "./dist/modules/taskflow/adapters/*.js"
+    },
+    "./taskflow/lib/*": {
+      "types": "./src/modules/taskflow/lib/*.ts",
+      "development": "./src/modules/taskflow/lib/*.ts",
+      "import": "./dist/modules/taskflow/lib/*.js"
+    },
+    "./taskflow/services/*": {
+      "types": "./src/modules/taskflow/services/*.ts",
+      "development": "./src/modules/taskflow/services/*.ts",
+      "import": "./dist/modules/taskflow/services/*.js"
+    },
+    "./taskflow/server/*": {
+      "types": "./src/modules/taskflow/server/*.ts",
+      "development": "./src/modules/taskflow/server/*.ts",
+      "import": "./dist/modules/taskflow/server/*.js"
+    },
+    "./taskflow/workflows/cli": {
+      "types": "./src/modules/taskflow/workflows/cli.ts",
+      "development": "./src/modules/taskflow/workflows/cli.ts",
+      "import": "./dist/modules/taskflow/workflows/cli.js"
+    }
+  },
+  "files": [
+    "dist",
+    "workflows"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run test:node && npm run test:workflows && vitest run",
+    "test:watch": "vitest",
+    "test:node": "NODE_OPTIONS=--conditions=development node --import tsx --test tests/modules/taskflow/process-runner.test.ts tests/modules/taskflow/hooks.node.ts src/modules/taskflow/__tests__/run-store.node.ts",
+    "test:workflows": "NODE_OPTIONS=--conditions=development node --import tsx --test --test-concurrency=2 $(find tests/modules/taskflow/workflows -name '*.test.ts')",
+    "dev:taskflow": "NODE_OPTIONS=--conditions=development tsx --watch src/bin.ts"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@agentclientprotocol/claude-agent-acp": "^0.76.0",
+    "@agentclientprotocol/codex-acp": "^1.11.0",
+    "@agentclientprotocol/sdk": "^1.4.0",
+    "@anthropic-ai/claude-agent-sdk": "^0.3.163",
+    "@devcontainers/cli": "0.89.0",
+    "@hono/node-server": "2.1.1",
+    "@hono/standard-validator": "0.2.0",
+    "@standard-community/standard-json": "0.3.5",
+    "@standard-community/standard-openapi": "0.2.9",
+    "@types/json-schema": "7.0.15",
+    "ajv": "^8.17.1",
+    "better-sqlite3": "^12.11.1",
+    "hono": "4.13.5",
+    "hono-openapi": "1.3.1",
+    "openapi-types": "12.1.3",
+    "pi-acp": "^0.0.33",
+    "portta-contracts": "0.1.0",
+    "portta-core": "0.1.0",
+    "ws": "8.19.0",
+    "yaml": "^2.8.2",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "24.13.3",
+    "@types/ws": "8.18.1",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "title": "Projects",
+  "description": "Products you recognise, and the environments running for them on this host.",
+  "catalogDescription": "A Project is the product. An Environment is one Compose stack running for it on this host.",
+  "newProject": "New project",
+  "needsDatabase": "Projects need the panel's database",
+  "needsDatabaseHint": "They are decisions rather than observations, so they are persisted. Start PostgreSQL and the catalog comes back; environments still list without it.",
+  "catalogEmpty": "No project yet",
+  "catalogEmptyHint": "Create a product, then attach repositories and adopt the environments running for it.",
+  "repository": "{{count}} repository",
+  "repositories": "{{count}} repositories",
+  "create": {
+    "title": "New project",
+    "description": "A name and a slug. Repositories and environments are attached afterwards.",
+    "create": "Create",
+    "name": "Name",
+    "slug": "Slug",
+    "slugHint": "Also what an environment's portta.project label must say to be adopted automatically.",
+    "descriptionLabel": "Description"
+  },
+  "searchPlaceholder": "Search project, environment, service, image",
+  "searchAria": "Search projects",
+  "empty": "No environment is running",
+  "emptyHint": "An environment appears when Compose is up on this host. Adopt it onto a Project with the portta.project label or by hand.",
+  "archived": "archived",
+  "running": "{{running}}/{{total}} running",
+  "detail": {
+    "notFound": "No project '{{slug}}'",
+    "backToAll": "Back to all projects",
+    "private": "private",
+    "unhealthyCount": "{{count}} unhealthy",
+    "sourceReason": {
+      "repoMatch": "its repository belongs to this project",
+      "label": "declared by its portta.project label",
+      "manual": "linked by hand",
+      "path": "it runs from a directory of this project"
+    }
+  },
+  "environments": {
+    "title": "Environments",
+    "description": "Compose projects on this host that belong to this project, and why.",
+    "empty": "Nothing is running for this project",
+    "emptyHint": "Start an environment, label it portta.project with this slug, or link one by hand.",
+    "adopt": "Adopt an environment",
+    "adoptButton": "Adopt"
+  },
+  "issues": {
+    "title": "Issues",
+    "description": "Projected from GitHub. Every row says how old the answer is.",
+    "filterAria": "Filter issues",
+    "status": "Status",
+    "state": "Issue state",
+    "reading": "Reading the issue projection",
+    "needsDatabase": "Issues need the panel's database",
+    "needsDatabaseHint": "They are a projection of GitHub, kept locally so they answer while GitHub is unreachable."
+  },
+  "repositoriesCard": {
+    "title": "Repositories",
+    "description": "The Git of this product. Local first; GitHub is optional metadata.",
+    "empty": "No repository yet",
+    "emptyHint": "Add one the host scanned, or name it by hand.",
+    "remove": "Unregister"
+  },
+  "environmentsLink": "Environments on this host ({{count}})",
+  "tabs": {
+    "label": "{{name}} sections",
+    "overview": "Overview",
+    "issues": "Issues",
+    "repositories": "Repositories ({{count}})",
+    "environments": "Environments ({{count}})",
+    "activity": "Activity",
+    "settings": "Settings"
+  },
+  "pulse": {
+    "sessions": "{{count}} active",
+    "unhealthy": "{{count}} unhealthy"
+  },
+  "density": {
+    "cards": "Cards"
+  },
+  "overview": {
+    "resources": "Resources",
+    "noMeasurement": "No environment of this project is measured right now.",
+    "manageRepositories": "Manage",
+    "manageEnvironments": "Manage"
+  },
+  "settings": {
+    "title": "Project",
+    "description": "What the panel keeps about this product. Nothing here touches a repository or a container.",
+    "relativePath": "Directory under Projects Home",
+    "relativePathHint": "One first-level directory of PORTTA_PROJECTS_HOME. Files are never moved.",
+    "archived": "Archived",
+    "deleteTitle": "Delete this project",
+    "deleteDescription": "Removes the registration and what Portta keeps about it. Nothing on the host changes.",
+    "deleteRemoves": "Removed: the project, its repositories' registrations, its sessions and activity.",
+    "deleteKeeps": "Kept: every container, volume, network, working directory and GitHub issue. Environments go back to unassigned.",
+    "typeSlug": "Type {{slug}} to confirm",
+    "deleteButton": "Delete project",
+    "provider": "Where work lives",
+    "providerHint": "GitHub Issues, or Linear. Derived means: GitHub, when a repository here has a GitHub remote.",
+    "providerDerived": "Derived from the repository",
+    "linearTeam": "Linear team",
+    "linearTeamHint": "The team key its issues belong to, such as ENG."
+  },
+  "actions": {
+    "label": "Environments",
+    "menuFor": "Actions for {{name}}",
+    "start": "Start environments",
+    "stop": "Stop environments",
+    "restart": "Restart environments",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "delete": "Delete project",
+    "openRepositories": "Repositories",
+    "openEnvironments": "Environments",
+    "settings": "Settings",
+    "failed": "Could not act on {{name}}",
+    "done": {
+      "start": "Started {{count}} environment of {{name}}",
+      "start_one": "Started {{count}} environment of {{name}}",
+      "start_other": "Started {{count}} environments of {{name}}",
+      "stop": "Stopped {{count}} environment of {{name}}",
+      "stop_one": "Stopped {{count}} environment of {{name}}",
+      "stop_other": "Stopped {{count}} environments of {{name}}",
+      "restart": "Restarted {{count}} environment of {{name}}",
+      "restart_one": "Restarted {{count}} environment of {{name}}",
+      "restart_other": "Restarted {{count}} environments of {{name}}",
+      "archive": "{{name}} archived",
+      "unarchive": "{{name}} is active again",
+      "delete": "{{name}} removed"
+    },
+    "partial": {
+      "start": "{{name}}: {{failed}} of {{total}} environments did not start",
+      "stop": "{{name}}: {{failed}} of {{total}} environments did not stop",
+      "restart": "{{name}}: {{failed}} of {{total}} environments did not restart"
+    },
+    "confirm": {
+      "stopTitle": "Stop {{name}}?",
+      "stopImpact": "This interrupts {{count}} containers across {{environments}} environments.",
+      "stopImpact_one": "This interrupts {{count}} container.",
+      "stopImpact_other": "This interrupts {{count}} containers across {{environments}} environments.",
+      "restartTitle": "Restart {{name}}?",
+      "restartImpact": "This restarts {{count}} containers across {{environments}} environments; each one is briefly unreachable.",
+      "restartImpact_one": "This restarts {{count}} container; it is briefly unreachable.",
+      "restartImpact_other": "This restarts {{count}} containers across {{environments}} environments; each one is briefly unreachable.",
+      "deleteTitle": "Delete {{name}}?",
+      "deleteImpact": "This removes the project, its repository registrations, its sessions and activity.",
+      "deleteKeeps": "Kept: every container, volume, network, working directory and GitHub issue. Its environments go back to unassigned."
+    },
+    "bulk": {
+      "start": "Start",
+      "stop": "Stop",
+      "restart": "Restart",
+      "archive": "Archive",
+      "nothingToStart": "None of the selected projects has a stopped environment",
+      "nothingToStop": "None of the selected projects has a running environment",
+      "stopTitle": "Stop {{count}} projects?",
+      "stopTitle_one": "Stop {{count}} project?",
+      "stopTitle_other": "Stop {{count}} projects?",
+      "stopImpact": "This interrupts {{count}} containers.",
+      "restartTitle": "Restart {{count}} projects?",
+      "restartTitle_one": "Restart {{count}} project?",
+      "restartTitle_other": "Restart {{count}} projects?",
+      "restartImpact": "This restarts {{count}} containers; each one is briefly unreachable.",
+      "archiveTitle": "Archive {{count}} projects?",
+      "archiveImpact": "They leave the default list. Nothing on the host changes, and they can be unarchived at any time."
+    }
+  },
+  "views": {
+    "cards": "Cards",
+    "table": "Table"
+  },
+  "viewLabel": "View",
+  "table": {
+    "caption": "Projects, their state and their work",
+    "name": "Project",
+    "state": "State",
+    "repositories": "Repos",
+    "environments": "Environments",
+    "agents": "Agents",
+    "activity": "Last activity",
+    "commit": "Last commit",
+    "resources": "Resources",
+    "actions": "Actions"
+  },
+  "state": {
+    "running": "Running",
+    "partial": "Degraded",
+    "unhealthy": "Unhealthy",
+    "idle": "Idle",
+    "archived": "Archived",
+    "runningHint": "Every adopted environment is up and healthy.",
+    "partialHint": "An environment is up with fewer services than it declares.",
+    "unhealthyHint": "A service of this project is failing its health check.",
+    "idleHint": "Nothing is running for this project right now."
+  },
+  "filters": {
+    "state": "State",
+    "anyState": "Any state",
+    "showArchived": "Show archived"
+  },
+  "noMatch": "No project matches these filters",
+  "noMatchHint": "Widen the search, or clear the state filter."
+}

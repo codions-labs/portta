@@ -1,0 +1,122 @@
+{
+  "title": "Gateway",
+  "description": "Os componentes próprios do gateway: status, diagnósticos e logs.",
+  "checking": "Verificando…",
+  "runDiagnostics": "Executar diagnósticos",
+  "restartTraefik": "Reiniciar Traefik",
+  "restarted": "{{components}} reiniciado(s). {{note}}:",
+  "components": {
+    "title": "Componentes",
+    "traefik": "Traefik",
+    "socketProxy": "Proxy de socket",
+    "persistence": "Persistência",
+    "tailscale": "Tailscale",
+    "notRunning": "não em execução",
+    "sharedNetwork": "Rede compartilhada",
+    "attached": "{{count}} anexado(s)",
+    "missing": "ausente",
+    "routedServices": "Serviços roteados"
+  },
+  "versions": {
+    "title": "Versões e perfil",
+    "gateway": "Gateway",
+    "panel": "Painel",
+    "profile": "Perfil",
+    "domain": "Domínio",
+    "traefikDashboard": "Dashboard do Traefik",
+    "thisPanel": "Este painel",
+    "loopbackOnly": "apenas loopback",
+    "routedForwardAuth": "roteado, com login Portta",
+    "routedNoCredential": "roteado sem credencial",
+    "readOnly": "somente leitura"
+  },
+  "diagnostics": {
+    "title": "Diagnósticos",
+    "summary": "{{failures}} falha(s), {{warnings}} aviso(s) · {{time}}",
+    "description": "Verificações que o painel pode fazer de dentro do seu container.",
+    "notRun": "Ainda não executado",
+    "notRunHint": "Para verificações no host (PATH, sockets em escuta, DNS, arquivos de certificado), execute portta doctor.",
+    "deeperChecks": "verificações mais profundas no host:"
+  },
+  "logs": {
+    "title": "Logs",
+    "componentAria": "Componente do gateway"
+  },
+  "settings": {
+    "issues": {
+      "reading": "Lendo os provedores de issues",
+      "title": "Provedores de issues",
+      "description": "GitHub pela CLI gh, e Linear. Os dois são autenticados no host, ao lado do daemon — o painel relata o estado e nunca guarda as credenciais.",
+      "signedIn": "autenticado",
+      "notSignedIn": "sem autenticação",
+      "notInstalled": "não está neste host"
+    }
+  },
+  "apply": {
+    "title": "Aplicar configurações salvas",
+    "barPending": "{{count}} configurações salvas ainda não estão valendo.",
+    "barPending_one": "{{count}} configuração salva ainda não está valendo.",
+    "barPending_other": "{{count}} configurações salvas ainda não estão valendo.",
+    "barApplying": "Aplicando as configurações salvas…",
+    "barAction": "Aplicar",
+    "barReview": "Revisar",
+    "barManual": "Aplique no host com:",
+    "unavailable": {
+      "disabled": "Defina PORTTA_APPLY=true no .env do host e rode o comando uma vez.",
+      "refused": "Este host recusa aplicar pelo painel: {{reason}}.",
+      "notPrepared": "PORTTA_APPLY já está ligado; o applier ainda não foi preparado. Rode o comando uma vez no host."
+    },
+    "confirmTitle": "Aplicar as configurações salvas?",
+    "confirmDescription": "O Portta recria os próprios containers para esses valores salvos passarem a valer.",
+    "confirmPanel": "Este painel é um deles: ele sai do ar por alguns segundos e volta sozinho.",
+    "confirmProjects": "Seus projetos não são tocados. Só os containers do próprio Portta são recriados, e a rede compartilhada fica como está.",
+    "confirmMoves": "Uma configuração pendente muda o endereço em que este painel responde, então esta aba não vai reconectar sozinha.",
+    "confirmKeepTab": "Mantenha esta aba aberta enquanto roda.",
+    "confirmBuild": "Este host constrói as próprias imagens, então o apply inclui um build Docker. O primeiro pode levar vários minutos.",
+    "confirmReference": "Esses valores salvos são só uma nova referência. Não é preciso recriar o gateway.",
+    "confirm": "Aplicar",
+    "discard": "Descartar",
+    "discardAll": "Descartar todas",
+    "discarded": "Alterações pendentes descartadas.",
+    "discarded_one": "Alteração descartada.",
+    "discarded_other": "{{count}} alterações pendentes descartadas.",
+    "secretSet": "definido",
+    "secretChanged": "alterado",
+    "secretUnset": "vazio",
+    "keepTabOpen": "Não feche esta aba. O painel volta sozinho.",
+    "phase": {
+      "starting": "Iniciando o applier…",
+      "applying": "Recriando os containers do gateway…",
+      "waiting": "O painel está reiniciando. Esperando ele responder…",
+      "reconnected": "Pronto. As configurações salvas estão valendo.",
+      "failed": "A aplicação falhou.",
+      "timeout": "O painel ainda não respondeu."
+    },
+    "steps": {
+      "started": "Applier iniciado",
+      "offline": "Painel saiu do ar",
+      "back": "Painel voltou a responder",
+      "applied": "Configurações valendo"
+    },
+    "reload": "Recarregar o painel",
+    "reloadWhy": "Esta página ainda mostra o que o processo anterior respondeu.",
+    "failedExit": "O applier terminou com código {{code}}. Nada foi desfeito.",
+    "failedHint": "Rode no host para ver a saída inteira:",
+    "showOutput": "Mostrar saída",
+    "timeoutBody": "O painel não responde há {{time}}. Ele pode ainda estar subindo. Recarregue a página, ou termine no host:"
+  },
+  "overviewCard": {
+    "title": "Gateway",
+    "profile": "Perfil",
+    "domain": "Domínio",
+    "listening": "Escutando",
+    "tls": "TLS",
+    "tlsEnabled": "ativado ({{mode}})",
+    "tailscale": "Tailscale",
+    "tailscaleRunning": "em execução",
+    "tailscaleEnabledNotRunning": "ativado, não em execução",
+    "publicAccess": "Acesso público",
+    "sharedNetwork": "Rede compartilhada",
+    "attached": "{{name}} · {{count}} conectado(s)"
+  }
+}

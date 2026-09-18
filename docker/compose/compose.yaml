@@ -1,0 +1,214 @@
+# ============================================================================
+# Portta: base stack
+# ============================================================================
+# This file contains ONLY gateway-owned infrastructure. It never references,
+# mounts or manages anything belonging to a consumer project.
+#
+# Do not run this file directly; use the CLI so the right profile overlays and
+# the resolved environment are applied:
+#
+#   ./bin/portta up local
+#
+# docker/compose/compose.yaml alone is intentionally incomplete: it declares no Traefik
+# networks or ports, because exactly one attach-* overlay decides those.
+#
+# Traefik's static configuration lives in `environment:` (TRAEFIK_* variables)
+# rather than a config file. Traefik treats file / CLI / env as mutually
+# exclusive sources, and only the env form composes across Compose overlays.
+# Dynamic configuration stays in config/traefik/dynamic/. See docs/development/adr/0003.
+# ============================================================================
+
+name: ${PORTTA_PROJECT_NAME:-portta}
+
+networks:
+  # Shared, external, created by `bootstrap`. Consumer projects attach their
+  # published HTTP services here. Its lifecycle is independent of this stack.
+  gateway:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}
+
+  # Gateway-private control plane. `internal: true` means no route to the
+  # outside world: the Docker socket proxy is unreachable from anywhere else.
+  control:
+    name: ${PORTTA_CONTROL_NETWORK:-portta-control}
+    internal: true
+    labels:
+      portta.managed: "true"
+      portta.component: control-network
+
+services:
+  # --------------------------------------------------------------------------
+  # Docker socket proxy: read-only, filtered view of the Docker API
+  # --------------------------------------------------------------------------
+  # Traefik needs container discovery, not control. This proxy exposes only the
+  # endpoints the Docker provider actually calls and rejects every write.
+  # It is reachable exclusively from the internal control network.
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0
+    restart: unless-stopped
+    read_only: true
+    environment:
+      # Endpoints Traefik's Docker provider requires
+      CONTAINERS: "1"
+      NETWORKS: "1"
+      EVENTS: "1"
+      PING: "1"
+      VERSION: "1"
+      # Everything else stays denied
+      POST: "0"
+      ALLOW_RESTARTS: "0"
+      ALLOW_STOP: "0"
+      ALLOW_START: "0"
+      AUTH: "0"
+      BUILD: "0"
+      COMMIT: "0"
+      CONFIGS: "0"
+      DISTRIBUTION: "0"
+      EXEC: "0"
+      IMAGES: "0"
+      INFO: "0"
+      NODES: "0"
+      PLUGINS: "0"
+      SECRETS: "0"
+      SERVICES: "0"
+      SESSION: "0"
+      SWARM: "0"
+      SYSTEM: "0"
+      TASKS: "0"
+      VOLUMES: "0"
+      LOG_LEVEL: warning
+    volumes:
+      # Read-only bind. The proxy is the only component that sees the socket.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - control
+    # Deliberately no `ports:`: the proxy must never be reachable from the host.
+    # read_only above hardens the container; the entrypoint still needs to
+    # render the generated haproxy.cfg somewhere, hence these tmpfs mounts.
+    tmpfs:
+      - /tmp
+      - /run
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "2375"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    labels:
+      traefik.enable: "false"
+      portta.managed: "true"
+      portta.component: socket-proxy
+
+  # --------------------------------------------------------------------------
+  # Traefik: HTTP/HTTPS edge router
+  # --------------------------------------------------------------------------
+  traefik:
+    image: traefik:v3.7.12
+    restart: unless-stopped
+    depends_on:
+      socket-proxy:
+        condition: service_healthy
+    # No `networks:` and no `ports:` here on purpose. How Traefik is attached to
+    # the world is a per-profile decision made by exactly one overlay:
+    #   docker/compose/attach/host.yaml      : its own namespace, ports on the host
+    #   docker/compose/attach/tailscale.yaml : inside the Tailscale container's
+    #                                  network namespace, reachable over the
+    #                                  tailnet with nothing published
+    # `networks:` and `network_mode:` are mutually exclusive and Compose merges
+    # rather than replaces both, so neither can be declared here and undone later.
+    environment:
+      # -- global ----------------------------------------------------------
+      TRAEFIK_GLOBAL_CHECKNEWVERSION: "false"
+      TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE: "false"
+
+      # -- observability ---------------------------------------------------
+      TRAEFIK_LOG_LEVEL: ${PORTTA_LOG_LEVEL:-INFO}
+      TRAEFIK_ACCESSLOG: ${PORTTA_ACCESS_LOG:-false}
+      TRAEFIK_PING: "true"
+
+      # -- api / dashboard -------------------------------------------------
+      # Off by default. docker/compose/features/dashboard.yaml turns it on, bound
+      # to loopback.
+      TRAEFIK_API: "false"
+
+      # -- entrypoints -----------------------------------------------------
+      TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ":443"
+      # Headers whose names contain characters outside [A-Za-z0-9-] can alias a
+      # canonical header once a backend normalises them (X_Auth_User becoming
+      # X-Auth-User in CGI/WSGI/PHP/nginx), which lets a client spoof headers
+      # Traefik manages. `keep` is Traefik's default and is fine behind
+      # loopback; the public profile raises this to `delete`. Setting it
+      # explicitly also silences Traefik's startup advisory.
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_ALIASHEADERSSTRATEGY: ${PORTTA_ALIAS_HEADERS_STRATEGY:-keep}
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ALIASHEADERSSTRATEGY: ${PORTTA_ALIAS_HEADERS_STRATEGY:-keep}
+
+      # -- docker provider -------------------------------------------------
+      TRAEFIK_PROVIDERS_DOCKER: "true"
+      TRAEFIK_PROVIDERS_DOCKER_ENDPOINT: tcp://socket-proxy:2375
+      # A service is routed only when it opts in with traefik.enable=true.
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      # Consumer containers sit on several networks; always dial them over the
+      # shared gateway network so we never reach into a project's private one.
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: ${PORTTA_NETWORK:-portta}
+      # Hostnames are derived from the labels Compose already injects, so a
+      # project opts in without repeating its own name. An explicit
+      # `traefik.http.routers.<name>.rule` label always wins.
+      TRAEFIK_PROVIDERS_DOCKER_DEFAULTRULE: >-
+        Host(`{{ if index .Labels "com.docker.compose.project" }}{{ normalize (index .Labels "com.docker.compose.project") }}-{{ normalize (index .Labels "com.docker.compose.service") }}{{ else }}{{ normalize .Name }}{{ end }}.${PORTTA_DOMAIN:-localhost}`)
+
+      # -- file provider (dynamic configuration) ---------------------------
+      TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/dynamic
+      TRAEFIK_PROVIDERS_FILE_WATCH: "true"
+    volumes:
+      - ./config/traefik/dynamic:/etc/traefik/dynamic:ro
+      # Local CA material, when `portta tls init` has been run. Empty
+      # otherwise; git-ignored either way.
+      - ./config/tls:/etc/traefik/tls:ro
+      - ./state/traefik/acme:/etc/traefik/acme
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    labels:
+      traefik.enable: "false"
+      portta.managed: "true"
+      portta.component: traefik
+
+  # --------------------------------------------------------------------------
+  # ForwardAuth: browser login and host-scoped sessions
+  # --------------------------------------------------------------------------
+  portta-auth:
+    image: ${PORTTA_AUTH_IMAGE:-ghcr.io/codions-labs/portta:${PORTTA_VERSION}}
+    restart: unless-stopped
+    read_only: true
+    # The store it reads is owner-only and belongs to whoever installed Portta,
+    # which on a VPS is root. Hard-coding `node` (uid 1000) meant the service
+    # could not open its own protection store on any Linux host installed as
+    # anybody else -- the same reason the panel takes PORTTA_WEB_USER.
+    user: ${PORTTA_AUTH_USER:-node}
+    command: ["node", "/app/apps/auth/dist/index.js"]
+    environment:
+      PORTTA_AUTH_PORT: "4180"
+      PORTTA_AUTH_STORE: /app/state/auth/protections.json
+      PORTTA_AUTH_SECRET: ${PORTTA_AUTH_SECRET:-}
+      PORTTA_AUTH_UI_DIR: /app/apps/auth/dist/ui
+      PORTTA_AUTH_SESSION_SECONDS: "43200"
+    volumes:
+      - ./state/auth:/app/state/auth:ro
+    networks:
+      - gateway
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4180/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    labels:
+      traefik.enable: "false"
+      portta.managed: "true"
+      portta.component: auth

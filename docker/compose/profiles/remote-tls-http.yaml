@@ -1,0 +1,32 @@
+# ============================================================================
+# ACME over HTTP-01: one certificate per hostname, and no credential
+# ============================================================================
+# What a public gateway on a public IP can do with nothing but an A record and
+# a wildcard A record. Traefik asks for a certificate the first time a router
+# is created for a hostname, Let's Encrypt fetches a token from this host over
+# :80, and the certificate arrives a second or two later.
+#
+# No entrypoint-level `domains` here, deliberately: a wildcard SAN cannot be
+# issued this way, and asking for one makes every issuance fail. The router's
+# own rule is what names the certificate.
+#
+# What this gives up against DNS-01:
+#
+#   - :80 must be reachable from the internet. A private or VPN-only gateway
+#     cannot use this at all.
+#   - A hostname has no certificate until something answers on it, so the very
+#     first request to a new service waits for issuance.
+#   - Let's Encrypt counts certificates per registered domain, not per name.
+#     A gateway that churns through hostnames will meet the weekly limit that
+#     one wildcard never would.
+#
+# Traefik installs the challenge router ahead of the :80 -> :443 redirection
+# above, so the redirect does not swallow the challenge.
+# See docs/product/guides/dns-and-tls.md.
+# ============================================================================
+
+services:
+  traefik:
+    environment:
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_HTTPCHALLENGE: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_HTTPCHALLENGE_ENTRYPOINT: web

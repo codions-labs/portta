@@ -1,0 +1,45 @@
+name: ${COMPOSE_PROJECT_NAME:-demo-a}
+
+services:
+  web:
+    image: traefik/whoami:v1.12.0
+    command: ["--port", "3000", "--name", "demo-a-web"]
+    restart: unless-stopped
+  api:
+    image: traefik/whoami:v1.12.0
+    command: ["--port", "8000", "--name", "demo-a-api"]
+    restart: unless-stopped
+  postgres:
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      # Over TCP: the image's first-boot initialisation server listens only on
+      # the socket, and a 1s start interval would report it healthy mid-init.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U demo -d demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+      start_interval: 1s
+  redis:
+    image: redis:8.10.1-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+      start_interval: 1s
+
+volumes:
+  pgdata:
+  redisdata:

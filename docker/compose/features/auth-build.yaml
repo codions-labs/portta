@@ -1,0 +1,19 @@
+# ============================================================================
+# Portta: build the auth image locally (checkout only)
+# ============================================================================
+# Applied only when PORTTA_WEB_BUILD=true. Development uses auth-dev.yaml;
+# normal local-release and installed runs consume an already-built image.
+#
+# The runtime target is what the long-running service executes.
+# See docs/development/adr/0020-installer-and-portta-home.md.
+# ============================================================================
+
+services:
+  portta-auth:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runtime
+      args:
+        PORTTA_VERSION: ${PORTTA_VERSION:-}
+    image: ${PORTTA_AUTH_IMAGE:-codions-labs/portta:${PORTTA_VERSION}}

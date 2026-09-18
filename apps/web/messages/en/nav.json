@@ -1,0 +1,50 @@
+{
+  "access": "Access",
+  "appName": "Portta",
+  "collapseSidebar": "Collapse sidebar",
+  "connection": {
+    "offline": "Can't reach the panel. Live updates are paused.",
+    "reconnecting": "Reconnecting…"
+  },
+  "docker": "Docker",
+  "documentation": "Documentation",
+  "expandSidebar": "Expand sidebar",
+  "gateway": "Gateway",
+  "gatewayDown": "Gateway down",
+  "gatewayUp": "Gateway up",
+  "live": {
+    "connecting": "connecting",
+    "live": "live",
+    "offline": "offline"
+  },
+  "network": "Network",
+  "overview": "Overview",
+  "projects": "Projects",
+  "sections": "Sections",
+  "services": "Services",
+  "settings": "Settings",
+  "toggleTheme": "Toggle theme",
+  "groups": {
+    "development": "Development",
+    "infrastructure": "Infrastructure"
+  },
+  "environments": "Environments",
+  "commandPalette": "Command menu",
+  "commandPlaceholder": "Type a command or search…",
+  "commandNoResults": "Nothing matches",
+  "commandGroups": {
+    "navigate": "Go to",
+    "projects": "Projects",
+    "actions": "Actions",
+    "preferences": "Preferences"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "shortcuts": {
+    "sidebar": "Toggle the sidebar"
+  }
+}

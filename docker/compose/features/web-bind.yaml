@@ -1,0 +1,19 @@
+# ============================================================================
+# Portta: publish the panel on a host interface
+# ============================================================================
+# Applied for every panel access mode except `public`:
+#
+#   local      127.0.0.1        this machine, or an SSH tunnel
+#   tailscale  100.x.y.z        the tailnet only, nothing on the public NIC
+#   vpn        127.0.0.1        loopback, plus the router in web-vpn.yaml
+#
+# PORTTA_WEB_BIND_ADDRESS is the whole decision, and the installer and
+# `portta config set panel.access` are the two places that set it. The `public`
+# mode never applies this overlay: there the port belongs to Traefik, so a
+# request cannot reach the panel without passing Portta ForwardAuth first.
+# ============================================================================
+
+services:
+  web:
+    ports:
+      - "${PORTTA_WEB_BIND_ADDRESS:-127.0.0.1}:${PORTTA_WEB_PORT:-8081}:8081"

@@ -1,0 +1,33 @@
+# ============================================================================
+# Web + API + PostgreSQL
+# ============================================================================
+# Note what is NOT here: postgres. A database has no business on the shared
+# network, since everything else on the host could reach it, and it does not
+# need a host port either.
+#
+# The API reaches it as `postgres:5432` over the project's own network, exactly
+# as before. A human reaches it on demand:
+#
+#   portta access open --project <name> --service postgres
+#   -> 127.0.0.1:<free port>
+# ============================================================================
+
+services:
+  web:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-web.loadbalancer.server.port=3000"
+
+  api:
+    networks: [default, portta]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api.loadbalancer.server.port=8000"
+
+networks:
+  portta:
+    external: true
+    name: ${PORTTA_NETWORK:-portta}

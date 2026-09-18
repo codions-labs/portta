@@ -1,0 +1,27 @@
+services:
+  postgres:
+    networks: [default, portta-access]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_ACCESS_NETWORK:-portta-access}"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME:-demo-a}-postgres.entrypoints=postgres"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME:-demo-a}-postgres.rule=HostSNIRegexp(`^${COMPOSE_PROJECT_NAME:-demo-a}-postgres\\..+$`)"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME:-demo-a}-postgres.tls=true"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME:-demo-a}-postgres.tls.options=postgres@file"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME:-demo-a}-postgres.service=${COMPOSE_PROJECT_NAME:-demo-a}-postgres"
+      - "traefik.tcp.services.${COMPOSE_PROJECT_NAME:-demo-a}-postgres.loadbalancer.server.port=5432"
+  redis:
+    networks: [default, portta-access]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${PORTTA_ACCESS_NETWORK:-portta-access}"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME:-demo-a}-redis.entrypoints=redis"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME:-demo-a}-redis.rule=HostSNIRegexp(`^${COMPOSE_PROJECT_NAME:-demo-a}-redis\\..+$`)"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME:-demo-a}-redis.tls=true"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME:-demo-a}-redis.service=${COMPOSE_PROJECT_NAME:-demo-a}-redis"
+      - "traefik.tcp.services.${COMPOSE_PROJECT_NAME:-demo-a}-redis.loadbalancer.server.port=6379"
+
+networks:
+  portta-access:
+    external: true
+    name: ${PORTTA_ACCESS_NETWORK:-portta-access}

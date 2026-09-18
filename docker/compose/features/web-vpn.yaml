@@ -1,0 +1,24 @@
+# ============================================================================
+# Portta: reach the panel over the VPN
+# ============================================================================
+# Applied when PORTTA_WEB_EXPOSE=vpn. It adds a Traefik router for the
+# panel so it is reachable at <host>.<domain> from the tailnet, instead of only
+# on the VPS's own loopback.
+#
+# The CLI refuses this overlay on the remote-public profile, where Traefik
+# binds every interface and a router would therefore be public. It must never
+# be reachable from the internet.
+#
+# There is no middleware on the router: the panel signs people in itself, and
+# `portta web up --expose vpn` refuses unless PORTTA_AUTH_MODE=required. The
+# tailnet is the first boundary and the panel's own login is the second.
+# See docs/development/adr/0035-authentication-lives-in-the-panel.md.
+# ============================================================================
+
+services:
+  web:
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.portta-web.rule: >-
+        Host(`${PORTTA_WEB_HOST:-portta-web}.${PORTTA_DOMAIN:-localhost}`)
+      traefik.http.services.portta-web.loadbalancer.server.port: "8081"

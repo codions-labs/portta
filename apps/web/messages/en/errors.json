@@ -1,0 +1,11 @@
+{
+  "hints": {
+    "notSaved": "the value was not saved",
+    "databaseUnavailable": "existing Docker-backed pages remain available; run portta db status",
+    "panelLimit": "this is a panel limit, not a Docker one",
+    "unexpected": "unexpected failure"
+  },
+  "readOnly": "the panel is running in read-only mode",
+  "crossOrigin": "cross-origin writes are refused",
+  "bridgeClosed": "bridge closed; the service itself was not touched"
+}

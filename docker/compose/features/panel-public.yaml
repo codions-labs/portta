@@ -1,0 +1,45 @@
+# ============================================================================
+# Portta: the panel on a public address, behind Portta ForwardAuth
+# ============================================================================
+# Applied when PORTTA_WEB_EXPOSE=public, the shortest path to a panel on a
+# development VPS. Two properties make it safe enough, and both are load
+# bearing:
+#
+#   1. The panel gets its OWN Traefik entrypoint (`panel`, :8090 inside the
+#      container). It is never attached to web/websecure, so publishing the
+#      panel does not publish a single application, and an application that
+#      opts into Traefik is not reachable on this port. Panel access and
+#      application exposure stay separate decisions.
+#
+#   2. The panel signs people in itself. There is no middleware on this
+#      router: `PORTTA_AUTH_MODE=required` is what stands in front of it, the
+#      panel's own process refuses to start with `public` access in `disabled`
+#      mode, and `portta web up --expose public` refuses before that.
+#      See docs/development/adr/0051-authentication-is-optional-inside-a-trusted-network.md.
+#
+# The panel container itself publishes no host port here (web-bind.yaml is not
+# applied), so the only way in is through this entrypoint.
+#
+# HTTP, not HTTPS, when the address is a bare IP: there is no certificate a
+# public CA will issue for one. The password is checked by the panel but the
+# connection is not encrypted.
+# `--expose domain` is the mode that gets a real certificate.
+# ============================================================================
+
+services:
+  traefik:
+    ports:
+      # 0.0.0.0 by default: `public` means public, and the installer states it.
+      - "${PORTTA_WEB_BIND_ADDRESS:-0.0.0.0}:${PORTTA_WEB_PORT:-8081}:8090"
+    environment:
+      TRAEFIK_ENTRYPOINTS_PANEL_ADDRESS: ":8090"
+
+  web:
+    labels:
+      # Overrides the `false` in web.yaml: a later overlay wins for map labels.
+      traefik.enable: "true"
+      # A bare IP has no hostname to match on, so the rule is the path. The
+      # entrypoint is what scopes it: nothing else answers on :8090.
+      traefik.http.routers.portta-panel.rule: PathPrefix(`/`)
+      traefik.http.routers.portta-panel.entrypoints: panel
+      traefik.http.services.portta-panel.loadbalancer.server.port: "8081"
