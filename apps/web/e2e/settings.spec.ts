@@ -35,7 +35,7 @@ test.describe('administering a panel that asks who you are', () => {
 
     // 2. The owner creates a viewer.
     await page.getByRole('link', { name: 'Users', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Users', level: 1 })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Users', level: 2 })).toBeVisible()
     await page.getByRole('button', { name: 'New user' }).click()
     const form = page.getByRole('dialog')
     await form.getByLabel(/^Name/).fill(VIEWER.name)
