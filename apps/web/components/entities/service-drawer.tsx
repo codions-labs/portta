@@ -94,7 +94,7 @@ export function ServiceDrawer({
           </span>
           {container.environment ? (
             <a
-              className="rounded-xs text-accent underline-offset-2 hover:underline focus-ring"
+              className="rounded-xs text-link underline-offset-2 hover:underline focus-ring"
               href={`/environments/${encodeURIComponent(container.environment)}`}
             >
               {t('environmentLink')}

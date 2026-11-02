@@ -4,7 +4,7 @@ export function DocsBreadcrumbs({ section, category, title }: { section: string;
     <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted">
       <ol className="flex flex-wrap items-center gap-2">
         <li>
-          <Link href="/docs" className="rounded hover:text-accent focus-ring">
+          <Link href="/docs" className="rounded hover:text-link focus-ring">
             Documentation
           </Link>
         </li>

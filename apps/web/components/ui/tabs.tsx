@@ -25,6 +25,48 @@ export interface TabDefinition {
  * Every tab has the same weight whether selected or not, so choosing one
  * never shifts its neighbours.
  */
+/**
+ * Sections of one place, as links: what a person can open, and which they are
+ * on. Not a tablist, because each section is a page with its own URL and the
+ * browser already knows how to walk between links.
+ */
+export function LinkTabs({
+  tabs,
+  active,
+  label,
+  className,
+}: {
+  tabs: { id: string; label: string; href: string }[]
+  active: string
+  label: string
+  className?: string
+}) {
+  return (
+    <nav
+      aria-label={label}
+      className={cn('mb-6 flex gap-0.5 overflow-x-auto border-b border-line scroll-thin', className)}
+    >
+      {tabs.map((tab) => {
+        const selected = tab.id === active
+        return (
+          <Link
+            key={tab.id}
+            href={tab.href}
+            aria-current={selected ? 'page' : undefined}
+            className={cn(
+              'relative flex h-10 shrink-0 items-center px-3 text-base font-medium whitespace-nowrap transition-colors duration-100 focus-ring-inset',
+              'after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full',
+              selected ? 'text-ink after:bg-accent' : 'text-subtle after:bg-transparent hover:text-ink',
+            )}
+          >
+            {tab.label}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
+
 export function Tabs({
   tabs,
   active,
@@ -87,7 +129,7 @@ export function Tabs({
             id={`tab-${tab.id}`}
             tabIndex={selected ? 0 : -1}
             className={cn(
-              'relative flex h-9 shrink-0 items-center gap-1.5 rounded-t-sm px-2.5 text-sm font-medium whitespace-nowrap transition-colors duration-100 focus-ring-inset',
+              'relative flex h-10 shrink-0 items-center gap-1.5 rounded-t-sm px-3 text-base font-medium whitespace-nowrap transition-colors duration-100 focus-ring-inset',
               'after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:transition-colors',
               selected ? 'text-ink after:bg-accent' : 'text-subtle hover:text-ink after:bg-transparent',
             )}

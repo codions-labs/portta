@@ -60,7 +60,7 @@ export function DocText({ children, citationLabel }: { children: string; citatio
         href={part.href}
         target="_blank"
         rel="noreferrer"
-        className="text-accent underline underline-offset-2 hover:text-accent"
+        className="text-link underline underline-offset-2 hover:text-link"
       >
         {part.text}
       </a>

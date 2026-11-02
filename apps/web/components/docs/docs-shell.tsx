@@ -60,7 +60,7 @@ export function DocsToc({ headings }: { headings: Array<Pick<DocHeading, 'id' | 
                 <a
                   href={`#${heading.id}`}
                   aria-current={active === heading.id ? 'location' : undefined}
-                  className={`block break-words rounded focus-ring ${active === heading.id ? 'text-accent' : 'text-muted hover:text-ink'}`}
+                  className={`block break-words rounded focus-ring ${active === heading.id ? 'text-link' : 'text-muted hover:text-ink'}`}
                 >
                   {heading.text}
                 </a>
@@ -161,7 +161,7 @@ export function DocsShell({
                     href={`/docs/${page.slug}`}
                     title={page.summary}
                     aria-current={slug === page.slug ? 'page' : undefined}
-                    className={`block rounded-md px-2 py-1.5 text-sm focus-ring ${slug === page.slug ? 'bg-accent/12 font-medium text-accent' : 'text-muted hover:bg-surface-2 hover:text-ink'}`}
+                    className={`block rounded-md px-2 py-1.5 text-sm focus-ring ${slug === page.slug ? 'bg-accent/12 font-medium text-link' : 'text-muted hover:bg-surface-2 hover:text-ink'}`}
                   >
                     {page.title}
                   </Link>
@@ -300,7 +300,7 @@ export function DocsShell({
                       className="block rounded p-2 focus-ring hover:bg-surface-2"
                     >
                       <span className="block text-sm font-medium">{hit.title}</span>
-                      <span className="block text-xs text-accent">
+                      <span className="block text-xs text-link">
                         {hit.audience === 'developer' ? 'Development' : hit.section}
                         {hit.category ? ` / ${hit.category}` : ''}
                       </span>

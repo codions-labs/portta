@@ -151,7 +151,7 @@ export function AddressLine({ value, href, className }: { value: string; href?: 
           href={href}
           target="_blank"
           rel="noreferrer"
-          className="truncate rounded-xs font-mono text-xs text-accent hover:underline focus-ring"
+          className="truncate rounded-xs font-mono text-xs text-link hover:underline focus-ring"
         >
           {value}
         </a>

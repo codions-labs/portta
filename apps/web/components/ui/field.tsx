@@ -23,15 +23,15 @@ const control = [
   'w-full min-w-0 rounded-md border border-line bg-surface text-ink',
   'placeholder:text-faint transition-colors duration-100',
   'hover:border-line-strong',
-  'focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25',
+  'focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/25',
   'read-only:bg-surface-2 read-only:hover:border-line',
   'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-line',
   'aria-invalid:border-danger aria-invalid:focus:ring-danger/25',
 ].join(' ')
 
 const heights = {
-  sm: 'h-7 px-2 text-xs',
-  md: 'h-8 px-2.5 text-sm',
+  sm: 'h-8.5 px-2.5 text-sm',
+  md: 'h-10 px-3 text-base',
 } as const
 
 export type FieldSize = keyof typeof heights
@@ -52,13 +52,13 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
 
 /**
  * A native select with the panel's chevron. The className sizes the box, so
- * `w-40` or `h-7` on the outside behaves the way it does on an Input.
+ * `w-40` or `h-8.5` on the outside behaves the way it does on an Input.
  */
 export function Select({ className, size = 'md', children, ...props }: SelectProps) {
   return (
-    <span className={cn('relative inline-block', size === 'sm' ? 'h-7' : 'h-8', className)}>
+    <span className={cn('relative inline-block', size === 'sm' ? 'h-8.5' : 'h-10', className)}>
       <select
-        className={cn(control, 'h-full appearance-none pr-7', size === 'sm' ? 'px-2 text-xs' : 'px-2.5 text-sm')}
+        className={cn(control, 'h-full appearance-none pr-7', size === 'sm' ? 'px-2.5 text-sm' : 'px-3 text-base')}
         {...props}
       >
         {children}

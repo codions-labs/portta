@@ -46,8 +46,8 @@ export function Segmented<Value extends string>({
       role="radiogroup"
       aria-label={label}
       className={cn(
-        'inline-flex shrink-0 items-center gap-0.5 rounded-md border border-line bg-surface-2 p-0.5',
-        size === 'sm' ? 'h-7' : 'h-8',
+        'inline-flex shrink-0 items-center gap-0.5 rounded-md bg-surface-2 p-0.5',
+        size === 'sm' ? 'h-8.5' : 'h-10',
         className,
       )}
       onKeyDown={(event) => {
@@ -75,9 +75,9 @@ export function Segmented<Value extends string>({
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(option.value)}
             className={cn(
-              'flex h-full items-center gap-1.5 rounded-sm text-xs font-medium transition-colors duration-100 focus-ring',
-              iconOnly || Icon ? 'px-1.5 sm:px-2' : 'px-2',
-              selected ? 'bg-surface text-ink shadow-raised ring-1 ring-line' : 'text-subtle hover:text-ink',
+              'flex h-full items-center gap-1.5 rounded-sm text-sm font-medium transition-colors duration-100 focus-ring',
+              iconOnly || Icon ? 'px-2 sm:px-2.5' : 'px-2.5',
+              selected ? 'bg-surface text-ink shadow-raised' : 'text-muted hover:text-ink',
             )}
           >
             {Icon ? <Icon className="size-3.5" /> : null}

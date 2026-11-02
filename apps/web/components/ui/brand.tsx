@@ -1,10 +1,10 @@
 export function PorttaBrand() {
   return (
-    <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-md bg-accent text-accent-fg">
+    <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-accent-fg">
       <svg
         aria-hidden="true"
         viewBox="0 0 16 16"
-        className="size-3.5"
+        className="size-4"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.75"

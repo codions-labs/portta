@@ -244,10 +244,10 @@ export function PanelSettings({
                 </Field>
               )}
               <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                <Link className="rounded-xs text-accent hover:underline focus-ring" href="/settings/general/dns">
+                <Link className="rounded-xs text-link hover:underline focus-ring" href="/settings/general/dns">
                   {t('configureDns')}
                 </Link>
-                <Link className="rounded-xs text-accent hover:underline focus-ring" href="/settings/general/tls">
+                <Link className="rounded-xs text-link hover:underline focus-ring" href="/settings/general/tls">
                   {t('configureTls')}
                 </Link>
                 <LearnMore citation="docs/product/concepts/addresses-and-access.md#custom-panel-domain" />

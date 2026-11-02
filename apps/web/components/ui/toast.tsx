@@ -101,7 +101,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 {toast.action ? (
                   <button
                     type="button"
-                    className="mt-1.5 text-xs font-medium text-accent hover:underline focus-ring rounded-xs"
+                    className="mt-1.5 text-xs font-medium text-link hover:underline focus-ring rounded-xs"
                     onClick={() => {
                       toast.action?.onClick()
                       dismiss(toast.id)

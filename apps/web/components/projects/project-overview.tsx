@@ -52,7 +52,7 @@ export function ProjectOverview({ project, readOnly }: { project: Project; readO
           title={t('environments.title')}
           actions={
             <Link
-              className="rounded-xs text-xs text-accent hover:underline focus-ring"
+              className="rounded-xs text-xs text-link hover:underline focus-ring"
               href={`/projects/${encodeURIComponent(project.slug)}/environments`}
             >
               {t('overview.manageEnvironments')}

@@ -85,7 +85,7 @@ function DocsHome() {
                 return (
                   <li key={slug}>
                     <Link href={page.url} className="block rounded px-4 py-3 focus-ring hover:bg-surface-2">
-                      <span className="block text-sm font-medium text-accent">{page.title}</span>
+                      <span className="block text-sm font-medium text-link">{page.title}</span>
                       <span className="mt-1 block text-sm text-muted">{page.description}</span>
                     </Link>
                   </li>
@@ -130,7 +130,7 @@ export default async function DocPage({ params }: { params: Promise<Params> }) {
               {previous ? (
                 <Link
                   href={previous.url}
-                  className="rounded-lg border border-line px-4 py-3 hover:text-accent focus-ring"
+                  className="rounded-lg border border-line px-4 py-3 hover:text-link focus-ring"
                 >
                   <span className="block text-xs text-muted">Previous</span>
                   {previous.title}
@@ -141,7 +141,7 @@ export default async function DocPage({ params }: { params: Promise<Params> }) {
               {next && (
                 <Link
                   href={next.url}
-                  className="rounded-lg border border-line px-4 py-3 text-right hover:text-accent focus-ring"
+                  className="rounded-lg border border-line px-4 py-3 text-right hover:text-link focus-ring"
                 >
                   <span className="block text-xs text-muted">Next</span>
                   {next.title}

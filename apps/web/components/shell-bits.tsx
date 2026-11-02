@@ -34,20 +34,20 @@ export function PageHeader({
   icon?: ReactNode
 }) {
   return (
-    <header className="mb-4">
+    <header className="mb-6 border-b border-line pb-6">
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
         <div className="min-w-0">
           {breadcrumb && breadcrumb.length >= 2 ? <Breadcrumb items={breadcrumb} className="-ml-1 mb-1" /> : null}
-          <h1 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-ink">
+          <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold text-ink md:text-4xl">
             {icon ? <span className="shrink-0 text-subtle [&_svg]:size-4">{icon}</span> : null}
             <span className="truncate">{title}</span>
           </h1>
-          {description ? <p className="mt-0.5 max-w-3xl text-sm text-subtle">{description}</p> : null}
+          {description ? <p className="mt-1.5 max-w-3xl text-base text-subtle">{description}</p> : null}
           {meta ? (
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">{meta}</div>
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted">{meta}</div>
           ) : null}
         </div>
-        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
     </header>
   )
@@ -221,7 +221,7 @@ export function Callout({
     <div
       role={role ?? (tone === 'danger' ? 'alert' : undefined)}
       className={cn(
-        'flex items-start gap-2.5 rounded-md border px-3 py-2 text-sm',
+        'flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm',
         toneBorder[tone],
         toneWash[tone],
         className,
@@ -324,12 +324,15 @@ export function StatTile({
 }) {
   const color = tone ? toneText[tone] : 'text-ink'
   return (
-    <div role="group" aria-label={label} className="rounded-lg border border-line bg-surface px-3 py-2">
+    <div role="group" aria-label={label} className="rounded-xl border border-line bg-surface px-5 py-4 shadow-raised">
       <Eyebrow>{label}</Eyebrow>
-      <div data-slot="value" className={cn('mt-1 text-xl leading-none font-semibold tabular-nums', color)}>
+      <div
+        data-slot="value"
+        className={cn('mt-2 font-heading text-3xl leading-none font-semibold tabular-nums', color)}
+      >
         {value}
       </div>
-      {hint ? <div className="mt-1 text-xs text-subtle">{hint}</div> : null}
+      {hint ? <div className="mt-1.5 text-xs text-subtle">{hint}</div> : null}
     </div>
   )
 }
