@@ -8,10 +8,7 @@ import { ApiError, api } from '../../lib/api/index.ts'
 import type { ProjectListItem } from '../../lib/projects.ts'
 import { projectStateRank } from '../../lib/projects.ts'
 import type { Column } from '../../lib/table.ts'
-import { useFormat } from '../../lib/use-format.ts'
-import { Mono } from '../copy.tsx'
 import { NoValue } from '../shell-bits.tsx'
-import { Badge } from '../ui/badge.tsx'
 import { ConfirmDialog } from '../ui/confirm-dialog.tsx'
 import { type BulkAction, DataTable } from '../ui/data-table.tsx'
 import type { TableArrangementHandle } from '../ui/table-arrangement.tsx'
@@ -47,7 +44,6 @@ export function ProjectTable({
 }) {
   const { t } = useTranslation('projects')
   const { t: ta } = useTranslation('projects', { keyPrefix: 'actions' })
-  const { relativeTime } = useFormat()
   const queryClient = useQueryClient()
   const toast = useToast()
   const [pending, setPending] = useState<{ kind: BulkKind; items: ProjectListItem[]; clear: () => void } | null>(null)
@@ -93,28 +89,6 @@ export function ProjectTable({
         ),
       },
       {
-        id: 'repositories',
-        header: t('table.repositories'),
-        align: 'right',
-        priority: 2,
-        sortValue: (item) => item.repositoryCount,
-        cell: (item) => <span className="tabular-nums">{item.repositoryCount}</span>,
-      },
-      {
-        id: 'agents',
-        header: t('table.agents'),
-        align: 'right',
-        sortValue: (item) => item.activeSessions,
-        cell: (item) =>
-          item.activeSessions ? (
-            <Badge tone="agent" dot>
-              {item.activeSessions}
-            </Badge>
-          ) : (
-            <NoValue />
-          ),
-      },
-      {
         id: 'resources',
         header: t('table.resources'),
         priority: 3,
@@ -132,41 +106,6 @@ export function ProjectTable({
           ),
       },
       {
-        id: 'commit',
-        header: t('table.commit'),
-        priority: 3,
-        // Useful, but the widest column here; off by default so the table fits a
-        // laptop without scrolling sideways.
-        defaultHidden: true,
-        sortValue: (item) => item.lastCommit?.date ?? null,
-        cell: (item) =>
-          item.lastCommit ? (
-            <span className="flex min-w-0 items-center gap-1.5 text-2xs">
-              <Mono kind="sha" tone="subtle">
-                {item.lastCommit.shortSha}
-              </Mono>
-              <span className="max-w-56 truncate text-muted">{item.lastCommit.subject}</span>
-            </span>
-          ) : (
-            <NoValue />
-          ),
-      },
-      {
-        id: 'activity',
-        header: t('table.activity'),
-        align: 'right',
-        priority: 2,
-        sortValue: (item) => item.lastActivityAt,
-        cell: (item) =>
-          item.lastActivityAt ? (
-            <span className="text-2xs tabular-nums text-muted" title={item.lastActivity ?? undefined}>
-              {relativeTime(item.lastActivityAt)}
-            </span>
-          ) : (
-            <NoValue />
-          ),
-      },
-      {
         id: 'actions',
         header: '',
         srHeader: t('table.actions'),
@@ -179,7 +118,7 @@ export function ProjectTable({
         ),
       },
     ],
-    [relativeTime, t],
+    [t],
   )
 
   /**

@@ -19,6 +19,7 @@ import { Dialog } from '@/components/ui/dialog'
 import { Field, Input } from '@/components/ui/field'
 import { authClient } from '@/lib/auth-client'
 import { usePrincipal } from '@/lib/principal'
+import { useAuthSession } from '@/lib/queries/auth-session'
 import { QrCode } from './qr-code'
 
 type Step =
@@ -31,7 +32,7 @@ export function TwoFactorCard() {
   const { t } = useTranslation('settings')
   const { t: tc } = useTranslation('common')
   const principal = usePrincipal()
-  const { data: session, refetch } = authClient.useSession()
+  const { data: session, refetch, isPending, isError } = useAuthSession()
   const [step, setStep] = useState<Step>({ at: 'closed' })
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
@@ -95,6 +96,7 @@ export function TwoFactorCard() {
           actions={
             <Button
               size="sm"
+              disabled={isPending || isError}
               variant={enabled ? 'default' : 'primary'}
               onClick={() => setStep({ at: 'password', next: enabled ? 'disable' : 'enable' })}
             >

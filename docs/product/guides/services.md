@@ -12,7 +12,14 @@ derived hostname, exactly as it does inside Traefik.
 
 ![Authentication disabled: the Services page, every service of every integrated project in one filterable table with its type, health, container port and addresses](../../images/auth-disabled-services.png)
 
-**Authentication disabled** — the Services page.
+**Authentication disabled**: the Services page.
+
+Opening a service shows its drawer: summary, access, runtime, logs, console and
+labels. For a routed service it also has a **Share with a client** section: who
+may open its hostname (**Protect with a password**, **Open to everybody**,
+**Close it**) and a temporary link that expires by itself. Deciding needs the
+`service:protect` permission, held by the owner and administrators. See
+[Run a public host](public-host.md) and [Share a service](sharing.md).
 
 
 ## Docker
@@ -33,7 +40,7 @@ operations below.
 
 ![Authentication disabled: the top of the Docker page, counts by section and the Portta section listing the gateway's own containers](../../images/auth-disabled-docker.png)
 
-**Authentication disabled** — the Docker page.
+**Authentication disabled**: the Docker page.
 
 Below the sections, a host summary: engine and resources, container counts by
 section, networks, and every published port with the container holding it.

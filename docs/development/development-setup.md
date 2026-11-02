@@ -12,7 +12,7 @@ infrastructure.
 | Node.js and npm | Node 24 or later (`.nvmrc` names it, so `nvm use` picks it) | the CLI, the build and the tests |
 | Docker Engine | 24 or later, with the Compose v2 plugin | the gateway, the panel and the demo projects |
 | [just](https://github.com/casey/just) | optional | short aliases; every recipe is one call to `./bin/portta` |
-| `gh`, `sqlite3` | optional | issues from GitHub through the host daemon; `portta db shell` and `portta db dump` |
+| `sqlite3` | optional | `portta db shell` and `portta db dump` |
 
 ## Get the checkout
 
@@ -23,9 +23,8 @@ npm ci
 ```
 
 `npm ci` installs every workspace from one lockfile. `bin/portta` needs it: it
-builds the CLI from `packages/cli`, `packages/core`, `packages/contracts` and
-`packages/host` whenever those sources are newer than the bundle, and then runs
-that bundle.
+builds the CLI from `packages/cli`, `packages/core` and `packages/contracts`
+whenever those sources are newer than the bundle, and then runs that bundle.
 
 ## Start Portta
 
@@ -103,12 +102,12 @@ flowchart TD
     images --> up["start the gateway and the panel with hot reload"]
     up --> owner["create admin@admin.com<br/>(only when authentication is required)"]
     owner --> migrate["apply pending migrations"]
-    migrate --> stacks["docker compose up -d in each example<br/>(with .portta/compose.portta.yaml when present)"]
-    stacks --> register["register the Project and repositories<br/>from .portta/portta.example.json"]
+    migrate --> stacks["docker compose up -d in each example<br/>(with the example's own overlay when present)"]
+    stacks --> register["register the Project<br/>from .portta/portta.example.json"]
     register --> urls["print routed URLs"]
 ```
 
-Registering is idempotent: a Project or repository the panel already has is
+Registering is idempotent: a Project the panel already has is
 left as it is, so running the command again is safe. The demo registers the
 Projects Demo Shop (`demo-shop`), Demo Site (`demo-site`) and the Docker Compose
 fixture (`portta-demo-compose`). `portta-demo-external` runs but is not adopted
@@ -124,29 +123,10 @@ http://portta-demo-compose-web.localhost
 http://portta-demo-compose-api.localhost
 ```
 
-No issues are seeded. Issues live in GitHub or Linear; see
-[Issues in development](#issues-in-development).
-
 ```bash
 just down --demo          # stop the gateway and the demo stacks, dropping their volumes
 just reset --yes --demo   # wipe and start again with the demo; see Reset a checkout
 ```
-
-## Issues in development
-
-The panel never calls GitHub or Linear itself. It asks the host daemon, which
-runs on your machine where `gh` is signed in, or where `LINEAR_API_KEY` is set.
-The panel is always wired to the daemon, so starting it is enough:
-
-```bash
-./bin/portta host serve --detach
-```
-
-The daemon listens on `127.0.0.1:5111` and logs to `state/host/daemon.log`.
-Without it, issue views say the provider could not be reached. On Linux the
-panel container cannot reach a daemon on loopback; see
-[Run the host daemon](../product/guides/host-daemon.md) and
-[Host daemon and module proxy](host-daemon.md).
 
 ## Run with authentication enabled
 
@@ -183,7 +163,7 @@ WebSockets, documentation and Next's HMR all answer on
 `docker/compose/features/web-dev.yaml` bind-mounts the source into the panel
 container, so the image's `node_modules` stay in place:
 
-- `apps/web/{app,components,lib,modules,messages,server,public}`
+- `apps/web/{app,components,lib,messages,server,public}`
 - `packages/{core,contracts,auth,db,server}/src`
 - `packages/db/drizzle`, so a newly generated migration is visible to
   `just db-migrate` without a rebuild
@@ -197,10 +177,6 @@ An edit to a page or a component reloads in the browser; an edit to
 A change to `apps/web/next.config.ts`, a dependency, the lockfile or a
 Dockerfile is not picked up by a mount. Run `just dev` again to rebuild the
 image.
-
-The host daemon runs on the host, not in a container. After changing
-`packages/host`, start the daemon again; `bin/portta` rebuilds the CLI bundle
-that contains it.
 
 ## The `portta` command
 
@@ -266,7 +242,7 @@ then runs `dev` again.
 projects on the shared Portta network, the `portta-demo-*` stacks and their
 volumes, managed helpers such as the applier and the runner, the panel
 database (`state/panel/portta.db` with its `-wal` and `-shm` files), and the
-contents of the regenerable snapshots in `state/git`, `state/metrics` and
+contents of the regenerable snapshots in `state/metrics` and
 `state/environment`.
 
 **Kept.** `.env`, `state/auth/`, ACME and Tailscale material, shared networks,
@@ -299,8 +275,7 @@ rather than a diff, because the repository is small enough to check in under a
 second and a diff-based gate depends on a base branch the runner may not have.
 Biome covers JavaScript, TypeScript, JSON, CSS and the inline scripts of HTML;
 it leaves generated artifacts alone (`package-lock.json`, the committed OpenAPI
-documents, the generated documentation paths, the Drizzle snapshots) and the
-workflow DSL scripts under `packages/host/workflows`, which are not modules.
+documents, the generated documentation paths, the Drizzle snapshots).
 A rule the code deliberately does not follow is switched off in `biome.json`:
 
 - `style/noNonNullAssertion`: `!` states an invariant the types cannot, and the
@@ -340,38 +315,30 @@ each resolves to its `dist/`. The image builds them in that order.
 
 ## Regenerating the screenshots
 
-The images in `docs/images/` are captured from the real panel running the demo,
-not from fixtures. Every frame is 1440×900 in English, and each file is named
-after the authentication mode it shows (`auth-disabled-*.png`,
-`auth-enabled-*.png`). The script is `apps/web/e2e/screenshots.mjs`; it targets
-<http://127.0.0.1:8081>, or `PORTTA_PANEL_URL` when set, and refuses a panel in
-the wrong mode.
+The images in `docs/images/` show the real panel against an isolated demo host.
+The capture harness supplies a synthetic Docker Engine API, resource metrics,
+readiness reports and a fresh SQLite database. It never reads the shared host's
+Docker socket, accounts, credentials or `.env`, and removes its own temporary
+state when finished. Public-host examples include ForwardAuth on every HTTP
+router before a password is configured.
 
-Start the host daemon with a `gh` configuration nobody is signed in to, so the
-images never show the operator's own GitHub issues:
+Every frame is 1440×900 in English. File names identify the panel's
+authentication mode (`auth-disabled-*.png`, `auth-enabled-*.png`); the public
+service's password is independent of panel sign-in.
 
-```bash
-GH_CONFIG_DIR="$(mktemp -d)" ./bin/portta host serve --detach
-```
-
-**Authentication disabled:**
+Build the panel and its dependencies once, then capture both modes:
 
 ```bash
-just dev --demo
+node --input-type=module -e "import build from './apps/web/e2e/build.mjs'; build()"
 npm run screenshots --workspace=portta-web -- auth-disabled
+npm run screenshots --workspace=portta-web -- auth-enabled
 ```
 
-**Authentication enabled.** The setup page is captured while the panel has no
-owner yet, and the account pages after `just dev --demo` creates it:
-
-```bash
-./bin/portta config set panel.auth required
-./bin/portta web dev                                         # the panel now asks for an owner
-npm run screenshots --workspace=portta-web -- auth-enabled   # captures /setup
-just dev --demo                                              # creates admin@admin.com
-npm run screenshots --workspace=portta-web -- auth-enabled   # sign-in and account pages
-```
-
-Set `panel.auth` back to `disabled` and run `just dev` afterwards if you
-normally work without sign-in. Change what is captured, and in which order, in
-`e2e/screenshots.mjs`.
+The browser uses the installed Playwright Chromium; set
+`PORTTA_SCREENSHOT_BROWSER_CHANNEL=chrome` to use an installed Google Chrome.
+The harness chooses free
+loopback ports and creates a documentation-only owner for the authenticated
+captures, including the setup and sign-in pages. No running gateway or demo
+containers are required. Change the capture sequence in
+`apps/web/e2e/screenshots.mjs`, its host in `documentation-host.mjs`, or its
+collector data in `documentation-state.mjs`.

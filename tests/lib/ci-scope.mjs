@@ -1,9 +1,19 @@
-export const allGateway = ['adoption', 'apply', 'lifecycle', 'local-tls', 'tcp-access', 'tcp-routing', 'web-panel']
+export const allGateway = [
+  'adoption',
+  'apply',
+  'lifecycle',
+  'local-tls',
+  'public-profile',
+  'tcp-access',
+  'tcp-routing',
+  'web-panel',
+]
 export const allBrowser = ['panel', 'infrastructure', 'auth', 'roles', 'settings']
 // Each shard gets its own disposable host; every suite belongs to exactly one.
 export const gatewayShards = [
   ['lifecycle', 'apply', 'web-panel', 'local-tls'],
   ['tcp-routing', 'tcp-access', 'adoption'],
+  ['public-profile'],
 ]
 
 // Paths a gateway suite actually exercises. Root manifests,
@@ -21,7 +31,11 @@ const gatewayRules = [
   [/^docker\/compose\/features\/tcp/, ['tcp-routing']],
   [/^docker\/compose\/profiles\/local-tls|^packages\/cli\/src\/commands\/tls/, ['local-tls']],
   [/^packages\/core\/src\/(discovery|endpoints|hostname|inventory)/, ['tcp-access', 'tcp-routing']],
-  [/^packages\/cli\/src\/commands\/(compose-runtime|projects)/, ['adoption']],
+  [/^packages\/cli\/src\/commands\/(compose-runtime|projects)/, ['adoption', 'public-profile']],
+  [
+    /^(packages\/cli\/src\/commands\/(protect|exposure)|apps\/auth\/|packages\/core\/src\/(protections|dynamic))/,
+    ['public-profile'],
+  ],
   [/^packages\/cli\/src\/commands\/access/, ['tcp-access']],
   [/^(packages\/db\/|packages\/core\/src\/(config|profiles|runner|database))/, ['web-panel', 'lifecycle']],
 ]

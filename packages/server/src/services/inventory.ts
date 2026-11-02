@@ -16,7 +16,7 @@ import type {
   RouteUrl,
   UrlScope,
 } from 'portta-contracts'
-import { composeFilesFromLabel, parseRemote, projectOperable, serviceKind, slug } from 'portta-core'
+import { composeFilesFromLabel, projectOperable, serviceKind, slug } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import { schemeFor } from '../config.ts'
 import { projectStartable } from './actions.ts'
@@ -206,8 +206,6 @@ export function summarise(
   // Declared identity, when a project bothered to declare it. Never required:
   // `namespace` below is the same inference the panel has always made.
   const declaredProject = labels[LABELS.project] ?? null
-  const declaredRepo = labels[LABELS.repo] ?? null
-  const gitRoot = labels[LABELS.gitRoot] ?? null
   const image = inspect?.Config.Image ?? item.Image
   const startedAt = epoch(inspect?.State.StartedAt)
   const state = toState(inspect?.State.Status ?? item.State)
@@ -247,9 +245,6 @@ export function summarise(
     workingDir,
     namespace: dirName && project && dirName !== project ? dirName : null,
     group: declaredProject,
-    repo: declaredRepo,
-    repoUrl: declaredRepo ? (parseRemote(declaredRepo)?.repoUrl ?? null) : null,
-    gitRoot,
     networks,
     onGatewayNetwork,
     traefikEnabled: labels[LABELS.traefikEnable] === 'true',
@@ -319,7 +314,6 @@ export function groupEnvironments(containers: ContainerSummary[], now: number): 
       services.find((service) => service.labels[LABELS.composeConfigFiles])?.labels[LABELS.composeConfigFiles],
     )
     const declared = services.find((service) => service.group)
-    const withRepo = services.find((service) => service.repo)
     environments.push({
       name,
       presence: 'live',
@@ -331,9 +325,6 @@ export function groupEnvironments(containers: ContainerSummary[], now: number): 
       // A project declares these once, on any of its services. The first that
       // does wins, and none of them doing so is the normal case.
       group: declared?.group ?? null,
-      repo: withRepo?.repo ?? null,
-      repoUrl: withRepo?.repoUrl ?? null,
-      gitRoot: services.find((service) => service.gitRoot)?.gitRoot ?? null,
       services,
       serviceCount: services.length,
       runningCount: services.filter((service) => service.state === 'running').length,

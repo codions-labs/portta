@@ -14,18 +14,17 @@ change none of it.
 
 ![Authentication disabled: the Environments page, every Compose project on this host with its services, state, access, resources, runtime and actions](../../images/auth-disabled-environments.png)
 
-**Authentication disabled** — every environment on this host.
+**Authentication disabled**: every environment on this host.
 
 `/environments` lists every Compose project on this host, adopted or not,
 each as a table of its services. `/environments/<name>` is one environment:
 
 ![Authentication disabled: the demo-shop environment, its seven services as one table with an Open / Test menu, resources and actions per row](../../images/auth-disabled-environment.png)
 
-**Authentication disabled** — one environment.
+**Authentication disabled**: one environment.
 
-The header says how many services run, which Project adopted it and why,
-which repository and branch it runs from, and the issue it is running for when
-the panel can tell; then **Open / Test**, Start, Stop, Restart, Rebuild and
+The header says how many services run, which Project adopted it and why;
+then **Open / Test**, Start, Stop, Restart, Rebuild and
 the two named removals. Three tabs:
 
 | Tab | What it holds |
@@ -47,7 +46,10 @@ remembers where it ran (`working_dir`, the Compose files) and lists it as
 **remembered**, with no services. On a Project page it stays under its
 Project. Two things can happen to it: **Start**, which asks the runner for
 `docker compose up` with the remembered paths when `PORTTA_RUNNER=true`, or
-answers with the exact command to run on the host when it is not; and
+answers with the exact command to run on the host when it is not (on a public
+host the runner also needs `PORTTA_RUNNER_PUBLIC=true`, the panel on its own
+domain with `PORTTA_AUTH_MODE=required` and `TLS_ENABLED=true`, see
+[Run a public host](public-host.md#operating-projects-from-the-panel)); and
 **Forget**, which drops the row with its overrides and links, and touches
 nothing on the host. A live environment cannot be forgotten: stop and remove
 it first. Removing an environment (with or without its volumes) leaves it
@@ -68,7 +70,7 @@ postgres | 10:00:03  ready to accept connections
 
 ![Authentication disabled: the Logs tab of demo-shop with lines from several services interleaved, each prefixed with its service](../../images/auth-disabled-environment-logs.png)
 
-**Authentication disabled** — the Logs tab.
+**Authentication disabled**: the Logs tab.
 
 A selector narrows the view to one service, and the choice is in the URL
 (`/environments/alpha/logs?service=api`), so a link opens on exactly what you were

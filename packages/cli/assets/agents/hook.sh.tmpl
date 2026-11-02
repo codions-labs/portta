@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Managed by Portta: `portta agents install` writes this file and
+# `portta agents uninstall` removes it. Do not edit.
+# Prints the host context for an agent session. Exits silently when Portta is
+# absent, and never fails the agent session.
+PORTTA_NODE_PATH=__PORTTA_NODE_PATH__
+PORTTA_CLI_PATH=__PORTTA_CLI_PATH__
+
+[ -x "$PORTTA_NODE_PATH" ] && [ -r "$PORTTA_CLI_PATH" ] || exit 0
+
+# macOS has no `timeout` without coreutils: use gtimeout when there is one,
+# and otherwise run without a limit, since the command bounds its own probes.
+run=()
+if command -v timeout >/dev/null 2>&1; then
+  run=(timeout 5)
+elif command -v gtimeout >/dev/null 2>&1; then
+  run=(gtimeout 5)
+fi
+
+"${run[@]}" "$PORTTA_NODE_PATH" "$PORTTA_CLI_PATH" agent context --format hook 2>/dev/null || true
+exit 0

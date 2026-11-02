@@ -8,8 +8,8 @@
 // who may do what, which projects they see — comes from `/api/auth/me` instead,
 // because those are Portta's rules and the client plugin does not know them.
 
+import { createAuthClient } from 'better-auth/client'
 import { adminClient, twoFactorClient } from 'better-auth/client/plugins'
-import { createAuthClient } from 'better-auth/react'
 
 export const authClient = createAuthClient({
   // Same origin, always: the panel serves its own pages and its own API, and a

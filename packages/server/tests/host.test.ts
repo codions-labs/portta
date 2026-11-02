@@ -89,7 +89,7 @@ describe('GET /api/environment/security', () => {
             fix: '',
             category: 'security',
             rationale: 'Effective configuration needs permission.',
-            docs: 'docs/product/guides/remote-bootstrap.md',
+            docs: 'docs/product/guides/remote-development.md',
           },
         ],
         summary: { problems: 42 },

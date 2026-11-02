@@ -2,13 +2,12 @@ import { defineConfig, devices } from '@playwright/test'
 
 // A project is one security mode. `open` is PORTTA_AUTH_MODE=disabled; `auth`
 // needs a panel nobody has set up yet; `protected` shares an owner its fixture
-// creates; `taskflow` is open, with the module on and a fake host daemon.
+// creates.
 // Filtering by file (`-- roles.spec.ts`) still selects one spec.
 const PROJECTS = {
   open: ['panel.spec.ts', 'infrastructure.spec.ts'],
   auth: ['auth.spec.ts'],
   protected: ['roles.spec.ts', 'settings.spec.ts'],
-  taskflow: ['taskflow.spec.ts'],
 }
 
 export default defineConfig({

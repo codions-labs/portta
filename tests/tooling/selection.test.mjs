@@ -95,12 +95,10 @@ test('CI runs E2E only for paths a suite exercises', () => {
 test('release runs every suite, and every suite has a shard', () => {
   const release = ciScope(['docs/README.md'], 'release')
   // The browser list is checked against the specs on disk, so a renamed or
-  // removed spec cannot linger in it. The taskflow project needs tmux and a
-  // host daemon, so it runs locally rather than in CI.
+  // removed spec cannot linger in it.
   const specs = readdirSync(join(root, 'apps/web/e2e'))
     .filter((name) => name.endsWith('.spec.ts'))
     .map((name) => name.slice(0, -'.spec.ts'.length))
-    .filter((name) => name !== 'taskflow')
   assert.deepEqual([...allBrowser].sort(), specs.sort())
   assert.deepEqual(release.gateway, [...allGateway].sort())
   assert.deepEqual(release.browser, [...allBrowser].sort())

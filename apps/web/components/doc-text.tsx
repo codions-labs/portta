@@ -47,7 +47,7 @@ function labeledParts(parts: DocPart[], citationLabel?: string): DocPart[] {
 }
 
 /**
- * Turns citations like `docs/product/guides/github.md` and `/docs/api` into deep links to
+ * Turns citations like `docs/product/guides/sharing.md` and `/docs/api` into deep links to
  * the documentation site. Plain text when the panel does not serve docs.
  */
 export function DocText({ children, citationLabel }: { children: string; citationLabel?: string }): ReactNode {

@@ -1,14 +1,12 @@
 # Use the web panel
 
 The panel is where a development host is opened: which Projects it carries,
-which repositories and environments make them up, what is running, how to reach
+which environments make them up, what is running, how to reach
 and test it, what the logs say and how much of the host it uses. It complements
-the CLI and `portta mcp` rather than replacing them: all three work on the same
-API and the same model
-([ADR 0032](../../development/adr/0032-portta-development-model.md)). Docker and
-Traefik remain the live sources of runtime facts; the panel persists the
-decisions — Projects, repositories, sessions — and a bounded history of what
-happened ([ADR 0013](../../development/adr/0013-what-the-panel-persists.md)).
+the CLI rather than replacing it: both work on the same API and the same model.
+Docker and Traefik remain the live sources of runtime facts; the panel persists
+the decisions, such as Projects and their adopted environments
+([ADR 0013](../../development/adr/0013-what-the-panel-persists.md)).
 
 It is off by default.
 
@@ -135,12 +133,12 @@ With **Authentication disabled** there is no sign-in page: every request is the
 local operator, holding every permission on every Project.
 
 With **Authentication enabled** (`PORTTA_AUTH_MODE=required`), the first visit to
-a panel with no owner lands on `/setup`, which creates the owner — the only
+a panel with no owner lands on `/setup`, which creates the owner: the only
 account ever created that way.
 
 ![Authentication enabled: the Create the owner page asks for a name, an email and a password of at least ten characters](../../images/auth-enabled-setup.png)
 
-**Authentication enabled** — `/setup` on a panel with no owner.
+**Authentication enabled**: `/setup` on a panel with no owner.
 
 A server with no browser creates the owner from the host instead:
 
@@ -154,14 +152,14 @@ Everybody after that is created by an administrator, and signs in at
 
 ![Authentication enabled: the sign-in page with email and password fields](../../images/auth-enabled-sign-in.png)
 
-**Authentication enabled** — the sign-in page.
+**Authentication enabled**: the sign-in page.
 
 A wrong password is refused without saying which of the two fields was wrong,
 and sign-in attempts from one address are rate-limited:
 
 ![Authentication enabled: the sign-in page showing an error after a wrong password](../../images/auth-enabled-sign-in-error.png)
 
-**Authentication enabled** — a refused sign-in.
+**Authentication enabled**: a refused sign-in.
 
 Once signed in, the panel is the same panel; the account menu at the foot of the
 sidebar names who you are, and Settings gains Users, API tokens, Security and
@@ -169,7 +167,7 @@ Audit.
 
 ![Authentication enabled: the Overview page for a signed-in owner](../../images/auth-enabled-overview-signed-in.png)
 
-**Authentication enabled** — the Overview for the signed-in owner.
+**Authentication enabled**: the Overview for the signed-in owner.
 
 The session is a cookie the panel issues and can revoke. A CLI or a coding agent
 carries a `ptt_` token instead, which never holds more than its owner's role.
@@ -178,28 +176,32 @@ See [Authentication](authentication.md) and
 
 ## The pages
 
-The sidebar groups the pages into **Development** (Overview, Projects) and
-**Infrastructure** (Services, Docker, Network, Access, Gateway), then Settings.
-An entry the current person may not open is not listed. Every page is a route,
+The sidebar lists Overview and Projects, then an **Infrastructure** group
+(Services, Docker, Network, Access, Gateway), then Settings. Environments are
+reached from Projects (**Environments on this host**). An entry the current
+person may not open is not listed. Every page is a route,
 so a link, a bookmark and the back button all work.
 
 ### Overview
 
-![Authentication disabled: the Overview page with the host strip, what needs attention, work assigned to you, the Projects, the environments using the host and recent code](../../images/auth-disabled-overview.png)
+![Authentication disabled: the Overview page with the host strip, what needs attention, the Projects and the environments using the host](../../images/auth-disabled-overview.png)
 
-**Authentication disabled** — the Overview on the demo host.
+**Authentication disabled**: the Overview on the demo host.
 
-The Development Dashboard, in the order the questions come. The top line names
-the machine — its commercial name or hostname, its kind, OS, architecture and
-uptime — beside the gateway's state and the host's verdict: **Normal**,
+The Overview, in the order the questions come. The top line names
+the machine (its commercial name or hostname, its kind, OS, architecture and
+uptime) beside the gateway's state and the host's verdict: **Normal**,
 **Watch**, **Under pressure** or **Critical**. Below it, one cell per reading
 `portta host collect` reported: CPU, memory, storage, and where the machine has
 them GPU, temperature, battery and load, each with the last thirty minutes in
-its tooltip. Then **Needs attention**, **Assigned to you** (open issues across
-every provider a Project is linked to), **Sessions**, **Projects**, **Using
-this host** and **Code**. A section with nothing to say shrinks rather than
-drawing an empty card. The page is served by `GET /api/overview`, which
-`portta overview` and an agent read too.
+its tooltip. Then **Needs attention**, **Projects** and **Using this host**. A section with
+nothing to say shrinks rather than drawing an empty card.
+
+In **Using this host**, each environment that has an address shows it under its
+name, with a copy button and, on a public host, a badge: **protected** (a login),
+**open** (everybody) or **closed** (nobody decided). It lists the environments
+the collector measured, so it stays empty until `portta host collect` is
+reporting.
 
 ### Projects
 
@@ -209,15 +211,14 @@ filter and archived Projects on request; **Environments on this host** opens
 `/environments`. **New project** asks for a name, a slug and a description, and
 the slug is what an environment's `portta.project` label must say to be adopted
 automatically. Opening a Project shows its state, an **Open / Test** menu for
-its primary environment, and its Overview, Issues, Repositories, Environments,
-Activity and Settings tabs. See [Manage projects](projects.md) and
-[Work with issues](issues.md).
+its primary environment, and its Overview, Environments and Settings tabs. See
+[Manage projects](projects.md).
 
 ### Environments
 
 `/environments` lists every Compose project Docker runs, adopted or not.
 `/environments/<name>` is one environment: its services with their addresses,
-resources and logs, the repository and branch it runs from, **Open / Test**,
+resources and logs, **Open / Test**,
 Start, Stop, Restart, Rebuild and the two named removals, a **Logs** tab that
 interleaves every service, and a **Settings** tab for presentation overrides
 and the hostname alias. See [Manage environments](environments.md) and the
@@ -231,11 +232,27 @@ into Portta, integrated projects, external Compose projects and standalone
 containers, with the networks and published ports. See
 [Manage services](services.md).
 
+#### Who may open a service
+
+Opening a service shows its drawer. On a public host the **Share with a client**
+section is where its hostname gets a decision: nobody has decided yet, so it is
+closed.
+
+![Authentication disabled: the service drawer on a public host, where nobody has decided about the hostname and it is closed](../../images/auth-disabled-exposure-closed.png)
+
+**Protect with a password** generates a login and shows the password once; only
+its hash is stored. **Open to everybody** removes the login, **Close it** goes
+back to closed, and a new password replaces the old one. Every change applies on
+the next request and recreates nothing. See
+[Run a public host](public-host.md).
+
+![Authentication disabled: the same service after Protect with a password, showing the one-time password](../../images/auth-disabled-exposure-protected.png)
+
 ### Network
 
 ![Authentication disabled: the Network page with domains, TLS, VPN and DNS settings, every routed hostname and the Docker networks with their roles](../../images/auth-disabled-network.png)
 
-**Authentication disabled** — the Network page.
+**Authentication disabled**: the Network page.
 
 Domains (local, VPN, public), TLS mode and ACME contact, Tailscale state, the DNS
 provider, every routed hostname with its target port, and the Docker networks
@@ -245,7 +262,7 @@ with their role: shared, control, access, or a project's own.
 
 ![Authentication disabled: the Access page with no open bridge and the TCP services of each project, each with its gateway address and an Open local access button](../../images/auth-disabled-access.png)
 
-**Authentication disabled** — the Access page.
+**Authentication disabled**: the Access page.
 
 Databases, caches and anything else that speaks TCP rather than HTTP. **Open
 local access** creates the same bridge [`portta access open`](tcp-access.md)
@@ -273,11 +290,11 @@ inside its container, and logs for Traefik, the socket proxy and Tailscale.
 ### Settings
 
 **General** (Projects, project addresses, project access, TLS, DNS, the panel
-and Traefik), **Environment** (host readiness and security findings, SSH keys)
-and **Integrations** (whether `gh` and Linear are usable on the host) are
-always listed. **Users**, **API tokens**, **Security** and **Audit** appear
-with authentication enabled; with it disabled a bookmark into one of them says
-the panel does not sign people in. Every section is described in
+and Traefik) is listed to whoever holds `settings:read`, and **Environment**
+(host readiness and security findings) to whoever holds `metrics:read`.
+**Users**, **API tokens**, **Security** and **Audit** appear with
+authentication enabled; with it disabled a bookmark into one of them says the
+panel does not sign people in. Every section is described in
 [Configure the panel](panel-settings.md); the accounts pages are shown in
 [Authentication](authentication.md).
 
@@ -285,7 +302,7 @@ the panel does not sign people in. Every section is described in
 
 ![Authentication disabled: the command menu open over the Overview, listing actions, pages and Projects](../../images/auth-disabled-command-menu.png)
 
-**Authentication disabled** — the command menu.
+**Authentication disabled**: the command menu.
 
 <kbd>⌘</kbd> <kbd>K</kbd> (<kbd>Ctrl</kbd> <kbd>K</kbd> elsewhere) or **Command
 menu** at the top of the sidebar opens a search over actions, pages, Projects
@@ -295,7 +312,7 @@ and preferences such as the theme. <kbd>[</kbd> toggles the sidebar.
 
 ![Authentication disabled: the documentation served by the panel at /docs, with navigation, the page and its table of contents](../../images/auth-disabled-docs.png)
 
-**Authentication disabled** — the documentation at `/docs`.
+**Authentication disabled**: the documentation at `/docs`.
 
 The panel serves this documentation at `/docs`, for the version it runs, with
 search and both themes; the book icon at the foot of the sidebar opens it.
@@ -310,14 +327,14 @@ keeps following the operating system.
 
 ![Authentication disabled: the Overview page in the dark theme](../../images/auth-disabled-overview-dark.png)
 
-**Authentication disabled** — the Overview in the dark theme.
+**Authentication disabled**: the Overview in the dark theme.
 
 ## Live updates
 
 **The event stream** (`GET /api/events`, server-sent events) keeps the pages
-current: a container changed state, a session started, a repository was scanned.
-It needs `activity:read`, and every event is filtered against the principal it
-is delivered to — an event about a Project somebody does not reach is not
+current: a container changed state, an environment started or stopped.
+It needs `environment:read`, and every event is filtered against the principal it
+is delivered to: an event about a Project somebody does not reach is not
 delivered. The browser reconnects on its own; the panel sends a keepalive every
 twenty seconds so a proxy does not close a quiet stream.
 
@@ -326,7 +343,7 @@ twenty seconds so a proxy does not close a quiet stream.
 reconnects with a widening delay, and falls back to polling every three seconds
 when it cannot stay up. The handshake is authorised before it becomes a socket:
 `logs:read`, scoped to the Project that adopted the environment. A refusal is an
-HTTP status — `401` with no credential, `403` without the permission or the
+HTTP status: `401` with no credential, `403` without the permission or the
 Project, `404` for an unknown path or environment.
 
 ## Actions
@@ -335,9 +352,10 @@ Project, `404` for an unknown path or environment.
 |---|---|
 | Project service | logs, console, start, stop, restart, details, remove (with confirmation) |
 | External container | logs, start, stop, restart, details, remove (with confirmation) |
+| Service hostname | protect with a password, open to everybody, close it, temporary link (`service:protect`: owner and administrators) |
 | Environment | start, stop, restart, rebuild, remove (keeping or dropping its data), forget when remembered |
 | TCP service | open a loopback bridge, close it, copy host / port / connection string |
-| Gateway | status, diagnostics, logs, restart Traefik, apply saved settings (opt-in) |
+| Gateway | status, diagnostics, logs, restart Traefik, apply saved settings (with `PORTTA_APPLY=true`) |
 
 Never offered: editing configuration or environment variables of a container,
 changing its networks or volumes, running an arbitrary command, resetting a
@@ -370,8 +388,8 @@ portta up
 ### Applying settings from the panel
 
 With `PORTTA_APPLY=true` (the default in `.env.example`), `portta up` also
-prepares a stopped container whose command is fixed at creation — `portta up`,
-with no argument the panel can influence — and the pending bar gains an **Apply
+prepares a stopped container whose command is fixed at creation (`portta up`,
+with no argument the panel can influence), and the pending bar gains an **Apply
 and restart** button that starts it.
 
 The confirmation names the pending keys and says that this panel is one of the
@@ -396,10 +414,10 @@ All of these live in `.env`; `portta web up` sets the first ones for you.
 | `PORTTA_WEB` | `false` | Whether the panel starts with the gateway |
 | `PORTTA_WEB_BIND_ADDRESS` | `127.0.0.1` | Interface the panel is published on |
 | `PORTTA_WEB_PORT` | `8081` | Host port |
-| `PORTTA_WEB_EXPOSE` | `local` | `local`, `tailscale`, `vpn`, `public` or `domain` — see [Reaching it](#reaching-it) |
+| `PORTTA_WEB_EXPOSE` | `local` | `local`, `tailscale`, `vpn`, `public` or `domain`, see [Reaching it](#reaching-it) |
 | `PORTTA_WEB_HOST` | `portta-web` | Hostname label used by `--expose vpn` |
 | `PORTTA_WEB_READ_ONLY` | `false` | Refuse every mutating endpoint |
-| `PORTTA_AUTH_MODE` | `disabled` | `disabled` or `required` — see [Authentication](authentication.md) |
+| `PORTTA_AUTH_MODE` | `disabled` | `disabled` or `required`, see [Authentication](authentication.md) |
 | `PORTTA_WEB_DEV` | `false` | Development mode: hot reload on the same port the API answers on |
 | `PORTTA_WEB_NETWORK` | `portta-web` | The panel's internal control network |
 | `PORTTA_WEB_USER` | `node` | User the container runs as, see below |
@@ -436,7 +454,8 @@ knows nothing about panel accounts. See [Authentication](authentication.md).
 **Traefik configuration.** The panel mounts `config/traefik/dynamic/`
 read-write and may write exactly three filenames in it: `portta-shares.yaml`,
 `portta-aliases.yaml` and `portta-auth.yaml`. Any other path is refused before
-the write. See [ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md).
+the write. It also keeps the ForwardAuth registry, `state/auth/protections.json`,
+which holds who may open each hostname. See [ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md).
 
 **Docker.** Its own socket proxy grants the read endpoints, the container
 lifecycle and exec, and denies images, volumes, build, swarm, secrets, plugins
@@ -446,6 +465,11 @@ inspecting the console session, and `prune`, `archive` and container `attach`
 are denied even where the proxy would forward them. See
 [ADR 0008](../../development/adr/0008-web-panel-socket-proxy.md) and
 [ADR 0043](../../development/adr/0043-container-console-over-docker-exec.md).
+
+**Console.** A shell in a project container is held by the owner and
+administrators only. When the panel is exposed on a `domain` or `public`, the
+account also needs two-factor authentication turned on (Settings, Security);
+on loopback it does not. See [Open a console](container-console.md).
 
 **Container creation.** One shape only: the socat TCP bridge, with a fixed
 image, fixed labels, no binds, no mounts, no capabilities and no privileged

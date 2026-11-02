@@ -1,21 +1,13 @@
 import { screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { principal, renderWithQuery } from './render.tsx'
 
 const environmentReport = vi.fn()
 const hostSecurityReport = vi.fn()
-const sshKeys = vi.fn()
-const generateSshKey = vi.fn()
 vi.mock('@/lib/api', () => ({
   api: {
     environmentReport: () => environmentReport(),
     hostSecurityReport: () => hostSecurityReport(),
-    sshKeys: () => sshKeys(),
-    generateSshKey: (body: unknown) => generateSshKey(body),
-    importSshKey: vi.fn(),
-    removeSshKey: vi.fn(),
-    testSshKey: vi.fn(),
   },
 }))
 
@@ -83,50 +75,10 @@ beforeEach(() =>
   }),
 )
 
-beforeEach(() => {
-  vi.mocked(navigator.clipboard.writeText).mockClear()
-  sshKeys.mockReset().mockResolvedValue({
-    keys: [
-      {
-        id: '00000000-0000-4000-8000-000000000001',
-        name: 'deploy',
-        description: null,
-        algorithm: 'ed25519',
-        bits: null,
-        fingerprint: 'SHA256:public-only',
-        publicKey: 'ssh-ed25519 AAAA public',
-        origin: 'generated',
-        createdAt: Math.floor(Date.now() / 1000),
-      },
-    ],
-  })
-  generateSshKey.mockReset().mockResolvedValue({})
-})
-
 describe('Environment settings', () => {
-  it('shows public metadata to readers and key creation only to managers', async () => {
-    const reader = renderWithQuery(
-      <EnvironmentView />,
-      undefined,
-      principal({ permissions: ['metrics:read', 'ssh:read'] }),
-    )
-    expect(await screen.findByText('deploy')).toBeInTheDocument()
-    expect(screen.getByText('SHA256:public-only')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Generate key' })).not.toBeInTheDocument()
-    await userEvent.click(screen.getByText('Show public key'))
-    await userEvent.click(screen.getByRole('button', { name: 'Copy public key' }))
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('ssh-ed25519 AAAA public')
-    reader.unmount()
-
-    renderWithQuery(
-      <EnvironmentView />,
-      undefined,
-      principal({ permissions: ['metrics:read', 'ssh:read', 'ssh:manage'] }),
-    )
-    await userEvent.click(await screen.findByRole('button', { name: 'Generate key' }))
-    expect(await screen.findByText('Generate an SSH key')).toBeInTheDocument()
-    await userEvent.type(await screen.findByLabelText(/Name/), 'release', { delay: null })
-    await userEvent.click(screen.getAllByRole('button', { name: 'Generate key' }).at(-1)!)
-    expect(generateSshKey).toHaveBeenCalledWith({ name: 'release', description: undefined, algorithm: 'ed25519' })
+  it('shows the host readiness and the security findings it collected', async () => {
+    renderWithQuery(<EnvironmentView />, undefined, principal({ permissions: ['metrics:read'] }))
+    expect(await screen.findByText('Docker')).toBeInTheDocument()
+    expect(await screen.findByText('Host firewall')).toBeInTheDocument()
   })
 })

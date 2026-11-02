@@ -18,7 +18,7 @@ export function eventRoutes(deps: AppDeps): Hono {
     documentRoute({
       tag: 'Events',
       operationId: 'streamEvents',
-      permission: 'activity:read',
+      permission: 'environment:read',
       summary: 'Stream runtime events',
       description: 'Server-sent events. Each non-ping data frame is a JSON LiveEvent; clients reconnect normally.',
       response: eventStreamResponse,

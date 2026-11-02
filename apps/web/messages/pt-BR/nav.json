@@ -25,7 +25,6 @@
   "settings": "Configurações",
   "toggleTheme": "Alternar tema",
   "groups": {
-    "development": "Desenvolvimento",
     "infrastructure": "Infraestrutura"
   },
   "environments": "Ambientes",

@@ -1,11 +1,5 @@
 import { existsSync, readFileSync, unlinkSync } from 'node:fs'
-import {
-  COLLECT_INTERVAL_MS,
-  ENVIRONMENT_COLLECT_INTERVAL_MS,
-  HISTORY_INTERVAL_MS,
-  REPOS_SCAN_INTERVAL_MS,
-} from 'portta-core'
-import { scanRepositories } from '../commands/repos.js'
+import { COLLECT_INTERVAL_MS, ENVIRONMENT_COLLECT_INTERVAL_MS, HISTORY_INTERVAL_MS } from 'portta-core'
 import { collectEnvironmentReport } from '../environment/index.js'
 import { collectHostSecurityReport, hostSecurityContext } from '../environment/security/index.js'
 import { writeHostSecurityReport } from '../environment/security/store.js'
@@ -99,20 +93,10 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-export interface CollectorLoopDeps {
-  /** The repository scan, so the loop can be driven in a test without git or Docker. */
-  scan: () => Promise<unknown>
-}
-
-export async function runCollectorLoop(
-  root: string,
-  deps: CollectorLoopDeps = { scan: () => scanRepositories({}) },
-  profile?: string,
-): Promise<void> {
+export async function runCollectorLoop(root: string, profile?: string): Promise<void> {
   writePid(root, process.pid)
   appendLog(root, `collector started pid=${process.pid}`)
   let lastHistory = 0
-  let lastScan = 0
   let lastEnvironment = 0
   let running = true
   const halt = () => {
@@ -132,16 +116,6 @@ export async function runCollectorLoop(
       }
     } catch (error) {
       appendLog(root, `collect failed: ${error instanceof Error ? error.message : String(error)}`)
-    }
-    // Repositories change slower than load does: once a minute is enough for
-    // a branch switch or a commit to show up, and cheap enough to never matter.
-    if (started - lastScan >= REPOS_SCAN_INTERVAL_MS || lastScan === 0) {
-      lastScan = started
-      try {
-        await deps.scan()
-      } catch (error) {
-        appendLog(root, `repository scan failed: ${error instanceof Error ? error.message : String(error)}`)
-      }
     }
     if (started - lastEnvironment >= ENVIRONMENT_COLLECT_INTERVAL_MS || lastEnvironment === 0) {
       lastEnvironment = started

@@ -1,26 +1,17 @@
 import type { Project } from 'portta-contracts'
 import { describe, expect, it } from 'vitest'
 import type { Database } from '../src/db/index.ts'
-import { type ProjectCoordinates, repositoryCoordinate, resolveAdoption } from '../src/services/adoption.ts'
+import { type ProjectCoordinates, resolveAdoption } from '../src/services/adoption.ts'
 import { GATEWAY, PROJECT_A, PROJECT_B } from './fixtures.ts'
 import { del, makeApp, post } from './helpers.ts'
 
-describe('repository coordinates', () => {
-  it('reads the same slug out of every remote shape', () => {
-    expect(repositoryCoordinate('git@github.com:Acme/Alpha.git')).toBe('acme/alpha')
-    expect(repositoryCoordinate('https://github.com/acme/alpha')).toBe('acme/alpha')
-    expect(repositoryCoordinate('https://github.com/acme/alpha.git')).toBe('acme/alpha')
-    expect(repositoryCoordinate(null)).toBeNull()
-  })
-})
-
 const PROJECTS: ProjectCoordinates[] = [
-  { id: '1', slug: 'meu-produto', repositories: ['acme/alpha', 'acme/api'] },
-  { id: '2', slug: 'outro', repositories: ['acme/beta'] },
+  { id: '1', slug: 'meu-produto', path: '/srv/projects/group/meu-produto' },
+  { id: '2', slug: 'outro', path: '/srv/projects/outro' },
 ]
 
 describe('adoption precedence', () => {
-  const project = { name: 'alpha', group: null, repo: null, repoUrl: null }
+  const project = { name: 'alpha', group: null }
 
   it('adopts nothing when there is nothing to go on', () => {
     expect(resolveAdoption(project, PROJECTS, new Map())).toBeNull()
@@ -40,35 +31,34 @@ describe('adoption precedence', () => {
     })
   })
 
-  it('matches on the repository when exactly one Project owns it', () => {
-    expect(resolveAdoption({ ...project, repoUrl: 'git@github.com:acme/alpha.git' }, PROJECTS, new Map())).toEqual({
-      projectId: '1',
-      source: 'repo-match',
-    })
-  })
-
-  it('adopts by path: the scan says which repository the environment runs from', () => {
-    const projects: ProjectCoordinates[] = [
-      { id: '1', slug: 'one', repositories: [], scanKeys: ['abcdef012345'], paths: ['/srv/projects/one'] },
-      { id: '2', slug: 'two', repositories: [], scanKeys: [], paths: ['/srv/projects/two'] },
-    ]
-    expect(resolveAdoption(project, projects, new Map(), { environmentKeys: { alpha: 'abcdef012345' } })).toEqual({
-      projectId: '1',
-      source: 'path',
-    })
-    expect(resolveAdoption({ ...project, workingDir: '/srv/projects/two/deploy' }, projects, new Map())).toEqual({
+  it('adopts by path: the working directory sits under the Project directory, at any depth', () => {
+    expect(resolveAdoption({ ...project, workingDir: '/srv/projects/outro/deploy' }, PROJECTS, new Map())).toEqual({
       projectId: '2',
       source: 'path',
     })
-    expect(resolveAdoption({ ...project, workingDir: '/srv/projects/twofold' }, projects, new Map())).toBeNull()
+    expect(
+      resolveAdoption({ ...project, workingDir: '/srv/projects/group/meu-produto/api' }, PROJECTS, new Map()),
+    ).toEqual({ projectId: '1', source: 'path' })
+    expect(resolveAdoption({ ...project, workingDir: '/srv/projects/outrofold' }, PROJECTS, new Map())).toBeNull()
   })
 
-  it('adopts nothing when two Projects own the same repository', () => {
-    const ambiguous: ProjectCoordinates[] = [
-      { id: '1', slug: 'one', repositories: ['acme/alpha'] },
-      { id: '2', slug: 'two', repositories: ['acme/alpha'] },
+  it('lets the deepest Project directory win over one that merely contains it', () => {
+    const nested: ProjectCoordinates[] = [
+      { id: '1', slug: 'parent', path: '/srv/projects/shop' },
+      { id: '2', slug: 'child', path: '/srv/projects/shop/admin' },
     ]
-    expect(resolveAdoption({ ...project, repoUrl: 'https://github.com/acme/alpha' }, ambiguous, new Map())).toBeNull()
+    expect(resolveAdoption({ ...project, workingDir: '/srv/projects/shop/admin/app' }, nested, new Map())).toEqual({
+      projectId: '2',
+      source: 'path',
+    })
+  })
+
+  it('adopts nothing when two Projects claim the same directory', () => {
+    const ambiguous: ProjectCoordinates[] = [
+      { id: '1', slug: 'one', path: '/srv/projects/shop' },
+      { id: '2', slug: 'two', path: '/srv/projects/shop' },
+    ]
+    expect(resolveAdoption({ ...project, workingDir: '/srv/projects/shop/app' }, ambiguous, new Map())).toBeNull()
   })
 })
 
@@ -86,11 +76,8 @@ interface Store {
       description: string | null
       archived: boolean
       relativePath: string | null
-      taskProvider: string | null
-      linearTeam: string | null
     }
   >
-  repositories: Map<string, Record<string, unknown>>
   environments: Map<string, string[]>
   /** Set by the test to prove nothing else was touched. */
   destructiveCalls: string[]
@@ -99,62 +86,23 @@ interface Store {
 function projectDatabase(): { db: Database; store: Store } {
   const store: Store = {
     projects: new Map(),
-    repositories: new Map(),
     environments: new Map(),
     destructiveCalls: [],
   }
   let nextId = 1
 
-  let nextRepositoryId = 1
-  // The GitHub coordinate is derived from the remote, never stored beside it.
-  const withGitHub = (row: Record<string, unknown>) => {
-    const slug = repositoryCoordinate((row.remoteUrl ?? null) as string | null)
-    return { ...row, github: slug ? { slug, htmlUrl: `https://github.com/${slug}` } : null }
-  }
   const db = {
     status: () => ({ configured: true, available: true, reason: null, checkedAt: 0, migrations: [] }),
     environments: { find: async () => null, upsertSeen: async () => ({}), list: async () => [] },
     settings: { listAllEnvironment: async () => [], listAllService: async () => [] },
-    repositories: {
-      list: async (projectId?: string) =>
-        [...store.repositories.values()]
-          .filter((row) => projectId === undefined || row.projectId === projectId)
-          .map(withGitHub),
-      find: async (id: string) => (store.repositories.has(id) ? withGitHub(store.repositories.get(id)!) : null),
-      create: async (projectId: string, input: Record<string, unknown>) => {
-        const id = String(nextRepositoryId++)
-        const row = {
-          id,
-          projectId,
-          role: null,
-          localPath: null,
-          relativePath: null,
-          remoteUrl: null,
-          provider: input.remoteUrl ? 'github' : 'local',
-          position: 0,
-          ...input,
-        }
-        store.repositories.set(id, row)
-        return withGitHub(row)
-      },
-      update: async (id: string, patch: Record<string, unknown>) => {
-        const row = store.repositories.get(id)
-        if (!row) return null
-        const updated = { ...row, ...patch }
-        store.repositories.set(id, updated)
-        return withGitHub(updated)
-      },
-      remove: async (id: string) => store.repositories.delete(id),
-    },
     projects: {
       create: async (input: {
         slug: string
         name: string
         description: string | null
         relativePath: string | null
-        taskProvider?: string | null
       }) => {
-        const record = { id: String(nextId++), archived: false, taskProvider: null, linearTeam: null, ...input }
+        const record = { id: String(nextId++), archived: false, ...input }
         store.projects.set(input.slug, record)
         return record
       },
@@ -210,7 +158,6 @@ describe('GET/POST /api/projects', () => {
       expect.objectContaining({
         slug: 'meu-produto',
         name: 'Meu Produto',
-        repositoryCount: 0,
         environmentCount: 0,
         runningEnvironmentCount: 0,
       }),
@@ -224,24 +171,6 @@ describe('GET/POST /api/projects', () => {
     expect(second.status).toBe(409)
   })
 
-  // Where a Project's work lives is derived, not configured: a repository with
-  // a GitHub remote is the whole link. A Project with none says why rather than
-  // presenting an empty issue list, which reads as "nothing to do".
-  it('derives the work coordinate from the repository remote, and says why when there is none', async () => {
-    const instance = app()
-    await post(instance.app, '/api/projects', { slug: 'produto', name: 'Produto' })
-    const bare = (await (await instance.app.request('/api/projects/produto')).json()) as Project
-    expect(bare.work).toMatchObject({ provider: null, coordinate: null })
-    expect(bare.work.reason).toContain('not linked')
-
-    await post(instance.app, '/api/projects/produto/repositories', {
-      name: 'api',
-      remoteUrl: 'git@github.com:acme/api.git',
-    })
-    const linked = (await (await instance.app.request('/api/projects/produto')).json()) as Project
-    expect(linked.work).toEqual({ provider: 'github', coordinate: 'acme/api', reason: null })
-  })
-
   it('answers 503 with a hint when persistence is unavailable', async () => {
     const { app: bare } = makeApp({ containers: [...GATEWAY, ...PROJECT_A] })
     const response = await bare.request('/api/projects')
@@ -251,20 +180,20 @@ describe('GET/POST /api/projects', () => {
 })
 
 describe('placing a Project under Projects Home', () => {
-  it('stores a first-level directory name and reports it as managed', async () => {
+  it('stores a directory under Projects Home, at any depth, and reports it as managed', async () => {
     const instance = app()
     const created = await post(instance.app, '/api/projects', {
       slug: 'produto',
       name: 'Produto',
-      relativePath: 'produto',
+      relativePath: 'grupo/produto',
     })
     expect(created.status).toBe(201)
     expect(((await created.json()) as Project).location).toBe('managed')
   })
 
-  it('refuses an absolute path, a parent reference or a nested path', async () => {
+  it('refuses an absolute path, a parent reference or a hidden directory', async () => {
     const instance = app()
-    for (const relativePath of ['/srv/projects/produto', '../produto', 'a/b']) {
+    for (const relativePath of ['/srv/projects/produto', '../produto', 'a/../../b', '.hidden/x']) {
       const response = await post(instance.app, '/api/projects', {
         slug: `p-${relativePath.length}`,
         name: 'P',
@@ -272,55 +201,6 @@ describe('placing a Project under Projects Home', () => {
       })
       expect(response.status, relativePath).toBe(400)
     }
-  })
-})
-
-describe('repositories', () => {
-  // The GitHub coordinate is read back out of the remote rather than stored
-  // beside it, so re-pointing the remote is the only thing that moves it.
-  it('derives the GitHub coordinate of a registered repository from its remote', async () => {
-    const instance = app()
-    await post(instance.app, '/api/projects', { slug: 'mono', name: 'Mono' })
-    const response = await post(instance.app, '/api/projects/mono/repositories', {
-      name: 'alpha',
-      remoteUrl: 'https://github.com/acme/alpha',
-      role: 'other',
-    })
-    expect(response.status).toBe(201)
-    const project = (await (await instance.app.request('/api/projects/mono')).json()) as Project
-    expect(project.repositories).toHaveLength(1)
-    expect(project.repositories[0]).toMatchObject({ name: 'alpha', provider: 'github', role: 'other' })
-    expect(project.repositories[0]?.github?.slug).toBe('acme/alpha')
-  })
-
-  it('registers a local repository with no GitHub at all', async () => {
-    const instance = app()
-    await post(instance.app, '/api/projects', { slug: 'local', name: 'Local' })
-    const response = await post(instance.app, '/api/projects/local/repositories', {
-      name: 'api',
-      localPath: '/srv/projects/local/api',
-    })
-    expect(response.status).toBe(201)
-    const body = await response.json()
-    expect(body).toMatchObject({
-      name: 'api',
-      provider: 'local',
-      localPath: '/srv/projects/local/api',
-      github: null,
-      git: null,
-    })
-    const list = await (await instance.app.request('/api/projects')).json()
-    expect(list.projects[0].repositoryCount).toBe(1)
-  })
-
-  it('refuses a repository with neither a name nor a scanned root', async () => {
-    const instance = app()
-    await post(instance.app, '/api/projects', { slug: 'produto', name: 'Produto' })
-    const response = await post(instance.app, '/api/projects/produto/repositories', {
-      remoteUrl: 'https://github.com/acme/alpha',
-    })
-    expect(response.status).toBe(400)
-    expect((await response.json()).error).toContain('needs a name')
   })
 })
 
@@ -355,7 +235,7 @@ describe('deleting a Project', () => {
 
     const response = await del(instance.app, '/api/projects/produto')
     expect(response.status).toBe(200)
-    expect((await response.json()).note).toContain('no container, volume, environment or repository')
+    expect((await response.json()).note).toContain('no container, volume or environment')
 
     // Nothing was stopped or removed on the Docker side.
     expect(instance.docker.removed).toEqual([])

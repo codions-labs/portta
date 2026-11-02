@@ -126,7 +126,7 @@ tailscale`) is a separate mechanism from the attachment described above: it
 binds only the **panel**, not project traffic, straight to this host's tailnet
 address, instead of routing it through Traefik. It runs `tailscale ip -4` on
 the machine the CLI itself runs on, so it needs [host-native
-Tailscale](#container-or-host-native) reachable there — the containerized
+Tailscale](#container-or-host-native) reachable there: the containerized
 attachment above does not put that binary on the host's `PATH`. It accepts
 authentication disabled, with a warning that anybody who reaches the panel over
 the tailnet is the local operator; run `portta config set panel.auth required`

@@ -13,21 +13,22 @@
 import { randomBytes } from 'node:crypto'
 import type { ContainerSummary, Share, ShareMode, ShareState } from 'portta-contracts'
 import {
+  fitLabel,
   generatePassword,
   hashPassword,
   SHARES_MARKER as MARKER,
+  MAX_LABEL,
   readProtectionStore,
   removeProtection,
-  renderAuthDynamic,
   renderShares,
   setProtection,
   shareRouterName,
   slug,
-  writeProtectionStore,
 } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import { GENERATED_FILES, readGenerated, writeGenerated } from './dynamic.ts'
 import type { Snapshot } from './inventory.ts'
+import { saveProtectionState } from './protection-state.ts'
 
 const DEFAULT_TTL_SECONDS = 4 * 3600
 export const MAX_TTL_SECONDS = 7 * 24 * 3600
@@ -59,10 +60,19 @@ export interface StoredShare {
 
 export { shareRouterName }
 
-/** `<project>-<service>-<id>.share.<domain>`: visibly not a project hostname. */
+/**
+ * `<project>-<service>-<id>-share.<domain>`: one DNS label, visibly a share.
+ *
+ * One label, because the wildcard certificate a public host asks for covers
+ * `<domain>` and `*.<domain>` and nothing deeper (ADR 0023). The project and
+ * service are fitted to leave room for the id and the `-share` suffix, so a long
+ * name never pushes the suffix out of the 63 octets a label may have.
+ */
 export function shareHost(config: PanelConfig, project: string, service: string, id: string): string {
   const domain = config.publicDomain ?? config.domain
-  return `${slug(project)}-${slug(service)}-${id}.share.${domain}`
+  const suffix = `-${id}-share`
+  const name = fitLabel(`${slug(project)}-${slug(service)}`, MAX_LABEL - suffix.length)
+  return `${name}${suffix}.${domain}`
 }
 
 // ---------------------------------------------------------------------------
@@ -98,11 +108,6 @@ export function saveShares(config: PanelConfig, shares: StoredShare[]): void {
 
 function shareScope(id: string): string {
   return `share:${id}`
-}
-
-function saveProtectionState(config: PanelConfig, store: ReturnType<typeof readProtectionStore>): void {
-  writeProtectionStore(config.authStore, store)
-  writeGenerated(config.dynamicDir, GENERATED_FILES.auth, renderAuthDynamic(store))
 }
 
 // ---------------------------------------------------------------------------
@@ -268,13 +273,23 @@ export async function createShare(
     expiresAt: now + ttl,
   }
 
-  if (password && user) {
+  const hash = password ? await hashPassword(password) : null
+  // Hashing yields. Re-read the shared state before any mutation, so a close or
+  // another share created meanwhile cannot be overwritten by an old snapshot.
+  const currentShares = loadShares(config).filter((share) => share.expiresAt > now)
+  if (currentShares.some((share) => share.container === container.name))
+    throw new ShareRefused(
+      `${container.name} is already shared`,
+      'revoke the existing share first, or regenerate its password',
+    )
+  if (hash && user) {
     const store = setProtection(readProtectionStore(config.authStore), {
       scope: shareScope(id),
       host: stored.host,
       entryPoints: [stored.entryPoint],
+      mode: 'protected',
       user,
-      hash: await hashPassword(password),
+      hash,
       label: service,
       project,
       service,
@@ -283,7 +298,7 @@ export async function createShare(
     // destination without the middleware being able to authenticate it.
     saveProtectionState(config, store)
   }
-  saveShares(config, [...shares, stored])
+  saveShares(config, [...currentShares, stored])
   const view = listShares(config, snapshot, now).find((share) => share.id === id)
   if (!view) throw new ShareRefused('the share could not be written')
   return { share: view, password }
@@ -304,12 +319,20 @@ export async function regenerateShare(
 
   const password = generatePassword()
   const user = share.user ?? 'reviewer'
+  const hash = await hashPassword(password)
+  const current = loadShares(config).find((entry) => entry.id === id)
+  if (!current || current.host !== share.host || current.container !== share.container || current.mode !== 'protected')
+    throw new ShareRefused(
+      `share '${id}' changed while its password was being generated`,
+      'reload the shares before trying again',
+    )
   const store = setProtection(readProtectionStore(config.authStore), {
     scope: shareScope(id),
     host: share.host,
     entryPoints: [share.entryPoint],
+    mode: 'protected',
     user,
-    hash: await hashPassword(password),
+    hash,
     label: share.service,
     project: share.project,
     service: share.service,

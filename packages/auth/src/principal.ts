@@ -6,7 +6,6 @@
 // `if (mode === 'disabled')` out of every other file.
 
 import { eq } from 'drizzle-orm'
-import { ACTIVITY_SOURCES, type ActivitySource } from 'portta-core'
 import { type Db, projectMembers, users } from 'portta-db'
 import {
   AGENT_DEFAULT_PERMISSIONS,
@@ -19,7 +18,7 @@ import {
   type Role,
 } from './access-control.ts'
 import type { Auth } from './auth.ts'
-import type { Principal } from './authorize.ts'
+import { PRINCIPAL_SOURCES, type Principal, type PrincipalSource } from './authorize.ts'
 import type { SecurityConfig } from './security-mode.ts'
 
 export type { Principal } from './authorize.ts'
@@ -38,8 +37,8 @@ function readActor(raw: string | null): string | null {
   return raw !== null && ACTOR.test(raw) ? raw : null
 }
 
-function readSource(raw: string | null, fallback: ActivitySource): ActivitySource {
-  return raw !== null && (ACTIVITY_SOURCES as readonly string[]).includes(raw) ? (raw as ActivitySource) : fallback
+function readSource(raw: string | null, fallback: PrincipalSource): PrincipalSource {
+  return raw !== null && (PRINCIPAL_SOURCES as readonly string[]).includes(raw) ? (raw as PrincipalSource) : fallback
 }
 
 /**
@@ -71,11 +70,6 @@ export interface ResolverDeps {
   db: Db
   /** Absent in `open` mode, where Better Auth is never built. */
   auth?: Auth | null
-  /**
-   * What an agent holds when the operator has narrowed it, from the
-   * `agentPermissions` setting. Absent, or unreadable, means the default.
-   */
-  agentPermissions?: () => Promise<readonly Permission[]>
 }
 
 /** Which Projects this user may see. `owner` and `admin` see all of them. */
@@ -88,16 +82,22 @@ async function scopeOf(db: Db, userId: string, role: Role): Promise<'all' | Read
   return new Set(rows.map((row) => row.projectId))
 }
 
+/** Read from the table, not from the session, so a cached session cannot say yes after a factor was removed. */
+async function hasSecondFactor(db: Db, userId: string): Promise<boolean> {
+  const [row] = await db.select({ on: users.twoFactorEnabled }).from(users).where(eq(users.id, userId))
+  return row?.on === true
+}
+
 export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
   const { security, db } = deps
 
   /**
    * The local operator.
    *
-   * Everything, narrowed twice: by read-only mode, and — when the request
-   * declares itself an agent — by whatever the operator granted agents. That
-   * second narrowing is the only thing `X-Portta-Actor` decides, and it decides
-   * it only here.
+   * Everything, narrowed twice: by read-only mode, and when the request
+   * declares itself an agent, to what agents hold by default. That second
+   * narrowing is the only thing `X-Portta-Actor` decides, and it decides it
+   * only here.
    */
   async function localPrincipal(headers: Headers): Promise<Principal> {
     const actor = readActor(headers.get('x-portta-actor'))
@@ -106,8 +106,7 @@ export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
 
     let permissions: ReadonlySet<Permission> = new Set(PERMISSIONS)
     if (actorKind === 'agent') {
-      const granted = (await deps.agentPermissions?.().catch(() => null)) ?? AGENT_DEFAULT_PERMISSIONS
-      permissions = intersect(permissions, granted)
+      permissions = intersect(permissions, AGENT_DEFAULT_PERMISSIONS)
     }
     if (security.readOnly) permissions = intersect(permissions, READ_PERMISSIONS)
 
@@ -124,6 +123,7 @@ export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
       source: readSource(headers.get('x-portta-source'), 'web'),
       sessionId: null,
       tokenId: null,
+      twoFactor: false,
       ip: readAddress(headers),
     }
   }
@@ -165,6 +165,8 @@ export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
       source: readSource(headers.get('x-portta-source') ?? metadata.source ?? null, 'api'),
       sessionId: null,
       tokenId: record.id,
+      // A token proves nothing about a second factor: it is a bearer secret.
+      twoFactor: false,
       ip: readAddress(headers),
     }
   }
@@ -192,6 +194,7 @@ export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
       source: readSource(headers.get('x-portta-source'), 'web'),
       sessionId: session.session.id,
       tokenId: null,
+      twoFactor: await hasSecondFactor(db, user.id),
       ip: readAddress(headers),
     }
   }
@@ -221,6 +224,7 @@ export function principalFor(overrides: Partial<Principal> = {}): Principal {
     source: 'web',
     sessionId: null,
     tokenId: null,
+    twoFactor: false,
     ip: null,
     ...overrides,
   }

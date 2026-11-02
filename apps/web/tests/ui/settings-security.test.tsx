@@ -11,12 +11,12 @@ const verifyTotp = vi.fn()
 const listSessions = vi.fn()
 const revokeSession = vi.fn()
 const changePassword = vi.fn()
-const refetch = vi.fn()
+const getSession = vi.fn()
 let session: unknown = null
 
 vi.mock('@/lib/auth-client', () => ({
   authClient: {
-    useSession: () => ({ data: session, refetch }),
+    getSession: () => getSession(),
     changePassword: (...args: unknown[]) => changePassword(...args),
     listSessions: () => listSessions(),
     revokeSession: (...args: unknown[]) => revokeSession(...args),
@@ -49,7 +49,7 @@ beforeEach(() => {
   disable.mockReset().mockResolvedValue({ data: {}, error: null })
   verifyTotp.mockReset().mockResolvedValue({ data: {}, error: null })
   changePassword.mockReset().mockResolvedValue({ data: {}, error: null })
-  refetch.mockReset().mockResolvedValue(undefined)
+  getSession.mockReset().mockImplementation(async () => ({ data: session, error: null }))
   listSessions.mockReset().mockResolvedValue({
     data: [
       {
@@ -117,18 +117,25 @@ describe('the Security settings', () => {
 
   it('turns the second factor off behind the password', async () => {
     session = { user: { twoFactorEnabled: true }, session: { token: 'here' } }
+    disable.mockImplementation(async () => {
+      session = { user: { twoFactorEnabled: false }, session: { token: 'here' } }
+      return { data: {}, error: null }
+    })
     renderWithQuery(<SecurityView />, undefined, me)
-    expect(screen.getByText('On')).toBeInTheDocument()
+    expect(await screen.findByText('On')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Turn off' }))
     const ask = await screen.findByRole('dialog')
     await userEvent.type(within(ask).getByLabelText(/Current password/), 'my-password', { delay: null })
     await userEvent.click(within(ask).getByRole('button', { name: 'Continue' }))
     expect(disable).toHaveBeenCalledWith({ password: 'my-password' })
+    expect(await screen.findByText('Off')).toBeInTheDocument()
+    expect(getSession).toHaveBeenCalledTimes(2)
   })
 
   it('lists the browsers, marks this one and signs the others out', async () => {
     renderWithQuery(<SecurityView />, undefined, me)
     expect(await screen.findByText('This browser')).toBeInTheDocument()
+    expect(getSession).toHaveBeenCalledTimes(1)
     expect(screen.getByText('Chrome')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(revokeSession).toHaveBeenCalledWith({ token: 'elsewhere' })

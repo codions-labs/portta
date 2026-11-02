@@ -54,6 +54,10 @@ export function useServiceConnection(project: string, service: string, enabled: 
   })
 }
 
+export function useExposure() {
+  return useQuery({ queryKey: keys.exposure(), queryFn: api.exposure })
+}
+
 export function useShares() {
   return useQuery({ queryKey: keys.shares(), queryFn: api.shares })
 }
@@ -81,8 +85,4 @@ export function useEnvironmentReport() {
 
 export function useHostSecurityReport() {
   return useQuery({ queryKey: keys.hostSecurityReport(), queryFn: api.hostSecurityReport, refetchInterval: 60_000 })
-}
-
-export function useSshKeys() {
-  return useQuery({ queryKey: keys.sshKeys(), queryFn: api.sshKeys })
 }

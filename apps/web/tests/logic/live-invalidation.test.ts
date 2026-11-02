@@ -21,13 +21,6 @@ describe('what a live event makes stale', () => {
     expect(keys).not.toContain('github')
   })
 
-  it('an issue change touches the work, not the containers', () => {
-    const keys = keysFor(event('config', { action: 'issue' })).map((key) => key.join('/'))
-    expect(keys).toContain('projects')
-    expect(keys).toContain('issues')
-    expect(keys).not.toContain('docker')
-  })
-
   it('a settings change touches config and the gateway', () => {
     const keys = keysFor(event('config', { action: 'env' })).map((key) => key.join('/'))
     expect(keys).toEqual(expect.arrayContaining(['config', 'gateway', 'status']))

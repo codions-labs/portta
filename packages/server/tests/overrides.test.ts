@@ -2,6 +2,7 @@ import { chmodSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Environment } from 'portta-contracts'
+import { readProtectionStore, setProtection, writeProtectionStore } from 'portta-core'
 import { environmentSettings, serviceSettings } from 'portta-db'
 import { afterEach, describe, expect, it } from 'vitest'
 import { GENERATED_FILES } from '../src/services/dynamic.ts'
@@ -38,10 +39,14 @@ afterEach(async () => {
 
 const seededDatabase = databasePerFile()
 
-async function app(dynamicDir = scratch(), options: { available?: boolean } = {}) {
+async function app(
+  dynamicDir = scratch(),
+  options: { available?: boolean } = {},
+  config: Partial<Parameters<typeof makeApp>[1]> = {},
+) {
   const seeded = await seededDatabase(options)
   return {
-    ...makeApp({ containers: [...GATEWAY, ...PROJECT_A] }, { dynamicDir }, seeded.database),
+    ...makeApp({ containers: [...GATEWAY, ...PROJECT_A] }, { dynamicDir, ...config }, seeded.database),
     seeded,
     db: seeded.database,
     dynamicDir,
@@ -124,6 +129,59 @@ describe('a hostname alias', () => {
     const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
     expect(written).toContain('Host(`shop.localhost`)')
     expect(written).toContain('http://alpha-web-1:80')
+  })
+
+  it('passes through ForwardAuth on a public host, so an alias nobody decided about is closed', async () => {
+    const instance = await app(scratch(), {}, { profile: 'remote-public', tlsEnabled: true })
+    const response = await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'shop' })
+    expect(response.status).toBe(200)
+    const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
+    expect(written).toContain('middlewares: [portta-forward-auth]')
+  })
+
+  it('refuses a hostname whose access decision belongs to another service on a public host', async () => {
+    const dir = scratch()
+    const authStore = join(dir, 'protections.json')
+    writeProtectionStore(
+      authStore,
+      setProtection(readProtectionStore(authStore), {
+        scope: 'host:shop.localhost',
+        host: 'shop.localhost',
+        entryPoints: ['websecure'],
+        mode: 'public',
+        label: 'shop',
+        project: 'other',
+        service: 'web',
+      }),
+    )
+    const instance = await app(dir, {}, { profile: 'remote-public', tlsEnabled: true, authStore })
+    const response = await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'shop' })
+    expect(response.status).toBe(400)
+    expect(existsSync(join(instance.dynamicDir, GENERATED_FILES.aliases))).toBe(false)
+  })
+
+  it('keeps a suspended alias without a router when the panel writes another alias', async () => {
+    const dir = scratch()
+    const authStore = join(dir, 'protections.json')
+    const instance = await app(dir, {}, { profile: 'remote-public', tlsEnabled: true, authStore })
+    expect((await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'shop' })).status).toBe(200)
+    // Somebody later decides shop.localhost for another project.
+    writeProtectionStore(
+      authStore,
+      setProtection(readProtectionStore(authStore), {
+        scope: 'host:shop.localhost',
+        host: 'shop.localhost',
+        entryPoints: ['websecure'],
+        mode: 'public',
+        label: 'shop',
+        project: 'other',
+        service: 'web',
+      }),
+    )
+    const another = await put(instance, '/api/environments/alpha/services/api/alias', { alias: 'api' })
+    const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
+    if (another.status === 200) expect(written).toContain('Host(`api.localhost`)')
+    expect(written).not.toContain('Host(`shop.localhost`)')
   })
 
   it('targets the container name, never the Compose service alias', async () => {

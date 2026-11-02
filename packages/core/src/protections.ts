@@ -20,12 +20,25 @@ export interface ProtectionTech {
   label: string
 }
 
+/**
+ * What the ForwardAuth service does for a hostname.
+ *
+ * `protected` asks for the record's credential. `public` lets everybody in
+ * and carries no credential at all. A hostname with no record is refused, so
+ * forgetting to decide leaves it closed.
+ */
+export type ProtectionMode = 'protected' | 'public'
+export const PROTECTION_MODES: readonly ProtectionMode[] = ['protected', 'public']
+
 export interface ProtectionRecord {
   scope: string
   host: string
   entryPoints: string[]
-  user: string
-  hash: string
+  mode: ProtectionMode
+  /** Present exactly when `mode` is `protected`. */
+  user?: string
+  /** Present exactly when `mode` is `protected`. A hash, never the password. */
+  hash?: string
   epoch: number
   label: string
   project?: string
@@ -84,14 +97,20 @@ function parseRecord(value: unknown): ProtectionRecord {
     throw new InvalidProtectionStore('invalid entryPoints')
   }
   if (!Number.isSafeInteger(item.epoch) || Number(item.epoch) < 1) throw new InvalidProtectionStore('invalid epoch')
+  if (item.mode !== 'protected' && item.mode !== 'public') throw new InvalidProtectionStore('invalid mode')
   const record: ProtectionRecord = {
     scope: nonEmpty(item.scope, 'scope'),
     host: normalizeProtectionHost(nonEmpty(item.host, 'host')),
     entryPoints: [...new Set(entryPoints as string[])].sort(),
-    user: nonEmpty(item.user, 'user'),
-    hash: nonEmpty(item.hash, 'hash'),
+    mode: item.mode,
     epoch: Number(item.epoch),
     label: nonEmpty(item.label, 'label'),
+  }
+  if (item.mode === 'protected') {
+    record.user = nonEmpty(item.user, 'user')
+    record.hash = nonEmpty(item.hash, 'hash')
+  } else if (item.user !== undefined || item.hash !== undefined) {
+    throw new InvalidProtectionStore('a public host carries no credential')
   }
   if (item.project !== undefined) record.project = nonEmpty(item.project, 'project')
   if (item.service !== undefined) record.service = nonEmpty(item.service, 'service')

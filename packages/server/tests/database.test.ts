@@ -136,7 +136,7 @@ describe('applying migrations', () => {
     expect(database.status().available).toBe(false)
 
     down = false
-    await database.recordEnvironmentsSeen([{ name: 'demo-a', workingDir: null, repoUrl: null, gitRoot: null }])
+    await database.recordEnvironmentsSeen([{ name: 'demo-a', workingDir: null }])
 
     expect(database.status()).toMatchObject({ available: true, migrations: ['0000_current'] })
     expect(await database.environments.find('demo-a')).toMatchObject({ composeProject: 'demo-a' })

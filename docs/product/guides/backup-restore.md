@@ -33,7 +33,8 @@ Archive everything this installation cannot regenerate: `.env`, `VERSION`,
 `config/` and `state/`, plus a consistent copy of the panel database taken with
 SQLite's `VACUUM INTO`. The copy needs `sqlite3` on the host; without it, or
 before the panel has ever started, the archive is written without the database
-and the command warns.
+and the command warns. `state/` includes the per-site decisions in
+`state/auth/protections.json`, so a restore brings back who may open each site.
 
 ```bash
 portta backup

@@ -113,6 +113,12 @@ use an automatic domain, that name can be reused.
 Turning this on is explicit. Changing a project domain or the panel URL never
 turns it on.
 
+A name that resolves is still not an open door. On a public host every routed
+hostname passes through ForwardAuth and has one of three states in the registry:
+protected (a login), open to everybody, or closed because nobody decided.
+`portta adopt` asks for that decision, and it can be changed later without
+recreating anything. See [Run a public host](../guides/public-host.md).
+
 See [Enable public access](../guides/public-access.md) for the CLI and what is never
 published.
 

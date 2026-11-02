@@ -1,10 +1,9 @@
-// Shared by the project, session and activity commands: the panel client with
+// Shared by the commands that talk to the panel: the panel client with
 // its options, the table renderer, and the small parsers.
 
 import type { Command } from 'commander'
 import { type PanelClient, type PanelOptions, panelClient } from '../api.js'
 import { gatewayContext } from '../context.js'
-import { UsageError } from '../errors.js'
 import { Output } from '../output.js'
 
 export interface WorkGlobals extends PanelOptions {
@@ -40,11 +39,6 @@ export function table(output: Output, rows: string[][]): void {
     )
 }
 
-export function requireProject(value: string | undefined): string {
-  if (!value) throw new UsageError('--project <slug> is required', 'list them with `portta projects list`')
-  return value
-}
-
 export function csv(value: string | undefined): string[] | undefined {
   if (value === undefined) return undefined
   const parts = value
@@ -52,15 +46,6 @@ export function csv(value: string | undefined): string[] | undefined {
     .map((part) => part.trim())
     .filter(Boolean)
   return parts.length > 0 ? parts : undefined
-}
-
-export function ago(seconds: number | null | undefined, now = Math.floor(Date.now() / 1000)): string {
-  if (!seconds) return '-'
-  const delta = Math.max(0, now - seconds)
-  if (delta < 60) return `${delta}s`
-  if (delta < 3600) return `${Math.floor(delta / 60)}m`
-  if (delta < 86400) return `${Math.floor(delta / 3600)}h`
-  return `${Math.floor(delta / 86400)}d`
 }
 
 export function query(params: Record<string, string | undefined>): string {

@@ -299,15 +299,13 @@ describe('the role matrix, at the door', () => {
 
   // A developer works in the Projects somebody put them in, and in no others.
   // The membership is the whole difference: the permission was never in doubt.
-  it('lets a developer do the work, in a Project they are a member of', async () => {
+  it('lets a developer open the Project they are a member of', async () => {
     const project = Number(seeded.ids.project)
-    const refused = await send('POST', '/api/projects/produto/sessions', 'developer', { summary: 'Ship it' })
+    const refused = await get('/api/projects/produto', 'developer')
     expect(refused.status, 'a developer with no membership').toBe(403)
 
     await send('PUT', `/api/users/${ids.developer}/projects`, 'owner', { projects: [project] })
-    const started = await send('POST', '/api/projects/produto/sessions', 'developer', { summary: 'Ship it' })
-    expect([200, 201], `starting a session answered ${started.status}`).toContain(started.status)
-    expect((await get('/api/projects/produto/sessions', 'developer')).status).toBe(200)
+    expect((await get('/api/projects/produto', 'developer')).status).toBe(200)
   })
 
   it('lets an admin administer, and read every project', async () => {

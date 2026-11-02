@@ -3,19 +3,8 @@
   "reading": "Lendo o que está acontecendo",
   "gatewayRunning": "Gateway em execução",
   "gatewayDown": "Gateway inativo",
-  "problems_one": "{{count}} problema",
-  "problems_other": "{{count}} problemas",
-  "sessions": {
-    "description": "Quem está trabalhando, em quê, desde quando.",
-    "title": "Agentes e sessões",
-    "empty": "Nenhum agente trabalhando agora",
-    "emptyHint": "Uma sessão aparece aqui quando um agente ou uma pessoa inicia uma sobre uma issue.",
-    "none": "Nenhuma sessão ativa"
-  },
   "attention": {
     "title": "Precisa de atenção",
-    "description": "Serviços unhealthy, environments degradados, conflitos, host sob pressão e o que o gateway verifica.",
-    "diagnostics": "Diagnósticos",
     "none": "Nada precisa de atenção.",
     "count": "{{count}} para agir",
     "count_one": "{{count}} para agir",
@@ -29,21 +18,16 @@
     "empty": "Nenhum projeto ainda",
     "emptyHint": "Crie um em Projetos; os environments deste host continuam listados de qualquer forma."
   },
-  "code": {
-    "title": "Código",
-    "description": "Commits recentes em todos os repositórios, e os repositórios com alterações locais.",
-    "uncommitted": "{{count}} sem commit",
-    "empty": "Nenhum commit coletado ainda",
-    "emptyHint": "O coletor do host varre cada repositório uma vez por minuto; portta repos scan faz isso agora.",
-    "dirty": "Alterações locais",
-    "recent": "Commits recentes",
-    "emptyHintShort": "O coletor do host varre cada repositório uma vez por minuto; para fazer agora, execute"
-  },
   "resources": {
     "top": "Usando este host",
     "topDescription": "Environments por memória. Pare um daqui quando o host estiver sob pressão.",
     "none": "Nada medido",
     "environments": "Ambientes"
+  },
+  "access": {
+    "protected": "Protegido",
+    "open": "Aberto",
+    "closed": "Fechado"
   },
   "reduced": {
     "needsDatabase": "O painel de desenvolvimento precisa do banco de dados do painel",
@@ -52,7 +36,6 @@
   },
   "host": {
     "title": "Este host",
-    "description": "Como esta máquina está agora.",
     "kind": {
       "notebook": "Notebook",
       "desktop": "Desktop",
@@ -74,7 +57,6 @@
     "cores": "{{count}} núcleos",
     "load": "load {{one}} {{five}} {{fifteen}}",
     "up": "ligado há {{time}}",
-    "high": "alto",
     "updated": "atualizado {{time}}",
     "stale": "coletado há {{age}}s",
     "collectorInactive": "Collector inativo",
@@ -88,7 +70,6 @@
       "unknown": "Desconhecido"
     },
     "summary": "Host",
-    "details": "Detalhes do host",
     "showDetails": "Mostrar detalhes do host",
     "hideDetails": "Ocultar detalhes do host",
     "temperature": "Temp",
@@ -102,14 +83,12 @@
     "cycles": "{{count}} ciclos",
     "uptime": "Tempo ativo",
     "gpuMemory": "Memória da GPU",
-    "kernel": "Kernel",
     "architecture": "Arquitetura",
     "virtual": "Máquina virtual",
     "history": "{{label}} nos últimos {{minutes}} minutos"
   },
   "consumption": {
     "title": "Consumo por projeto",
-    "description": "O que está usando CPU e memória neste host agora.",
     "cpu": "CPU",
     "memory": "RAM",
     "containers": "{{count}} containers",

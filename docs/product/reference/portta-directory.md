@@ -16,10 +16,6 @@ The rule that decides what belongs there is one sentence
 |---|---|---|
 | `project.yaml` | optional | the project's identity and conventions |
 | `runtime.json` | optional | the Compose input set, profiles, and which services have an HTTP surface |
-| `workflows/` | yes | the project's own multi-agent workflows |
-| `taskflow.yaml` | yes | the Taskflow module's project settings |
-| `taskflow.local.yaml` | **no** | machine-specific overrides for the above |
-| `worktrees/` | **no** | the checkouts Git creates for parallel work |
 
 A project uses only what it needs. A repository with no `.portta/` at all is a
 normal case: `portta adopt` derives a plan and keeps it in the installation's
@@ -29,34 +25,27 @@ own state instead.
 
 | Belongs to the **project** — committed | Belongs to the **host** — never committed |
 |---|---|
-| Name, main branch, stack | Domain, subdomain, hostname, IP address |
+| Name, stack | Domain, subdomain, hostname, IP address |
 | Compose files and profiles | TLS material and certificates |
 | Which service is an HTTP surface, and its **internal** port | Published host ports |
-| Branch-name pattern | Absolute paths, Projects Home |
-| Worktree root, relative to the repository | Tunnels, VPN membership, credentials |
-| Workflows and lifecycle hooks | The concrete Compose namespace |
-| Which instruction files an agent should read | Multiplexer and environment provider choice |
+| Which instruction files an agent should read | Absolute paths, Projects Home |
+| | Tunnels, VPN membership, credentials |
+| | The concrete Compose namespace |
 
 Host-shaped settings live in the installation directory (`~/portta` by default,
-or wherever `PORTTA_HOME` points), in a `*.local.yaml` overlay beside the
-committed file, or are derived at runtime.
+or wherever `PORTTA_HOME` points), or are derived at runtime.
 
 The test, when it is not obvious: *would two machines running this same commit
 legitimately disagree about it?* If they would, it belongs to the host.
 
 ## `project.yaml`
 
-What the project is, and the conventions work follows in it. Every field is
-optional except `version`, and a project with no file at all is a normal case —
-the defaults below are what it gets.
+What the project is. Every field is optional except `version`, and a project
+with no file at all is a normal case: the defaults below are what it gets.
 
 ```yaml
 version: 1
 name: demo-shop
-mainBranch: main
-worktrees:
-  root: .portta/worktrees
-  branchPattern: "{type}/{slug}"
 stack: [node, mysql]
 instructions: [AGENTS.md]
 ```
@@ -65,9 +54,6 @@ instructions: [AGENTS.md]
 |---|---|---|
 | `version` | — | required; a reader refuses a version it does not understand |
 | `name` | the directory | the project's own name |
-| `mainBranch` | the repository's | the branch work is cut from |
-| `worktrees.root` | `.portta/worktrees` | where worktrees live, always relative to the repository |
-| `worktrees.branchPattern` | `{type}/{slug}` | accepts `{type}` and `{slug}`; an unknown placeholder is refused |
 | `stack` | empty | informative only; never decides behaviour |
 | `instructions` | empty | which instruction files an agent should read here |
 
@@ -76,8 +62,7 @@ the runtime comes up, and they already live in `runtime.json`; a second copy
 here would be two answers to one question.
 
 The schema refuses what belongs to the host rather than ignoring it: a URL, an
-absolute path, a `~`-relative path, a published host port, a root that escapes
-the repository with `..`, and any key it does not know — so `domain:` or
+absolute path, a `~`-relative path, a published host port, and any key it does not know — so `domain:` or
 `port:` is an error, not a field that quietly travels.
 
 ## `runtime.json`
@@ -102,30 +87,13 @@ compatibility acknowledgements:
 ```
 
 The port is the one the container listens on, not one published on the host.
-Two worktrees of the same project both use `3000` and never collide, because
+Two checkouts of the same project both use `3000` and never collide, because
 isolation comes from the environment namespace and the URL comes from the
 gateway.
 
 There is no domain, URL, label, network or Compose project name in this file,
 and none may be added: those are resolved per host. See
 [Add an existing project](../guides/adopting-projects.md).
-
-## Overlays
-
-A machine-specific override is always a separate file ending in `.local.yaml`,
-never a section inside a committed one. `taskflow.local.yaml` may override the
-multiplexer, the worktree root, auto-pull, integration toggles, profiles,
-custom agents and lifecycle hooks; the committed file stays portable.
-
-Add the overlays and the worktree checkouts to the project's ignore rules:
-
-```gitignore
-.portta/*.local.yaml
-.portta/worktrees/
-```
-
-Do not put secrets in either file. Secrets belong in the installation's
-environment.
 
 ## Versioning
 
@@ -137,5 +105,4 @@ understand instead of guessing.
 
 - [Projects, environments and services](../concepts/project-model.md)
 - [Add an existing project](../guides/adopting-projects.md)
-- [The working agreement](../concepts/working-agreement.md)
 - [ADR 0052](../../development/adr/0052-the-portta-directory-is-the-project-contract.md)

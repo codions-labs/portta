@@ -9,11 +9,7 @@ const output = resolve(root, 'dist')
 rmSync(output, { recursive: true, force: true })
 mkdirSync(output, { recursive: true })
 
-// Three programs from one build: the CLI; the host daemon it starts as a child
-// (`portta host serve`), so the daemon never runs inside the CLI process; and
-// the ACP supervisor the Taskflow module starts on demand, which outlives a
-// daemon restart so the agents it holds keep running. All three sit in `dist/`,
-// where each finds the others beside itself.
+// One program: the CLI.
 //
 // Workspace packages resolve through their `development` export condition, from
 // source. What stays outside the bundle is what must be found on disk at
@@ -39,11 +35,7 @@ const englishLocaleOnly = {
 
 await build({
   plugins: [englishLocaleOnly],
-  entryPoints: [
-    { in: resolve(root, 'src/cli.ts'), out: 'cli' },
-    { in: resolve(root, '../host/src/bin.ts'), out: 'host' },
-    { in: resolve(root, '../host/src/modules/taskflow/server/supervisor.ts'), out: 'supervisor' },
-  ],
+  entryPoints: [{ in: resolve(root, 'src/cli.ts'), out: 'cli' }],
   outdir: output,
   bundle: true,
   platform: 'node',
@@ -51,12 +43,6 @@ await build({
   target: 'node24',
   conditions: ['development'],
   external: [
-    'better-sqlite3',
-    '@devcontainers/cli',
-    '@anthropic-ai/claude-agent-sdk',
-    '@agentclientprotocol/claude-agent-acp',
-    '@agentclientprotocol/codex-acp',
-    'pi-acp',
     // Not a resolution constraint like the ones above: `systeminformation` is a
     // barrel over the probes of every operating system, 709 KB for the eleven
     // calls `portta metrics` makes. It is a dependency of this package, so it
@@ -72,13 +58,7 @@ await build({
   banner: {
     js: '#!/usr/bin/env node\nimport { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);',
   },
-  // The three programs share most of their graph: without splitting the whole
-  // host went into `cli.js` as well as `host.js`. Chunk names carry no
-  // directory, so every module still sees `dist/` as `import.meta.dirname` —
-  // which is how the bundles locate each other and their assets. The assertion
-  // below keeps that true.
-  splitting: true,
-  chunkNames: '[name]-[hash]',
+  splitting: false,
   // Names survive minification so a stack trace from an installed CLI still
   // points at something, and lines stay short enough that the frame Node prints
   // above it is readable rather than 80 KB of one line. Together they cost
@@ -98,14 +78,6 @@ const nested = readdirSync(output, { recursive: true }).filter(
 )
 if (nested.length > 0) throw new Error(`the bundle must stay flat in dist/, these are not: ${nested.join(', ')}`)
 
-// Taskflow's builtin workflows and its authoring skill, where the bundles look
-// for them (`portta-host/taskflow/assets`).
-const assets = resolve(output, 'assets')
-cpSync(resolve(root, '../host/workflows'), resolve(assets, 'workflows'), { recursive: true })
-cpSync(resolve(root, '../../skills/portta-workflows'), resolve(assets, 'skills', 'portta-workflows'), {
-  recursive: true,
-})
-
 // The documentation corpus, gzipped: 1.6 MB of JSON that compresses to 400 KB,
 // read only by `portta docs`, which pays a few milliseconds to inflate it.
 writeFileSync(resolve(output, 'documentation.json.gz'), gzipSync(`${JSON.stringify(collectKnowledge())}\n`))
@@ -121,8 +93,7 @@ const version =
 if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:[-+][0-9A-Za-z.-]+)?$/.test(version))
   throw new Error(`invalid Portta build version: ${version}`)
 writeFileSync(resolve(runtime, 'VERSION'), `${version}\n`)
-// The images an installation builds itself: the applier and the toolbox. The
-// sandbox image is published by its own workflow and pulled, never built here.
+// The images an installation builds itself: the applier and the toolbox.
 for (const entry of [
   '.env.example',
   'docker/compose',
@@ -139,6 +110,13 @@ mkdirSync(resolve(runtime, 'config/traefik/dynamic'), { recursive: true })
 for (const file of ['middlewares.yaml', 'tcp.yaml']) {
   cpSync(resolve(repository, 'config/traefik/dynamic', file), resolve(runtime, 'config/traefik/dynamic', file))
 }
+
+// What `portta agents install` writes into an agent's configuration: the
+// instruction, the hook and extension templates, and the skills. They ship in
+// the package so installing needs no network and no checkout.
+const assets = resolve(output, 'assets')
+cpSync(resolve(root, 'assets/agents'), resolve(assets, 'agents'), { recursive: true })
+cpSync(resolve(repository, 'skills'), resolve(assets, 'skills'), { recursive: true })
 
 // The npm page of a package shows the README and the licence that sit at the
 // root of its tarball, and this package has neither in source: both live at the

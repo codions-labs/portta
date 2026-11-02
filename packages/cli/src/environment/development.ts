@@ -26,12 +26,11 @@ async function simple(
 export const developmentProbe: EnvironmentProbe = {
   id: 'tools',
   async probe(context) {
-    const [node, npm, npx, gitFacts, ghFacts, tailscaleFacts] = await Promise.all([
+    const [node, npm, npx, gitFacts, tailscaleFacts] = await Promise.all([
       simple(context, 'tools.node', 'Node.js', 'node', ['--version'], false),
       simple(context, 'tools.npm', 'npm', 'npm', ['--version'], false),
       simple(context, 'tools.npx', 'npx', 'npx', ['--version'], false),
       toolFacts(context, 'git', ['--version']),
-      toolFacts(context, 'gh', ['--version']),
       toolFacts(context, 'tailscale', ['version']),
     ])
 
@@ -67,31 +66,6 @@ export const developmentProbe: EnvironmentProbe = {
       )
     }
 
-    let gh = environmentToolVerdict(ghFacts, {
-      id: 'tools.gh',
-      title: 'GitHub CLI',
-      category: 'development',
-      optional: true,
-      fix: 'install GitHub CLI if this host works with GitHub',
-    })
-    if (ghFacts.installed && ghFacts.usable) {
-      const auth = await context.run(ghFacts.path!, ['auth', 'status'], { reject: false, timeout: PROBE_TIMEOUT_MS })
-      gh = withDetails(
-        ghFacts,
-        {
-          id: 'tools.gh',
-          title: 'GitHub CLI',
-          category: 'development',
-          optional: true,
-          fix: 'gh auth login',
-        },
-        [
-          detail('pass', `binary: ${ghFacts.version ?? 'installed'}`),
-          detail(auth.failed ? 'warn' : 'pass', auth.failed ? 'installed but not authenticated' : 'authenticated'),
-        ],
-      )
-    }
-
     let tailscale = environmentToolVerdict(tailscaleFacts, {
       id: 'tools.tailscale',
       title: 'Tailscale',
@@ -123,6 +97,6 @@ export const developmentProbe: EnvironmentProbe = {
       )
     }
 
-    return [node, npm, npx, git, gh, tailscale]
+    return [node, npm, npx, git, tailscale]
   },
 }

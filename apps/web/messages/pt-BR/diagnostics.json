@@ -209,11 +209,5 @@
       "detail": "{{file}} não corresponde às configurações atuais",
       "fix": "portta web auth apply"
     }
-  },
-  "taskflow-host": {
-    "title": "Daemon de host do Taskflow",
-    "pass": {
-      "detail": "acessível em {{url}}, servindo {{count}} projeto(s)"
-    }
   }
 }

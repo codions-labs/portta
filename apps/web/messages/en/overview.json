@@ -3,19 +3,8 @@
   "reading": "Reading what is happening",
   "gatewayRunning": "Gateway running",
   "gatewayDown": "Gateway down",
-  "problems_one": "{{count}} problem",
-  "problems_other": "{{count}} problems",
-  "sessions": {
-    "description": "Who is working, on what, since when.",
-    "title": "Agents and sessions",
-    "empty": "No agent is working right now",
-    "emptyHint": "A session appears here when an agent or a person starts one against an issue.",
-    "none": "No active session"
-  },
   "attention": {
     "title": "Needs attention",
-    "description": "Unhealthy services, degraded environments, conflicts, a host under pressure, and what the gateway checks.",
-    "diagnostics": "Diagnostics",
     "none": "Nothing needs attention.",
     "count": "{{count}} to act on",
     "count_one": "{{count}} to act on",
@@ -29,21 +18,16 @@
     "empty": "No project yet",
     "emptyHint": "Create one under Projects; environments on this host stay listed regardless."
   },
-  "code": {
-    "title": "Code",
-    "description": "Recent commits across every repository, and the repositories with local changes.",
-    "uncommitted": "{{count}} uncommitted",
-    "empty": "No commit collected yet",
-    "emptyHint": "The host collector scans every repository once a minute; portta repos scan does it now.",
-    "dirty": "Local changes",
-    "recent": "Recent commits",
-    "emptyHintShort": "The host collector scans every repository once a minute; to do it now, run"
-  },
   "resources": {
     "top": "Using this host",
     "topDescription": "Environments by memory. Stop one from here when the host is under pressure.",
     "none": "Nothing measured",
     "environments": "Environments"
+  },
+  "access": {
+    "protected": "Protected",
+    "open": "Open",
+    "closed": "Closed"
   },
   "reduced": {
     "needsDatabase": "The development dashboard needs the panel's database",
@@ -52,7 +36,6 @@
   },
   "host": {
     "title": "This host",
-    "description": "How this machine looks right now.",
     "kind": {
       "notebook": "Notebook",
       "desktop": "Desktop",
@@ -74,7 +57,6 @@
     "cores": "{{count}} cores",
     "load": "load {{one}} {{five}} {{fifteen}}",
     "up": "up {{time}}",
-    "high": "high",
     "updated": "updated {{time}}",
     "stale": "collected {{age}}s ago",
     "collectorInactive": "Collector inactive",
@@ -88,7 +70,6 @@
       "unknown": "Unknown"
     },
     "summary": "Host",
-    "details": "Host details",
     "showDetails": "Show host details",
     "hideDetails": "Hide host details",
     "temperature": "Temp",
@@ -102,14 +83,12 @@
     "cycles": "{{count}} cycles",
     "uptime": "Uptime",
     "gpuMemory": "GPU memory",
-    "kernel": "Kernel",
     "architecture": "Architecture",
     "virtual": "Virtual machine",
     "history": "{{label}} over the last {{minutes}} minutes"
   },
   "consumption": {
     "title": "Project consumption",
-    "description": "What is using CPU and memory on this host right now.",
     "cpu": "CPU",
     "memory": "RAM",
     "containers": "{{count}} containers",

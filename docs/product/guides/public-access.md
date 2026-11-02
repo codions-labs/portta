@@ -13,20 +13,30 @@ can do, so it is explicit, it shows you exactly what changes, and it asks.
 portta public enable
 ```
 
-It resolves the domain that would go public — `PUBLIC_DOMAIN` if set,
+It resolves the domain that would go public: `PUBLIC_DOMAIN` if set,
 otherwise the already-configured project domain, as long as it isn't
 `localhost`. Without either it refuses, pointing at
 `portta config set domain.mode auto`. It also refuses while a TCP entrypoint is
 active.
 
+It also refuses while a running service routes with no login gate, which is
+what a project started before the host went public does: it would be open to the
+internet the moment the profile changes. Stop it with
+`portta runtime down <path>`, enable public access, then `portta adopt` and
+`portta runtime up` it again so it is planned behind the gate. `portta doctor`
+reports the same state as a failure. `portta up` on the public profile refuses to start the gateway while such a service exists (a stopped one counts only if it would come back on its own), and only warns when the gateway is already serving, so a restart never takes the host down.
+
 Then it asks a single confirmation naming that domain:
 
 ```
-expose opted-in HTTP services on *.dev.example.com? [y/N]
+serve this host's HTTP services on *.dev.example.com over the internet? Each site stays closed until you decide who may open it [y/N]
 ```
 
 On yes it sets `PUBLIC_ENABLED=true` and `PORTTA_PROFILE=remote-public` in
-`.env` and immediately runs `docker compose up -d` to apply it.
+`.env` (and `PUBLIC_DOMAIN` when only the project domain supplied the name) and
+immediately runs `docker compose up -d` to apply it. Projects adopted while the
+host was private need a decision for each routed service before they open: see
+[Run a public host](public-host.md).
 
 ```bash
 portta public status
@@ -34,17 +44,16 @@ portta public disable
 ```
 
 `disable` sets `PUBLIC_ENABLED=false` and always switches `PORTTA_PROFILE`
-back to `remote-private`, then tells you to run `portta up` to apply it — it
+back to `remote-private`, then tells you to run `portta up` to apply it. It
 does not restart anything itself. Consumer projects keep running throughout.
 
 ## What public mode does and does not change
 
 It changes **who can reach Traefik**. That is all.
 
-It does not publish anything new. A service is still routed only when it sets
-`traefik.enable=true`, and databases and caches are still never on the shared
-network. What was invisible stays invisible; what was already routed becomes
-reachable from the internet.
+It does not publish anything new. Only services that `portta adopt` routes get a
+hostname, databases and caches are never on the shared network, and every routed
+hostname needs a decision before it opens: see [Run a public host](public-host.md).
 
 Never public, in any profile:
 
@@ -52,7 +61,7 @@ Never public, in any profile:
 - the Docker API and the socket proxy
 - the Traefik dashboard
 
-`doctor` and the CI exposure job both fail if any of those bind `0.0.0.0`.
+`doctor` fails if any of those bind `0.0.0.0`.
 
 ## Prerequisites
 
@@ -80,25 +89,8 @@ Public mode raises `aliasHeadersStrategy` to `delete`, so a client cannot
 forge a header Traefik manages by exploiting a backend that normalises
 underscores.
 
-Anything routed is public unless its router opts into authentication. Portta
-ships a working ForwardAuth middleware and one credential per protected host:
-
-```bash
-portta protect host demo-web.example.com --project demo --service web
-```
-
-The router then opts in with a label the project owns; see
-[Protecting a project hostname](authentication.md#protecting-a-project-hostname).
-
-## Deciding
-
-Use the private profile. It is the default recommendation because it gives you
-the same thing, remote access from anywhere, without an open port.
-
-Public mode earns its keep for external webhooks, a demo for someone who cannot
-join your tailnet, or testing something that must see a public certificate.
-When the reason passes, turn it off:
-
-```bash
-portta public disable
-```
+Every routed hostname passes through the ForwardAuth middleware, and the
+registry (`state/auth/protections.json`) decides: a login, everybody, or
+nothing. A hostname nobody decided about is closed. A project that declares
+Traefik routing of its own is refused on a public host, because Portta cannot
+put that router behind ForwardAuth. See [Run a public host](public-host.md).

@@ -27,7 +27,7 @@ describe('open mode', () => {
     const open = await harness()
     const principal = await open.resolver.fromHeaders(new Headers({ 'x-portta-actor': 'claude-code' }))
     expect(principal).toMatchObject({ actor: 'claude-code', actorKind: 'agent' })
-    expect(principal!.permissions.has('issue:write')).toBe(true)
+    expect(principal!.permissions.has('environment:operate')).toBe(true)
     expect(principal!.permissions.has('environment:settings')).toBe(false)
     expect(principal!.permissions.size).toBe(AGENT_DEFAULT_PERMISSIONS.length)
   })
@@ -47,17 +47,18 @@ describe('open mode', () => {
     expect(principal!.actor).toBe('local')
   })
 
-  it('takes what the operator granted agents, when they narrowed it', async () => {
-    const open = await harness({ agentPermissions: ['issue:read', 'logs:read'] })
+  it('narrows an agent to what agents hold by default', async () => {
+    const open = await harness()
     const principal = await open.resolver.fromHeaders(new Headers({ 'x-portta-actor': 'claude-code' }))
-    expect([...principal!.permissions].sort()).toEqual(['issue:read', 'logs:read'])
+    expect(principal!.permissions.size).toBe(AGENT_DEFAULT_PERMISSIONS.length)
+    expect(principal!.permissions.has('environment:settings')).toBe(false)
   })
 
   it('leaves only reads in read-only mode', async () => {
     const open = await harness({ readOnly: true })
     const principal = await open.resolver.fromHeaders(new Headers())
     expect(principal!.permissions.size).toBe(READ_PERMISSIONS.length)
-    expect(principal!.permissions.has('issue:write')).toBe(false)
+    expect(principal!.permissions.has('environment:operate')).toBe(false)
   })
 })
 
@@ -99,8 +100,8 @@ describe('protected mode', () => {
     const open = await harness({ mode: 'protected', readOnly: true })
     const email = await anOwner(open)
     const principal = await open.resolver.fromHeaders(await signIn(open.auth, email, PASSWORD))
-    expect(principal!.permissions.has('issue:write')).toBe(false)
-    expect(principal!.permissions.has('issue:read')).toBe(true)
+    expect(principal!.permissions.has('environment:operate')).toBe(false)
+    expect(principal!.permissions.has('environment:read')).toBe(true)
   })
 })
 
@@ -132,9 +133,9 @@ describe('a token', () => {
   // role lower every token that leaned on it, without touching the tokens.
   it('holds the intersection of its scopes and its owner’s role', async () => {
     const open = await harness({ mode: 'protected' })
-    const { key } = await aToken(open, { issue: ['read', 'write'], logs: ['read'] })
+    const { key } = await aToken(open, { environment: ['read', 'operate'], logs: ['read'] })
     const principal = await open.resolver.fromHeaders(bearer(key.key))
-    expect([...principal!.permissions].sort()).toEqual(['issue:read', 'issue:write', 'logs:read'])
+    expect([...principal!.permissions].sort()).toEqual(['environment:operate', 'environment:read', 'logs:read'])
   })
 
   it('is refused when its owner is banned', async () => {

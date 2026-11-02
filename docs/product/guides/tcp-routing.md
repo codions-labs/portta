@@ -148,7 +148,7 @@ Error: Protocol error, got "H" as reply type byte
 ```
 
 `H` is the first byte of `HTTP`. Read that error as *the hostname matched no
-router* — a typo, a project that is not running, or a container whose route
+router*: a typo, a project that is not running, or a container whose route
 Traefik has not picked up yet. `portta urls` and the panel's Access page
 show the hostnames that do exist.
 

@@ -6,15 +6,11 @@
   "searchAria": "Search services",
   "empty": "No service matches the filters",
   "table": {
-    "project": "Project",
     "service": "Service",
     "state": "State",
     "health": "Health",
-    "image": "Image",
     "uptime": "Uptime",
     "actions": "Actions",
-    "type": "Type",
-    "ports": "Port",
     "access": "Access",
     "resources": "Resources",
     "runtime": "Runtime",
@@ -25,7 +21,6 @@
     "tcp": "TCP"
   },
   "connection": {
-    "show": "Connect",
     "title": "Connection details · {{name}}"
   },
   "row": {

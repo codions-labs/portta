@@ -1,8 +1,7 @@
 # Persistence
 
 The administration panel keeps its durable decisions in one SQLite file:
-preferences, project metadata, people and access, and a bounded history of the
-development flow. It is part of the panel, not part of the HTTP gateway, and it
+preferences, project metadata, people and access. It is part of the panel, not part of the HTTP gateway, and it
 never stores runtime observations as a source of truth.
 
 **There is no database server.** The panel opens the file in its own process
@@ -14,14 +13,14 @@ before the HTTP listener starts. See
 [ADR 0037](../../development/adr/0037-sqlite-is-the-panel-database.md).
 
 > [!NOTE]
-> In WAL mode a SQLite database is three files — `portta.db`, `portta.db-wal`
+> In WAL mode a SQLite database is three files, `portta.db`, `portta.db-wal`
 > and `portta.db-shm`. Anything that copies, moves or removes the database moves
 > all three; copying only the first is how a backup silently loses the most
 > recent writes.
 
 ## What is persisted
 
-Decisions, and a bounded history of the development flow:
+Decisions:
 
 - one stable gateway instance identity (`instance`);
 - **People and access** (`users`, `sessions`, `accounts`, `verifications`,
@@ -29,63 +28,35 @@ Decisions, and a bounded history of the development flow:
   Projects a `developer` or `viewer` can see. The tables exist from the first
   migration; the panel starts using them when authentication is turned on;
 - **Projects** (`projects`): the product the operator recognises, its slug,
-  description and its place under Projects Home; where its work lives
-  (`task_provider`, `linear_team`); which environments it adopted
-  (`project_environments`), and why;
-- **Repositories** (`repositories`): a Project's git repositories — a path, a
-  remote, a role. Nothing about the forge is projected into a row: the remote is
-  the whole link;
-- **The issue an environment is running for** (`environment_issues`): a
-  reference such as `github:owner/repo#113`, and why Portta believes it — a
-  label, a branch, a namespace, or somebody's hand. This is the one thing about
-  work the panel stores, because it is the one thing no provider knows
-  ([Work and issues](work-and-issues.md));
-- **Work sessions** (`work_sessions`): who worked on what, since when, and what
-  came out. The issue is that same reference, not a foreign key;
-- **Activity** (`activity_events`): what happened — a session started, an
-  environment rebuilt, a commit landed — pruned in code after ninety days or
-  five thousand rows per Project;
-- **Audit** (`audit_log`): the sensitive writes — who signed in, who changed a
-  role, who destroyed an environment — so "who did that" is answerable months
+  description and its directory relative to Projects Home; which environments
+  it adopted (`project_environments`), and why (`manual`, `label` or `path`);
+- **Audit** (`audit_log`): the sensitive writes, who signed in, who changed a
+  role, who destroyed an environment, so "who did that" is answerable months
   later. Never a request body, a password, a hash or a token;
-- **SSH keys** (`ssh_keys`) Portta itself owns;
 - environment identity (`environments`, one row per `COMPOSE_PROJECT_NAME` ever
   seen, with `working_dir` and `config_files` as Docker last recorded them, so
   an environment whose containers are gone can be started again through the
   runner, or forgotten) and the closed catalogue of global, environment and
   service preferences (`settings`, `environment_settings`, `service_settings`).
 
-Twenty tables in total.
+Fifteen tables in total.
 
 ## What is not persisted
 
-Container state, health, ports, networks, URLs, logs, the repository scans and
+Who may open a routed hostname is not in this file either. It is the ForwardAuth
+registry, `state/auth/protections.json`, which the auth service reads on every
+request and which `portta backup` includes with the rest of `state/`.
+
+Container state, health, ports, networks, URLs, logs and
 Traefik status come from their live owners. A stopped container disappears from
 the next Docker snapshot; the panel's database is not a stale inventory cache.
 `packages/db/tests/schema.test.ts` asserts that no table for any of them exists.
-
-**Issues are not persisted either**, and that is a third category rather than an
-oversight. An issue belongs to GitHub or to Linear; Portta reads it when
-somebody opens it and stores nothing, so there is no mirror to go stale and no
-reconciliation to schedule. What it keeps is the reference, on the rows above.
 
 Most of this state is true only of this machine.
 [ADR 0016](../../development/adr/0016-state-that-could-be-shared.md) classifies
 what could ever be shared between two gateways (project and user decisions) and
 what must never be (runtime observations and instance configuration). No
 synchronisation is implemented.
-
-## The host daemon's database is a different one
-
-The host daemon keeps its own state — its token and, with the Taskflow module
-on, worktrees, terminal sessions, agent runs and their transcripts — under
-`$PORTTA_HOME/state/host/`, and the panel never opens those files
-([ADR 0049](../../development/adr/0049-host-state-in-sqlite.md)). Two files,
-two owners, two lifetimes, two backups. The panel reads the daemon's state
-through the daemon's API, the way it reads Docker through Docker's.
-
-`state/panel/` sits beside `state/host/` and not inside it, so "which file is
-the panel's" is never a thing to look up.
 
 ## How it is opened
 
@@ -100,8 +71,7 @@ request on one side and a background job on the other:
 | `foreign_keys` | `ON` | Off by default in SQLite, which would make every reference and cascade decorative |
 | `synchronous` | `NORMAL` | The documented safe pairing with WAL: durable against a process crash, at risk only from losing power mid-checkpoint |
 
-That last one is a deliberate trade, and it is the same one the host daemon
-already makes.
+That last one is a deliberate trade.
 
 Migrations are serialised across processes by `BEGIN IMMEDIATE` over a one-row
 lock table rather than by an advisory lock, because SQLite has no lock that

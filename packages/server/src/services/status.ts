@@ -8,15 +8,10 @@ import type { AppDeps } from '../deps.ts'
 import { listBridges, listForwarders } from './access.ts'
 import { diagnose, problemsOnly } from './diagnostics.ts'
 import { gatewayStatus } from './gateway.ts'
-import { forgeStatus } from './issues/host-client.ts'
 import { loadAliases } from './overrides.ts'
 import { listShares } from './shares.ts'
 
 export async function panelOverview(deps: AppDeps): Promise<Overview> {
-  // One call, reused by the diagnostics below and by the response: asking the
-  // daemon twice for the same answer would double the cost of the panel's
-  // busiest page.
-  const forge = await forgeStatus(deps.forge)
   const snapshot = await deps.cache.get()
   const gateway = gatewayStatus(snapshot, deps.config)
   const integrated = snapshot.environments.filter((environment) => environment.integrated)
@@ -51,11 +46,8 @@ export async function panelOverview(deps: AppDeps): Promise<Overview> {
     urls: snapshot.containers
       .filter((container) => container.ownership !== 'gateway' && container.state === 'running')
       .flatMap((container) => container.urls),
-    problems: problemsOnly(
-      diagnose(snapshot, deps.config, null, shares, deps.db.status(), loadAliases(deps.config), forge),
-    ),
+    problems: problemsOnly(diagnose(snapshot, deps.config, null, shares, deps.db.status(), loadAliases(deps.config))),
     generatedAt: snapshot.at,
-    forge,
   }
   return overview
 }

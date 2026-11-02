@@ -9,17 +9,11 @@ export const LABELS = {
 
   // Optional, and optional on purpose: everything below is inferred from the
   // Compose labels when it is absent, and a project that sets none behaves
-  // exactly as it did before they existed. See
-  // docs/development/adr/0010-git-collected-on-the-host.md.
+  // exactly as it did before they existed.
   //
   //   project   the logical project, when COMPOSE_PROJECT_NAME is a per-worktree
   //             namespace and several worktrees belong under one heading
-  //   repo      `owner/name` or a remote URL, which gives forge links with no
-  //             host-side Git at all
-  //   gitRoot   the repository root, when the Compose file is not at it
   project: 'portta.project',
-  repo: 'portta.repo',
-  gitRoot: 'portta.git.root',
 
   composeProject: 'com.docker.compose.project',
   composeService: 'com.docker.compose.service',

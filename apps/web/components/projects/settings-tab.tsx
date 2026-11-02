@@ -11,7 +11,7 @@ import { Mono } from '@/components/copy'
 import { Empty, ErrorBox } from '@/components/shell-bits'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
-import { Field, Input, Select } from '@/components/ui/field'
+import { Field, Input } from '@/components/ui/field'
 import { Switch } from '@/components/ui/switch'
 import { api } from '@/lib/api'
 import { useCan } from '@/lib/permissions'
@@ -26,10 +26,6 @@ export function SettingsTab({ project, readOnly }: { project: Project; readOnly:
   const [description, setDescription] = useState(project.description ?? '')
   const [relativePath, setRelativePath] = useState(project.relativePath ?? '')
   const [archived, setArchived] = useState(project.archived)
-  // Null is "derive it", which is what a Project with a GitHub remote wants and
-  // is why the control has three states rather than two.
-  const [taskProvider, setTaskProvider] = useState<'derived' | 'github' | 'linear'>(project.taskProvider ?? 'derived')
-  const [linearTeam, setLinearTeam] = useState(project.linearTeam ?? '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [typed, setTyped] = useState('')
 
@@ -43,8 +39,6 @@ export function SettingsTab({ project, readOnly }: { project: Project; readOnly:
         description: description.trim() === '' ? null : description.trim(),
         relativePath: relativePath.trim() === '' ? null : relativePath.trim(),
         archived,
-        taskProvider: taskProvider === 'derived' ? null : taskProvider,
-        linearTeam: linearTeam.trim() === '' ? null : linearTeam.trim(),
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: keys.projects() })
@@ -123,37 +117,6 @@ export function SettingsTab({ project, readOnly }: { project: Project; readOnly:
                 />
               )}
             </Field>
-            {/* Where this Project's work lives. `derived` is the default and
-                needs no decision: a repository with a GitHub remote is a GitHub
-                project already (ADR 0050). */}
-            <Field label={t('settings.provider')} hint={t('settings.providerHint')}>
-              {(id) => (
-                <Select
-                  id={id}
-                  value={taskProvider}
-                  onChange={(event) => setTaskProvider(event.target.value as typeof taskProvider)}
-                  aria-label={t('settings.provider')}
-                >
-                  <option value="derived">{t('settings.providerDerived')}</option>
-                  <option value="github">GitHub</option>
-                  <option value="linear">Linear</option>
-                </Select>
-              )}
-            </Field>
-            {taskProvider === 'linear' ? (
-              <Field label={t('settings.linearTeam')} hint={t('settings.linearTeamHint')}>
-                {(id) => (
-                  <Input
-                    id={id}
-                    mono
-                    value={linearTeam}
-                    onChange={(event) => setLinearTeam(event.target.value.toUpperCase())}
-                    aria-label={t('settings.linearTeam')}
-                    placeholder="ENG"
-                  />
-                )}
-              </Field>
-            ) : null}
             <label className="flex items-center gap-2 text-sm">
               <Switch checked={archived} onCheckedChange={setArchived} aria-label={t('settings.archived')} />
               {t('settings.archived')}

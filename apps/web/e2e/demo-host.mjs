@@ -6,7 +6,7 @@
 // containers somebody started by hand and forgot, an open TCP bridge, one
 // unhealthy service and one port claimed twice. Everything the panel is for
 // is visible at once, so a page that overflows its viewport shows it here.
-// The documentation screenshots come from `just dev --demo` instead: see
+// The documentation capture adapts this host in documentation-host.mjs: see
 // e2e/screenshots.mjs.
 
 import { composeLabels, gatewayLabels, makeBridge, makeContainer, volume } from './container.mjs'

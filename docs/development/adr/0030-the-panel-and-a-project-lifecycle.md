@@ -1,6 +1,6 @@
 # 0030. The panel may operate a project, without owning it
 
-**Status:** Accepted; see [0001](0001-decoupled-infrastructure.md), [0047](0047-host-daemon-and-panel-proxy.md)
+**Status:** Accepted; see [0001](0001-decoupled-infrastructure.md)
 
 ## Context
 
@@ -12,9 +12,9 @@ run `docker system prune`.
 Operating is a different claim. The panel starts, stops, restarts and removes
 one container at a time ([ADR 0008](0008-web-panel-socket-proxy.md)), with
 `assertNotGatewayOwned` refusing Portta's own components and `removeContainer`
-hard-coding `v=0`. Four features that follow from a remote development host —
-turning a whole project off, rebuilding it, removing it from this host, starting
-a per-workspace editor — cannot be built against a reading of ADR 0001 that
+hard-coding `v=0`. Three features that follow from a remote development host —
+turning a whole project off, rebuilding it, removing it from this host —
+cannot be built against a reading of ADR 0001 that
 forbids operating, and cannot be built by widening the socket proxy either.
 [ADR 0026](0026-applying-settings-from-the-panel.md) rejects that: resolving
 overlays against `.env` is reimplementing Compose inside the panel.
@@ -52,24 +52,27 @@ It follows ADR 0026 exactly:
 - reports outcome by having the panel read the container back (state, exit
   code, log tail since `StartedAt`).
 
+On a public host (`PORTTA_PROFILE=remote-public`) the runner is refused unless
+`PORTTA_RUNNER_PUBLIC=true` **and** the panel is on its own domain
+(`PORTTA_WEB_EXPOSE=domain`) with sign-in required (`PORTTA_AUTH_MODE=required`)
+over TLS (`TLS_ENABLED=true`). `PORTTA_WEB_EXPOSE=public` stays refused because it
+has no TLS. The switch is not a panel setting, so a panel cannot release itself,
+and the refusal is checked on every read, including for a runner that already
+exists.
+
 The runner adds nothing to the panel's Docker permissions: it is started with
 the `start` the panel already holds. Adding a verb to the set is an ADR-level
 change, not a patch.
 
 The request the runner reads is `{ verb, project, flags? }` in
 `state/runner/request.json`. Flags are a closed set too: `no-cache` is valid
-only with `build`; `directory` is valid only with `down-volumes`. Adding a
+only with `build`. Adding a
 flag is the same class of change as adding a verb. The working directory and
 Compose files come from Docker's own labels
 (`com.docker.compose.project.working_dir`, `.config_files`), never from a
 path the panel supplied. The runner translates those host paths through
 `/host` so it can read the files; `--project-directory` stays the host path,
 because Compose hands bind mounts to the daemon.
-
-Directory removal is the runner's job, not the panel's. The path is the
-label, validated as an existing directory that is not `/`, not a top-level
-directory, and does not walk up. A dirty working tree is refused unless the
-operator overrides after seeing the counts.
 
 ### Where a project lives
 
@@ -86,7 +89,7 @@ removed. The snapshot records `config_files` beside `working_dir` in
 `environments`, and a remembered Environment is a full `Environment` with no
 services and `presence: remembered`. Start on one hands the runner
 `{ verb: "up", project, workingDir, configFiles }`. The panel validates both
-paths against the bound `remove_working_dir` already applies (absolute, no
+paths against a bound (absolute, no
 `..`, not `/`, not a top-level directory) and refuses a comma, a quote or a
 backslash, which is what lets the shell read the list as text. The runner
 uses those fields **only** when `docker ps` finds no container for the
@@ -106,10 +109,10 @@ repository root is already mounted at its own path and needs no link.
 
 ### The safety envelope
 
-- A verb that destroys data (`down-volumes`, directory removal) requires the
+- A verb that destroys data (`down-volumes`) requires the
   **project name typed back**, checked on the server.
 - Portta's own components are refused by name, reusing `assertNotGatewayOwned`.
-- No operation ever touches a Git remote, a forge repository, an issue or a
+- No operation ever touches a Git remote, a forge repository or a
   branch.
 - Every operation is logged where the operator can read it back.
 - The working directory is validated as an existing directory and never
@@ -130,8 +133,3 @@ Docker socket and a view of the host filesystem. The closed verb set, the
 opt-in key, and the project name validated against the live snapshot are what
 keep it bounded. A project started outside Compose has no working-directory
 label and is reported as not operable rather than offered a dead button.
-
-Work that needs the host itself rather than Compose — worktrees, terminals,
-agent runs — goes through the host daemon
-([ADR 0047](0047-host-daemon-and-panel-proxy.md)) under the same
-operate-not-own claim.

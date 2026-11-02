@@ -237,7 +237,7 @@ nothing in a project changes.
 
 The panel does the same from
 [Project addresses](http://127.0.0.1:8081/settings/general/project-domain),
-under **Your own domain**.
+where **How addresses are built** offers **A domain you own**.
 
 ```bash
 portta urls

@@ -42,7 +42,7 @@
         {
           "source": "docs/product/guides/projects.md",
           "slug": "projects",
-          "description": "Organize repositories and environments into Projects."
+          "description": "Organize environments into Projects."
         },
         {
           "source": "docs/product/guides/environments.md",
@@ -63,11 +63,6 @@
           "source": "docs/product/guides/local-development.md",
           "slug": "local-development",
           "description": "Use the gateway for applications on your workstation."
-        },
-        {
-          "source": "docs/product/guides/host-daemon.md",
-          "slug": "host-daemon",
-          "description": "Run the host daemon that modules needing git, tmux or agents use, and let the panel reach it."
         },
         {
           "source": "docs/product/guides/monorepos.md",
@@ -116,16 +111,6 @@
           "description": "Choose private or public access for a remote host."
         },
         {
-          "source": "docs/product/guides/remote-bootstrap.md",
-          "slug": "remote-bootstrap",
-          "description": "Prepare a remote host over SSH."
-        },
-        {
-          "source": "docs/product/guides/ssh-keys.md",
-          "slug": "ssh-keys",
-          "description": "Generate, import, test and remove instance-owned SSH credentials."
-        },
-        {
           "source": "docs/product/guides/tailscale.md",
           "slug": "tailscale",
           "description": "Attach the gateway to your private tailnet."
@@ -141,14 +126,19 @@
           "description": "Publish HTTPS routes through a Cloudflare Tunnel."
         },
         {
+          "source": "docs/product/guides/deploy.md",
+          "slug": "deploy",
+          "description": "Deploy Portta on a server step by step."
+        },
+        {
+          "source": "docs/product/guides/public-host.md",
+          "slug": "public-host",
+          "description": "Run many projects on a public server with a decision per site."
+        },
+        {
           "source": "docs/product/guides/public-access.md",
           "slug": "public-access",
           "description": "Enable deliberate internet access to selected routes."
-        },
-        {
-          "source": "docs/product/guides/remote-tunnels.md",
-          "slug": "remote-tunnels",
-          "description": "Reach a remote host through SSH and private bridges."
         }
       ]
     },
@@ -195,20 +185,10 @@
     },
     {
       "title": "Guides",
-      "category": "Issues and integrations",
+      "category": "API",
       "audience": "user",
       "sequential": false,
       "pages": [
-        {
-          "source": "docs/product/guides/issues.md",
-          "slug": "issues",
-          "description": "Read and write the issues a Project's work lives in, on GitHub or Linear."
-        },
-        {
-          "source": "docs/product/guides/github.md",
-          "slug": "github",
-          "description": "Connect GitHub through the gh CLI on the host."
-        },
         {
           "source": "docs/product/guides/use-api.md",
           "slug": "use-api",
@@ -272,11 +252,6 @@
           "description": "Explore the OpenAPI contract and try requests against this panel."
         },
         {
-          "source": "docs/product/reference/mcp.md",
-          "slug": "mcp",
-          "description": "Connect agents over stdio and consult the tool contract."
-        },
-        {
           "source": "docs/product/reference/host-metrics.md",
           "slug": "host-metrics",
           "description": "Inspect host and project resource collection and snapshots."
@@ -317,7 +292,7 @@
         {
           "source": "docs/product/concepts/project-model.md",
           "slug": "project-model",
-          "description": "Understand Projects, repositories, environments, services and endpoints."
+          "description": "Understand Projects, environments, services and endpoints."
         },
         {
           "source": "docs/product/concepts/addresses-and-access.md",
@@ -338,16 +313,6 @@
           "source": "docs/product/concepts/security.md",
           "slug": "security",
           "description": "Understand trust boundaries, isolation, secrets and residual risks."
-        },
-        {
-          "source": "docs/product/concepts/work-and-issues.md",
-          "slug": "work-and-issues",
-          "description": "Understand why work lives in an external provider and what Portta adds to it."
-        },
-        {
-          "source": "docs/product/concepts/working-agreement.md",
-          "slug": "working-agreement",
-          "description": "Understand the method agents and people share here, and how it is distributed as a skill."
         }
       ]
     },
@@ -373,11 +338,6 @@
           "description": "Find workspace ownership and learn where new code belongs."
         },
         {
-          "source": "docs/development/host-daemon.md",
-          "slug": "host-daemon-development",
-          "description": "The host daemon, the panel's module proxy and WebSocket bridge, and how to run them."
-        },
-        {
           "source": "docs/development/database-development.md",
           "slug": "database-development",
           "description": "Change schemas and validate generated migrations."
@@ -391,6 +351,11 @@
           "source": "docs/development/testing.md",
           "slug": "testing",
           "description": "Choose targeted tests and integration or release validation."
+        },
+        {
+          "source": "docs/development/agents-smoke.md",
+          "slug": "agents-smoke",
+          "description": "Check by hand that Claude Code, Codex, OpenCode and Pi start with the Portta layer."
         },
         {
           "source": "docs/development/publish-cli.md",
@@ -461,11 +426,6 @@
           "description": "0009. Databases are told apart by hostname, with TLS terminated at the gateway."
         },
         {
-          "source": "docs/development/adr/0010-git-collected-on-the-host.md",
-          "slug": "adr/0010-git-collected-on-the-host",
-          "description": "0010. Git is collected on the host, and the panel only reads the result."
-        },
-        {
           "source": "docs/development/adr/0011-bounded-traefik-write-surface.md",
           "slug": "adr/0011-bounded-traefik-write-surface",
           "description": "0011. The panel has a bounded Traefik write surface."
@@ -499,11 +459,6 @@
           "source": "docs/development/adr/0017-no-docker-sdk.md",
           "slug": "adr/0017-no-docker-sdk",
           "description": "0017. The panel speaks the Docker Engine API directly."
-        },
-        {
-          "source": "docs/development/adr/0018-github-issues-through-the-gh-cli.md",
-          "slug": "adr/0018-github-issues-through-the-gh-cli",
-          "description": "0018. GitHub Issues go through the `gh` CLI on the host."
         },
         {
           "source": "docs/development/adr/0019-compose-files-live-under-docker.md",
@@ -568,12 +523,7 @@
         {
           "source": "docs/development/adr/0031-projects-home-and-project.md",
           "slug": "adr/0031-projects-home-and-project",
-          "description": "0031. Projects, repositories and environments are distinct."
-        },
-        {
-          "source": "docs/development/adr/0032-portta-development-model.md",
-          "slug": "adr/0032-portta-development-model",
-          "description": "0032. The Portta development model."
+          "description": "0031. Projects and environments are distinct."
         },
         {
           "source": "docs/development/adr/0034-child-process-output.md",
@@ -611,11 +561,6 @@
           "description": "0040. The installation environment is the configuration contract."
         },
         {
-          "source": "docs/development/adr/0042-portta-owned-ssh-keys.md",
-          "slug": "adr/0042-portta-owned-ssh-keys",
-          "description": "0042. Portta-owned SSH keys use a narrow panel boundary."
-        },
-        {
           "source": "docs/development/adr/0043-container-console-over-docker-exec.md",
           "slug": "adr/0043-container-console-over-docker-exec",
           "description": "0043. Container consoles use Docker exec through the panel proxy."
@@ -624,31 +569,6 @@
           "source": "docs/development/adr/0044-example-projects-live-in-projects-home.md",
           "slug": "adr/0044-example-projects-live-in-projects-home",
           "description": "0044. Example projects live in Projects Home."
-        },
-        {
-          "source": "docs/development/adr/0046-official-modules-are-composed-at-build-time.md",
-          "slug": "adr/0046-official-modules-are-composed-at-build-time",
-          "description": "0046. Official modules are composed at build time."
-        },
-        {
-          "source": "docs/development/adr/0047-host-daemon-and-panel-proxy.md",
-          "slug": "adr/0047-host-daemon-and-panel-proxy",
-          "description": "0047. A host daemon does the host's work, and the panel reaches it through a proxy."
-        },
-        {
-          "source": "docs/development/adr/0048-module-endpoints-through-traefik.md",
-          "slug": "adr/0048-module-endpoints-through-traefik",
-          "description": "0048. A module exposes endpoints through Traefik, in one bounded file of its own."
-        },
-        {
-          "source": "docs/development/adr/0049-host-state-in-sqlite.md",
-          "slug": "adr/0049-host-state-in-sqlite",
-          "description": "0049. Host daemon state lives in SQLite under `PORTTA_HOME/state/host`."
-        },
-        {
-          "source": "docs/development/adr/0050-work-lives-in-an-external-provider.md",
-          "slug": "adr/0050-work-lives-in-an-external-provider",
-          "description": "0050. Work lives in an external provider, and Portta points at it."
         },
         {
           "source": "docs/development/adr/0051-authentication-is-optional-inside-a-trusted-network.md",
@@ -661,14 +581,9 @@
           "description": "0052. The `.portta` directory is the project's contract, and it never describes a host."
         },
         {
-          "source": "docs/development/adr/0053-portta-is-spec-aware-not-spec-owned.md",
-          "slug": "adr/0053-portta-is-spec-aware-not-spec-owned",
-          "description": "0053. Portta is spec-aware, not spec-owned."
-        },
-        {
-          "source": "docs/development/adr/0054-mcp-tools-are-shared-and-served-over-http.md",
-          "slug": "adr/0054-mcp-tools-are-shared-and-served-over-http",
-          "description": "0054. The MCP tools are shared, and the panel serves them over HTTP."
+          "source": "docs/development/adr/0055-portta-routes-and-protects-agents-do-the-work.md",
+          "slug": "adr/0055-portta-routes-and-protects-agents-do-the-work",
+          "description": "Why Portta routes and protects projects and leaves the AI work to agents."
         },
         {
           "source": "docs/development/adr/README.md",

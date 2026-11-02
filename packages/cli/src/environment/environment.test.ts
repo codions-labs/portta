@@ -31,9 +31,9 @@ function context(
 }
 
 describe('environment probes', () => {
-  it('parses installed versions and reports gh authentication separately', async () => {
+  it('parses installed versions and the global Git author identity', async () => {
     const probe = context({
-      paths: { node: '/bin/node', npm: '/bin/npm', npx: '/bin/npx', git: '/bin/git', gh: '/bin/gh', tailscale: null },
+      paths: { node: '/bin/node', npm: '/bin/npm', npx: '/bin/npx', git: '/bin/git', tailscale: null },
       responses: {
         '/bin/node --version': result('v24.0.0\n'),
         '/bin/npm --version': result('10.9.0\n'),
@@ -41,8 +41,6 @@ describe('environment probes', () => {
         '/bin/git --version': result('git version 2.48.0\n'),
         '/bin/git config --global user.name': result('Ada\n'),
         '/bin/git config --global user.email': result('ada@example.test\n'),
-        '/bin/gh --version': result('gh version 2.70.0\n'),
-        '/bin/gh auth status': result('', true, 'not logged in'),
       },
     })
     const checks = await developmentProbe.probe(probe)
@@ -50,7 +48,7 @@ describe('environment probes', () => {
       status: 'pass',
       tool: { version: 'v24.0.0' },
     })
-    expect(checks.find((entry) => entry.id === 'tools.gh')).toMatchObject({ status: 'warn', fix: 'gh auth login' })
+    expect(checks.find((entry) => entry.id === 'tools.git')?.status).toBe('pass')
     expect(checks.find((entry) => entry.id === 'tools.tailscale')?.status).toBe('info')
   })
 

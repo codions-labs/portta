@@ -13,13 +13,9 @@
 // with no behaviour in it.
 
 import { appliedMigrations, createDb, type Db, migrateWithLock, seedMinimal } from 'portta-db'
-import { ActivityRepository } from './activity.ts'
 import { EnvironmentsRepository } from './environments.ts'
 import { ProjectsRepository } from './projects.ts'
-import { RepositoriesRepository } from './repositories.ts'
 import { SettingsRepository } from './settings.ts'
-import { SshKeysRepository } from './ssh-keys.ts'
-import { WorkSessionsRepository } from './work-sessions.ts'
 
 export interface DatabaseStatus {
   configured: boolean
@@ -77,11 +73,7 @@ export class Database {
 
   readonly environments: EnvironmentsRepository
   readonly projects: ProjectsRepository
-  readonly repositories: RepositoriesRepository
   readonly settings: SettingsRepository
-  readonly sessions: WorkSessionsRepository
-  readonly activity: ActivityRepository
-  readonly sshKeys: SshKeysRepository
 
   private readonly backend: DatabaseBackend
   private initializing: Promise<void> | null = null
@@ -98,11 +90,7 @@ export class Database {
     this.handle = db
     this.environments = new EnvironmentsRepository(db)
     this.projects = new ProjectsRepository(db)
-    this.repositories = new RepositoriesRepository(db)
     this.settings = new SettingsRepository(db)
-    this.sessions = new WorkSessionsRepository(db)
-    this.activity = new ActivityRepository(db)
-    this.sshKeys = new SshKeysRepository(db)
   }
 
   static open(path: string): Database {
@@ -183,8 +171,6 @@ export class Database {
     environments: ReadonlyArray<{
       name: string
       workingDir: string | null
-      repoUrl: string | null
-      gitRoot: string | null
       /** The Compose files Docker recorded; remembered so `up` can run once the containers are gone. */
       operable?: { configFiles: string[] }
     }>,
@@ -200,8 +186,6 @@ export class Database {
             composeProject: environment.name,
             workingDir: environment.workingDir,
             configFiles: environment.operable?.configFiles ?? [],
-            repoUrl: environment.repoUrl,
-            repoSubpath: environment.gitRoot,
           }),
         ),
       )
@@ -250,5 +234,3 @@ export function requireDatabase(database: Database): Database {
 }
 
 export type { ProjectRecord } from './projects.ts'
-export type { NewSshKeyRecord, SshKeyRecord } from './ssh-keys.ts'
-export { SshKeysRepository } from './ssh-keys.ts'

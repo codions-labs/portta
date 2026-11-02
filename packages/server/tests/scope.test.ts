@@ -1,6 +1,6 @@
 // A permission says what somebody may do. A membership says where.
 //
-// The negatives are the point: a developer holding `issue:write` still gets 403
+// The negatives are the point: a developer holding `environment:operate` still gets 403
 // in a Project nobody put them in, and every listing answers with theirs rather
 // than refusing. What is asserted here per resource is that the second half of
 // the decision is actually made — a route that resolved the resource and then
@@ -126,29 +126,15 @@ beforeAll(async () => {
 })
 
 describe('a named resource in a Project somebody is not in', () => {
-  // Refused before the Project's own configuration is read, so a non-member
-  // cannot learn from a 409 whether it is linked to a provider at all.
-  it('is refused for the issues of a Project, read and written alike', async () => {
-    expect((await get('/api/projects/outro/issues', 'dev')).status).toBe(403)
-    expect((await get('/api/projects/outro/issues/1', 'dev')).status).toBe(403)
-    expect((await get('/api/projects/outro/issues-vocabulary', 'dev')).status).toBe(403)
-    expect((await send('POST', '/api/projects/outro/issues', 'dev', { title: 'no' })).status).toBe(403)
-    expect((await send('PATCH', '/api/projects/outro/issues/1', 'dev', { title: 'no' })).status).toBe(403)
-    expect((await send('POST', '/api/projects/outro/issues/1/comments', 'dev', { body: 'no' })).status).toBe(403)
-  })
-
-  it('is refused for a session in it, by id', async () => {
-    const started = await json(
-      await send('POST', '/api/projects/outro/sessions', 'owner', { issueRef: 'github:acme/beta#7' }),
-    )
-    expect((await get(`/api/sessions/${started.id}`, 'dev')).status).toBe(403)
-    expect((await send('PATCH', `/api/sessions/${started.id}`, 'dev', { heartbeat: true })).status).toBe(403)
-    expect((await get(`/api/sessions/${started.id}`, 'owner')).status).toBe(200)
+  it('is refused for the settings and operations of an environment in it, read and written alike', async () => {
+    expect((await get('/api/environments/beta/settings', 'dev')).status).toBe(403)
+    expect((await send('PUT', '/api/environments/beta/settings', 'dev', { pinned: true })).status).toBe(403)
+    expect((await send('POST', '/api/environments/beta/actions/stop', 'dev')).status).toBe(403)
   })
 
   it('is allowed in the Project they are in', async () => {
     expect((await get('/api/projects/produto', 'dev')).status).toBe(200)
-    expect((await get('/api/projects/produto/sessions', 'dev')).status).toBe(200)
+    expect((await get('/api/projects/produto/resources', 'dev')).status).toBe(200)
     expect((await get('/api/environments/alpha/settings', 'dev')).status).toBe(200)
   })
 
@@ -164,13 +150,6 @@ describe('a listing', () => {
   it('answers with theirs rather than refusing', async () => {
     const projects = await json(await get('/api/projects', 'dev'))
     expect(projects.projects.map((project: { slug: string }) => project.slug)).toEqual(['produto'])
-
-    // Activity crosses every Project, so the filter is the only thing keeping
-    // one Project's work out of another member's list.
-    await send('POST', '/api/projects/produto/sessions', 'owner', { summary: 'mine' })
-    await send('POST', '/api/projects/outro/sessions', 'owner', { summary: 'theirs' })
-    const activity = await json(await get('/api/activity', 'dev'))
-    expect(activity.events.map((event: { project: string | null }) => event.project)).toEqual(['produto'])
   })
 
   it('shows the owner everything', async () => {
@@ -215,9 +194,6 @@ describe('every documented read that names a Project', () => {
     '{slug}': 'outro',
     '{project}': 'beta',
     '{service}': 'web',
-    // An issue key the provider is never asked for: the scope is decided first.
-    '{key}': '1',
-    '{ref}': encodeURIComponent('github:acme/beta#7'),
   }
 
   it('is refused to somebody who is not in it', async () => {

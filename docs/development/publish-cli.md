@@ -206,16 +206,14 @@ Nothing in this repository can repair that; these are one-time settings changes.
 
 2. **GHCR packages.** The container packages survive the deletion but lose their
    Actions access to the repository, so image pushes fail with
-   `denied: permission_denied: write_package`. For each package — `portta` and
-   `portta-sandbox` — open its settings under
+   `denied: permission_denied: write_package`. For the `portta` package, open its
+   settings under
    `github.com/orgs/<owner>/packages/container/<name>/settings`, then Manage
    Actions access → Add repository → `portta` → **Write**. Package visibility is
    a separate setting and is not restored by this step: `portta` must stay public
    so an installed runtime can pull anonymously.
 
 3. **Repository configuration.** Environments, secrets, variables, rulesets and
-   branch protection are all gone. `taskflow-live-integrations.yaml` needs the
-   `live-integration-certification` environment with the `PORTTA_FLOW_E2E_*`
-   variables and the `PORTTA_FLOW_E2E_GITHUB_TOKEN` and `LINEAR_API_KEY` secrets.
+   branch protection are all gone.
 
 See npm's documentation for [publishing a package](https://docs.npmjs.com/cli/v11/commands/npm-publish/), [two-factor authentication](https://docs.npmjs.com/about-two-factor-authentication/), and [trusted publishing](https://docs.npmjs.com/trusted-publishers/).

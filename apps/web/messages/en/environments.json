@@ -37,14 +37,10 @@
     "removeKeepTitle": "Remove this project, keep data?",
     "removeDataTitle": "Remove this project and local data?",
     "removeFromHost": "Remove {{name}} from this host.",
-    "githubUntouched": "The GitHub repository, its issues, its branches and its pull requests are not touched.",
+    "githubUntouched": "Nothing outside this host changes.",
     "previewContainers": "{{count}} container(s) will be removed.",
     "previewVolumes": "Named volumes: {{names}}. Size is unknown: the panel cannot inspect volumes.",
-    "alsoDirectory": "Also remove the working directory on this host.",
-    "directoryNeedsRunner": "Directory removal needs the runner. Without it the panel prints the exact rm -rf for you.",
-    "dirtyOverride": "The working tree is dirty ({{staged}} staged, {{unstaged}} unstaged, {{untracked}} untracked). Override and remove the directory anyway.",
-    "typeName": "Type {{name}} to confirm.",
-    "copyCommand": "Copy command"
+    "typeName": "Type {{name}} to confirm."
   },
   "collapsedService": "{{count}} collapsed service",
   "collapsedServices": "{{count}} collapsed services",
@@ -53,75 +49,10 @@
   "tabs": {
     "overview": "Overview",
     "services": "Services",
-    "git": "Git",
     "logs": "Logs",
     "settings": "Settings"
   },
   "notFound": "No environment '{{name}}' is running",
-  "stats": {
-    "services": "Services",
-    "running": "running",
-    "unhealthy": "Unhealthy",
-    "uptime": "Uptime"
-  },
-  "environment": {
-    "title": "Environment",
-    "description": "What this Compose project is, and where it lives.",
-    "integrated": "Integrated",
-    "worktree": "Worktree",
-    "gitRoot": "Git root",
-    "repository": "Repository",
-    "networks": "Networks"
-  },
-  "resources": {
-    "title": "Resources",
-    "description": "What this project's containers are using right now.",
-    "empty": "No running containers to measure.",
-    "cpu": "CPU",
-    "memory": "RAM"
-  },
-  "endpoints": {
-    "title": "Endpoints",
-    "description": "Every address this project answers on, grouped by service.",
-    "empty": "This project has no services",
-    "accessPage": "Access page"
-  },
-  "repository": {
-    "title": "Repository",
-    "description": "Collected on the host; see the Git tab for the whole snapshot."
-  },
-  "git": {
-    "reading": "Reading collected Git metadata",
-    "empty": "No Git metadata collected for this project",
-    "approved": "approved",
-    "changesRequested": "changes requested",
-    "reviewRequested": "review requested",
-    "draft": "draft",
-    "checksFailing": "checks failing",
-    "checksPending": "checks pending",
-    "checksPassing": "checks passing",
-    "detachedHead": "detached HEAD",
-    "uncommittedChanges_one": "{{count}} uncommitted change",
-    "uncommittedChanges_other": "{{count}} uncommitted changes",
-    "clean": "clean",
-    "ahead": "{{count}} ahead",
-    "behind": "{{count}} behind",
-    "staleHint": "older than {{seconds}}s",
-    "collectedAgo": "collected {{time}}",
-    "author": "Author",
-    "workingTree": "Working tree",
-    "staged": "{{count}} staged",
-    "unstaged": "{{count}} unstaged",
-    "untracked": "{{count}} untracked",
-    "unmerged": "{{count}} unmerged",
-    "upstream": "Upstream",
-    "noUpstream": "No upstream branch",
-    "remote": "Remote",
-    "scannedDirectory": "Scanned directory",
-    "refreshOnHost": "Refresh on the host",
-    "branch": "Branch",
-    "collected": "Collected"
-  },
   "servicesEmpty": "This project has no services",
   "servicesEmptyHint": "A project joins by adding the gateway overlay: see docs/product/guides/adopting-projects.md.",
   "containerActions": {
@@ -132,7 +63,6 @@
     "stop": "Stop",
     "restart": "Restart",
     "removeContainer": "Remove container",
-    "error": "error",
     "logsTitle": "Logs · {{name}}",
     "remove": {
       "title": "Remove this container?",
@@ -168,13 +98,7 @@
     "hint": "An alias is additional: the project keeps answering on the hostname it derives."
   },
   "backToAll": "Back to all projects",
-  "unknown": "unknown",
-  "notRouted": "not routed by the gateway",
-  "exitCode": "exit {{code}}",
-  "primary": "primary",
   "header": {
-    "repository": "Repository",
-    "openRepository": "Open repository",
     "resources": "Resources",
     "services": "{{running}}/{{total}} services running",
     "noProject": "not adopted by any project",

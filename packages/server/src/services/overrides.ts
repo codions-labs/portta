@@ -10,7 +10,13 @@
 // Nothing here writes a byte inside a project. See ADR 0001 and ADR 0011.
 
 import type { ContainerSummary, Environment, EnvironmentOverrides, ServiceOverrides } from 'portta-contracts'
-import { parseAliases, renderAliases, type StoredAlias } from 'portta-core'
+import {
+  parseAliases,
+  protectionForHost,
+  readProtectionStore,
+  renderAliasesForStore,
+  type StoredAlias,
+} from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import type { Database } from '../db/index.ts'
 import { ENVIRONMENT_KEYS, SERVICE_KEYS } from '../db/keys.ts'
@@ -232,6 +238,17 @@ export function planAlias(
     )
   }
 
+  // A decision already recorded for this hostname belongs to whoever made it,
+  // on every profile because it outlives a switch to a public host: an alias
+  // must not inherit it for another service.
+  const decided = protectionForHost(readProtectionStore(config.authStore), host)
+  if (decided && (decided.service !== request.service || decided.project !== request.project)) {
+    throw new OverrideRefused(
+      `${host} already has an access decision that belongs to another service`,
+      'remove it with portta protect remove, or choose another hostname',
+    )
+  }
+
   const clash = existing.find(
     (alias) => alias.host === host && !(alias.project === request.project && alias.service === request.service),
   )
@@ -279,7 +296,11 @@ export function loadAliases(config: PanelConfig): StoredAlias[] {
 }
 
 export function saveAliases(config: PanelConfig, aliases: StoredAlias[]): void {
-  writeGenerated(config.dynamicDir, GENERATED_FILES.aliases, renderAliases(aliases))
+  writeGenerated(
+    config.dynamicDir,
+    GENERATED_FILES.aliases,
+    renderAliasesForStore(aliases, readProtectionStore(config.authStore), config.profile === 'remote-public'),
+  )
 }
 
 /** Sorted so a rewrite of unchanged state produces an unchanged file. */

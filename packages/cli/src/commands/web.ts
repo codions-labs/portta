@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Command } from 'commander'
 import {
@@ -6,10 +6,12 @@ import {
   isPanelAccess,
   isTrue,
   PANEL_ACCESS_MODES,
+  parseAliases,
   patchEnvFile,
   porttaImages,
   prepareEnvFile,
   readProtectionStore,
+  renderAliasesForStore,
   renderAuthDynamic,
   writeEnvFile,
   writeProtectionStore,
@@ -21,8 +23,7 @@ import { ensureInstallationDirectories } from '../installation-directories.js'
 import { requireLocalRelease, selectLocalRelease } from '../local-release.js'
 import { Output } from '../output.js'
 import { runProcess } from '../process.js'
-import { ensureHostToken, ensureMetricsCollector, stopMetricsCollector } from './host.js'
-import { refreshRepositories } from './repos.js'
+import { ensureMetricsCollector, stopMetricsCollector } from './host.js'
 
 function globals(command: Command) {
   return command.optsWithGlobals() as {
@@ -45,13 +46,22 @@ function setValues(root: string, values: Record<string, string>): void {
  * ForwardAuth for project hostnames and shares, rendered from the current
  * protection store.
  */
-export function syncForwardAuth(root: string): void {
+export function syncForwardAuth(root: string, profile: string): void {
   const storePath = join(root, 'state/auth/protections.json')
   const store = readProtectionStore(storePath)
   writeProtectionStore(storePath, store)
   const dynamic = join(root, 'config/traefik/dynamic')
   mkdirSync(dynamic, { recursive: true })
   writeEnvFile(join(dynamic, 'portta-auth.yaml'), renderAuthDynamic(store))
+  // An alias the panel wrote on a private host must not become an open door when
+  // the host goes public: its router is rendered again for the profile now in use.
+  const aliasFile = join(dynamic, 'portta-aliases.yaml')
+  if (existsSync(aliasFile)) {
+    const publicHost = profile === 'remote-public'
+    // An alias whose hostname carries a decision made for another service would
+    // inherit it, so on a public host it is left out until the conflict is gone.
+    writeEnvFile(aliasFile, renderAliasesForStore(parseAliases(readFileSync(aliasFile, 'utf8')), store, publicHost))
+  }
 }
 
 /**
@@ -167,7 +177,7 @@ export function prepareWebUp(options: WebUpOptions, command: Command): PreparedW
     )
   setValues(initial.root, values)
   ensureInstallationDirectories(initial.root)
-  syncForwardAuth(initial.root)
+  syncForwardAuth(initial.root, initial.config.profile)
   // The values just written win over anything inherited: a PORTTA_WEB=false in
   // the environment would otherwise drop the panel overlays and leave Compose
   // starting a service that no longer exists in its file list.
@@ -183,7 +193,6 @@ export async function webUp(options: WebUpOptions, command: Command): Promise<vo
   output.step('panel')
   if (!options.dev) await requireLocalRelease(context)
   await ensureNetwork(context.config.network)
-  ensureHostToken(context)
   // This was silent and can be slow on a cold pull; `reject: false` meant a
   // failure produced no output at all.
   output.progress('pulling alpine/socat:1.8.1.3')
@@ -243,7 +252,6 @@ export async function finishWebUp(
 ): Promise<void> {
   const { context, values, output } = prepared
   if (refreshHost) {
-    await refreshRepositories(context.config.profile, output)
     await ensureMetricsCollector(context.config.profile, output)
   }
   const running = gatewayContext({ profile: globals(command).profile, overrides: values })

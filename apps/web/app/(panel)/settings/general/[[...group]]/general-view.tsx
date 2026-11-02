@@ -9,7 +9,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DashboardCard } from '@/components/dashboard-card'
 import { ProjectDomainCard } from '@/components/domain-card'
-import { AgentPermissionsCard } from '@/components/settings/agent-permissions-card'
 import { PanelSettings } from '@/components/settings/panel-settings'
 import { ProjectAccessSettings } from '@/components/settings/project-access-settings'
 import { RestartSummary } from '@/components/settings/restart-summary'
@@ -25,8 +24,6 @@ import { api } from '@/lib/api'
 import { useCan } from '@/lib/permissions'
 import { keys, useConfig } from '@/lib/queries'
 
-/** GitHub is a group of the same file, shown in its own section. */
-const ELSEWHERE = new Set(['GitHub'])
 export function GeneralView({ group }: { group: string | null }) {
   const { t } = useTranslation('settings')
   const { t: tc } = useTranslation('common')
@@ -40,7 +37,7 @@ export function GeneralView({ group }: { group: string | null }) {
   const query = useConfig()
 
   const view = query.data
-  const groups = useMemo(() => (view?.groups ?? []).filter((name) => !ELSEWHERE.has(name)), [view?.groups])
+  const groups = view?.groups ?? []
   const activeGroup = groups.find((name) => slug(name) === group) ?? (group === null ? groups[0] : undefined)
 
   useEffect(() => {
@@ -201,7 +198,6 @@ export function GeneralView({ group }: { group: string | null }) {
             )}
             {activeGroup === 'Project domain' ? <ProjectDomainCard domain={liveDomain} /> : null}
             {activeGroup === 'Traefik' ? <DashboardCard /> : null}
-            {activeGroup === 'Panel' ? <AgentPermissionsCard editable={mayManage} /> : null}
           </div>
         ) : (
           <div className="min-w-0 flex-1 rounded-lg border border-line bg-surface">

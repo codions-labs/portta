@@ -1,7 +1,6 @@
 {
   "title": "Configurações",
   "description": "Como o Portta nomeia os projetos, quem pode alcançá-los e como este painel é acessado.",
-  "saved": "Salvo. O Traefik lê a configuração estática na inicialização; estes valores passam a valer quando os containers do gateway forem recriados no host:",
   "notWritable": "O painel não pode gravar {{path}}. Edite no host.",
   "sectionNotFound": "A seção de configurações “{{group}}” não existe",
   "chooseGroup": "Escolha um dos grupos disponíveis.",
@@ -31,7 +30,6 @@
     "formula": "Como um hostname é formado",
     "formulaPattern": "<projeto>-<serviço>.<base>",
     "base": "Domínio base",
-    "provider": "DNS automático",
     "examples": "Um projeto chamado loja responderia em:",
     "stateOk": "utilizável",
     "stateLimited": "requer atenção",
@@ -119,9 +117,6 @@
     "confirm": "Ativar acesso público",
     "confirmWarning": "O painel, bancos de dados e serviços sem roteamento continuam fora deste acesso. Projetos roteados sem proteção poderão ser acessados por qualquer pessoa."
   },
-  "publicAccess": {
-    "result": "Os projetos que optarem por isso ficarão em <projeto>-<serviço>.{{domain}}."
-  },
   "groups": {
     "Gateway": "Gateway",
     "Project access": "Acesso aos projetos",
@@ -131,7 +126,6 @@
     "Public access": "Acesso público",
     "DNS": "DNS",
     "Panel": "Painel",
-    "GitHub": "GitHub",
     "Project domain": "Endereços dos projetos",
     "Projects": "Projetos"
   },
@@ -348,8 +342,6 @@
     "panelNotOnEveryInterface": "o painel não é publicado em todas as interfaces; acesse pela VPN"
   },
   "savedShort": "Salvo.",
-  "restartRequired": "Exige reinício",
-  "restartHint": "Mudar isto passa a valer depois que o gateway reiniciar, não ao salvar.",
   "pendingHint": "Salvo, mas o processo em execução ainda usa {{value}}.",
   "sectionsLabel": "Seções de configurações",
   "sections": {
@@ -358,13 +350,12 @@
     "users": "Usuários",
     "tokens": "Tokens de API",
     "security": "Segurança",
-    "integrations": "Integrações",
     "audit": "Auditoria"
   },
   "roleHints": {
     "owner": "É dono deste painel. Existe exatamente um, e o papel muda por transferência.",
     "admin": "Tudo, menos assumir a propriedade. Vê todos os Projetos.",
-    "developer": "Trabalha nos Projetos de que participa: issues, ambientes, repositórios.",
+    "developer": "Trabalha nos Projetos de que participa: ambientes e serviços.",
     "viewer": "Lê os Projetos de que participa, e não altera nada."
   },
   "localMode": {
@@ -373,12 +364,6 @@
     "tokens": "Um token pertence a uma pessoa, e este painel não tem nenhuma. Defina PORTTA_AUTH_MODE=required no host para ligar contas e tokens.",
     "security": "Não há conta a proteger: este painel não pergunta quem está perguntando. Defina PORTTA_AUTH_MODE=required no host para ligar as contas.",
     "audit": "A auditoria registra quem fez o quê, e aqui todo mundo é o operador local. Defina PORTTA_AUTH_MODE=required no host para ligar as contas."
-  },
-  "agentPermissions": {
-    "title": "O que um agente local pode fazer",
-    "description": "O teto sobre uma requisição que se anuncia com X-Portta-Actor. Ele estreita o que a pessoa por trás já tem; nunca concede nada a mais.",
-    "restoreDefault": "Restaurar o padrão",
-    "usingDefault": "Usando o padrão"
   },
   "users": {
     "title": "Usuários",
@@ -480,7 +465,7 @@
     "currentPassword": "Senha atual",
     "twoFactor": "Segundo fator",
     "twoFactorDescription": "Um aplicativo autenticador, pedido depois da senha.",
-    "twoFactorHint": "Ligar isso acrescenta um passo à sua entrada, e nada mais. Os códigos de recuperação aparecem uma vez, quando você liga.",
+    "twoFactorHint": "Ligar isso acrescenta um passo à sua entrada. Em um painel acessível pela internet, é também o que libera o console do contêiner. Os códigos de recuperação aparecem uma vez, quando você liga.",
     "on": "Ligado",
     "off": "Desligado",
     "turnOn": "Ligar",
@@ -510,10 +495,6 @@
     "expires": "expira {{when}}",
     "totpUnavailable": "Este painel não conseguiu ligar o aplicativo autenticador."
   },
-  "integrations": {
-    "title": "Integrações",
-    "description": "O que o painel conversa e não é o host."
-  },
   "environment": {
     "title": "Ambiente",
     "description": "O que este host tem instalado e se cada ferramenta funciona no shell não interativo do Portta.",
@@ -539,38 +520,9 @@
       "fail": "Problema"
     }
   },
-  "ssh": {
-    "title": "Chaves SSH",
-    "description": "Credenciais desta instância Portta. As chaves privadas ficam no armazenamento restrito do host e nunca aparecem na API.",
-    "empty": "Nenhuma chave SSH do Portta.",
-    "emptyHint": "Gere uma chave nova ou importe uma chave privada existente sem senha.",
-    "generate": "Gerar chave",
-    "import": "Importar chave",
-    "generateTitle": "Gerar uma chave SSH",
-    "generateDescription": "ED25519 é o padrão recomendado. Chaves RSA são geradas com 4096 bits.",
-    "importTitle": "Importar uma chave SSH",
-    "importDescription": "A entrada privada é gravada diretamente no armazenamento restrito e nunca é devolvida.",
-    "name": "Nome",
-    "descriptionLabel": "Descrição",
-    "algorithm": "Algoritmo",
-    "privateKey": "Chave privada",
-    "privateKeyHint": "Chave privada OpenSSH ou PEM sem senha. Ela não será exibida novamente.",
-    "publicKey": "Mostrar chave pública",
-    "copyPublicKey": "Copiar chave pública",
-    "forge": "Forge",
-    "test": "Testar",
-    "remove": "Remover",
-    "removeTitle": "Remover {{name}}",
-    "removeImpact": "Os arquivos privado e público serão removidos permanentemente desta instância Portta.",
-    "cancel": "Cancelar",
-    "origin": {
-      "generated": "gerada",
-      "imported": "importada"
-    }
-  },
   "audit": {
     "title": "Auditoria",
-    "description": "Quem fez o quê: contas, papéis, tokens, participação em Projetos e configurações. A atividade de desenvolvimento fica na página Atividade.",
+    "description": "Quem fez o quê: contas, papéis, tokens, participação em Projetos, configurações e quem pode abrir cada site.",
     "filterByUser": "Filtrar por usuário",
     "everybody": "Todos",
     "when": "Quando",

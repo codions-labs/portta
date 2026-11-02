@@ -19,7 +19,10 @@ function seconds(value: string | undefined | null): number | null {
   return Number.isNaN(ms) || ms <= 0 ? null : Math.floor(ms / 1000)
 }
 
-function whyUnavailable(saved: Map<string, string>): {
+function whyUnavailable(
+  saved: Map<string, string>,
+  extra: Record<string, string> = {},
+): {
   unavailableReason: RunnerUnavailableReason
   reason: string
 } {
@@ -32,7 +35,7 @@ function whyUnavailable(saved: Map<string, string>): {
     }
   }
 
-  const refusal = runnerRefusal(env)
+  const refusal = runnerRefusal(env) ?? runnerRefusal({ ...env, ...extra })
   if (refusal !== null) return { unavailableReason: 'refused', reason: refusal }
 
   return {
@@ -54,9 +57,27 @@ export async function runnerStatus(
   const saved = parseEnv(readEnvFile(config.envFile))
   const prepareCommand = `./bin/portta up ${config.profile}`
 
+  // The refusal is checked on every read, not only when the container is
+  // missing: a runner prepared before the settings changed must not stay usable.
+  // Both what the file says and what this process runs with are checked, and
+  // the stricter wins; a runner that exists is still off when the switch is.
   const container = runnerOf(snapshot)
-  if (!container) {
-    const { unavailableReason, reason } = whyUnavailable(saved)
+  const effective = {
+    ...Object.fromEntries(saved),
+    PORTTA_PROFILE: config.profile,
+    PORTTA_WEB_EXPOSE: config.webExpose,
+    PORTTA_AUTH_MODE: config.authMode,
+    TLS_ENABLED: String(config.tlsEnabled),
+  }
+  const refusal = runnerRefusal(Object.fromEntries(saved)) ?? runnerRefusal(effective)
+  const enabled = isTrue(saved.get('PORTTA_RUNNER') ?? 'false')
+  if (!container || !enabled || refusal !== null) {
+    const { unavailableReason, reason } = whyUnavailable(saved, {
+      PORTTA_PROFILE: config.profile,
+      PORTTA_WEB_EXPOSE: config.webExpose,
+      PORTTA_AUTH_MODE: config.authMode,
+      TLS_ENABLED: String(config.tlsEnabled),
+    })
     return {
       state: 'unavailable',
       available: false,

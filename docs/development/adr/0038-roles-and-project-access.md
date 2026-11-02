@@ -5,7 +5,7 @@
 ## Context
 
 Once the panel has accounts, "signed in" stops being an answer. A panel that
-can start, stop and remove every container on a host, register repositories,
+can start, stop and remove every container on a host,
 open bridges and rewrite the gateway's configuration cannot give the same
 powers to everybody who has a password.
 
@@ -15,7 +15,7 @@ restart a service; that does not mean they may restart *your* service.
 
 ## Decision
 
-**A flat vocabulary.** Permissions are `resource:action` — `issue:write`,
+**A flat vocabulary.** Permissions are `resource:action` — `container:operate`,
 `environment:destroy`, `settings:manage` — generated from one statement table
 in `packages/auth/src/access-control.ts`. Adding an action is one line there,
 not five in five files. Better Auth's admin plugin authorises against exactly
@@ -37,8 +37,7 @@ forget one" a build failure rather than an audit.
 the door, without a Project; the Project is checked in the handler, once the
 resource has been read and it is known which one it belongs to. Which Project a
 thing is in comes from where it actually lives: an environment from the
-Project that adopted it, a repository from its row, a bridge from the
-environment it targets. An environment nobody adopted belongs to nobody and is visible to
+Project that adopted it, a bridge from the environment it targets. An environment nobody adopted belongs to nobody and is visible to
 `owner` and `admin` alone.
 
 **Listings filter; named resources refuse.** Asking for the Projects returns

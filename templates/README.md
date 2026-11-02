@@ -1,15 +1,15 @@
 # Templates
 
 Reference overlays for the shapes a project usually has, for **manual mode**:
-a project that owns its own `compose.portta.yaml` instead of the overlay
+a project that writes its own overlay instead of the one
 `portta adopt` generates (see
 [Add an existing project](../docs/product/guides/adopting-projects.md#manual-mode)).
 They are **references to copy from**, not runtime that projects depend on:
 nothing here is included, mounted or extended by a consumer project. Copy the
 closest one, adjust the service names and ports, and it is yours.
 
-`portta envs init <path>` generates the same thing from a project's actual
-Compose file, which is usually faster.
+`portta adopt <path> --dry-run` prints the plan Portta would generate from a
+project's actual Compose file, which is usually faster.
 
 | Template | Shape |
 |---|---|

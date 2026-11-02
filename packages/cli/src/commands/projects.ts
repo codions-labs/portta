@@ -1,5 +1,4 @@
-import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import type { Command } from 'commander'
 import {
@@ -19,7 +18,6 @@ import {
 } from 'portta-core'
 import { z } from 'portta-core/zod'
 import { parse as parseYaml } from 'yaml'
-import { confirm } from '../confirm.js'
 import { gatewayContext } from '../context.js'
 import { inspectContainers } from '../docker.js'
 import { RefusedError, UsageError } from '../errors.js'
@@ -176,14 +174,6 @@ function classifyCompose(image: string, name: string): 'datastore' | 'http' | 'w
   if (HTTP_IMAGE.test(image)) return 'http'
   if (HTTP_NAME.test(name)) return 'http'
   return 'unknown'
-}
-
-/** Known web consoles whose first exposed port is a non-HTTP protocol/API. */
-function detectedHttpPort(service: { image: string | null; container_ports: string[]; expose: string[] }): number {
-  const image = service.image ?? ''
-  if (/mailpit|mailhog/i.test(image)) return 8025
-  if (/rustfs|(?:^|\/)minio(?::|\/|$)/i.test(image)) return 9001
-  return Number(service.container_ports[0] ?? service.expose[0] ?? 80)
 }
 
 function publishedPorts(service: ComposeService): Array<{ host: string; container: string }> {
@@ -414,10 +404,7 @@ export async function analyzeCommand(path: string, options: AnalyzeOptions, comm
       ...new Set(
         report.services.flatMap((service) =>
           Object.entries(service.labels)
-            .filter(
-              ([key]) =>
-                key.startsWith('portta.project') || key.startsWith('portta.repo') || key.startsWith('portta.git.root'),
-            )
+            .filter(([key]) => key.startsWith('portta.project'))
             .map(([key, value]) => `${key}=${value}`),
         ),
       ),
@@ -430,15 +417,8 @@ export async function analyzeCommand(path: string, options: AnalyzeOptions, comm
       output.line(`  project.yaml           invalid, so its defaults are not applied:`)
       for (const issue of declared.issues) output.line(`    ${issue.path ? `${issue.path}: ` : ''}${issue.message}`)
     } else if (declared.config) {
-      const summary = [
-        declared.config.name ? `name ${declared.config.name}` : null,
-        declared.config.mainBranch ? `main branch ${declared.config.mainBranch}` : null,
-        `worktrees ${declared.config.worktrees.root}`,
-        `branches ${declared.config.worktrees.branchPattern}`,
-      ].filter((part): part is string => part !== null)
-      output.line(
-        `  project.yaml           ${declared.source === 'file' ? summary.join(', ') : `absent, so defaults apply: ${summary.join(', ')}`}`,
-      )
+      const summary = declared.config.name ? `name ${declared.config.name}` : 'declares nothing'
+      output.line(`  project.yaml           ${declared.source === 'file' ? summary : `absent, so defaults apply`}`)
     }
     output.line('\nServices')
     for (const service of report.services)
@@ -500,111 +480,6 @@ export async function analyzeCommand(path: string, options: AnalyzeOptions, comm
         )
     output.line('\nNothing in this project was modified. See docs/product/guides/adopting-projects.md.')
   }
-}
-
-interface OverlayService {
-  name: string
-  port?: number
-  /** The networks the resolved model already gives the service; `default` when it names none */
-  networks: string[]
-}
-
-/**
- * The networks a routed service ends up on: the ones it already declares plus
- * `portta`. Writing `default` for a service that names its own networks would
- * make Compose create an unused `<project>_default`.
- */
-export function overlayNetworks(declared: readonly string[]): string[] {
-  const names = declared.filter((name) => name !== 'portta')
-  return [...(names.length > 0 ? names : ['default']), 'portta']
-}
-
-export function renderOverlay(
-  project: string,
-  services: OverlayService[],
-  network: string,
-  logicalProject?: string,
-): string {
-  const blocks = services
-    .map(({ name, port, networks }) => {
-      const ports = '    ports: !reset []\n'
-      if (port === undefined) return `  ${name}:\n${ports}`
-      return `  ${name}:\n${ports}    networks:\n${overlayNetworks(networks)
-        .map((entry) => `      - ${entry}`)
-        .join(
-          '\n',
-        )}\n    labels:\n      - "traefik.enable=true"\n      - "traefik.docker.network=\${PORTTA_NETWORK:-${network}}"${logicalProject ? `\n      - "portta.project=${logicalProject}"` : ''}\n      - "traefik.http.services.\${COMPOSE_PROJECT_NAME:-${project}}-${name}.loadbalancer.server.port=${port}"`
-    })
-    .join('\n\n')
-  return `# ============================================================================\n# Portta runtime overlay — generated, do not edit\n# ============================================================================\n# Source Compose files remain untouched. Portta recreates this file whenever\n# the runtime plan changes. Host ports are removed; routed services keep their\n# private networks and join the Portta gateway network.\n# ============================================================================\n\nservices:\n${blocks}\n\nnetworks:\n  portta:\n    external: true\n    name: \${PORTTA_NETWORK:-${network}}\n`
-}
-
-export async function initCommand(
-  pathValue: string,
-  options: { dryRun?: boolean; service?: string[]; output?: string; force?: boolean; file?: string; project?: string },
-  command: Command,
-): Promise<void> {
-  const report = await analyze(pathValue, { file: options.file }, [])
-  const context = gatewayContext({ required: !options.dryRun })
-  const requested: OverlayService[] =
-    options.service && options.service.length > 0
-      ? options.service.map((entry) => {
-          const match = /^([a-zA-Z0-9_.-]+):(\d+)$/.exec(entry)
-          if (!match) throw new UsageError(`invalid --service value: ${entry}; expected name:port`)
-          const service = report.services.find((candidate) => candidate.name === match[1])
-          if (!service) throw new UsageError(`no service named ${match[1]} in ${report.compose_file}`)
-          return { name: service.name, port: Number(match[2]), networks: service.networks }
-        })
-      : report.services
-          .filter((service) => service.kind === 'http')
-          .map((service) => ({ name: service.name, port: detectedHttpPort(service), networks: service.networks }))
-  if (!requested.length) throw new RefusedError('no HTTP service was detected', 'pass --service name:port explicitly')
-  if (options.project !== undefined && !/^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/.test(options.project)) {
-    throw new UsageError(`invalid --project value: ${options.project}; expected a lowercase Project slug`)
-  }
-  const routed = new Set(requested.map((service) => service.name))
-  const overlayServices: OverlayService[] = report.services
-    .filter((service) => routed.has(service.name) || service.published_ports.length > 0)
-    .map((service) => ({
-      name: service.name,
-      port: requested.find((candidate) => candidate.name === service.name)?.port,
-      networks: service.networks,
-    }))
-  const content = renderOverlay(report.project.name, overlayServices, context.config.network, options.project)
-  const runtimeId = createHash('sha256').update(safeRealpath(report.path)).digest('hex').slice(0, 16)
-  const destination = options.output
-    ? resolve(report.path, options.output)
-    : join(context.root, 'runtime', 'compose', runtimeId, 'compose.portta.yaml')
-  const output = new Output(globals(command))
-  if (options.dryRun) {
-    output.data(content)
-    return
-  }
-  if (existsSync(destination) && !options.force)
-    throw new RefusedError(`${destination} already exists`, 'pass --force to replace it while keeping a backup')
-  await confirm(`write ${destination}?`, globals(command).yes === true)
-  mkdirSync(dirname(destination), { recursive: true, mode: 0o755 })
-  if (existsSync(destination)) renameSync(destination, `${destination}.bak.${Date.now()}`)
-  const temporary = `${destination}.${process.pid}.tmp`
-  writeFileSync(temporary, content, { mode: 0o644 })
-  try {
-    const validated = await runProcess(
-      'docker',
-      ['compose', '-f', join(report.path, report.compose_file), '-f', temporary, 'config', '--format', 'json'],
-      { cwd: report.path, reject: false },
-    )
-    if (validated.exitCode !== 0)
-      throw new RefusedError(
-        'generated runtime overlay is not valid Compose',
-        validated.stderr.trim() || validated.stdout.trim(),
-      )
-    ComposeSchema.parse(JSON.parse(validated.stdout))
-    renameSync(temporary, destination)
-  } catch (error) {
-    rmSync(temporary, { force: true })
-    throw error
-  }
-  output.progress(`created  ${destination}`)
 }
 
 async function gitOutput(path: string, args: string[]): Promise<string | null> {

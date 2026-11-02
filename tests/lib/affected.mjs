@@ -29,11 +29,9 @@ export function selectTests(root, files) {
   const workspaces = [
     'packages/core',
     'packages/contracts',
-    'packages/mcp',
     'packages/db',
     'packages/auth',
     'packages/cli',
-    'packages/host',
     'apps/auth',
     'packages/server',
     'apps/web',

@@ -43,7 +43,7 @@ describe('the role matrix', () => {
 
   it('lets a developer work but not administer', () => {
     const granted = permissionsOf('developer')
-    for (const allowed of ['issue:write', 'environment:operate', 'logs:read', 'access:open', 'worksession:write']) {
+    for (const allowed of ['environment:operate', 'service:operate', 'logs:read', 'access:open']) {
       expect(granted.has(allowed as Permission), allowed).toBe(true)
     }
     for (const refused of [
@@ -91,14 +91,13 @@ describe('the role matrix', () => {
 })
 
 describe('what an agent holds by default', () => {
-  // An agent works on issues and environments. It does not reconfigure an
-  // environment or re-register a repository — those change how the panel
-  // behaves, not what the work is.
-  it('is a developer minus the two that change the panel', () => {
+  // An agent works on environments. It does not reconfigure one: that changes
+  // how the panel behaves, not what the work is.
+  it('is a developer minus the one that changes the panel', () => {
     const developer = permissionsOf('developer')
     const agent = new Set(AGENT_DEFAULT_PERMISSIONS)
     for (const permission of developer) {
-      const withheld = permission === 'environment:settings' || permission === 'repository:manage'
+      const withheld = permission === 'environment:settings'
       expect(agent.has(permission), permission).toBe(!withheld)
     }
   })
@@ -110,13 +109,13 @@ describe('the scope on top of the permission', () => {
 
   it('lets a developer who is a member through', () => {
     const developer = principal('developer', new Set([alpha]))
-    expect(can(developer, 'issue:write', { projectId: alpha })).toBe(true)
+    expect(can(developer, 'environment:operate', { projectId: alpha })).toBe(true)
   })
 
   it('refuses a developer who is not, even holding the permission', () => {
     const developer = principal('developer', new Set([alpha]))
-    expect(developer.permissions.has('issue:write')).toBe(true)
-    expect(can(developer, 'issue:write', { projectId: beta })).toBe(false)
+    expect(developer.permissions.has('environment:operate')).toBe(true)
+    expect(can(developer, 'environment:operate', { projectId: beta })).toBe(false)
   })
 
   // An environment no Project adopted has no membership to check, so it is
@@ -128,22 +127,12 @@ describe('the scope on top of the permission', () => {
 
   it('lets owner and admin through every project', () => {
     for (const role of ['owner', 'admin'] as const) {
-      expect(can(principal(role), 'issue:write', { projectId: beta })).toBe(true)
+      expect(can(principal(role), 'environment:operate', { projectId: beta })).toBe(true)
     }
   })
 
   it('ignores the scope for a resource that has none', () => {
     expect(can(principal('developer', new Set()), 'metrics:read')).toBe(true)
-  })
-
-  it('lets every role read SSH metadata and reserves key mutations for administrators', () => {
-    for (const role of ['owner', 'admin', 'developer', 'viewer'] as const) {
-      expect(can(principal(role), 'ssh:read')).toBe(true)
-    }
-    expect(can(principal('owner'), 'ssh:manage')).toBe(true)
-    expect(can(principal('admin'), 'ssh:manage')).toBe(true)
-    expect(can(principal('developer'), 'ssh:manage')).toBe(false)
-    expect(can(principal('viewer'), 'ssh:manage')).toBe(false)
   })
 
   it('keeps a container console distinct from lifecycle operations', () => {
@@ -158,9 +147,9 @@ describe('the scope on top of the permission', () => {
 
 describe('what authorize throws', () => {
   it('is 401 with no principal at all', () => {
-    expect(() => authorize(null, 'issue:read')).toThrow(Unauthenticated)
+    expect(() => authorize(null, 'environment:read')).toThrow(Unauthenticated)
     try {
-      authorize(null, 'issue:read')
+      authorize(null, 'environment:read')
     } catch (error) {
       expect((error as Unauthenticated).status).toBe(401)
     }
@@ -171,19 +160,19 @@ describe('what authorize throws', () => {
   // forever.
   it('is 403 for a principal that is not allowed, and names what was needed', () => {
     const viewer = principal('viewer')
-    expect(() => authorize(viewer, 'issue:write')).toThrow(Forbidden)
+    expect(() => authorize(viewer, 'environment:operate')).toThrow(Forbidden)
     try {
-      authorize(viewer, 'issue:write')
+      authorize(viewer, 'environment:operate')
     } catch (error) {
       expect((error as Forbidden).status).toBe(403)
-      expect((error as Forbidden).permission).toBe('issue:write')
-      expect((error as Error).message).toContain('issue:write')
+      expect((error as Forbidden).permission).toBe('environment:operate')
+      expect((error as Error).message).toContain('environment:operate')
     }
   })
 
   it('returns the principal when it passes, so a handler can use it', () => {
     const owner = principal('owner')
-    expect(authorize(owner, 'issue:write')).toBe(owner)
+    expect(authorize(owner, 'environment:operate')).toBe(owner)
   })
 })
 

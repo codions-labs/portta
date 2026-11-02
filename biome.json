@@ -20,10 +20,8 @@
       "!!docs/.generated",
       "!!package-lock.json",
       "!!packages/contracts/openapi.json",
-      "!!packages/contracts/taskflow.openapi.json",
       "!!packages/contracts/src/docs-paths.generated.ts",
-      "!!packages/db/drizzle/meta",
-      "!!packages/host/workflows"
+      "!!packages/db/drizzle/meta"
     ]
   },
   "vcs": {

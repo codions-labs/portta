@@ -66,9 +66,7 @@ executable plus an argument array with shell expansion disabled.
 
 The CLI intentionally keeps its prompts small and dependency-free. Confirmation
 is No by default, writes to stderr and is replaced by `--yes` in automation.
-The core commands ship no shell completion script. The Taskflow module
-registers `portta flow completion bash|zsh`, which generates one for its own
-command tree.
+The CLI ships no shell completion script.
 
 ## Exit codes
 
@@ -88,7 +86,7 @@ command tree.
 |---|---|
 | `setup` | `--dir`, `--dry-run`, `--skip-pull`; the global `--profile` selects the profile to start. |
 | `bootstrap` | `--skip-pull` |
-| `up [profile]` | `--attach`, `--demo`. `--demo` starts the panel when it is not reachable, starts every `portta-demo-*` stack in `PORTTA_PROJECTS_HOME` and registers the Project and repositories each one declares. `--local-release` is checkout only. |
+| `up [profile]` | `--attach`, `--demo`. `--demo` starts the panel when it is not reachable, starts every `portta-demo-*` stack in `PORTTA_PROJECTS_HOME` and registers the Project each one declares. `--local-release` is checkout only. |
 | `down` | `--demo`. Without it, consumer projects keep running. With it, `PORTTA_PROJECTS_HOME/portta-demo-*` are stopped and their volumes dropped, then the gateway. |
 | `restart`, `status`, `doctor`, `inspect`, `update`, `version` | Global flags only. |
 | `dev [profile]`, `reset`, `build` | Checkout only: development setup from local Dockerfiles, its reset, and the local image build. See [Development setup](../../development/development-setup.md). |
@@ -101,7 +99,7 @@ In a project directory with a Compose file, `up`, `down`, `restart`, `status`
 and `logs` operate that project's runtime instead of the gateway; `up` prepares
 the Runtime Plan first when it is missing or stale.
 
-### Projects, environments and work
+### Projects and environments
 
 Two nouns. A **Project** is the product being developed: a decision the panel
 persists, so these verbs call the panel API. An **environment** is a Compose
@@ -110,13 +108,10 @@ project Docker is running: an observation, read locally.
 | Command | Command-specific flags |
 |---|---|
 | `projects list` | Global flags only |
-| `projects show <slug>` | Repositories with git state, adopted environments |
-| `projects create` | `--slug`, `--name`, `--description`, `--path <dir>` (first-level directory under Projects Home) |
-| `projects context <slug>` | `--issue <ref>` (`github:owner/repo#n` or `linear:ENG-42`) includes that issue in full. The Development Context an agent reads before working; `--json` carries the instruction files in full |
-| `projects resolve [--path <abs>]` | Which Project a directory belongs to: the registered root, a subdirectory of it, a linked worktree, or (declared as inferred) a clone with the same remote. Reads the host and the panel, writes nothing. Fails with a named reason instead of guessing: `unknown`, `ambiguous` (the candidates are listed), `stale` (the registration points at a path that no longer exists) or `unauthorized` |
+| `projects show <slug>` | The Project with its adopted environments |
+| `projects create` | `--slug`, `--name`, `--description`, `--path <dir>` (directory relative to Projects Home, at any depth) |
+| `projects resolve [--path <abs>]` | Which Project a directory belongs to: the registered root, a subdirectory of it, or a linked worktree. Reads the host and the panel, writes nothing. Fails with a named reason instead of guessing: `unknown`, `ambiguous` (the candidates are listed) or `unauthorized` |
 | `projects resources <slug>` | Usage attributed through the adopted environments |
-| `projects activity <slug>` | `--kind <a,b>`, `--limit <n>` |
-| `overview` | The Development Dashboard |
 | `envs list` (`env` and `environment` are aliases) | Global flags only |
 | `envs show <name>` | Global flags only |
 | `envs start\|stop\|restart <name>` | Dependency order; nothing is removed. |
@@ -124,47 +119,31 @@ project Docker is running: an observation, read locally.
 | `envs endpoints <name>` | The routed hostnames |
 | `envs services` | `--project <name>` |
 | `envs analyze <path>` | Read-only. `--file <path>` names the Compose file (relative to `<path>` or absolute) when it is not `compose.yaml` in `<path>`; the project directory is then the file's. |
-| `envs init <path>` | `--dry-run`, repeatable `--service <name:port>`, `--file`, `--project <slug>`, `--output`, `--force`; writing needs confirmation. With `--file` the overlay is written next to that Compose file. `--project` emits `portta.project` on routed services so worktree namespaces adopt the logical Project. |
 | `envs namespace` | `--path`, `--base`, `--suffix`, `--no-check` |
-| `adopt <path>` | Canonical isolated Compose adoption. `--dry-run --json` reports the Runtime Plan and pending decisions without writing state. Repeat `--service <name:port>` to choose an HTTP surface; `--project <name>` sets an explicit Compose project namespace; `--remove-container-name <service>`, `--allow-shared-networks`, and `--allow-shared-volumes` record explicit compatibility decisions. `--manual` records a project-owned integration without Portta mutations. |
-| `prepare [path]` | `--service <name:port>` (repeatable), `--project <name>`, `--dry-run`. Lower level: creates and validates the Runtime Plan, which is what `adopt --dry-run` runs. |
-| `init [path]` | `--service <name:port>` (repeatable), `--project <name>`, `--manual`. Lower level: stores Runtime intent outside the source repository, which is what `adopt` runs. |
+| `adopt <path>` | Canonical isolated Compose adoption. `--dry-run --json` reports the Runtime Plan and pending decisions without writing state. Repeat `--service <name:port>` to choose an HTTP surface; `--project <name>` sets an explicit Compose project namespace; `--remove-container-name <service>`, `--allow-shared-networks`, and `--allow-shared-volumes` record explicit compatibility decisions. `--manual` records a project-owned integration without Portta mutations. On a public host, `--protect <service>` asks for a generated credential (printed once) and `--public <service>` lets everybody open it; adopt stops with a pending `public_exposure` until every routed service has one. |
 | `runtime up\|down\|restart\|status\|config [path]` | Reuse the validated persisted Runtime Plan; `up` reconciles stale source inputs before starting. |
 | `runtime logs [path]` | `--service <name>`, `--no-follow`, `--tail <lines>` |
-| `sessions list` | `--project <slug>`, `--active` |
-| `sessions start` | `--project`, `--issue`, `--repository`, `--environment`, `--summary`, `--head` |
-| `sessions end <id>` | `--summary`, `--abandon`, `--head` |
-| `sessions heartbeat <id>` | Global flags only |
-| `activity` | `--project`, `--kind`, `--issue`, `--repository`, `--environment`, `--limit` |
 
 Every verb that calls the panel accepts `--url`, `--allow-remote` and
-`--actor` (`PORTTA_ACTOR`), exactly as `portta mcp` does.
+`--actor` (`PORTTA_ACTOR`).
 
 `PORTTA_URL` is the API base variable. `PORTTA_TOKEN` sends a Bearer token.
 
-### Issues
-
-A Project's work lives in GitHub Issues or Linear. These verbs read and write it
-live through the panel and the host daemon: GitHub through the `gh` session on
-the host, Linear through `LINEAR_API_KEY` on the host. Portta keeps only the
-reference (`github:owner/repo#113`, `linear:ENG-42`). Every verb except
-`status` requires `--project <slug>`, which decides the repository or Linear
-team. A body is `--body <text>` or `--body-file <path>` (`-` reads stdin). See
-[Work with issues](../guides/issues.md).
+### Agents
 
 | Command | Command-specific flags |
 |---|---|
-| `issues list` | `--state open\|closed\|all`, `--assignee <login>`, `--label <name>`, `--milestone <title>`, `--q <text>` |
-| `issues show <ref>` | The issue with its body, comments and environments |
-| `issues create <title>` | `--body`, `--body-file`, `--label <a,b>`, `--assignee <a,b>`, `--milestone <title>` |
-| `issues edit <ref>` | `--title`, `--body`, `--body-file`, `--add-label`, `--remove-label`, `--add-assignee`, `--remove-assignee`, `--milestone` |
-| `issues close <ref>` | `--reason completed\|not-planned` |
-| `issues reopen <ref>` | Global flags only |
-| `issues comment <ref> [text]` | `--body`, `--body-file` |
-| `issues status` | Whether this host can read and write issues |
+| `agent context` | Read-only and offline; always exits 0, prints no secret and finishes in under a second. Says where a directory stands on this host: `--path <dir>` (default: the current directory), `--home <dir>` (where `scope.yaml` is read from), `--format text\|hook`. `--format hook` prints at most 15 lines for an agent's context, and nothing on a machine without a Portta installation. The `scope` is the first row that matches: `no-portta`, `excluded` (a path in `~/.config/portta/agents/scope.yaml`), `out-of-scope`, `non-compliant`, `compliant`, `needs-adoption`, `needs-dockerizing`. The installation is found from `PORTTA_ROOT`, `PORTTA_HOME` or a well-known location, never by walking up from the directory. |
+| `agents install [agents...]` | Writes the Portta layer for the agents found here (`claude`, `codex`, `opencode`, `pi`); name agents to install for those even when not found. `--dry-run`, `--home <dir>` (wins over `CLAUDE_CONFIG_DIR` and `CODEX_HOME`). Idempotent. |
+| `agents status [agents...]` | Compares what is installed with what should be. `--home <dir>`. |
+| `agents uninstall [agents...]` | Removes only the marker blocks, the hook entries that name `portta/agents/hook.sh` and the files the installer created. `--dry-run`, `--home <dir>`. Shared skills and the hook script go only when no agent is named. |
 
-Issue verbs accept `--url`, `--allow-remote` and `--actor` like the other panel
-verbs.
+The layer is an instruction in a `<!-- BEGIN PORTTA -->` block of the agent's
+global file, a `SessionStart` hook (Claude Code and Codex) or an extension (Pi)
+that runs `agent context --format hook`, and the skills in `~/.agents/skills`.
+`portta doctor` warns about an agent installed without it. Codex runs a new hook
+only after you review it in `/hooks`. To check it by hand, follow
+[Smoke test the agent layer](../../development/agents-smoke.md).
 
 ### Configuration
 
@@ -204,7 +183,7 @@ arguments directly to the selected client. `psql` and `mysql` also accept
 | `db restore <file>` | Replaces the database. Refused while the panel runs (`portta web down` first) and asks for confirmation (`--yes`). |
 | `db migrate` | Asks the running panel to apply pending SQL migrations without a restart. |
 
-### Panel, network and integrations
+### Panel, network and host
 
 | Command | Command-specific flags |
 |---|---|
@@ -220,8 +199,9 @@ arguments directly to the selected client. `psql` and `mysql` also accept
 | `auth token create` | `--name`, `--human`, `--scopes <a,b>`, `--expires-in-days`; the secret is shown once. |
 | `auth token revoke <id>` | Global flags only. Somebody else's needs `user:update`. |
 | `protect host <host>` | `--user`, `--password-stdin`, `--entrypoint`, `--label`, `--project`, `--service`; creates or rotates a protected-host record. |
+| `protect open <host>` | `--entrypoint`, `--label`, `--project`, `--service`; records that everybody may open the host, with no login. Takes effect at once, with no container recreated. |
 | `protect status [host]` | Read-only; never returns credential hashes. |
-| `protect remove <host>` | Removes the record; the consumer project's middleware label is unchanged. |
+| `protect remove <host>` | Removes the decision. On a public host the site is closed afterwards, because no record means closed. |
 | `auth reset-password <email>` | `--password-stdin`; otherwise a password is generated and shown once. Runs inside the panel container and ends every session of that account. |
 | `users list` | Global flags only. |
 | `users create` | `--name`, `--email`, `--role`, `--projects`, `--password-stdin`; a generated password is shown once. |
@@ -231,37 +211,19 @@ arguments directly to the selected client. `psql` and `mysql` also accept
 | `users revoke <email> <project>` | Global flags only. Sends the whole list, with this Project removed. |
 | `users remove <email>` | Global flags only. |
 | `network status` | `--public-ip` explicitly permits one external lookup. |
+| `public init` | `--domain <d>` and `--email <a>` required; `--panel-host` (the domain or one label under it, covered by the wildcard certificate), `--ip` (DNS records only), `--cloudflare-token-stdin` (one line, never an argument), `--dry-run`. Writes the public-server keys, starts nothing, needs confirmation. |
 | `public status\|enable\|disable` | Enable needs confirmation; TCP services are never published. |
 | `dns check\|status` | Read-only. |
 | `dns setup` | `--target <ip>`, `--dry-run`; Cloudflare needs a scoped token. |
-| `repos scan` | `--environment <name>`, `--path <dir>`, `--with-prs`, `--forge-ttl <seconds>`. Collects every repository (git state, the last twenty commits, the instruction files on the allowlist, and references to the decision records and specification documents it keeps) into `state/git/<key>.json` plus `state/git/index.json`, which maps each environment to the repository it runs from. The metrics watcher runs it once a minute. |
-| `repos status`, `repos clear` | Inspect or remove only `state/git/*.json`. |
-| `repos specs` | `--path <dir>`. The decision records (`docs/**/adr/*.md` and equivalents) and the OpenSpec or Spec Kit documents the last scan recognised, as references: path, convention, kind, title, hash, dirty. Nothing is read beyond a document's title line, and nothing is written. A repository without any lists none. |
 | `host collect` | Write host/project metrics and an environment readiness report. |
 | `envs report` (`env` and `environment` are aliases) | Refresh `state/environment/report.json` without changing the host. |
 | `host watch` | Start the detached collector, or run it in the foreground with `--loop`. |
 | `host status` | Whether the collector is running, and how old the last snapshot is. |
-| `host serve` | Run the host daemon in the foreground on `PORTTA_HOST_BIND:PORTTA_HOST_PORT` (default `127.0.0.1:5111`). `--detach` starts it in the background, logging to `state/host/daemon.log`, unless one already answers. Creates `state/host/token` on first start. See [Run the host daemon](../guides/host-daemon.md). |
-| `host service install` | `--env KEY=VALUE` (repeatable), `--no-auto-env`, `-y`. Installs, enables and starts the `portta-host` user service (systemd on Linux, launchd `com.portta.host` on macOS), which runs `portta host serve` from this installation. |
-| `host service uninstall\|restart\|status\|logs` | Manage that service; `logs` follows it. |
-| `flow <command>` | The Taskflow module's commands; `--port` selects the host daemon's port. See [the Taskflow CLI reference](../../modules/taskflow/cli.md). |
 | `share list`, `share revoke <id>`, `share gc` | Shares can only be created in the panel. |
 | `tls status\|init` | `init` runs OpenSSL in the toolbox container and enables TLS in `.env`. |
 | `tls trust\|untrust` | Print the privileged command for this operating system; never run it. |
-| `remote bootstrap <target>` | `--profile`, `--dir`, `--repo`, `--branch`, `--install-docker`, `--dry-run`. Prepares the remote host from a Git checkout: clones the repository there and runs the checkout's `./bin/portta bootstrap`. Never copies a secret, never overwrites a remote `.env`. |
-| `remote status\|doctor\|urls <target>` | Read-only, over SSH. `--json` is forwarded. |
-| `remote exec <target> -- <cmd>` | Runs the command there with the terminal attached. |
-| `remote access open <target>` | `--project`, `--service`, `--port`, `--local-port`, `--dir`. Leaves an SSH tunnel running after the command exits. |
-| `remote access list\|close` | `close` takes an id or `--all`; the remote bridge is left for the remote host to close. |
 | `toolbox build` | Build or verify the pinned operational image. |
 | `toolbox run <command...>` | Run an explicit command in the one-shot operational container. |
-| `mcp` | `--url`, `--allow-remote`, `--actor` (default `agent`), `--docs-source local\|panel` (default `local`). Serves the panel verbs to an agent over stdio; refuses a non-loopback panel URL without the flag, because that is where a credential would be sent. See [MCP](mcp.md). |
-
-Host key verification is never relaxed: `StrictHostKeyChecking` defaults to
-`accept-new`, which records a key the first time and still refuses a *changed*
-one. `PORTTA_SSH_HOST_KEY_POLICY` can tighten it; nothing in the tree sets it
-to `no`, and the static checks reject that unsafe value.
-
 
 ### Maintenance and tunnelling
 
@@ -294,9 +256,7 @@ its canonical name (`env list` and `envs list` both print `envs.list`).
 command's `data`: a field removed, a type changed, or a meaning changed.
 Adding an optional field is not one. A consumer checks `schema` and
 `version` before reading `data`, and refuses what it does not understand.
-Every schema is at version 1; a bump is recorded in the changelog. The
-`portta flow` commands of the Taskflow module print their own JSON without
-this envelope.
+Every schema is at version 1; a bump is recorded in the changelog.
 
 The table lists the stable top-level fields of `data`:
 
@@ -314,12 +274,8 @@ The table lists the stable top-level fields of `data`:
 | `envs namespace` | `namespace`, `base`, `suffix` |
 | `projects list` | `projects[]` (`ProjectSummary` of the API) |
 | `projects show` | the API's `Project` |
-| `projects context` | the API's `DevelopmentContext`, which names its own `schema` (`development-context`) and `version` inside `data`; see [MCP reference](mcp.md#the-development-context) for the fields |
-| `projects resolve` | `resolved`, `path`, `basis` (`root`, `subdirectory`, `worktree`, `remote`), `certain`, `project` (`id`, `slug`, `name`), `repository` (`id`, `name`, `path`, `remoteUrl`), `git` (`root`, `branch`, `remote`), `worktree` (`path`, `mainPath`); on failure `error` (`kind`, `message`, `hint`, `candidates[]`) with exit 1 (`unknown`, `ambiguous`), 3 (`stale`) or 4 (`unauthorized`) |
+| `projects resolve` | `resolved`, `path`, `basis` (`root`, `subdirectory`, `worktree`), `project` (`id`, `slug`, `name`, `path`), `worktree` (`path`, `mainPath`); on failure `error` (`kind`, `message`, `hint`, `candidates[]`) with exit 1 (`unknown`, `ambiguous`) or 4 (`unauthorized`) |
 | `projects resources` | the API's `ProjectResources` |
-| `overview` | the API's `DevelopmentOverview` |
-| `sessions list` | `sessions[]` (`Session`) |
-| `activity` | `events[]` (`ActivityEvent`) |
 | `access list` | `bridges[]` (`id`, `project`, `service`, `target_port`, `local_port`, `kind`, `expires`, `bind`, `network`, `state`) |
 | `service list` | `forwarders[]` |
 | `web status` | `enabled`, `devMode`, `readOnly`, `expose`, `url`, `panel`, `socketProxy` |
@@ -327,9 +283,6 @@ The table lists the stable top-level fields of `data`:
 | `public status` | `enabled`, `profile`, `domain`, `bindAddress` |
 | `dns check` | `domain`, `hostname`, `addresses`, `resolves` |
 | `dns status` | `enabled`, `zone`, `domain`, `tokenSet` |
-| `repos status` | `collectedAt`, `home`, `repositories[]` (`key`, `path`, `name`, `remote`, `location`, `relativePath`, `branch`, `dirty`, `environments[]`, `ageSeconds`) |
-| `repos specs` | `collectedAt`, `repositories[]` (`key`, `path`, `name`, `collectedAt`, `specifications[]` — each a `SpecificationReference` of the API: `path`, `provider` (`adr`, `openspec`, `spec-kit`), `kind`, `title`, `sizeBytes`, `modifiedAt`, `sha256`, `dirty`) |
-| `repos scan` | `index` (the written index) and `repositories[]` (each collected file) |
 | `share list` | `shares[]` |
 | `db status` | The panel database's state |
 | `db migrate` | `applied[]`, `migrations[]` |
@@ -339,7 +292,8 @@ The table lists the stable top-level fields of `data`:
 | `tunnel test` | `host`, `code`, `ok`, `detail`, `hint` |
 | `backup` | `file`, `size`, `paths[]`, `database` |
 | `repair --dry-run` | `dryRun`, `changes[]` |
-| `remote access list` | `tunnels[]` (`id`, `pid`, `target`, `project`, `service`, `remotePort`, `localPort`, `started`, `address`) |
+| `agent context` | `host` (`portta`, `version`, `profile`, `gateway`, `domain`), `project` (`root`, `worktree`, `scope`, `compose`, `publishedPorts`, `exposure[]`, `urls`, `violations`, `note`), `skills`, `next` |
+| `agents install\|status\|uninstall` | `home`, `dryRun`, `agents[]`, `items[]` (`agent`, `kind`, `path`, `state`, `action`), `notes[]` |
 
 Fields are additive within `0.x`; incompatible changes are called out in the
 changelog. Secret values never appear in JSON.
@@ -365,4 +319,4 @@ portta docs search "TLS" --url http://127.0.0.1:8081
 
 `--url` explicitly selects the panel. Remote non-loopback URLs also require `--allow-remote`; existing Portta token/login configuration applies. Failure does not fall back to local content. JSON output includes `origin`, corpus version, revision when available and a content hash.
 
-The source is Markdown shared with `/docs`, the documentation API and the MCP tools. See [Use the Portta API](../guides/use-api.md) and [MCP reference](mcp.md).
+The source is Markdown shared with `/docs` and the documentation API. See [Use the Portta API](../guides/use-api.md).

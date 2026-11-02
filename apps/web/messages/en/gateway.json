@@ -42,16 +42,6 @@
     "title": "Logs",
     "componentAria": "Gateway component"
   },
-  "settings": {
-    "issues": {
-      "reading": "Reading the issue providers",
-      "title": "Issue providers",
-      "description": "GitHub through the gh CLI, and Linear. Both are authenticated on the host, beside the daemon — the panel reports them and never holds their credentials.",
-      "signedIn": "signed in",
-      "notSignedIn": "not signed in",
-      "notInstalled": "not on this host"
-    }
-  },
   "apply": {
     "title": "Apply saved settings",
     "barPending": "{{count}} saved settings are not running yet.",

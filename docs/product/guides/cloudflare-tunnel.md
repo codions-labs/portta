@@ -248,7 +248,8 @@ networks and the connector reconnects on its own.
 
 **It does not decide what is published.** The connector carries a wildcard to
 Traefik, and Traefik still routes only services that opted in. Enabling a tunnel
-publishes nothing by itself.
+publishes nothing by itself. Who may open each hostname stays the
+per-site decision described in [Run a public host](public-host.md).
 
 **It does not replace publishing a port.** A VPS with a public address and open
 ports is faster (traffic goes straight to you) and depends on nobody. Both stay

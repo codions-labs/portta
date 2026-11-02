@@ -11,13 +11,6 @@ export const GLOBAL_KEYS = {
   theme: z.enum(['system', 'light', 'dark']),
   defaultPage: z.enum(['overview', 'projects', 'docker', 'access', 'network', 'gateway', 'settings']),
   tableDensity: z.enum(['comfortable', 'compact']),
-  /**
-   * What an agent that announces itself with `X-Portta-Actor` may do, as
-   * `resource:action`. Unset means `AGENT_DEFAULT_PERMISSIONS`. The names are
-   * checked where they are used rather than here: a list written by a newer
-   * panel should narrow an older one, never lock it out.
-   */
-  agentPermissions: z.array(z.string().min(1).max(64)).max(64),
 } as const
 
 export const ENVIRONMENT_KEYS = {

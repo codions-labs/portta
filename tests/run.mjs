@@ -45,7 +45,6 @@ for (const name of tested) await step(name, 'npm', ['test', `--workspace=${name}
 if (checks) {
   for (const name of workspaces) await step(`types ${name}`, 'npm', ['run', 'typecheck', `--workspace=${name}`])
   await step('OpenAPI', 'npm', ['run', 'openapi:check', '--workspace=portta-contracts'])
-  await step('Taskflow OpenAPI', 'npm', ['run', 'openapi:taskflow:check', '--workspace=portta-contracts'])
   await step('schema', 'npm', ['run', 'db:check', '--workspace=portta-db'])
 }
 if (['e2e', 'release'].includes(options.mode) && passed) {

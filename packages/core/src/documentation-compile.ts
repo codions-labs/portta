@@ -88,12 +88,10 @@ export function resolveDocPath(from: string, href: string): string {
   }
   return out.join('/')
 }
-/** `moduleRoots` are the documentation directories of official modules, publishable like `docs/product` and `docs/development`. */
 export function compileDocumentation(
   rawManifest: unknown,
   sources: Record<string, string>,
   identity: DocumentationIdentity,
-  moduleRoots: readonly string[] = [],
 ): DocumentationCorpus {
   const manifest = DocumentationManifest.parse(rawManifest)
   const seen = new Set<string>()
@@ -116,8 +114,7 @@ export function compileDocumentation(
           !item.source ||
           !(
             item.source.startsWith(`docs/${group.audience === 'user' ? 'product' : 'development'}/`) ||
-            item.source === 'CHANGELOG.md' ||
-            moduleRoots.some((directory) => (item.source ?? '').startsWith(`${directory}/`))
+            item.source === 'CHANGELOG.md'
           )
         )
           throw new Error(`internal source cannot be published: ${item.source}`)
@@ -149,11 +146,7 @@ export function compileDocumentation(
     }
   }
   for (const source of Object.keys(sources))
-    if (
-      (/^docs\/(product|development)\/.+\.md$/.test(source) ||
-        moduleRoots.some((directory) => source.startsWith(`${directory}/`) && source.endsWith('.md'))) &&
-      !paths.has(source)
-    )
+    if (/^docs\/(product|development)\/.+\.md$/.test(source) && !paths.has(source))
       throw new Error(`unclassified documentation: ${source}`)
   for (const [alias, target] of Object.entries(manifest.aliases)) {
     if (!seen.has(target) || seen.has(alias) || !slug.safeParse(alias).success || alias === 'images')
@@ -222,8 +215,8 @@ export function validateDocumentation(
     const { tokens } = parseDocumentation(markdown)
     for (const token of tokens) {
       for (const child of token.children ?? []) {
-        if (child.type === 'link_open') check(child.attrGet('href') ?? '', source, false)
-        if (child.type === 'image') check(child.attrGet('src') ?? '', source, true)
+        if (child.type === 'link_open') check(String(child.attrGet('href') ?? ''), source, false)
+        if (child.type === 'image') check(String(child.attrGet('src') ?? ''), source, true)
       }
       for (const html of [token, ...(token.children ?? [])].filter(
         (item) => item.type === 'html_block' || item.type === 'html_inline',

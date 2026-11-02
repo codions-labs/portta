@@ -3,9 +3,8 @@
 // Local facts come from core, executed locally; persistent decisions come from
 // the API. Every command that needs a decision — a Project, a session —
 // goes through here, so the credential handling, the loopback refusal and the
-// way a refusal is worded exist once. `portta mcp` wraps the same client.
+// way a refusal is worded exist once.
 
-import { describeFailure, type HttpMethod } from 'portta-mcp'
 import type { GatewayContext } from './context.js'
 import { findCredential } from './credentials.js'
 import { CliError, EXIT, PreconditionError, RefusedError } from './errors.js'
@@ -72,10 +71,47 @@ export function panelHeaders(
   return headers
 }
 
-export type { HttpMethod }
-// How a panel answer becomes a sentence is decided once, in `portta-mcp`,
-// because the panel's own MCP transport words a refusal the same way.
-export { describeFailure }
+export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
+
+/**
+ * How a panel answer becomes a sentence.
+ *
+ * A caller needs to tell "you asked for something impossible" from "try again
+ * later", so the status codes are carried through as words rather than
+ * flattened into one failure. 503 is temporary by construction: it is what a
+ * GitHub outage, a stopped database or an exhausted rate limit looks like.
+ */
+export function describeFailure(status: number, body: string): string {
+  const detail = extractMessage(body)
+  if (status === 400) return `refused: ${detail}`
+  if (status === 401 || status === 403) return `not permitted: ${detail}`
+  if (status === 404) return `not found: ${detail}`
+  if (status === 503) return `temporarily unavailable, and worth retrying: ${detail}`
+  return `the panel answered ${status}: ${detail}`
+}
+
+function extractMessage(body: string): string {
+  const trimmed = body.trim()
+  if (trimmed === '') return '(no detail)'
+  try {
+    const parsed = JSON.parse(trimmed) as { error?: unknown; message?: unknown; hint?: unknown }
+    const message =
+      typeof parsed.error === 'string'
+        ? parsed.error
+        : typeof parsed.error === 'object' &&
+            parsed.error &&
+            'message' in parsed.error &&
+            typeof (parsed.error as { message?: unknown }).message === 'string'
+          ? (parsed.error as { message: string }).message
+          : typeof parsed.message === 'string'
+            ? parsed.message
+            : null
+    if (message) return typeof parsed.hint === 'string' ? `${message} (${parsed.hint})` : message
+  } catch {
+    // not JSON: the body is the message
+  }
+  return trimmed
+}
 
 export interface PanelAnswer {
   ok: boolean
@@ -146,8 +182,7 @@ export interface PanelOptions {
  * narrowed to what an agent holds made it answer 403 on a panel where the
  * operator holds everything.
  *
- * An agent driving the CLI says so with PORTTA_ACTOR_KIND=agent, and `portta
- * mcp` — the surface that exists for agents — declares it outright.
+ * An agent driving the CLI says so with PORTTA_ACTOR_KIND=agent.
  */
 function declaredKind(env: NodeJS.ProcessEnv): 'human' | 'agent' {
   return env.PORTTA_ACTOR_KIND === 'agent' ? 'agent' : 'human'
@@ -156,8 +191,7 @@ function declaredKind(env: NodeJS.ProcessEnv): 'human' | 'agent' {
 /** What a command sends, composed where a test can read it back. */
 export function panelRequestHeaders(context: GatewayContext, options: PanelOptions = {}): Record<string, string> {
   const url = resolvePanelUrl(context.env, options, context.env.PORTTA_WEB_PORT ?? '8081')
-  const actor =
-    options.actor ?? context.env.PORTTA_ACTOR ?? context.env.PORTTA_MCP_ACTOR ?? process.env.USER ?? 'operator'
+  const actor = options.actor ?? context.env.PORTTA_ACTOR ?? process.env.USER ?? 'operator'
   const actorKind = options.actorKind ?? declaredKind(context.env)
   return panelHeaders(context.env, actor, actorKind, { url, ...(options.token ? { token: options.token } : {}) })
 }

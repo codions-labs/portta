@@ -15,7 +15,7 @@ to create, run and maintain it.
 What to test, and which command to run for a changed area, is the
 [testing policy in AGENTS.md](../../AGENTS.md#testing-policy-for-agents); this
 page is the mechanics. Every Node workspace accepts a Vitest filename and
-test-name filter. Prefer a full relative filename; a substring such as `issues`
+test-name filter. Prefer a full relative filename; a substring such as `projects`
 can select several files. Combine a filename with `-t` to avoid importing
 unrelated files. Check the executed test count: Vitest can exit successfully
 when a name matches no cases. For a module, give its test directory or several
@@ -155,8 +155,8 @@ covered.
 
 Always close instances. Schema tests retain real constraints, foreign keys,
 transactions and sequences. Migration tests explicitly use fresh instances.
-Snapshots contain no shared mutable rows. `seededDatabase()` adds the Project,
-repository and environments needed by service tests. Avoid redundant seeds.
+Snapshots contain no shared mutable rows. `seededDatabase()` adds the Project and
+the environments needed by service tests. Avoid redundant seeds.
 
 `db:check` copies schema/config/migrations to a temporary package, runs the
 actual generator there, compares SQL and metadata, and removes the temporary
@@ -190,8 +190,8 @@ npm run test:e2e --workspace=portta-web -- auth.spec.ts -g 'password that is wro
 The viewport check (`npm run viewports --workspace=portta-web`) uses the same
 owned resources and walks the ten pages the panel serves without an account
 (`apps/web/e2e/viewports.mjs`), asserting that none scrolls sideways and no
-control ends up off-screen. The documentation screenshots are captured from a running
-`just dev --demo` instead; see
+control ends up off-screen. The documentation screenshots use an isolated demo
+host and temporary panel state; see
 [Regenerating the screenshots](development-setup.md#regenerating-the-screenshots).
 Neither is an automated test to create or keep for simple visual changes. Use
 `playwright-cli` for that kind of verification.
@@ -219,12 +219,9 @@ images, and stream both into the disposable host (`PORTTA_E2E_PREBUILT_IMAGES=1`
 so the host neither rebuilds nor pulls, and no image archive is written to disk. Locally, without those variables, the
 host builds everything as before.
 
-Browser specs run in four Playwright projects (`open`, `auth`, `protected`,
-`taskflow`) with three workers; each worker owns its database file, Engine API
-fake and panel. `PORTTA_E2E_SKIP_BUILD=1` reuses an existing build. The
-`taskflow` project is not part of CI's release scope: its fixture needs tmux
-and a host daemon, so it runs locally with
-`npm run test:e2e --workspace=portta-web -- --project taskflow`.
+Browser specs run in three Playwright projects (`open`, `auth`, `protected`)
+with three workers; each worker owns its database file, Engine API
+fake and panel. `PORTTA_E2E_SKIP_BUILD=1` reuses an existing build.
 
 Publication (`publish.yaml`) depends on the validation job; failed prerequisites
 or tests prevent publication. Development channels publish amd64 images;

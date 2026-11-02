@@ -11,6 +11,8 @@ import type {
   Diagnostic,
   DockerHost,
   EnvironmentReport,
+  ExposureResult,
+  ExposureView,
   GatewayStatus,
   LogsResponse,
   MetricsCurrent,
@@ -106,6 +108,16 @@ export const infraApi = {
       method: 'POST',
       body: '{}',
     }),
+  exposure: () => request<ExposureView>('/exposure'),
+  protectService: (id: string, body: { user?: string } = {}) =>
+    request<ExposureResult>(`/services/${encodeURIComponent(id)}/exposure`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  openService: (id: string) =>
+    request<ExposureResult>(`/services/${encodeURIComponent(id)}/exposure/open`, { method: 'POST', body: '{}' }),
+  closeService: (id: string) =>
+    request<ExposureResult>(`/services/${encodeURIComponent(id)}/exposure`, { method: 'DELETE' }),
   revokeShare: (id: string) => request<{ ok: boolean }>(`/shares/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   config: () => request<ConfigView>('/config'),
   patchConfig: (values: Record<string, string | null>) =>

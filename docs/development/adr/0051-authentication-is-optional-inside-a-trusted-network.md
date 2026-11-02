@@ -98,8 +98,8 @@ people in, pass.
   ACL that admits a device admits an operator; a stolen VPN profile is a stolen
   panel. Portta says so in `doctor` rather than implying a boundary it does not
   enforce.
-- There is no per-user attribution without accounts. Activity, sessions and
-  audit record the local operator, and an installation that needs to know *who*
+- There is no per-user attribution without accounts. The audit log
+  records the local operator, and an installation that needs to know *who*
   needs `required` — which is the same trade
   [ADR 0035](0035-authentication-lives-in-the-panel.md) always described.
 - The dangerous configuration is now the one that is hard to reach by accident.

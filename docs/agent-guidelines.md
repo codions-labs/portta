@@ -36,12 +36,10 @@ environments sharing a database corrupt each other silently.
 environment on the host. Your route failing is almost never the gateway's
 fault; `portta doctor` will say what it is.
 
-**Never treat "Remove from this host" as deleting a repository.** The panel
-can rebuild a project and can remove it from this machine — containers,
-optionally volumes, optionally the working directory — after the Compose
-project name is typed back. That path never reaches GitHub. An `rm -rf`
-the panel prints is for that project's working directory on this host, and
-only that. Do not run it against another checkout.
+**Never treat "Remove from this host" as deleting a project's code.** The
+panel can rebuild a project and can remove its containers, optionally its
+volumes, after the Compose project name is typed back. It never removes the
+project's working directory. Do not run `rm -rf` against another checkout.
 
 ## Always do these
 
@@ -106,7 +104,7 @@ directory:
 portta down                    # or: portta runtime down <path>
 ```
 
-Add `-v` only if the data is yours and you are sure.
+`down` stops containers and keeps volumes and data.
 
 ## Reaching databases: the order to try
 
@@ -114,8 +112,8 @@ Add `-v` only if the data is yours and you are sure.
 2. **`portta db psql` / `redis cli`**, a client inside the project's
    network from anywhere on the host. Nothing published, nothing left behind.
 3. **`portta access open`**, only when a human needs a GUI. Close it.
-4. **`portta remote access open`**, for a VPS, over the VPN. Never open a
-   public port to make a remote database easier to reach.
+
+Never open a public port to make a remote database easier to reach.
 
 Never `ports: ["5432:5432"]`, not even temporarily, and never a database on
 `0.0.0.0`. Never stop another project's database to free 5432: nothing is
@@ -184,15 +182,14 @@ responsibility, not the tool's.
 
 ## Remote hosts
 
-Databases and caches on a VPS are reached over the VPN, never over the
-internet:
-
-```bash
-portta remote access open user@vps --project <name> --service postgres
-```
-
-Never enable public access to make something easier to reach. If a human wants
+Databases and caches on a VPS are reached over the VPN or from the VPS itself,
+never over the internet. Never enable public access to make something easier to reach. If a human wants
 that, they will run `portta public enable` themselves.
+
+On a public host every routed service is closed until somebody decides who may
+open it, and `portta adopt` stops with a pending `public_exposure` decision
+until `--protect <service>` (a generated credential) or `--public <service>`
+(no login) is given. Ask the human which one; never choose `--public` yourself.
 
 ---
 
@@ -221,35 +218,10 @@ Always:
 - run `portta doctor` before improvising infrastructure
 - report URLs from `portta urls`, not `localhost:3000`
 - reach databases in this order: `docker compose exec`, then
-  `portta db psql` / `redis cli`, then `portta access open` for a GUI,
-  then `portta remote access open` over the VPN for a VPS. Never by
-  publishing a port, and never on `0.0.0.0`
+  `portta db psql` / `redis cli`, then `portta access open` for a GUI.
+  Never by publishing a port, and never on `0.0.0.0`
 - stop only what you started, from its own directory
 
 If a port seems taken, that is the signal that something publishes a port it
 does not need. Fix that; do not free the port by force.
 ```
-
-## Naming an environment after the issue it belongs to
-
-The panel links a running environment to the issue it is running for, so one of
-these coordinates is enough:
-
-```bash
-# a branch the panel can read
-git switch -c issue-182-tcp-proxy
-
-# a namespace portta already produces
-portta envs namespace --suffix issue182
-
-# or say it outright, in the overlay, with the whole reference
-labels:
-  portta.issue: "github:owner/repo#182"
-```
-
-A label carries the whole reference because an environment is not inside a
-Project and has nothing to resolve a bare number against; a branch and a
-namespace carry only a number, read against the Project's own repository.
-
-The link is a row. It never starts, stops or removes anything, and a manual
-link in the panel always wins over an inferred one.

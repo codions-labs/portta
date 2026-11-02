@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
-import type { Environment, ProjectGit } from 'portta-contracts'
+import type { Environment } from 'portta-contracts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeContainer, makeEnvironment, makeOperable, makeStartable } from './fixtures.ts'
 import { principal, renderWithQuery } from './render.tsx'
@@ -18,7 +18,6 @@ class ApiError extends Error {
 }
 
 const project = vi.fn()
-const environmentGit = vi.fn()
 const environmentLogs = vi.fn()
 const projects = vi.fn()
 const projectDetail = vi.fn()
@@ -28,7 +27,6 @@ vi.mock('@/lib/api', () => ({
   ApiError,
   api: {
     environment: (name: string) => project(name),
-    environmentGit: (name: string) => environmentGit(name),
     environmentLogs: (name: string, options: unknown) => environmentLogs(name, options),
     containerAction: vi.fn().mockResolvedValue({ ok: true }),
     environmentAction: vi.fn().mockResolvedValue({
@@ -92,9 +90,6 @@ const alpha: Environment = {
   startable: makeStartable(),
   namespace: null,
   group: null,
-  repo: null,
-  repoUrl: null,
-  gitRoot: null,
   serviceCount: 2,
   runningCount: 2,
   healthyCount: 1,
@@ -132,64 +127,8 @@ const alpha: Environment = {
   ],
 }
 
-const gitScan: ProjectGit = {
-  project: 'alpha',
-  collected: true,
-  collectedAt: 1_700_000_000,
-  ageSeconds: 10,
-  stale: false,
-  staleAfterSeconds: 900,
-  workingDir: '/srv/dev/alpha',
-  git: {
-    branch: 'fix/182-tcp-proxy',
-    detached: false,
-    head: { sha: 'abc1234def', shortSha: 'abc1234', subject: 'Fix the proxy', author: 'Someone', date: 1_700_000_000 },
-    staged: 1,
-    unstaged: 2,
-    untracked: 0,
-    unmerged: 0,
-    dirty: true,
-    upstream: 'origin/fix/182-tcp-proxy',
-    ahead: 3,
-    behind: 0,
-    remote: 'origin',
-  },
-  remote: {
-    url: 'git@github.com:acme/alpha.git',
-    host: 'github.com',
-    slug: 'acme/alpha',
-    kind: 'github',
-    repoUrl: 'https://github.com/acme/alpha',
-  },
-  links: {
-    repo: 'https://github.com/acme/alpha',
-    commit: 'https://github.com/acme/alpha/commit/abc1234def',
-    branch: 'https://github.com/acme/alpha/tree/fix/182-tcp-proxy',
-  },
-  forge: {
-    kind: 'github',
-    collectedAt: 1_700_000_000,
-    authenticated: true,
-    reason: null,
-    // Five, so the card's slice(0, 4) would have hidden one.
-    pulls: [1, 2, 3, 4, 5].map((number) => ({
-      number,
-      title: `Pull ${number}`,
-      state: 'OPEN',
-      draft: false,
-      reviewDecision: null,
-      checks: null,
-      url: `https://github.com/acme/alpha/pull/${number}`,
-      headRefName: `feat/${number}`,
-    })),
-  },
-  reason: null,
-  refreshCommand: 'portta repos scan --environment alpha',
-}
-
 beforeEach(() => {
   project.mockReset().mockResolvedValue(alpha)
-  environmentGit.mockReset().mockResolvedValue(gitScan)
   environmentLogs.mockReset().mockResolvedValue({
     project: 'alpha',
     truncated: false,
@@ -253,7 +192,6 @@ describe('Environment page', () => {
 
     beforeEach(() => {
       project.mockResolvedValue(remembered)
-      environmentGit.mockRejectedValue(new ApiError(404, 'no scan'))
     })
 
     it('says it is not running and hides rebuild and remove', async () => {

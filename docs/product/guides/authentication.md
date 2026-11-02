@@ -45,7 +45,7 @@ flowchart TD
   access -- "local on a LAN address, without PORTTA_AUTH_ALLOW_LAN" --> refuse
   access -- "local, tailscale or vpn" --> local["Every request is the local operator"]
   local --> agent{"X-Portta-Actor names an agent?"}
-  agent -- yes --> narrowed["Narrowed to the agentPermissions setting"]
+  agent -- yes --> narrowed["Narrowed to a developer minus environment:settings"]
   agent -- no --> all["Every permission"]
   mode -- required --> secret{"PORTTA_AUTH_SECRET set?"}
   secret -- no --> refuse
@@ -79,8 +79,7 @@ and a panel that signs people in, pass.
 
 ![Authentication disabled: Settings Users says this panel does not sign people in, and to set PORTTA_AUTH_MODE=required on the host to turn accounts on](../../images/auth-disabled-settings-users.png)
 
-**Authentication disabled** — Settings offers only General, Environment and
-Integrations; a bookmark into Users says the panel does not sign people in.
+**Authentication disabled** — Settings offers only General and Environment; a bookmark into Users says the panel does not sign people in.
 
 `disabled` is the statement that reaching the panel already means being somebody
 the network let in, and the access mode is the answer Portta has for that.
@@ -114,8 +113,8 @@ device on this network is the local operator
 
 The security of a panel with no login is the tailnet's or the VPN's. A tailnet
 ACL that admits a device admits an operator, and a stolen VPN profile is a
-stolen panel. There is no per-user attribution without accounts: activity and
-sessions record the local operator, and an installation that needs to know
+stolen panel. There is no per-user attribution without accounts: the audit log
+records the local operator, and an installation that needs to know
 *who* needs `required`.
 
 ### Agents
@@ -123,13 +122,8 @@ sessions record the local operator, and an installation that needs to know
 With no sign-in there is nobody to be, so `X-Portta-Actor` is attribution: it
 says which caller behind the machine this is. The one thing it decides is that a
 request announcing itself as an agent (an actor whose `X-Portta-Actor-Kind` is
-not `human`, which is what `portta mcp` sends) is held to the
-`agentPermissions` setting. Its default is a developer minus
-`environment:settings` and `repository:manage`.
-
-That setting is editable in **Settings → General → Panel**, one permission at a
-time, and `GET`/`PUT /api/settings/agent-permissions` is the same list for a
-script.
+not `human`, which is what a CLI run with `PORTTA_ACTOR_KIND=agent` sends) is
+held to a developer's permissions minus `environment:settings`.
 
 ## Authentication required
 
@@ -182,7 +176,7 @@ read as the default. A user who has turned on a second factor is sent to
 |---|---|
 | `owner` | Everything. Exactly one, and the only one who can transfer ownership. |
 | `admin` | Everything except acting on the owner. |
-| `developer` | Works: issues, sessions, environments, services, containers, repositories, loopback bridges, their own tokens. Does not destroy, open a container console, change settings or administer accounts. |
+| `developer` | Works: environments, services, containers, loopback bridges, their own tokens. Does not destroy, open a container console, change settings or administer accounts. |
 | `viewer` | Reads, and their own tokens. |
 
 Every API operation declares the permission it needs as `resource:action`, and
@@ -209,7 +203,7 @@ person, not a machine token.
 
 ### Managing accounts
 
-![Authentication enabled: Settings Users listing Admin Demo as the active owner with access to every Project](../../images/auth-enabled-settings-users.png)
+![Authentication enabled: Settings Users listing Ada Lovelace as the active owner with access to every Project](../../images/auth-enabled-settings-users.png)
 
 **Authentication enabled** — Settings, Users.
 
@@ -241,8 +235,7 @@ typed first.
 
 A role says what somebody may do. A membership says where. `owner` and `admin`
 see every Project; a `developer` and a `viewer` see the ones somebody put them
-in, and nothing else — not the issues, not the environments, not the activity,
-not the events.
+in, and nothing else, not the environments and not the events.
 
 ```bash
 portta users grant  ada@example.com demo-shop
@@ -254,15 +247,13 @@ Project second, once it is known which one the resource belongs to.
 
 | Resource | Its Project |
 |---|---|
-| Project, repository, work session, activity | the row's own `project_id` |
-| Issue | the Project whose provider it is read through; there is no global issue list |
+| Project | itself |
 | Environment, service, container, logs, per-environment resources | the Project that adopted the environment; **none** if no Project did |
 | Bridge, forwarder, share | the environment it targets |
 | Docker's raw host inventory, gateway, network, tunnel, settings, users, audit | nothing: they are about the host, and the permission decides alone |
 
 An environment no Project adopted is visible to `owner` and `admin` and to
-nobody else. The same is true of a repository the host scanned that nobody
-registered, and of an event with no Project in it.
+nobody else.
 
 **Listings filter; named resources refuse.** Asking for the Projects returns
 yours. Asking for one by name that you are not in is a `403`. The Overview sums
@@ -313,14 +304,14 @@ takes effect on the next request that carries it.
 
 ```bash
 portta auth token create --name laptop --human    # the secret is shown once
-portta auth token create --name ci --scopes issue:read,issue:write --expires-in-days 90
+portta auth token create --name ci --scopes environment:read,logs:read --expires-in-days 90
 portta auth token list
 portta auth token revoke <id>
 ```
 
 Asking for no scopes gives the default for what the token is: a person's token
 (`--human`) holds their whole role, and an agent's token holds a developer's
-permissions minus `environment:settings` and `repository:manage`, within the
+permissions minus `environment:settings`, within the
 owner's role. Asking for scopes the owner does not hold is a `400` that names
 which ones did not fit.
 
@@ -358,7 +349,7 @@ there rather than on the next command. It also takes `--token`. The store is
 one entry per panel URL.
 
 Every other command sends `PORTTA_TOKEN` when it is set, and otherwise whatever
-`login` saved for that panel. `portta mcp` uses the same resolution. A panel in
+`login` saved for that panel. A panel in
 `disabled` mode needs neither. A non-loopback panel URL still needs
 `--allow-remote`, because that URL is where a credential would be sent.
 
@@ -409,28 +400,39 @@ and garbage collection remove its protection record. See
 
 ### Protecting a project hostname
 
-Portta never edits a consumer project's router. Create the host record, then opt
-that router into the generated middleware in the project's own Compose file:
+Who may open a project hostname is a record in `state/auth/protections.json`, one
+per hostname: `protected` asks for the record's credential, `public` lets
+everybody in, and no record means closed.
+
+On a public host (profile `remote-public`) every routed service already passes
+through the ForwardAuth middleware, so the record is the whole decision. It
+applies on the next request, no container is recreated and the project's files
+are never edited. `portta adopt` asks for it (`--protect <service>` or
+`--public <service>`), and later:
 
 ```bash
 portta protect host demo-shop-web.example.com --project demo-shop --service web
+portta protect open demo-shop-api.example.com --project demo-shop --service api
+portta protect status
+portta protect status demo-shop-web.example.com
+portta protect remove demo-shop-web.example.com
 ```
+
+`protect host` creates or rotates the credential and prints a generated password
+once (`--password-stdin` takes yours). `protect status` never shows hashes.
+Removing a record closes the host on a public host. See
+[Run a public host](public-host.md).
+
+Off a public host Portta adds nothing to a project's router. A router that
+should be gated opts in with a label in the project's own Compose file:
 
 ```yaml
 labels:
   - "traefik.http.routers.demo-shop-web.middlewares=portta-forward-auth@file"
 ```
 
-Inspect or remove records without exposing hashes:
-
-```bash
-portta protect status
-portta protect status demo-shop-web.example.com
-portta protect remove demo-shop-web.example.com
-```
-
-Removing the record does not edit the project label. Until the label is removed,
-the unresolved protection fails closed.
+Until that label exists the record does nothing, and removing the record while
+the label stays leaves the host closed.
 
 ## State and recovery
 

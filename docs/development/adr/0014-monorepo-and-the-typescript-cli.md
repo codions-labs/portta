@@ -20,14 +20,13 @@ Workspace responsibilities are:
 - `packages/db`: schema, current baseline migration and database client;
 - `packages/auth`: identity and authorization;
 - `packages/server`: business rules and integrations;
-- `packages/host`: the host daemon and its modules ([ADR 0047](0047-host-daemon-and-panel-proxy.md));
 - `apps/web`: the panel UI and process composition;
 - `apps/auth`: ForwardAuth for protected application hosts and shares;
 - `packages/cli`: commands, host effects, formatting and packaging.
 
 Local facts are derived by Core and executed locally. Persistent decisions go
 through the panel API. The CLI never writes the panel's database directly
-([ADR 0049](0049-host-state-in-sqlite.md)) and the UI does not reimplement
+and the UI does not reimplement
 server rules.
 
 Node 24 or newer is required for the CLI and installer

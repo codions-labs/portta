@@ -5,12 +5,7 @@ import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 import type { Hono } from 'hono'
 import { createAuth, createPrincipalResolver, hasOwner, resolveSecurityMode } from 'portta-auth-core'
-import {
-  type Db,
-  environments as environmentsTable,
-  projects as projectsTable,
-  repositories as repositoriesTable,
-} from 'portta-db'
+import { type Db, environments as environmentsTable, projects as projectsTable } from 'portta-db'
 import { createTestDb, resetTestDb, type TestDb } from 'portta-db/testing'
 import { afterAll } from 'vitest'
 import { createApp } from '../src/api/index.ts'
@@ -26,7 +21,6 @@ import type {
   DockerVersion,
 } from '../src/services/docker/types.ts'
 import { createSnapshotCache } from '../src/services/inventory.ts'
-import { type ForgeClient, type ForgeRequest, ForgeUnavailable } from '../src/services/issues/host-client.ts'
 import { createVerdictCache } from '../src/services/traefik.ts'
 
 export interface FakeContainer {
@@ -292,10 +286,10 @@ export function testConfig(overrides: Partial<PanelConfig> = {}): PanelConfig {
 
 /**
  * A real SQLite, in memory, migrated, and seeded with the situation nearly
- * every suite needs: one Project with one Repository on a GitHub remote, and
+ * every suite needs: one Project with a working directory, and
  * the two environments it has been seen running.
  *
- * The real engine rather than hand-written stand-ins, one per repository: those
+ * The real engine rather than hand-written stand-ins, one per suite: those
  * are cheap and wrong in the way stand-ins always are — they accept rows a
  * check would refuse, return ids in a shape the driver never produces, and let
  * a query the panel got wrong pass anyway. The real engine costs single-digit
@@ -307,7 +301,6 @@ export interface SeededDatabase {
   /** The ids the seed produced, as the API returns them: strings. */
   ids: {
     project: string
-    repository: string
     environment: string
   }
   close: () => Promise<void>
@@ -358,31 +351,19 @@ async function seed(db: TestDb, close: () => Promise<void>, options: SeedOptions
       ? new Database(db as unknown as Db, unreachableBackend())
       : Database.forTesting(db as unknown as Db)
   if (options.available !== false) await database.initialize()
-  const ids = { project: '', repository: '', environment: '' }
+  const ids = { project: '', environment: '' }
 
   if (options.empty !== true) {
     const [project] = await db
       .insert(projectsTable)
       .values({ slug: 'produto', name: 'Produto' })
       .returning({ id: projectsTable.id })
-    // A GitHub remote and nothing else: the coordinate an issue read needs is
-    // derived from it, exactly as it is for a Project an operator registered.
-    const [repository] = await db
-      .insert(repositoriesTable)
-      .values({
-        projectId: project!.id,
-        name: 'api',
-        provider: 'github',
-        remoteUrl: 'https://github.com/acme/api',
-      })
-      .returning({ id: repositoriesTable.id })
     const seen = await db
       .insert(environmentsTable)
       .values([{ composeProject: 'alpha' }, { composeProject: 'alpha-issue182' }])
       .returning({ id: environmentsTable.id, composeProject: environmentsTable.composeProject })
 
     ids.project = String(project!.id)
-    ids.repository = String(repository!.id)
     ids.environment = String(seen.find((row) => row.composeProject === 'alpha')!.id)
   }
 
@@ -409,51 +390,10 @@ function unreachableBackend() {
   return { migrate: refuse, applied: refuse, ping: refuse, close: async () => undefined }
 }
 
-/** What a `ForgeClient` answered, and what was asked to get it. */
-export interface FakeForge {
-  client: ForgeClient
-  calls: ForgeRequest[]
-}
-
-export type ForgeHandler = (request: ForgeRequest) => unknown
-
-const NO_DAEMON = 'no host daemon in this test'
-
-/**
- * A host daemon that answers, in the shape `gh` and Linear answer in.
- *
- * The default is a host with nothing signed in: every suite here builds an app,
- * and almost none of them are about issues — so the dashboard reads "no
- * provider" rather than a list, which is the situation a panel on a fresh host
- * is actually in. A suite about issues passes its own handler, and throws
- * `ForgeUnavailable` from it to state a provider failure.
- */
-export function fakeForge(handler: ForgeHandler = silentDaemon): FakeForge {
-  const calls: ForgeRequest[] = []
-  return {
-    calls,
-    client: {
-      async call<T>(request: ForgeRequest): Promise<T> {
-        calls.push(request)
-        return handler(request) as T
-      },
-    },
-  }
-}
-
-function silentDaemon(request: ForgeRequest): unknown {
-  // The daemon's own vocabulary: `detail`, which `forgeStatus` renames to the
-  // contract's `reason`. A fake answers what the daemon answers.
-  const down = { available: false, authenticated: false, account: null, detail: NO_DAEMON }
-  if (request.path === '/status') return { github: down, linear: { ...down } }
-  throw new ForgeUnavailable('daemon-unreachable', NO_DAEMON)
-}
-
 export function makeApp(
   options: FakeDockerOptions = {},
   configOverrides: Partial<PanelConfig> = {},
   db: Database = detachedDatabase(),
-  forge: ForgeClient = fakeForge().client,
 ) {
   const docker = fakeDocker(options)
   const config = testConfig(configOverrides)
@@ -472,12 +412,11 @@ export function makeApp(
     hub,
     verdict,
     db,
-    forge,
     security,
     auth: null,
     principals,
   })
-  return { app, docker, config, cache, hub, verdict, db, forge, security, principals }
+  return { app, docker, config, cache, hub, verdict, db, security, principals }
 }
 
 /** Same-origin by default: the API refuses cross-origin writes. */
@@ -545,7 +484,6 @@ export function makeProtectedApp(
     hub,
     verdict,
     db: database,
-    forge: fakeForge().client,
     security,
     auth,
     principals,

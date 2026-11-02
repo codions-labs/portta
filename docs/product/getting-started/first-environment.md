@@ -51,12 +51,21 @@ portta doctor
 portta urls
 ```
 
-Inside the project directory the short forms work too: `portta up`, `portta
-status`, `portta logs` and `portta down` operate the runtime of the directory
-you are in, preparing the plan first when it is missing or stale.
+`runtime up` prepares the plan first when it is missing or stale; the other
+`runtime` commands need an existing plan. Inside the project directory the
+short forms work too: `portta up`, `portta status`, `portta logs` and `portta
+down` operate the runtime of the directory you are in.
 
-Use the URLs printed by Portta. A service named `web` under local hostname mode
-uses `<namespace>-web.localhost`, such as `http://demo-shop-web.localhost`.
+Use the URLs printed by Portta. On this machine a service named `web` is at
+`<namespace>-web.localhost`, such as `http://demo-shop-web.localhost`. On a
+server with a domain it is `<project>-<service>.<domain>`.
+
+## On a public host
+
+On a host with the `remote-public` profile, every routed service needs a
+decision before `adopt` completes: protected (`--protect web`, a generated
+credential), public (`--public web`, no login), or closed when undecided. See
+[Add an existing project](../guides/adopting-projects.md#who-may-open-it).
 
 ## See it in the panel
 
@@ -74,4 +83,5 @@ With the default `PORTTA_AUTH_MODE=disabled` it opens without a sign-in on
 ## Next step
 
 [Add your first project](first-project.md) to understand the relationship
-between the running environment and its Project.
+between the running environment and its Project. Then run `portta agents
+install` so Claude Code, Codex, OpenCode or Pi learn this host.

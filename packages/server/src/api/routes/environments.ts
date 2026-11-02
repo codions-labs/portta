@@ -7,25 +7,18 @@ import {
   EnvironmentActionResult,
   EnvironmentRemovalPreview,
   EnvironmentRunnerStartResult,
-  ProjectGit,
   type ProjectLogSource,
   ProjectLogsResponse,
   ProjectRebuildResult,
   ProjectRemoveResult,
 } from 'portta-contracts'
-import type { ActivityKind } from 'portta-core'
-import { issueRefLabel, issueRefUrl } from 'portta-core'
 import { z } from 'portta-core/zod'
 import { requireDatabase } from '../../db/index.ts'
 import type { AppDeps } from '../../deps.ts'
 import { adoptions, projectOfEnvironment, visible } from '../../services/access-control.ts'
 import { ActionRefused, runProjectAction } from '../../services/actions.ts'
-import { recordActivity } from '../../services/activity.ts'
 import { type AuditAction, audit } from '../../services/audit.ts'
-import { readProjectGit } from '../../services/git.ts'
 import type { Snapshot } from '../../services/inventory.ts'
-import { loadIssueLinks } from '../../services/issues/environments.ts'
-import { issuePanelUrl } from '../../services/issues/read.ts'
 import { dispatchRunner, projectRemovalPreview, rebuildProject, removeProject } from '../../services/operations.ts'
 import { applyOverrides, loadOverrides } from '../../services/overrides.ts'
 import { type LogSourceLines, mergeLogSources } from '../../services/projectlogs.ts'
@@ -54,80 +47,36 @@ function clampTail(requested: string | undefined, fallback: number): number {
 }
 
 /**
- * The issue this environment is running for, when the panel can tell.
- *
- * A ref and a label, never a fetched issue: rendering an environment must not
- * wait on GitHub, and an environment page stays useful when GitHub is down. The
- * panel link is only offered when a Project claims this environment, because
- * the issue route is Project-scoped.
- *
- * Every step degrades to `null`: no database, no link, no Project. Nothing here
- * is required for an environment page to render.
- */
-async function issueOf(deps: AppDeps, snapshot: Snapshot, environment: Environment) {
-  if (!deps.db.status().available) return null
-  const db = deps.db
-  const repositories = await db.repositories.list()
-  const slugOfProject = new Map<string, string | null>()
-  for (const repository of repositories) {
-    if (!slugOfProject.has(repository.projectId) && repository.github) {
-      slugOfProject.set(repository.projectId, repository.github.slug)
-    }
-  }
-  const claims = await db.projects.listEnvironments()
-  const projectOfEnvironment = new Map(claims.map((row) => [row.composeProject, row.projectId]))
-  const slugs = new Map(
-    snapshot.environments.map((item) => {
-      const projectId = projectOfEnvironment.get(item.name)
-      return [item.name, projectId ? (slugOfProject.get(projectId) ?? null) : null] as const
-    }),
-  )
-  const links = await loadIssueLinks(deps.config, db, snapshot, slugs)
-  const link = links.get(environment.name)
-  if (!link) return null
-  const projectId = projectOfEnvironment.get(environment.name)
-  const project = projectId ? ((await db.projects.list()).find((row) => row.id === projectId) ?? null) : null
-  return {
-    ref: link.issueRef,
-    label: issueRefLabel(link.issueRef),
-    url: issueRefUrl(link.issueRef),
-    source: link.source,
-    reason: link.reason,
-    panelUrl: project ? issuePanelUrl(project.slug, link.issueRef) : null,
-  }
-}
-
-/**
  * Which lifecycle operations are also audit entries.
  *
  * Every one of them: an environment's lifecycle is a change to what is running
- * on the host, which is the definition of what this log is for. The two
- * vocabularies are deliberately not the same one — activity says `removed`
- * where the audit list says `destroyed` — so the mapping is written out.
+ * on the host, which is the definition of what this log is for. The operation
+ * says `removed` where the audit list says `destroyed`, so the mapping is
+ * written out.
  */
-const ENVIRONMENT_AUDIT: Partial<Record<ActivityKind, AuditAction>> = {
+const ENVIRONMENT_AUDIT = {
   'environment.started': 'environment.started',
   'environment.stopped': 'environment.stopped',
   'environment.restarted': 'environment.restarted',
   'environment.rebuilt': 'environment.rebuilt',
   'environment.removed': 'environment.destroyed',
   'environment.forgotten': 'environment.forgotten',
-}
+} as const satisfies Record<string, AuditAction>
+
+type EnvironmentOperation = keyof typeof ENVIRONMENT_AUDIT
 
 /**
- * One activity line per lifecycle operation, attributed to the Project that
- * adopted the environment when one did — and one audit line beside it.
+ * One audit line per lifecycle operation, attributed to the Project that
+ * adopted the environment when one did.
  *
- * Both here rather than in the service: `runProjectAction` and `removeProject`
- * are Docker calls with no database in them, and the panel already records
- * their activity from the route for that reason.
+ * Here rather than in the service: `runProjectAction` and `removeProject` are
+ * Docker calls with no database in them, so the route records the line.
  */
-async function recordEnvironmentActivity(
+async function auditEnvironment(
   deps: AppDeps,
   name: string,
   principal: Principal,
-  kind: ActivityKind,
-  summary: string,
+  kind: EnvironmentOperation,
 ): Promise<void> {
   const db = deps.db
   if (!db.status().available) return
@@ -137,33 +86,16 @@ async function recordEnvironmentActivity(
         (row) => row.composeProject === environment.composeProject,
       )
     : undefined
-  const slug = adoption
-    ? ((await db.projects.list().catch(() => [])).find((project) => project.id === adoption.projectId)?.slug ?? null)
-    : null
-  await recordActivity(
-    { db, hub: deps.hub },
-    {
-      kind,
-      actor: principal.actor,
-      actorKind: principal.actorKind,
-      project: slug,
-      projectId: adoption?.projectId ?? null,
-      environmentId: environment?.id ?? null,
-      summary,
-      data: { environment: name },
-    },
-  )
-  const action = ENVIRONMENT_AUDIT[kind]
-  if (action) {
-    await audit(db.handle, principal, {
-      action,
-      resourceType: 'environment',
-      resourceId: environment?.id ?? null,
-      resourceName: name,
-      projectId: adoption ? Number(adoption.projectId) : null,
-    })
-  }
+  await audit(db.handle, principal, {
+    action: ENVIRONMENT_AUDIT[kind],
+    resourceType: 'environment',
+    resourceId: environment?.id ?? null,
+    resourceName: name,
+    projectId: adoption ? Number(adoption.projectId) : null,
+  })
 }
+
+const RemoveBody = z.object({ confirmation: z.string(), volumes: z.boolean() }).strict()
 
 export function environmentRoutes(deps: AppDeps): Hono {
   const app = new Hono()
@@ -255,41 +187,7 @@ export function environmentRoutes(deps: AppDeps): Hono {
       if (!project) throw new HTTPException(404, { message: `no environment '${name}' is running` })
       await reach(c, name)
       const decorated = applyOverrides([project], await loadOverrides(deps.db))[0]!
-      const issue = await issueOf(deps, snapshot, decorated)
-      return c.json({ ...decorated, ...(issue === null ? {} : { issue }) })
-    },
-  )
-
-  /**
-   * What the host collected about this project's repository. Never live: the
-   * panel reads a file and reports its age, and the response carries the
-   * command that refreshes it. A project with no Git, no remote or no scan
-   * gets a 200 with fewer fields, never an error.
-   */
-  app.get(
-    '/environments/:project/git',
-    documentRoute({
-      tag: 'Environments',
-      operationId: 'getProjectGit',
-      permission: 'environment:read',
-      summary: 'Get collected Git metadata',
-      response: ProjectGit,
-      description:
-        'Reads a host-collected snapshot. No scan, repository or remote is represented as a smaller 200 response.',
-      parameters: [projectParameter],
-      errors: [404, 500],
-    }),
-    async (c) => {
-      const snapshot = await deps.cache.get()
-      const name = c.req.param('project')
-      if (
-        !snapshot.environments.some((item) => item.name === name) &&
-        (await findRememberedEnvironment(deps.db, snapshot, deps.config, name)) === null
-      ) {
-        throw new HTTPException(404, { message: `no environment '${name}' is running` })
-      }
-      await reach(c, name)
-      return c.json(readProjectGit(deps.config, name))
+      return c.json(decorated)
     },
   )
 
@@ -415,13 +313,7 @@ export function environmentRoutes(deps: AppDeps): Hono {
         noCache: body.noCache === true,
       })
       deps.cache.invalidate()
-      await recordEnvironmentActivity(
-        deps,
-        c.req.param('project'),
-        principalOf(c),
-        'environment.rebuilt',
-        `${c.req.param('project')} rebuild requested${body.noCache ? ' without cache' : ''}`,
-      )
+      await auditEnvironment(deps, c.req.param('project'), principalOf(c), 'environment.rebuilt')
       return c.json(rebuildResult)
     },
   )
@@ -433,37 +325,20 @@ export function environmentRoutes(deps: AppDeps): Hono {
       operationId: 'removeProject',
       permission: 'environment:destroy',
       summary: 'Remove this project from this host',
-      description: 'Confirmation is the exact Compose project name, checked on the server. GitHub is never touched.',
+      description:
+        'Confirmation is the exact Compose project name, checked on the server. The working directory is never removed.',
       response: ProjectRemoveResult,
       parameters: [projectParameter],
-      request: z
-        .object({
-          confirmation: z.string(),
-          volumes: z.boolean(),
-          directory: z.boolean(),
-          overrideDirty: z.boolean().optional(),
-        })
-        .strict(),
+      request: RemoveBody,
       errors: [400, 403, 404, 409, 500, 502],
     }),
     async (c) => {
       const snapshot = await deps.cache.get()
-      const body = (await c.req.json()) as {
-        confirmation: string
-        volumes: boolean
-        directory: boolean
-        overrideDirty?: boolean
-      }
+      const body = RemoveBody.parse(await c.req.json())
       await reach(c, c.req.param('project'))
       const result = await removeProject(deps.client, snapshot, deps.config, deps.db, c.req.param('project'), body)
       deps.cache.invalidate()
-      await recordEnvironmentActivity(
-        deps,
-        c.req.param('project'),
-        principalOf(c),
-        'environment.removed',
-        `${c.req.param('project')} removed from this host${body.volumes ? ', with its volumes' : ''}${body.directory ? ' and its directory' : ''}`,
-      )
+      await auditEnvironment(deps, c.req.param('project'), principalOf(c), 'environment.removed')
       return c.json(result)
     },
   )
@@ -507,13 +382,7 @@ export function environmentRoutes(deps: AppDeps): Hono {
       configFiles,
     })
     deps.cache.invalidate()
-    await recordEnvironmentActivity(
-      deps,
-      name,
-      principal,
-      'environment.started',
-      `${name} start requested through the runner`,
-    )
+    await auditEnvironment(deps, name, principal, 'environment.started')
     return { ok: true, project: name, action: 'start', via: 'runner', runner }
   }
 
@@ -545,7 +414,7 @@ export function environmentRoutes(deps: AppDeps): Hono {
         }
         const result = await runProjectAction(deps.client, snapshot, c.req.param('project'), action)
         deps.cache.invalidate()
-        await recordEnvironmentActivity(
+        await auditEnvironment(
           deps,
           c.req.param('project'),
           principalOf(c),
@@ -554,7 +423,6 @@ export function environmentRoutes(deps: AppDeps): Hono {
             : action === 'stop'
               ? 'environment.stopped'
               : 'environment.restarted',
-          `${c.req.param('project')} ${action === 'stop' ? 'stopped' : `${action}ed`}${result.ok ? '' : ' with failures'}`,
         )
         return c.json(result)
       },
@@ -588,7 +456,7 @@ export function environmentRoutes(deps: AppDeps): Hono {
       const remembered = await findRememberedEnvironment(db, snapshot, deps.config, name)
       if (!remembered) throw new HTTPException(404, { message: `no environment '${name}' is remembered` })
       await reach(c, name)
-      await recordEnvironmentActivity(deps, name, principalOf(c), 'environment.forgotten', `${name} forgotten`)
+      await auditEnvironment(deps, name, principalOf(c), 'environment.forgotten')
       await db.environments.forget(name)
       deps.cache.invalidate()
       return c.json({ ok: true as const, forgotten: name })

@@ -71,7 +71,7 @@ export function shareRoutes(deps: AppDeps): Hono {
           listShares(deps.config, snapshot),
           (share) => owners.get(share.project) ?? null,
         ),
-        domain: `share.${deps.config.publicDomain ?? deps.config.domain}`,
+        domain: deps.config.publicDomain ?? deps.config.domain,
         publicAllowed: deps.config.publicEnabled && deps.config.publicDomain !== null,
         maxTtlSeconds: MAX_TTL_SECONDS,
       }

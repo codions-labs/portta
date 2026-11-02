@@ -1,11 +1,9 @@
 import type { Auth, PrincipalResolver, SecurityConfig } from 'portta-auth-core'
 import type { PanelConfig } from './config.ts'
 import type { Database } from './db/index.ts'
-import type { ServerModule } from './modules/index.ts'
 import type { LiveHub } from './realtime/hub.ts'
 import type { DockerClient } from './services/docker/client.ts'
 import type { SnapshotCache } from './services/inventory.ts'
-import type { ForgeClient } from './services/issues/host-client.ts'
 import type { VerdictCache } from './services/traefik.ts'
 
 export interface AppDeps {
@@ -22,16 +20,6 @@ export interface AppDeps {
    * turns it into a 503.
    */
   db: Database
-  /**
-   * The way to the host daemon's forge surface, which is where `gh` and Linear
-   * are (ADR 0018, ADR 0047).
-   *
-   * Not optional, and not null when the daemon is down: the client itself is
-   * always constructible, and a daemon that cannot be reached is a typed
-   * failure on the call rather than an absent dependency every route would have
-   * to check for.
-   */
-  forge: ForgeClient
   /** Whether the panel asks who you are, decided once at boot. */
   security: SecurityConfig
   /**
@@ -41,9 +29,4 @@ export interface AppDeps {
   auth: Auth | null
   /** Who a request is, from what it carries. The one answer the API trusts. */
   principals: PrincipalResolver
-  /**
-   * The official modules this process mounts. Absent means every registered
-   * module; a suite passes its own.
-   */
-  modules?: readonly ServerModule[]
 }

@@ -36,7 +36,9 @@ not developer, viewer or the default local agent. A console is resolved from an
 environment and service already visible to the panel, must be running and may
 not be a Portta-owned component. The server chooses `/bin/bash` then `/bin/sh`,
 never accepts a user, command or privileged flag, and reports a shell-less
-image explicitly.
+image explicitly. On a panel reached over `domain` or `public`, a person who
+signed in must also have two-factor authentication enabled; the console refuses
+the connection until they do.
 
 The browser and Docker streams remain separate. Browser binary frames carry TTY
 bytes; JSON text frames carry bounded resize messages. The session idles out

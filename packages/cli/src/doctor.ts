@@ -9,7 +9,7 @@
 // here is the gathering: one `docker inspect` over every container, a handful
 // of network lookups, and the host probes in `host.ts`.
 //
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   authStoreVerdict,
@@ -34,15 +34,18 @@ import {
   loopbackDomainVerdict,
   meetsMinimum,
   panelAuthVerdicts,
+  protectionForHost,
   publishesSensitivePort,
+  readProtectionStore,
   routesFor,
   traefikServiceNames,
+  ungatedContainers,
 } from 'portta-core'
+import { agentsNeedingLayer } from './commands/agents.js'
 import { composeArguments, type GatewayContext } from './context.js'
 import { inspectContainers } from './docker.js'
 import { collectEnvironmentChecks } from './environment/index.js'
 import { fileMode, isPrivateAddress, locate } from './host.js'
-import { CLI_MODULES, moduleDoctorChecks } from './modules/index.js'
 import { runProcess } from './process.js'
 
 const MIN_COMPOSE_MAJOR = 2
@@ -133,6 +136,20 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
   } else {
     add(check('config.env', 'warn', '.env', 'absent; running on built-in defaults', 'cp .env.example .env'))
   }
+
+  // --- agents ------------------------------------------------------------------
+  // An agent on this machine that starts sessions without knowing where it is.
+  const bare = agentsNeedingLayer()
+  if (bare.length > 0)
+    add(
+      check(
+        'agents.layer',
+        'warn',
+        'AI agents',
+        `installed without the Portta layer: ${bare.join(', ')}`,
+        'portta agents install   (dry run first: portta agents install --dry-run)',
+      ),
+    )
 
   // --- runtime -------------------------------------------------------------
   // The host report and `doctor` intentionally share the same Docker row.
@@ -462,32 +479,54 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
     ),
   )
 
-  // --- issues --------------------------------------------------------------
-  // The panel reads and writes issues through `gh` on this host, so this is a
-  // check about this machine rather than about the panel's configuration
-  // (docs/development/adr/0018-github-issues-through-the-gh-cli.md). It never
-  // fails: a Portta used only for environments needs neither provider, and a
-  // failure would make `portta doctor` exit 1 on a host that is fine.
-  const gh = await locate('gh')
-  if (!gh) {
-    add(
-      check(
-        'issues.gh',
-        'warn',
-        'github cli',
-        'gh is not installed, so the panel cannot read or write issues',
-        'install it from https://cli.github.com, then gh auth login',
-      ),
-    )
-  } else {
-    const authed = await runProcess('gh', ['auth', 'status'], { reject: false })
-    add(
-      authed.failed
-        ? check('issues.gh', 'warn', 'github cli', 'gh is installed but nobody is signed in', 'gh auth login')
-        : check('issues.gh', 'pass', 'github cli', `signed in (${gh})`),
-    )
+  // --- a public host ---------------------------------------------------------
+  // Everything on a public host passes through ForwardAuth and a hostname with
+  // no decision is closed, so a stopped auth service closes every project and a
+  // routed service with no record is simply unreachable.
+  if (config.profile === 'remote-public') {
+    if (auth?.state !== 'running')
+      add(
+        check(
+          'public.auth',
+          'fail',
+          'public host',
+          'portta-auth is not running, so every routed hostname is closed',
+          'portta up   then portta logs portta-auth',
+        ),
+      )
+    const ungated = ungatedContainers(containers)
+    if (ungated.length > 0)
+      add(
+        check(
+          'public.gate',
+          'fail',
+          'public host',
+          `routed with no login gate, so open to the internet: ${ungated.join(', ')}`,
+          'portta runtime down <path>, then portta adopt <path> and portta runtime up <path> to plan it behind the gate',
+        ),
+      )
+    if (isTrue(env.PORTTA_RUNNER_PUBLIC))
+      add(
+        check(
+          'public.runner',
+          'warn',
+          'public host',
+          'PORTTA_RUNNER_PUBLIC is on: a signed-in panel session can start, stop and remove projects',
+          'remove PORTTA_RUNNER_PUBLIC from .env to operate projects on the host only',
+        ),
+      )
+    const undecided = undecidedHosts(root)
+    if (undecided.length > 0)
+      add(
+        check(
+          'public.exposure',
+          'warn',
+          'public host',
+          `routed with no decision, so closed: ${undecided.join(', ')}`,
+          'portta adopt <path> --protect <service>  or  --public <service>, or portta protect host|open <host>',
+        ),
+      )
   }
-  if (env.LINEAR_API_KEY) add(check('issues.linear', 'pass', 'linear', 'LINEAR_API_KEY is set for the host daemon'))
 
   // --- databases by hostname -----------------------------------------------
   if (config.tcpEnabled) {
@@ -934,9 +973,6 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
     )
   }
 
-  // --- official modules ----------------------------------------------------
-  add(...(await moduleDoctorChecks(context, CLI_MODULES)))
-
   return checks
 }
 
@@ -1060,4 +1096,27 @@ async function resolveIpv4(hostname: string): Promise<string[]> {
   } catch {
     return []
   }
+}
+
+/** Hostnames in the persisted Runtime Plans that the ForwardAuth registry has no record for. */
+function undecidedHosts(root: string): string[] {
+  const directory = join(root, 'runtime', 'compose')
+  if (!existsSync(directory)) return []
+  let registry: ReturnType<typeof readProtectionStore>
+  try {
+    registry = readProtectionStore(join(root, 'state/auth/protections.json'))
+  } catch {
+    return []
+  }
+  const hosts: string[] = []
+  for (const id of readdirSync(directory)) {
+    try {
+      const plan = JSON.parse(readFileSync(join(directory, id, 'plan.json'), 'utf8')) as {
+        services?: Array<{ host?: string | null }>
+      }
+      for (const service of plan.services ?? [])
+        if (service.host && !protectionForHost(registry, service.host)) hosts.push(service.host)
+    } catch {}
+  }
+  return hosts
 }

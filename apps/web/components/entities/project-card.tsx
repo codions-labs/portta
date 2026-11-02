@@ -1,11 +1,10 @@
 'use client'
 
-import { Bot, Boxes, FolderGit2, GitCommitHorizontal } from 'lucide-react'
+import { Boxes } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ProjectListItem } from '../../lib/projects.ts'
 import { projectState, projectStateTone } from '../../lib/projects.ts'
 import { narrowTone } from '../../lib/tone.ts'
-import { useFormat } from '../../lib/use-format.ts'
 import { cn } from '../../lib/utils.ts'
 import { StatusIndicator } from '../ui/badge.tsx'
 import { Card } from '../ui/card.tsx'
@@ -38,26 +37,11 @@ export function ProjectCounts({ item, className }: { item: ProjectListItem; clas
   const facts: Array<{ id: string; icon: typeof Boxes; label: string; text: string; tone?: 'danger' | 'agent' }> = []
 
   facts.push({
-    id: 'repositories',
-    icon: FolderGit2,
-    label: t(item.repositoryCount === 1 ? 'repository' : 'repositories', { count: item.repositoryCount }),
-    text: String(item.repositoryCount),
-  })
-  facts.push({
     id: 'environments',
     icon: Boxes,
     label: t('running', { running: item.runningEnvironments, total: item.environmentCount }),
     text: `${item.runningEnvironments}/${item.environmentCount}`,
   })
-  if (item.activeSessions) {
-    facts.push({
-      id: 'sessions',
-      icon: Bot,
-      label: t('pulse.sessions', { count: item.activeSessions }),
-      text: String(item.activeSessions),
-      tone: 'agent',
-    })
-  }
 
   return (
     <span className={cn('inline-flex items-center gap-2.5 text-xs tabular-nums text-muted', className)}>
@@ -95,7 +79,6 @@ export function ProjectCounts({ item, className }: { item: ProjectListItem; clas
  * which was the whole complaint about this page.
  */
 export function ProjectCard({ item }: { item: ProjectListItem }) {
-  const { relativeTime } = useFormat()
   const target = { slug: item.slug, name: item.name, archived: item.archived, environments: item.environments }
 
   return (
@@ -129,24 +112,6 @@ export function ProjectCard({ item }: { item: ProjectListItem }) {
           />
         ) : null}
       </div>
-
-      {item.lastCommit || item.lastActivity ? (
-        <div className="mt-auto flex min-w-0 items-center gap-1.5 border-t border-line px-3 py-1.5 text-2xs text-subtle">
-          {item.lastCommit ? (
-            <>
-              <GitCommitHorizontal className="size-3 shrink-0" aria-hidden />
-              <span className="font-mono">{item.lastCommit.shortSha}</span>
-              <span className="min-w-0 truncate">{item.lastCommit.subject}</span>
-              <span className="ml-auto shrink-0">{relativeTime(item.lastCommit.date)}</span>
-            </>
-          ) : (
-            <>
-              <span className="min-w-0 truncate">{item.lastActivity}</span>
-              <span className="ml-auto shrink-0">{relativeTime(item.lastActivityAt)}</span>
-            </>
-          )}
-        </div>
-      ) : null}
     </Card>
   )
 }

@@ -1,7 +1,6 @@
 {
   "title": "Settings",
   "description": "How Portta names projects, who can reach them, and how this panel is reached.",
-  "saved": "Saved. Traefik reads its static configuration at startup, so these values take effect once the gateway containers are recreated on the host:",
   "notWritable": "The panel cannot write {{path}}. Edit it on the host instead.",
   "sectionNotFound": "Settings section “{{group}}” does not exist",
   "chooseGroup": "Choose one of the available groups.",
@@ -31,7 +30,6 @@
     "formula": "How a hostname is formed",
     "formulaPattern": "<project>-<service>.<base>",
     "base": "Base domain",
-    "provider": "Automatic DNS",
     "examples": "A project called loja would answer on:",
     "stateOk": "usable",
     "stateLimited": "needs attention",
@@ -119,9 +117,6 @@
     "confirm": "Enable public access",
     "confirmWarning": "The panel, datastores, and unrouted services remain outside this access. Routed projects without protection may be reached by anyone."
   },
-  "publicAccess": {
-    "result": "Opted-in projects will be reachable as <project>-<service>.{{domain}}."
-  },
   "groups": {
     "Gateway": "Gateway",
     "Project access": "Project access",
@@ -131,7 +126,6 @@
     "Public access": "Public access",
     "DNS": "DNS",
     "Panel": "Panel",
-    "GitHub": "GitHub",
     "Project domain": "Project addresses",
     "Projects": "Projects"
   },
@@ -348,8 +342,6 @@
     "panelNotOnEveryInterface": "the panel is not published on every interface; reach it over the VPN instead"
   },
   "savedShort": "Saved.",
-  "restartRequired": "Needs a restart",
-  "restartHint": "Changing this takes effect after the gateway restarts, not when it is saved.",
   "pendingHint": "Saved, but the running process still has {{value}}.",
   "sectionsLabel": "Settings sections",
   "sections": {
@@ -358,13 +350,12 @@
     "users": "Users",
     "tokens": "API tokens",
     "security": "Security",
-    "integrations": "Integrations",
     "audit": "Audit"
   },
   "roleHints": {
     "owner": "Owns this panel. There is exactly one, and the role moves by transfer.",
     "admin": "Everything except taking ownership. Sees every Project.",
-    "developer": "Works on the Projects they are a member of: issues, environments, repositories.",
+    "developer": "Works on the Projects they are a member of: environments and services.",
     "viewer": "Reads the Projects they are a member of, and changes nothing."
   },
   "localMode": {
@@ -373,12 +364,6 @@
     "tokens": "A token belongs to a person, and this panel has none. Set PORTTA_AUTH_MODE=required on the host to turn accounts and tokens on.",
     "security": "There is no account to secure: this panel does not ask who is asking. Set PORTTA_AUTH_MODE=required on the host to turn accounts on.",
     "audit": "The audit log records who did what, and here everybody is the local operator. Set PORTTA_AUTH_MODE=required on the host to turn accounts on."
-  },
-  "agentPermissions": {
-    "title": "What a local agent may do",
-    "description": "The ceiling over a request that announces itself with X-Portta-Actor. It narrows what the person behind it holds; it never grants anything extra.",
-    "restoreDefault": "Restore the default",
-    "usingDefault": "Using the default"
   },
   "users": {
     "title": "Users",
@@ -480,7 +465,7 @@
     "currentPassword": "Current password",
     "twoFactor": "Second factor",
     "twoFactorDescription": "An authenticator app, asked for after your password.",
-    "twoFactorHint": "Turning it on adds one step to your sign-in and nothing else. Backup codes are shown once, when you turn it on.",
+    "twoFactorHint": "Turning it on adds one step to your sign-in. On a panel reached over the internet it is also what opens the container console. Backup codes are shown once, when you turn it on.",
     "on": "On",
     "off": "Off",
     "turnOn": "Turn on",
@@ -510,10 +495,6 @@
     "expires": "expires {{when}}",
     "totpUnavailable": "This panel could not turn on an authenticator app."
   },
-  "integrations": {
-    "title": "Integrations",
-    "description": "What the panel talks to that is not the host."
-  },
   "environment": {
     "title": "Environment",
     "description": "What this host has installed, and whether each tool is usable from Portta's non-interactive shell.",
@@ -539,38 +520,9 @@
       "fail": "Problem"
     }
   },
-  "ssh": {
-    "title": "SSH keys",
-    "description": "Credentials owned by this Portta instance. Private keys stay in owner-only host storage and never appear in the API.",
-    "empty": "No Portta-owned SSH keys.",
-    "emptyHint": "Generate a new key or import an existing unencrypted private key.",
-    "generate": "Generate key",
-    "import": "Import key",
-    "generateTitle": "Generate an SSH key",
-    "generateDescription": "ED25519 is the recommended default. RSA keys are generated at 4096 bits.",
-    "importTitle": "Import an SSH key",
-    "importDescription": "The private input is written directly to owner-only storage and is never returned.",
-    "name": "Name",
-    "descriptionLabel": "Description",
-    "algorithm": "Algorithm",
-    "privateKey": "Private key",
-    "privateKeyHint": "Unencrypted OpenSSH or PEM private key. It will not be shown again.",
-    "publicKey": "Show public key",
-    "copyPublicKey": "Copy public key",
-    "forge": "Forge",
-    "test": "Test",
-    "remove": "Remove",
-    "removeTitle": "Remove {{name}}",
-    "removeImpact": "The private and public files will be permanently removed from this Portta instance.",
-    "cancel": "Cancel",
-    "origin": {
-      "generated": "generated",
-      "imported": "imported"
-    }
-  },
   "audit": {
     "title": "Audit",
-    "description": "Who did what: accounts, roles, tokens, Project membership and settings. Development activity lives on the Activity page.",
+    "description": "Who did what: accounts, roles, tokens, Project membership, settings and who may open which site.",
     "filterByUser": "Filter by user",
     "everybody": "Everybody",
     "when": "When",

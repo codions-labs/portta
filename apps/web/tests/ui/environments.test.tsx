@@ -29,7 +29,6 @@ vi.mock('@/lib/api', () => ({
     stats: vi.fn().mockResolvedValue({ cpuPercent: null }),
     shares: vi.fn().mockResolvedValue([]),
     serviceTraefik: vi.fn().mockResolvedValue({ available: false, reason: 'not configured' }),
-    environmentGit: vi.fn().mockResolvedValue({ collected: false, git: null, refreshCommand: 'portta repos scan' }),
     metricsCurrent: vi.fn().mockResolvedValue({ projects: [], collectorActive: false, stale: true }),
   },
 }))
@@ -61,9 +60,6 @@ const alpha: Environment = {
   startable: makeStartable(),
   namespace: null,
   group: null,
-  repo: null,
-  repoUrl: null,
-  gitRoot: null,
   serviceCount: 4,
   runningCount: 4,
   healthyCount: 2,

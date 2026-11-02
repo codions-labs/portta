@@ -184,7 +184,7 @@ export function securityVerdicts(facts: HostSecurityFacts, context: HostSecurity
         'SSH server',
         facts.sshd.reason ?? 'could not be checked',
         'The effective SSH server policy may differ from one configuration file because includes and Match blocks apply.',
-        'docs/product/guides/remote-bootstrap.md',
+        'docs/product/guides/remote-development.md',
       ),
     )
   } else if (facts.sshd.state === 'absent') {
@@ -195,7 +195,7 @@ export function securityVerdicts(facts: HostSecurityFacts, context: HostSecurity
         'SSH server',
         'not observed on this host',
         'An absent server is normal on a workstation and may also mean SSH is provided outside this host.',
-        'docs/product/guides/remote-bootstrap.md',
+        'docs/product/guides/remote-development.md',
       ),
     )
   } else {
@@ -225,7 +225,7 @@ export function securityVerdicts(facts: HostSecurityFacts, context: HostSecurity
         publicServer
           ? 'Key-only authentication and a disabled direct root login reduce credential attacks on a publicly exposed server.'
           : 'These settings are contextual on a local workstation and are shown without treating it as compromised.',
-        'docs/product/guides/remote-bootstrap.md',
+        'docs/product/guides/remote-development.md',
         '',
         details,
       ),

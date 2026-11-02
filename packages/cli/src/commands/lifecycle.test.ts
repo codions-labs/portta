@@ -106,14 +106,12 @@ describe('regenerable checkout snapshots', () => {
     for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
   })
 
-  it('empties git and metrics and leaves credentials alone', () => {
+  it('empties metrics and the environment report and leaves credentials alone', () => {
     const root = mkdtempSync(join(tmpdir(), 'portta-reset-'))
     roots.push(root)
-    mkdirSync(join(root, 'state/git'), { recursive: true })
     mkdirSync(join(root, 'state/metrics'), { recursive: true })
     mkdirSync(join(root, 'state/environment'), { recursive: true })
     mkdirSync(join(root, 'state/auth'), { recursive: true })
-    writeFileSync(join(root, 'state/git/index.json'), '{}')
     writeFileSync(join(root, 'state/metrics/host.json'), '{}')
     writeFileSync(join(root, 'state/environment/report.json'), '{}')
     writeFileSync(join(root, 'state/auth/secret'), 'keep')
@@ -123,10 +121,8 @@ describe('regenerable checkout snapshots', () => {
     )
     writeFileSync(join(root, '.env'), 'PORTTA_WEB=true\n')
 
-    expect(clearRegenerableState(root)).toEqual(['state/git', 'state/metrics', 'state/environment'])
-    expect(existsSync(join(root, 'state/git'))).toBe(true)
+    expect(clearRegenerableState(root)).toEqual(['state/metrics', 'state/environment'])
     expect(existsSync(join(root, 'state/metrics'))).toBe(true)
-    expect(existsSync(join(root, 'state/git/index.json'))).toBe(false)
     expect(existsSync(join(root, 'state/metrics/host.json'))).toBe(false)
     expect(existsSync(join(root, 'state/environment/report.json'))).toBe(false)
     expect(readFileSync(join(root, 'state/auth/secret'), 'utf8')).toBe('keep')
@@ -149,10 +145,8 @@ describe('resetCommand', () => {
   function checkout(): string {
     const root = mkdtempSync(join(tmpdir(), 'portta-reset-'))
     roots.push(root)
-    mkdirSync(join(root, 'state/git'), { recursive: true })
     mkdirSync(join(root, 'state/metrics'), { recursive: true })
     mkdirSync(join(root, 'state/environment'), { recursive: true })
-    writeFileSync(join(root, 'state/git/index.json'), '{}')
     writeFileSync(join(root, 'state/metrics/host.json'), '{}')
     writeFileSync(join(root, 'state/environment/report.json'), '{}')
     writeFileSync(
@@ -245,7 +239,6 @@ describe('resetCommand', () => {
       expect.arrayContaining(['compose', 'down', '-v', '--remove-orphans']),
       expect.anything(),
     )
-    expect(existsSync(join(root, 'state/git/index.json'))).toBe(false)
     expect(existsSync(join(root, 'state/metrics/host.json'))).toBe(false)
     expect(existsSync(join(root, 'state/environment/report.json'))).toBe(false)
     // Without --demo nothing example-shaped is started. Example *data* is gone
@@ -317,6 +310,27 @@ describe('resetCommand', () => {
     expect(mocks.demoStacksUp).toHaveBeenCalledTimes(1)
   })
 
+  it('refuses public gateway startup when a TCP router uses HTTPS with datastore entrypoints off', async () => {
+    checkout()
+    mocks.gatewayContext().config.profile = 'remote-public'
+    mocks.inspectContainers.mockResolvedValue([
+      {
+        name: 'tcp-bypass',
+        state: 'running',
+        labels: {
+          'traefik.enable': 'true',
+          'traefik.tcp.routers.bypass.rule': 'HostSNI(`app.example.com`)',
+          'traefik.tcp.routers.bypass.entrypoints': 'websecure',
+          'traefik.tcp.routers.bypass.tls.passthrough': 'true',
+        },
+        ports: [],
+      },
+    ])
+
+    await expect(upCommand(undefined, {}, command())).rejects.toThrow(/tcp-bypass/)
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up'))).toBe(false)
+  })
+
   it('up --demo applies the demonstration after the gateway is up', async () => {
     checkout()
     mocks.requireDocker.mockResolvedValue(undefined)
@@ -331,7 +345,7 @@ describe('resetCommand', () => {
 
     await upCommand(undefined, { demo: true }, command())
 
-    expect(mocks.syncForwardAuth).toHaveBeenCalledWith(expect.any(String))
+    expect(mocks.syncForwardAuth).toHaveBeenCalledWith(expect.any(String), 'local')
     expect(mocks.demoStacksUp).toHaveBeenCalledTimes(1)
     expect(mocks.demoStacksUp).toHaveBeenCalledTimes(1)
     const up = mocks.runProcess.mock.calls.find((call) => ((call[1] ?? []) as string[]).includes('up'))

@@ -38,7 +38,7 @@ describe('the published documentation', () => {
     const slugs = [...page.matchAll(/slugs:\s*\[([^\]]+)\]/g)].flatMap((match) =>
       [...match[1]!.matchAll(/'([^']+)'/g)].map((entry) => entry[1]!),
     )
-    expect(slugs.length).toBeGreaterThan(20)
+    expect(slugs.length).toBeGreaterThan(15)
     const have = new Set(corpus.pages.map((entry) => entry.slug))
     expect(slugs.filter((slug) => !have.has(slug))).toEqual([])
   })

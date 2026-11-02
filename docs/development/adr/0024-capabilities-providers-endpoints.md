@@ -102,7 +102,7 @@ Traefik is on loopback is reported as broken rather than offered as a URL.
 ### Datastores get `host:port` endpoints, never an HTTP hostname
 
 A service whose kind is not `http` is never given an HTTP hostname: Postgres
-and Redis are reached over the access network, a TCP route or an SSH bridge,
+and Redis are reached over the access network, a TCP route or a loopback bridge,
 and offering them a URL would be offering something that cannot work. This
 matches the refusal `portta share` makes.
 

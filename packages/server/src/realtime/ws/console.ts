@@ -44,6 +44,12 @@ export function consoleRoute(deps: AppDeps): WsRoute {
       return { projectId: await projectOfEnvironment(deps.db, name) }
     },
     handle(socket, { params, url, principal }) {
+      // A shell in a container is the most a signed-in session can do, so on a
+      // panel reachable beyond loopback it needs a second factor.
+      if (consoleNeedsSecondFactor(deps, principal)) {
+        socket.close(1008, 'two-factor authentication is required for the console: enable it in Settings, Security')
+        return
+      }
       const parsed = query.safeParse(Object.fromEntries(url.searchParams))
       if (!parsed.success) {
         socket.close(1008, 'invalid console parameters')
@@ -52,6 +58,12 @@ export function consoleRoute(deps: AppDeps): WsRoute {
       void openConsole(deps, socket, principal, params.name ?? '', parsed.data)
     },
   }
+}
+
+/** The console on a panel that is not loopback-only needs an account with a second factor. */
+export function consoleNeedsSecondFactor(deps: Pick<AppDeps, 'config'>, principal: Principal): boolean {
+  const exposed = deps.config.webExpose === 'domain' || deps.config.webExpose === 'public'
+  return exposed && principal.kind !== 'local' && !principal.twoFactor
 }
 
 function sendJson(socket: WebSocket, message: Record<string, unknown>): void {

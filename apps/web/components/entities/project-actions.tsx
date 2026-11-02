@@ -6,7 +6,6 @@ import {
   ArchiveRestore,
   Boxes,
   ExternalLink,
-  FolderGit2,
   MoreHorizontal,
   Play,
   RotateCw,
@@ -198,9 +197,6 @@ export function ProjectActionsMenu({
         <MenuContent align={align}>
           <MenuItem onSelect={() => navigate(base)}>
             <ExternalLink className="size-3.5" /> {tc('open')}
-          </MenuItem>
-          <MenuItem onSelect={() => navigate(`${base}/repositories`)}>
-            <FolderGit2 className="size-3.5" /> {ta('openRepositories')}
           </MenuItem>
           <MenuItem onSelect={() => navigate(`${base}/environments`)}>
             <Boxes className="size-3.5" /> {ta('openEnvironments')}

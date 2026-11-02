@@ -65,12 +65,6 @@ Or, with no gateway involved at all:
 docker compose exec postgres psql -U app -d app
 ```
 
-## From a VPS
-
-`portta remote access open deploy@vps --project demo-shop --service postgres`
-gives you a local address for a database on a remote host; see
-[Reach a remote service](remote-tunnels.md).
-
 ## Every day, at a stable address
 
 ```bash

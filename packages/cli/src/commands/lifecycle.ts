@@ -7,12 +7,14 @@ import {
   type ContainerRecord,
   databaseFileFor,
   databaseFiles,
+  gatewayAlreadyPublic,
   parseAliases,
   patchEnvFile,
   prepareEnvFile,
   projectsFor,
   routesFor,
   type StoredAlias,
+  ungatedContainers,
 } from 'portta-core'
 import { ensureCheckoutCli, reexecBuiltCli } from '../checkout-cli.js'
 import { confirm } from '../confirm.js'
@@ -34,8 +36,7 @@ import {
   requireDemoStacks,
   waitForPanel,
 } from './demo.js'
-import { ensureHostToken, ensureMetricsCollector, stopMetricsCollector } from './host.js'
-import { refreshRepositories } from './repos.js'
+import { ensureMetricsCollector, stopMetricsCollector } from './host.js'
 import { ensureRunner, removeRunner } from './runner.js'
 import { finishWebUp, prepareWebUp, syncForwardAuth, webUp } from './web.js'
 
@@ -85,13 +86,13 @@ async function compose(
   })
 }
 
-function ensureAuthState(root: string): void {
+function ensureAuthState(root: string, profile: string): void {
   const authDirectory = join(root, 'state/auth')
   mkdirSync(authDirectory, { recursive: true, mode: 0o700 })
   chmodSync(authDirectory, 0o700)
   const path = join(root, '.env')
   prepareEnvFile(path)
-  syncForwardAuth(root)
+  syncForwardAuth(root, profile)
 }
 
 /** major.minor, which is the granularity the API contract moves at. */
@@ -182,7 +183,7 @@ export async function bootstrapCommand(options: { skipPull?: boolean }, command:
   if (composeVersion.exitCode !== 0) throw new CliError('Docker Compose v2 is required', EXIT.precondition)
   prepareEnvFile(join(context.root, '.env'))
   ensureInstallationDirectories(context.root)
-  ensureAuthState(context.root)
+  ensureAuthState(context.root, context.config.profile)
   const network = await ensureNetwork(context.config.network)
   output.progress(`${network.padEnd(8)} shared network ${context.config.network}`)
   // Explicit build/dev overlays carry checkout-only tags. Ignore those while
@@ -223,8 +224,22 @@ export async function upCommand(
   // network explicitly before asking Compose to start the gateway.
   await ensureNetwork(context.config.network)
   if (context.config.tcpEnabled) await ensureNetwork(context.config.accessNetwork)
-  ensureAuthState(context.root)
-  ensureHostToken(context)
+  ensureAuthState(context.root, context.config.profile)
+  if (context.config.profile === 'remote-public') {
+    const present = await inspectContainers(true)
+    const ungated = ungatedContainers(present)
+    const serving = gatewayAlreadyPublic(present)
+    const advice = 'run portta runtime down <path>, then portta adopt and portta runtime up it again'
+    // Starting the gateway is what would open them. Once it already serves, a restart
+    // changes nothing, so it only warns and leaves the host reachable for the fix.
+    if (ungated.length > 0 && !serving)
+      throw new RefusedError(
+        `these services route with no login gate, so starting a public gateway would open them: ${ungated.join(', ')}`,
+        advice,
+      )
+    if (ungated.length > 0)
+      output.warning(`routed with no login gate, so open to the internet: ${ungated.join(', ')}. ${advice}`)
+  }
   output.progress(builds ? 'starting components, building local images' : 'starting components')
   const wait = !options.attach
   const started = await compose(
@@ -246,7 +261,6 @@ export async function upCommand(
     )
   }
 
-  await refreshRepositories(context.config.profile, output)
   await ensureMetricsCollector(context.config.profile, output)
 
   // The optional applier, so the panel can recreate these containers itself.
@@ -355,7 +369,7 @@ export function panelDatabaseArtefacts(root: string): string[] {
 }
 
 /** Snapshots the collector and `repos scan` rewrite. Never `state/` itself. */
-export const REGENERABLE_STATE_DIRS = ['state/git', 'state/metrics', 'state/environment'] as const
+export const REGENERABLE_STATE_DIRS = ['state/metrics', 'state/environment'] as const
 
 export function clearRegenerableState(root: string): string[] {
   const cleared: string[] = []

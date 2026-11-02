@@ -128,8 +128,3 @@ copy-paste-and-forget snippet, and the gateway will not apply it for you.
 
 Start with `access open`. Publish the two or three you keep reaching for.
 
-## Not set up for this yet?
-
-`portta remote access open` works over plain SSH and needs no
-Tailscale Services configuration at all. See
-[Open remote tunnels](remote-tunnels.md).

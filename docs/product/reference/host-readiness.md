@@ -12,12 +12,12 @@ version, resolved path and sub-findings that explain the verdict.
 | Category | Checks |
 |---|---|
 | Infrastructure | Docker client, tested engine version, daemon/socket access, Compose v2, Tailscale connection |
-| Development | Node.js, npm, npx, Git and its author identity, GitHub CLI and its login, OpenSSH client and agent, tmux |
+| Development | Node.js, npm, npx, Git and its author identity, OpenSSH client and agent, tmux |
 | Agents | Claude Code, Codex CLI, Cursor agent, Gemini CLI and Antigravity |
 
-An absent optional tool is **information**, not a warning. An installed GitHub
-CLI without a login is a recommendation because the workflow exists but cannot
-be used. Docker or a required Node tool that cannot run is a problem. Every
+An absent optional tool is **information**, not a warning. Git without a
+global author identity is a recommendation because the tool is there but
+commits would fail. Docker or a required Node tool that cannot run is a problem. Every
 probe has a four-second timeout and invokes an executable with an argument
 array; it never builds a shell command, creates a tmux session, prints a token,
 or stores raw command output.
@@ -37,8 +37,7 @@ metrics on their five-second cadence. To refresh only readiness, run:
 portta envs report
 ```
 
-The command is also available through the canonical `portta envs report`
-spelling. The write is atomic. The panel mounts `state/environment` read-only.
+The write is atomic. The panel mounts `state/environment` read-only.
 
 The same refresh collects host security observations. SSH server policy,
 installed firewalls and Fail2ban are graded using the host kind and exposure

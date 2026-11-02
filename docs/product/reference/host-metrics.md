@@ -5,7 +5,7 @@ Desktop → a Linux VM → the panel. Anything the panel reads from `/proc`, the
 Engine's `GET /info`, or `systeminformation` inside that container is the VM,
 not the machine.
 
-So collection runs on the host, the same way [Git does](../../development/adr/0010-git-collected-on-the-host.md).
+So collection runs on the host, the same way Git does.
 The CLI talks to `systeminformation` and Docker, writes files under
 `state/metrics`, and the panel only reads them. There is no Prometheus, no
 Grafana, no privileged panel, and no extra `/proc` bind.
@@ -57,8 +57,7 @@ never an error.
 30 seconds is **stale**.
 
 Readiness changes more slowly and is collected every five minutes. Use
-`portta envs report` to refresh only that report. The same watcher runs
-`portta repos scan` once a minute.
+`portta envs report` to refresh only that report.
 
 `portta up` and `portta web up` start the watcher. `portta down` and
 `portta web down` stop it. If the gateway stays up after `web down`, the

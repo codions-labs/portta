@@ -7,7 +7,7 @@
 // configuration, which is exactly what the panel already has.
 
 import { existsSync, statSync } from 'node:fs'
-import type { Diagnostic, ForgeStatus, Share, TraefikVerdict } from 'portta-contracts'
+import type { Diagnostic, Share, TraefikVerdict } from 'portta-contracts'
 import { parseEnv, readEnvFile, readProtectionStore, type StoredAlias } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import { isProtected, isRouted } from '../config.ts'
@@ -35,38 +35,8 @@ export function diagnose(
   shares: Share[] = [],
   database: DatabaseStatus | null = null,
   aliases: StoredAlias[] = [],
-  forge: ForgeStatus | null = null,
 ): Diagnostic[] {
   const results: Diagnostic[] = []
-
-  // Silence when nothing is linked: a Portta whose Projects have no remote and
-  // no Linear key has nothing to read issues from, and saying so on every
-  // doctor run would be noise. What is worth saying is that the tool exists but
-  // nobody is signed in — that is a fixable thing the operator cannot see.
-  if (forge) {
-    for (const [name, status, fix] of [
-      ['github', forge.github, 'run gh auth login on this host'],
-      ['linear', forge.linear, 'set LINEAR_API_KEY on the host running portta host serve'],
-    ] as const) {
-      if (!status.available) continue
-      results.push(
-        status.authenticated
-          ? check(
-              `issues.${name}`,
-              'pass',
-              name === 'github' ? 'GitHub Issues' : 'Linear',
-              `signed in as ${status.account}`,
-            )
-          : check(
-              `issues.${name}`,
-              'warn',
-              name === 'github' ? 'GitHub Issues' : 'Linear',
-              status.reason ?? 'nobody is signed in',
-              fix,
-            ),
-      )
-    }
-  }
 
   if (database?.configured) {
     if (database.available) {

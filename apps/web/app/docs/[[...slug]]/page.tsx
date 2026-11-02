@@ -42,20 +42,12 @@ function DocsHome() {
     {
       title: 'Common tasks',
       description: 'Choose the guide for what you need to do.',
-      slugs: [
-        'projects',
-        'dns-and-tls',
-        'remote-development',
-        'authentication',
-        'database-access',
-        'issues',
-        'troubleshooting',
-      ],
+      slugs: ['projects', 'dns-and-tls', 'remote-development', 'authentication', 'database-access', 'troubleshooting'],
     },
     {
       title: 'Reference',
       description: 'Look up commands, settings and contracts.',
-      slugs: ['configuration', 'cli', 'api', 'mcp', 'compatibility'],
+      slugs: ['configuration', 'cli', 'api', 'compatibility'],
     },
     {
       title: 'Understand Portta',

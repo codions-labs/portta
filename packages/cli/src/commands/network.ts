@@ -1,7 +1,7 @@
 import { lookup } from 'node:dns/promises'
 import { join } from 'node:path'
 import type { Command } from 'commander'
-import { patchEnvFile } from 'portta-core'
+import { patchEnvFile, ungatedContainers } from 'portta-core'
 import { confirm } from '../confirm.js'
 import { composeArguments, gatewayContext } from '../context.js'
 import { inspectContainers } from '../docker.js'
@@ -99,7 +99,18 @@ export async function publicEnable(command: Command): Promise<void> {
   }
   if (context.config.tcpEnabled)
     throw new RefusedError('public access cannot be enabled while TCP entrypoints are active')
-  await confirm(`expose opted-in HTTP services on *.${publicDomain}?`, global.yes === true)
+  // Fail closed: a project already routing here has no gate, so it would be open
+  // the moment the host is public. It has to be stopped and planned again first.
+  const ungated = ungatedContainers(await inspectContainers(true))
+  if (ungated.length > 0)
+    throw new RefusedError(
+      `these running services route with no login gate, so they would be open on a public host: ${ungated.join(', ')}`,
+      'stop each project (portta runtime down <path>), enable public access, then portta adopt and portta runtime up it again',
+    )
+  await confirm(
+    `serve this host's HTTP services on *.${publicDomain} over the internet? Each site stays closed until you decide who may open it`,
+    global.yes === true,
+  )
   await writeSetting('PUBLIC_ENABLED', 'true', command)
   if (!context.config.publicDomain) await writeSetting('PUBLIC_DOMAIN', publicDomain, command)
   await writeSetting('PORTTA_PROFILE', 'remote-public', command)

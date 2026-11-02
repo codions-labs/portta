@@ -66,17 +66,10 @@ export function EnvironmentOverview({ name }: { name: string }) {
 }
 
 function WorkingDirectory({ environment }: { environment: Environment }) {
-  const { t } = useTranslation('environments')
-  if (!environment.workingDir && !environment.gitRoot) return null
+  if (!environment.workingDir) return null
   return (
     <div className="flex flex-wrap items-center gap-x-1 px-1 text-xs text-subtle">
       {environment.workingDir ? <Mono kind="path" tone="subtle" value={environment.workingDir} /> : null}
-      {environment.gitRoot && environment.gitRoot !== environment.workingDir ? (
-        <span className="flex min-w-0 items-center gap-1">
-          {' '}
-          · {t('environment.gitRoot')}: <Mono kind="path" tone="subtle" value={environment.gitRoot} />
-        </span>
-      ) : null}
     </div>
   )
 }

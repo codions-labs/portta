@@ -242,8 +242,6 @@ describe('the optional identity labels', () => {
         'com.docker.compose.project.working_dir': '/srv/dev/storefront-issue59',
         'traefik.enable': 'true',
         'portta.project': 'storefront',
-        'portta.repo': 'owner/storefront',
-        'portta.git.root': '/srv/dev/storefront-issue59',
       },
     },
     {
@@ -259,15 +257,12 @@ describe('the optional identity labels', () => {
     },
   ]
 
-  it('reads them onto the container and up onto the project', async () => {
+  it('reads the label onto the container and up onto the project', async () => {
     const { client } = fakeDocker({ containers: declaring })
     const snapshot = await buildSnapshot(client, config)
     const project = snapshot.environments.find((item) => item.name === 'storefront-issue59')
 
     expect(project?.group).toBe('storefront')
-    expect(project?.repo).toBe('owner/storefront')
-    expect(project?.repoUrl).toBe('https://github.com/owner/storefront')
-    expect(project?.gitRoot).toBe('/srv/dev/storefront-issue59')
   })
 
   it('takes them from whichever service declared them', async () => {
@@ -285,33 +280,8 @@ describe('the optional identity labels', () => {
     const snapshot = await buildSnapshot(client, config)
     for (const project of snapshot.environments) {
       expect(project.group).toBeNull()
-      expect(project.repo).toBeNull()
-      expect(project.repoUrl).toBeNull()
-      expect(project.gitRoot).toBeNull()
     }
     expect(snapshot.environments.find((item) => item.name === 'beta')?.namespace).toBe('beta-issue59')
-  })
-
-  it('derives no repository link from a label it cannot parse', async () => {
-    const { client } = fakeDocker({
-      containers: [
-        {
-          id: 'bad',
-          name: 'x-web-1',
-          image: 'nginx:1.31.4-alpine',
-          networks: ['portta'],
-          labels: {
-            'com.docker.compose.project': 'x',
-            'com.docker.compose.service': 'web',
-            'traefik.enable': 'true',
-            'portta.repo': 'not a remote at all',
-          },
-        },
-      ],
-    })
-    const snapshot = await buildSnapshot(client, config)
-    expect(snapshot.environments[0]?.repo).toBe('not a remote at all')
-    expect(snapshot.environments[0]?.repoUrl).toBeNull()
   })
 })
 

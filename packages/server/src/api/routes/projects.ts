@@ -1,13 +1,12 @@
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { authorizeScope, principalOf } from 'portta-auth-core/hono'
-import { Project, ProjectSummary, TaskProvider } from 'portta-contracts'
+import { Project, ProjectSummary } from 'portta-contracts'
 import { parseRelativeProjectPath } from 'portta-core'
 import { z } from 'portta-core/zod'
 import { type Database, requireDatabase } from '../../db/index.ts'
 import type { AppDeps } from '../../deps.ts'
 import { projectScope, visible } from '../../services/access-control.ts'
-import { recordActivity } from '../../services/activity.ts'
 import { loadProjectCatalog, type ProjectCatalog, toProject, toProjectSummary } from '../../services/catalog.ts'
 import type { Snapshot } from '../../services/inventory.ts'
 import { OverrideRefused } from '../../services/overrides.ts'
@@ -28,7 +27,7 @@ const ProjectsResponse = z
   .meta({ ref: 'ProjectsResponse' })
 
 /**
- * First-level directory under Projects Home (ADR 0031). Validated here so a
+ * Directory under Projects Home, at any depth (ADR 0031). Validated here so a
  * bad path is a 400 with the reason, and again in the repository.
  */
 const RelativePath = z
@@ -45,10 +44,10 @@ const RelativePath = z
       }
     },
     {
-      message: 'relativePath must be one directory name under Projects Home: no slashes, no dots, never absolute',
+      message: 'relativePath must stay under Projects Home: relative, no dot segments, no hidden directory',
     },
   )
-  .describe('First-level directory under Projects Home. Never an absolute path.')
+  .describe('Directory under Projects Home, such as group/project. Never an absolute path.')
 
 const CreateBody = z
   .object({
@@ -60,14 +59,6 @@ const CreateBody = z
     name: z.string().min(1).max(120),
     description: z.string().max(2000).nullable().optional(),
     relativePath: RelativePath.nullable().optional(),
-    taskProvider: TaskProvider.nullable().optional(),
-    linearTeam: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .regex(/^[A-Z][A-Z0-9]{0,9}$/, 'a Linear team key is up to ten uppercase letters or digits')
-      .nullable()
-      .optional(),
   })
   .strict()
   .meta({ ref: 'CreateProjectBody' })
@@ -78,22 +69,6 @@ const PatchBody = z
     description: z.string().max(2000).nullable().optional(),
     archived: z.boolean().optional(),
     relativePath: RelativePath.nullable().optional(),
-    /** `null` goes back to deriving it from the repository's own remote. */
-    taskProvider: TaskProvider.nullable().optional(),
-    /**
-     * The team a Linear Project's issues belong to, such as `ENG`.
-     *
-     * Settable here because it is the other half of choosing Linear: a Project
-     * on Linear with no team names nothing, and the refusal an operator gets
-     * tells them to set it — which they could not, until this existed.
-     */
-    linearTeam: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .regex(/^[A-Z][A-Z0-9]{0,9}$/, 'a Linear team key is up to ten uppercase letters or digits')
-      .nullable()
-      .optional(),
   })
   .strict()
   .meta({ ref: 'PatchProjectBody' })
@@ -115,7 +90,7 @@ const Removal = z
 /**
  * Joins the operator's decisions with what is actually running.
  *
- * The repository and environment lists come from the database; the runtime
+ * The Project list comes from the database; the runtime
  * half comes from the snapshot the panel already has, so a Project with
  * nothing up is a full answer rather than an empty one.
  */
@@ -124,13 +99,7 @@ async function assemble(db: Database, snapshot: Snapshot, config: AppDeps['confi
 }
 
 function summariesFrom(catalog: ProjectCatalog) {
-  return catalog.records.map((record) =>
-    toProjectSummary(
-      record,
-      (catalog.repositoriesByProject.get(record.id) ?? []).length,
-      catalog.environments.get(record.id) ?? [],
-    ),
-  )
+  return catalog.records.map((record) => toProjectSummary(record, catalog.environments.get(record.id) ?? []))
 }
 
 /** A Zod failure on a stored decision is the caller's mistake, said plainly. */
@@ -193,18 +162,6 @@ export function projectRoutes(deps: AppDeps): Hono {
       const created = await refusedOnValidation(() =>
         db.projects.create({ ...body, description: body.description ?? null, relativePath: body.relativePath ?? null }),
       )
-      const principal = principalOf(c)
-      await recordActivity(
-        { db, hub: deps.hub },
-        {
-          kind: 'project.created',
-          actor: principal.actor,
-          actorKind: principal.actorKind,
-          project: created.slug,
-          projectId: created.id,
-          summary: `Project ${created.name} created`,
-        },
-      )
       await record(deps, c, {
         action: 'project.created',
         resourceType: 'project',
@@ -212,7 +169,7 @@ export function projectRoutes(deps: AppDeps): Hono {
         resourceName: created.slug,
         projectId: Number(created.id),
       })
-      return c.json(toProject(created, [], [], home()), 201)
+      return c.json(toProject(created, [], home()), 201)
     },
   )
 
@@ -234,14 +191,7 @@ export function projectRoutes(deps: AppDeps): Hono {
       if (!record) throw new HTTPException(404, { message: `no project '${slug}'` })
       authorizeScope(c, projectScope(record.id))
       const catalog = await assemble(db, await deps.cache.get(), deps.config)
-      return c.json(
-        toProject(
-          record,
-          catalog.repositoriesByProject.get(record.id) ?? [],
-          catalog.environments.get(record.id) ?? [],
-          home(),
-        ),
-      )
+      return c.json(toProject(record, catalog.environments.get(record.id) ?? [], home()))
     },
   )
 
@@ -268,19 +218,6 @@ export function projectRoutes(deps: AppDeps): Hono {
       authorizeScope(c, projectScope(existing.id))
       const updated = await refusedOnValidation(() => db.projects.update(slug, patch))
       if (!updated) throw new HTTPException(404, { message: `no project '${slug}'` })
-      const principal = principalOf(c)
-      await recordActivity(
-        { db, hub: deps.hub },
-        {
-          kind: 'project.updated',
-          actor: principal.actor,
-          actorKind: principal.actorKind,
-          project: updated.slug,
-          projectId: updated.id,
-          summary: `Project ${updated.name} updated`,
-          data: { fields: Object.keys(patch) },
-        },
-      )
       await record(deps, c, {
         action: 'project.updated',
         resourceType: 'project',
@@ -289,7 +226,7 @@ export function projectRoutes(deps: AppDeps): Hono {
         projectId: Number(updated.id),
         metadata: { fields: Object.keys(patch) },
       })
-      return c.json(toProjectSummary(updated, 0, []))
+      return c.json(toProjectSummary(updated, []))
     },
   )
 
@@ -298,7 +235,7 @@ export function projectRoutes(deps: AppDeps): Hono {
    *
    * This is the endpoint most likely to be misread, so it says what it did not
    * do: no container is stopped, no volume is removed, no environment is
-   * changed and no repository is unlinked from GitHub.
+   * changed.
    */
   app.delete(
     '/projects/:slug',
@@ -307,7 +244,7 @@ export function projectRoutes(deps: AppDeps): Hono {
       operationId: 'deleteProject',
       permission: 'project:delete',
       summary: 'Remove a Project grouping',
-      description: 'Deletes the grouping only. No container, volume, environment or repository is touched.',
+      description: 'Deletes the grouping only. No container, volume or environment is touched.',
       response: Removal,
       parameters: [slugParameter],
       errors: [403, 404, 500, 503],
@@ -321,18 +258,6 @@ export function projectRoutes(deps: AppDeps): Hono {
       if (!(await db.projects.remove(slug))) {
         throw new HTTPException(404, { message: `no project '${slug}'` })
       }
-      const principal = principalOf(c)
-      await recordActivity(
-        { db, hub: deps.hub },
-        {
-          kind: 'project.deleted',
-          actor: principal.actor,
-          actorKind: principal.actorKind,
-          project: slug,
-          summary: `Project ${existing.name} removed from the panel`,
-          data: { slug },
-        },
-      )
       // No projectId: the row is gone, and the column would be nulled by the
       // cascade a moment later. The slug is what a person reads anyway.
       await record(deps, c, {
@@ -344,7 +269,7 @@ export function projectRoutes(deps: AppDeps): Hono {
       return c.json({
         ok: true,
         removed: slug,
-        note: 'the grouping only: no container, volume, environment or repository was touched',
+        note: 'the grouping only: no container, volume or environment was touched',
       })
     },
   )
@@ -356,7 +281,7 @@ export function projectRoutes(deps: AppDeps): Hono {
       operationId: 'setProjectEnvironments',
       permission: 'project:update',
       summary: 'Set the environments a Project adopts by hand',
-      description: 'A manual mapping always wins over portta.project and over a repository match.',
+      description: 'A manual mapping always wins over portta.project and over a directory match.',
       request: EnvironmentsBody,
       response: Project,
       parameters: [slugParameter],
@@ -377,29 +302,9 @@ export function projectRoutes(deps: AppDeps): Hono {
         }
       }
       await db.projects.setEnvironments(record.id, body.environments)
-      const principal = principalOf(c)
-      await recordActivity(
-        { db, hub: deps.hub },
-        {
-          kind: 'environment.adopted',
-          actor: principal.actor,
-          actorKind: principal.actorKind,
-          project: record.slug,
-          projectId: record.id,
-          summary: `${record.name} adopts ${body.environments.join(', ') || 'no environment'} by hand`,
-          data: { environments: body.environments },
-        },
-      )
 
       const catalog = await assemble(db, await deps.cache.get(true), deps.config)
-      return c.json(
-        toProject(
-          record,
-          catalog.repositoriesByProject.get(record.id) ?? [],
-          catalog.environments.get(record.id) ?? [],
-          home(),
-        ),
-      )
+      return c.json(toProject(record, catalog.environments.get(record.id) ?? [], home()))
     },
   )
 

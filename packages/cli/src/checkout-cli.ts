@@ -10,7 +10,6 @@ export const CHECKOUT_CLI_SOURCES = [
   'packages/cli/package.json',
   'packages/core/src',
   'packages/contracts/src',
-  'packages/host/src',
 ] as const
 
 export function checkoutCliDist(root: string): string {

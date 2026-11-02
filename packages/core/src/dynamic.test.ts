@@ -8,6 +8,7 @@ describe('ForwardAuth dynamic file', () => {
       scope: 'share:a7f3',
       host: 'demo.example.com',
       entryPoints: ['websecure'],
+      mode: 'protected',
       user: 'reviewer',
       hash: '$portta$scrypt$65536$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
       label: 'Demo',
@@ -19,6 +20,19 @@ describe('ForwardAuth dynamic file', () => {
     expect(yaml).toContain('priority: 10000')
     const router = yaml.slice(yaml.indexOf('portta-auth-login-share-a7f3:'), yaml.indexOf('  services:'))
     expect(router).not.toContain('middlewares:')
+  })
+
+  it('renders no login router for a public host', () => {
+    const store = setProtection(emptyProtectionStore(), {
+      scope: 'host:api.example.com',
+      host: 'api.example.com',
+      entryPoints: ['websecure'],
+      mode: 'public',
+      label: 'api',
+    })
+    const yaml = renderAuthDynamic(store)
+    expect(yaml).not.toContain('api.example.com')
+    expect(yaml).toContain('portta-forward-auth:')
   })
 
   // The panel is not behind this middleware any more: it signs people in

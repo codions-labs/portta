@@ -18,7 +18,7 @@ layers together.
 
 `dockerode` is a mature Docker SDK, but its purpose is to expose nearly the
 whole API. It includes operations this panel deliberately cannot perform,
-including exec, image and volume management, prune, archives, builds and
+including image and volume management, prune, archives, builds and
 remote daemon transports. Wrapping it would retain our facade while moving the
 allowlist away from the transport that actually emits requests.
 
@@ -69,7 +69,7 @@ on its own if it made the request boundary less explicit.
 
 Reconsider this decision if at least one of these becomes true:
 
-1. The panel deliberately adds streaming exec or attach, image or volume
+1. The panel deliberately adds attach, image or volume
    management, BuildKit, or TLS/SSH transport to a remote daemon.
 2. The Engine protocol gains behavior the small client cannot reasonably
    implement or verify.

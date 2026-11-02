@@ -1,6 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
 import { visibleSections } from '@/components/settings/sections'
-import { registeredModuleIds } from '@/lib/server/modules'
 import { pagePrincipal, panelSignsPeopleIn } from '@/lib/server/page-data'
 
 export const dynamic = 'force-dynamic'
@@ -18,7 +17,6 @@ export default async function SettingsIndexPage() {
   const [first] = visibleSections({
     permissions: [...principal.permissions],
     signsPeopleIn: panelSignsPeopleIn(),
-    modules: registeredModuleIds(),
   })
   if (!first) notFound()
   redirect(first.href)

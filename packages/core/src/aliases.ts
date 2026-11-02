@@ -1,4 +1,5 @@
-import { quoteDynamicValue } from './dynamic.ts'
+import { FORWARD_AUTH_MIDDLEWARE, quoteDynamicValue } from './dynamic.ts'
+import { type ProtectionStore, protectionForHost } from './protections.ts'
 
 /**
  * A hostname alias is a nickname, never a rename.
@@ -35,9 +36,15 @@ export function aliasRouterName(project: string, service: string): string {
   return `portta-alias-${project}-${service}`.replace(/[^a-zA-Z0-9-]/g, '-')
 }
 
-/** The canonical Traefik file renderer, used by both the panel and the CLI. */
-export function renderAliases(aliases: StoredAlias[]): string {
-  const lines = [...HEADER, `${ALIASES_MARKER}${JSON.stringify(aliases)}`, '']
+/**
+ * The canonical Traefik file renderer, used by both the panel and the CLI.
+ *
+ * On a public host (`forwardAuth`) every alias passes through ForwardAuth, so a
+ * hostname nobody decided about is closed, exactly like the project's own.
+ */
+export function renderAliases(aliases: StoredAlias[], forwardAuth = false, suspended: StoredAlias[] = []): string {
+  // A suspended alias stays in the stored state, so it returns when its conflict is gone, but has no router.
+  const lines = [...HEADER, `${ALIASES_MARKER}${JSON.stringify([...aliases, ...suspended])}`, '']
   if (aliases.length === 0) {
     lines.push('# No alias is set. A project is reached on the hostname it derives.')
     return `${lines.join('\n')}\n`
@@ -49,6 +56,7 @@ export function renderAliases(aliases: StoredAlias[]): string {
     lines.push(`    ${router}:`)
     lines.push(`      rule: ${quoteDynamicValue(`Host(\`${alias.host}\`)`)}`)
     lines.push(`      entryPoints: [${alias.entryPoint}]`)
+    if (forwardAuth) lines.push(`      middlewares: [${FORWARD_AUTH_MIDDLEWARE}]`)
     lines.push(`      service: ${router}`)
   }
 
@@ -61,6 +69,33 @@ export function renderAliases(aliases: StoredAlias[]): string {
 
   lines.push('')
   return lines.join('\n')
+}
+
+/**
+ * The file every writer renders, so none can undo a suspension.
+ *
+ * On a public host an alias whose hostname carries a decision made for another
+ * service would inherit it, so it keeps its stored state but has no router until
+ * the conflict is gone.
+ */
+export function renderAliasesForStore(
+  aliases: StoredAlias[],
+  store: ProtectionStore,
+  publicHost: boolean,
+  previousStore?: ProtectionStore,
+): string {
+  const conflicts = (alias: StoredAlias): boolean => {
+    return [store, ...(previousStore ? [previousStore] : [])].some((candidate) => {
+      const decided = protectionForHost(candidate, alias.host)
+      return decided !== null && (decided.service !== alias.service || decided.project !== alias.project)
+    })
+  }
+  const suspended = publicHost ? aliases.filter(conflicts) : []
+  return renderAliases(
+    aliases.filter((alias) => !suspended.includes(alias)),
+    publicHost,
+    suspended,
+  )
 }
 
 /** Reads the state back out of the file the panel itself wrote. */

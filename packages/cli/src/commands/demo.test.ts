@@ -132,7 +132,6 @@ describe('demo Projects', () => {
           description: 'Example shop.',
           relativePath: 'portta-demo-shop',
         },
-        repositories: [{ key: 'shop', name: 'portta-demo-shop', role: 'web', relativePath: 'portta-demo-shop' }],
       }),
     )
     writeFileSync(
@@ -155,10 +154,8 @@ describe('demo Projects', () => {
 
     expect(mocks.requests.map((request) => request.body)).toEqual([
       { slug: 'demo-shop', name: 'Demo Shop', description: 'Example shop.', relativePath: 'portta-demo-shop' },
-      { name: 'portta-demo-shop', role: 'web', relativePath: 'portta-demo-shop' },
       { slug: 'demo-site', name: 'Demo Site', description: null, relativePath: 'portta-demo-site' },
     ])
-    expect(mocks.requests[1]?.url).toContain('/projects/demo-shop/repositories')
   })
 })
 

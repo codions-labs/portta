@@ -13,7 +13,6 @@ const watched = [
   'packages/cli/package.json',
   'packages/core/src',
   'packages/contracts/src',
-  'packages/host/src',
 ].map((entry) => join(root, entry))
 
 function newest(path) {

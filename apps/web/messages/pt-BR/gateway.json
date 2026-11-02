@@ -42,16 +42,6 @@
     "title": "Logs",
     "componentAria": "Componente do gateway"
   },
-  "settings": {
-    "issues": {
-      "reading": "Lendo os provedores de issues",
-      "title": "Provedores de issues",
-      "description": "GitHub pela CLI gh, e Linear. Os dois são autenticados no host, ao lado do daemon — o painel relata o estado e nunca guarda as credenciais.",
-      "signedIn": "autenticado",
-      "notSignedIn": "sem autenticação",
-      "notInstalled": "não está neste host"
-    }
-  },
   "apply": {
     "title": "Aplicar configurações salvas",
     "barPending": "{{count}} configurações salvas ainda não estão valendo.",

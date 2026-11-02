@@ -55,7 +55,9 @@ Traefik answered, but no router matched. In order of likelihood:
 portta urls        # is the hostname listed at all?
 ```
 
-**Not listed.** The container did not opt in. Check it has
+**Not listed.** The project is not adopted, or the container did not opt in.
+`portta adopt <path> --dry-run` shows which services Portta would route. For a
+project that carries its own labels (manual mode), check the container has
 `traefik.enable=true`, and that it is actually running:
 
 ```bash
@@ -70,7 +72,9 @@ PORTTA_LOG_LEVEL=DEBUG portta up local
 portta logs traefik
 ```
 
-**A literal `${...}` in a label.** The labels were written in map form.
+**A literal `${...}` in a label.** For an adopted project Portta writes its
+labels itself; this one affects labels you wrote by hand. They were written in
+map form.
 Compose interpolates `${VAR}` inside a *list* entry but not inside a mapping
 key. Rewrite as a list:
 
@@ -80,6 +84,37 @@ labels:
 ```
 
 `doctor` reports this specifically.
+
+## 401 from a public host
+
+On the `remote-public` profile every routed hostname passes through
+ForwardAuth, and one nobody decided about is closed: it answers `401` with an
+empty body. List the decisions and give the hostname one:
+
+```bash
+portta protect status
+portta protect host shop-web.example.com     # a login, password shown once
+portta protect open shop-web.example.com     # everybody
+```
+
+If every hostname answers `401`, `portta doctor` reports `portta-auth` is not
+running: `portta logs portta-auth`.
+
+## `adopt` stops with a pending decision
+
+On a public host `portta adopt` needs a decision for each routed service
+(`public_exposure`). Pass `--protect <service>` or `--public <service>`. It
+also refuses a project that declares Traefik routing of its own, because Portta
+cannot put that router behind ForwardAuth: remove the `traefik.*` labels from
+the Compose files it names.
+
+## The panel cannot start or stop projects on a public host
+
+The runner is refused there unless `PORTTA_RUNNER=true`,
+`PORTTA_RUNNER_PUBLIC=true`, `PORTTA_WEB_EXPOSE=domain`,
+`PORTTA_AUTH_MODE=required` and `TLS_ENABLED=true` are all set. The panel names
+what is missing. Applying saved settings from the panel is always refused on a
+public host: run `portta up` there. See [Run a public host](public-host.md).
 
 ## 502 / 504 from the gateway
 

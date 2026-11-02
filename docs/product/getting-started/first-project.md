@@ -1,7 +1,6 @@
 # Add your first project
 
-A Project groups the repositories and environments that belong to the same
-product. An Environment is one Compose namespace.
+A Project groups the environments that belong to the same product. An Environment is one Compose namespace.
 
 ## Prerequisites
 
@@ -14,38 +13,53 @@ sign in with an account allowed to create Projects.
 1. Open **Projects**. Existing Projects appear as cards; **Table** switches to a
    table.
 
-   ![Authentication disabled: the Projects page with Demo Shop, Demo Site and the Docker Compose fixture as cards, and the New project button](../../images/auth-disabled-projects.png)
+   ![Authentication disabled: the Projects page with Demo A, Demo Monorepo and Demo Shop as cards, and the New project button](../../images/auth-disabled-projects.png)
 
-   **Authentication disabled** — the Projects page.
+   **Authentication disabled**: the Projects page.
 
-2. Choose **Environments on this host** and find your environment, such as
-   `demo-shop`. Verify its working directory and services belong to your
-   checkout, then go back to **Projects**.
+2. Optionally follow **Environments on this host** (the link under the list) to
+   find your environment, such as `demo-shop`, and check that its working
+   directory and services belong to your checkout. Then go back to **Projects**.
 3. Choose **New project**, enter `Demo Shop` as the name and `demo-shop` as the
-   slug, then choose **Create**.
+   slug, then choose **Create**. The description is optional.
 
    ![Authentication disabled: the New project dialog with Name, Slug and Description fields](../../images/auth-disabled-dialog-new-project.png)
 
-   **Authentication disabled** — the New project dialog.
+   **Authentication disabled**: the New project dialog.
 
-4. Open the Project. An environment whose services carry the
-   `portta.project=demo-shop` label is associated with it; the label does not
-   create the Project itself.
-5. Inspect its **Environments** and **Repositories** tabs. If the environment has
-   no label, use **Adopt an environment** on the Environments tab to select it
-   explicitly, and **Add repository** to register the checkout.
+4. Open the Project and inspect its **Environments** tab. Portta attaches a
+   running environment to a Project by the first rule that applies, and the tab
+   says which one applied to each environment:
 
-The same Project can be created from the terminal:
+   - **linked by hand**: you chose it with **Adopt an environment**;
+   - **declared by its `portta.project` label**: a service of the environment
+     carries `portta.project=demo-shop`, matching the slug;
+   - **it runs from a directory of this project**: the environment's working
+     directory is under the directory set in the Project's **Settings**
+     (**Directory under Projects Home**, at any depth). When several Projects
+     contain it, the deepest directory wins; two Projects on the same
+     directory adopt nothing.
+
+   The label does not create the Project. It is the one optional line you add
+   to your own Compose file; Portta never edits it.
+5. If the environment is not listed, pick it in **Adopt an environment** and
+   choose **Adopt**. The select lists the environments no Project has yet.
+
+The same Project can be created from the terminal while the panel is running:
 
 ```bash
 portta projects create --slug demo-shop --name 'Demo Shop'
 ```
 
+Add `--path group/demo-shop` to set its directory under Projects Home.
+
 ## Expected result
 
-Your Project and its running environment are visible without moving the
-repository or sharing another environment's state. If they are missing, use
+Your Project lists its running environment, with the reason it belongs there,
+without moving the project or sharing another environment's state. If they are missing, use
 [Troubleshooting](../guides/troubleshooting.md) and verify the labels described
 in [Add an existing project](../guides/adopting-projects.md).
 
-See [Manage projects](../guides/projects.md) for ongoing administration.
+See [Manage projects](../guides/projects.md) for ongoing administration. To let
+your coding agents (Claude Code, Codex, OpenCode, Pi) learn this host, run
+`portta agents install`.

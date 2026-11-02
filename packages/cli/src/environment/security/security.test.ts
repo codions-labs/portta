@@ -1,9 +1,9 @@
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { ProbeContext } from '../types.ts'
-import { collectHostSecurityChecks, hostSecurityContext } from './index.ts'
+import { hostSecurityContext } from './index.ts'
 import { probeFail2ban, probeFirewalls, probeSshd, SECURITY_COMMAND_ALLOWLIST } from './probes.ts'
 
 function result(stdout = '', failed = false, stderr = '') {
@@ -90,28 +90,5 @@ describe('read-only host security probes', () => {
     const probe = context({}, {})
     expect(await probeFail2ban(probe, 'darwin')).toMatchObject({ state: 'absent', reason: 'not applicable' })
     expect(probe.run).not.toHaveBeenCalled()
-  })
-
-  it('reports the owner-only mode of Portta SSH storage', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'portta-security-'))
-    const directory = join(root, 'state/ssh')
-    mkdirSync(directory, { recursive: true, mode: 0o755 })
-    chmodSync(directory, 0o755)
-    const probe = context({}, {})
-    probe.fileMode = vi.fn(() => '755')
-    try {
-      const checks = await collectHostSecurityChecks(root, probe, {
-        hostKind: 'server',
-        platform: 'linux',
-        profile: 'remote-public',
-        publicAccess: true,
-      })
-      expect(checks.find((check) => check.id === 'security.portta-ssh-storage')).toMatchObject({
-        status: 'warn',
-        detail: 'state/ssh mode: 755',
-      })
-    } finally {
-      rmSync(root, { recursive: true, force: true })
-    }
   })
 })

@@ -209,13 +209,6 @@ describe('the settings', () => {
       rmSync(dir, { recursive: true, force: true })
     }
   })
-
-  it('records a change to what a local agent may do', async () => {
-    await send('PUT', '/api/settings/agent-permissions', 'owner', { permissions: ['issue:read'] })
-    const [entry] = await since()
-    expect(entry?.action).toBe('settings.changed')
-    expect(entry?.resourceName).toBe('agentPermissions')
-  })
 })
 
 describe('signing in', () => {

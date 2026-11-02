@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from 'node:fs'
 import { platform } from 'node:os'
 import { join } from 'node:path'
 import {
-  check,
   type DoctorCheck,
   type EnvironmentReport,
   type HostSecurityContext,
@@ -53,21 +52,6 @@ export async function collectHostSecurityChecks(
   securityContext = hostSecurityContext(root),
 ): Promise<DoctorCheck[]> {
   const checks = securityVerdicts(await collectHostSecurityFacts(probeContext, securityContext), securityContext)
-  const sshDirectory = join(root, 'state/ssh')
-  const mode = probeContext.fileMode(sshDirectory)
-  checks.push({
-    ...check(
-      'security.portta-ssh-storage',
-      !existsSync(sshDirectory) ? 'info' : mode === '700' ? 'pass' : 'warn',
-      'Portta SSH storage',
-      !existsSync(sshDirectory) ? 'not created yet' : `state/ssh mode: ${mode ?? 'could not determine'}`,
-      mode && mode !== '700' ? `chmod 700 ${sshDirectory}` : '',
-    ),
-    category: 'security',
-    rationale:
-      'Portta-owned private SSH keys share this directory; only the installation owner should be able to traverse it.',
-    docs: 'docs/product/guides/ssh-keys.md',
-  })
   return checks
 }
 

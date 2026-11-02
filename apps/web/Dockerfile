@@ -25,12 +25,10 @@ COPY apps/auth/package.json ./apps/auth/
 COPY apps/web/package.json ./apps/web/
 COPY packages/core/package.json ./packages/core/
 COPY packages/contracts/package.json ./packages/contracts/
-COPY packages/mcp/package.json ./packages/mcp/
 COPY packages/db/package.json ./packages/db/
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/server/package.json ./packages/server/
 COPY packages/cli/package.json ./packages/cli/
-COPY packages/host/package.json ./packages/host/
 # Install the whole workspace graph. Filtering with --workspace drops optional
 # native bindings the Alpine build needs.
 RUN npm ci
@@ -44,8 +42,6 @@ COPY packages/core/tsconfig.json packages/core/tsconfig.build.json ./packages/co
 COPY packages/core/src ./packages/core/src
 COPY packages/contracts/tsconfig.json packages/contracts/tsconfig.build.json ./packages/contracts/
 COPY packages/contracts/src ./packages/contracts/src
-COPY packages/mcp/tsconfig.json packages/mcp/tsconfig.build.json ./packages/mcp/
-COPY packages/mcp/src ./packages/mcp/src
 COPY packages/db/tsconfig.json packages/db/tsconfig.build.json ./packages/db/
 COPY packages/db/src ./packages/db/src
 COPY packages/db/drizzle ./packages/db/drizzle
@@ -60,7 +56,6 @@ COPY apps/web/tsconfig.json apps/web/next.config.ts apps/web/postcss.config.mjs 
 COPY apps/web/app ./apps/web/app
 COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
-COPY apps/web/modules ./apps/web/modules
 COPY apps/web/messages ./apps/web/messages
 COPY apps/web/server ./apps/web/server
 COPY apps/web/public ./apps/web/public
@@ -71,7 +66,6 @@ COPY tooling ./tooling
 COPY README.md CHANGELOG.md .env.example ./
 RUN npm run build --workspace=portta-core \
  && npm run build --workspace=portta-contracts \
- && npm run build --workspace=portta-mcp \
  && npm run build --workspace=portta-db \
  && npm run build --workspace=portta-auth-core \
  && npm run build --workspace=portta-server \
@@ -96,8 +90,6 @@ COPY packages/core/tsconfig.json ./packages/core/
 COPY packages/core/src ./packages/core/src
 COPY packages/contracts/tsconfig.json ./packages/contracts/
 COPY packages/contracts/src ./packages/contracts/src
-COPY packages/mcp/tsconfig.json ./packages/mcp/
-COPY packages/mcp/src ./packages/mcp/src
 COPY packages/db/tsconfig.json ./packages/db/
 COPY packages/db/src ./packages/db/src
 COPY packages/db/drizzle ./packages/db/drizzle
@@ -147,26 +139,19 @@ COPY apps/auth/package.json ./apps/auth/
 COPY apps/web/package.json ./apps/web/
 COPY packages/core/package.json ./packages/core/
 COPY packages/contracts/package.json ./packages/contracts/
-COPY packages/mcp/package.json ./packages/mcp/
 COPY packages/db/package.json ./packages/db/
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/server/package.json ./packages/server/
 COPY packages/cli/package.json ./packages/cli/
-COPY packages/host/package.json ./packages/host/
 # better-sqlite3 compiles here: the panel opens its own SQLite database, and
 # Drizzle's driver imports it from the ROOT node_modules — which is why the
 # build is asserted rather than assumed. A nested copy under packages/db would
-# be deleted with portta-host below and the panel would fail at first boot with
-# a module-not-found nobody would connect to this line (ADR 0037). The
-# toolchain is removed again, and so is what only the host daemon loads — its
-# own tree and the agent SDKs it hoists — because the panel never imports
-# portta-host: that runs on the host, not in this image.
+# be pruned and the panel would fail at first boot with a module-not-found
+# nobody would connect to this line (ADR 0037). The toolchain is removed again.
 RUN apk add --no-cache openssh-client \
  && apk add --no-cache --virtual .native-build python3 make g++ \
  && npm ci --workspace=portta-web --workspace=portta-auth --omit=dev \
  && test -f node_modules/better-sqlite3/build/Release/better_sqlite3.node \
- && rm -rf packages/host/node_modules node_modules/@agentclientprotocol node_modules/@anthropic-ai \
-    node_modules/@openai node_modules/@devcontainers node_modules/pi-acp \
  && apk del .native-build \
  && npm cache clean --force
 COPY --from=build /app/apps/auth/dist ./apps/auth/dist
@@ -174,7 +159,6 @@ COPY --from=build /app/apps/web/.next ./apps/web/.next
 COPY --from=build /app/apps/web/dist ./apps/web/dist
 COPY --from=build /app/packages/core/dist ./packages/core/dist
 COPY --from=build /app/packages/contracts/dist ./packages/contracts/dist
-COPY --from=build /app/packages/mcp/dist ./packages/mcp/dist
 COPY --from=build /app/packages/db/dist ./packages/db/dist
 COPY --from=build /app/packages/auth/dist ./packages/auth/dist
 COPY --from=build /app/packages/server/dist ./packages/server/dist

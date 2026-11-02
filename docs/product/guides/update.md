@@ -11,8 +11,8 @@ portta setup
 
 Setup finds the existing installation and, after one confirmation:
 
-1. replaces the runtime assets — `bin/portta`, `VERSION`, `.env.example`,
-   `docker/`, `scripts/`, `templates/` and the `runtime/` copy — with the ones
+1. replaces the runtime assets (`bin/portta`, `VERSION`, `.env.example`,
+   `docker/`, `scripts/`, `templates/` and the `runtime/` copy) with the ones
    from the new npm package;
 2. copies a default file into `config/traefik/dynamic/` only when that file does
    not exist, and leaves the rest of `config/` alone;
@@ -46,3 +46,14 @@ portta update
 ```
 
 Take a backup first when the update matters: [Back up and restore the panel](backup-restore.md).
+
+## Refresh the agent layer
+
+Setup does not touch the files `portta agents install` wrote for Claude Code,
+Codex, OpenCode and Pi. After updating the package, compare and rewrite the
+difference:
+
+```bash
+portta agents status
+portta agents install
+```

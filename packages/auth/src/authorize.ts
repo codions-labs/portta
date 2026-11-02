@@ -5,10 +5,13 @@
 // — a second implementation of this is a second answer to "may I", and one of
 // them will be wrong.
 
-import type { ActivitySource } from 'portta-core'
 import type { Permission, Role } from './access-control.ts'
 
 export type PrincipalKind = 'local' | 'user' | 'token'
+
+/** Which surface a request came from. Attribution only, never a decision. */
+export const PRINCIPAL_SOURCES = ['web', 'cli', 'api'] as const
+export type PrincipalSource = (typeof PRINCIPAL_SOURCES)[number]
 
 export interface Principal {
   kind: PrincipalKind
@@ -23,9 +26,11 @@ export interface Principal {
   /** Attribution: the user's name, a token's declared actor, or X-Portta-Actor. */
   actor: string
   actorKind: 'human' | 'agent'
-  source: ActivitySource
+  source: PrincipalSource
   sessionId: string | null
   tokenId: string | null
+  /** Whether the account behind the request has a second factor. Always false for `local`. */
+  twoFactor: boolean
   /**
    * The address this request appeared to come from, or null.
    *

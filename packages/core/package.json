@@ -21,30 +21,10 @@
       "development": "./src/browser.ts",
       "import": "./dist/browser.js"
     },
-    "./modules": {
-      "types": "./src/modules/index.ts",
-      "development": "./src/modules/index.ts",
-      "import": "./dist/modules/index.js"
-    },
     "./documentation-compile": {
       "types": "./src/documentation-compile.ts",
       "development": "./src/documentation-compile.ts",
       "import": "./dist/documentation-compile.js"
-    },
-    "./taskflow": {
-      "types": "./src/taskflow/index.ts",
-      "development": "./src/taskflow/index.ts",
-      "import": "./dist/taskflow/index.js"
-    },
-    "./taskflow/config": {
-      "types": "./src/taskflow/config.ts",
-      "development": "./src/taskflow/config.ts",
-      "import": "./dist/taskflow/config.js"
-    },
-    "./taskflow/paths": {
-      "types": "./src/taskflow/paths.ts",
-      "development": "./src/taskflow/paths.ts",
-      "import": "./dist/taskflow/paths.js"
     }
   },
   "files": [
@@ -61,11 +41,11 @@
   "devDependencies": {
     "@types/node": "24.13.3",
     "typescript": "7.0.2",
-    "vitest": "4.1.11",
+    "vitest": "4.1.12",
     "@types/markdown-it": "^14.1.2"
   },
   "dependencies": {
-    "zod": "4.5.4",
-    "markdown-it": "^14.1.0"
+    "zod": "4.6.7",
+    "markdown-it": "^15.0.3"
   }
 }

@@ -14,19 +14,12 @@ import type {
   ProjectRemoveResult,
   RunnerStatus,
 } from 'portta-contracts'
-import {
-  assertRemovableWorkingDir,
-  parseRunnerRequest,
-  type RunnerFlag,
-  type RunnerRequest,
-  type RunnerVerb,
-} from 'portta-core'
+import { parseRunnerRequest, type RunnerFlag, type RunnerRequest, type RunnerVerb } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import type { Database } from '../db/index.ts'
 import { closeBridge, listBridges, listForwarders } from './access.ts'
 import { ActionRefused } from './actions.ts'
 import type { DockerClient } from './docker/client.ts'
-import { readProjectGit } from './git.ts'
 import type { Snapshot } from './inventory.ts'
 import { loadAliases, saveAliases } from './overrides.ts'
 import { runnerOf, runnerStatus } from './runner.ts'
@@ -77,7 +70,7 @@ function projectOrThrow(snapshot: Snapshot, name: string) {
 
 async function dbRecords(db: Database | null, name: string) {
   if (db === null || !db.status().available) {
-    return { overrides: 0, projectLinks: 0, issueLinks: 0 }
+    return { overrides: 0, projectLinks: 0 }
   }
   return db.environments.recordCounts(name)
 }
@@ -137,17 +130,7 @@ export async function projectRemovalPreview(
       if (mount.type === 'volume' && mount.name) volumes.set(mount.name, null)
     }
   }
-  const git = readProjectGit(config, name)
   const runnerPresent = Boolean(runnerOf(snapshot))
-  let directoryOk = false
-  if (project.workingDir) {
-    try {
-      assertRemovableWorkingDir(project.workingDir)
-      directoryOk = true
-    } catch {
-      directoryOk = false
-    }
-  }
 
   const records = await collectRecords(snapshot, config, db, name)
   return {
@@ -162,16 +145,8 @@ export async function projectRemovalPreview(
     networks: [...project.networks],
     volumes: [...volumes.keys()].map((volumeName) => ({ name: volumeName, sizeBytes: null })),
     workingDir: project.workingDir,
-    git: {
-      collected: git.collected,
-      dirty: git.git?.dirty === true,
-      staged: git.git?.staged ?? 0,
-      unstaged: git.git?.unstaged ?? 0,
-      untracked: git.git?.untracked ?? 0,
-    },
     records,
     runnerAvailable: runnerPresent,
-    directoryRemovalAvailable: runnerPresent && project.operable.ok && directoryOk,
   }
 }
 
@@ -187,7 +162,6 @@ async function collectRecords(
     overrides: counts.overrides,
     aliases: aliases.length,
     projectLinks: counts.projectLinks,
-    issueLinks: counts.issueLinks,
     accessBridges: listBridges(snapshot)
       .filter((bridge) => bridge.project === name)
       .map((bridge) => bridge.id),
@@ -271,40 +245,11 @@ export async function removeProject(
   config: PanelConfig,
   db: Database | null,
   name: string,
-  body: { confirmation: string; volumes: boolean; directory: boolean; overrideDirty?: boolean },
+  body: { confirmation: string; volumes: boolean },
 ): Promise<ProjectRemoveResult> {
   confirmProjectName(name, body.confirmation)
   const project = projectOrThrow(snapshot, name)
   const members = assertRemovableProject(snapshot, config, name, 'remove')
-  if (body.directory && !body.volumes) {
-    throw new ActionRefused(
-      'directory removal is only available with local data',
-      'choose Remove project and local data',
-      400,
-    )
-  }
-
-  const git = readProjectGit(config, name)
-  if (body.directory && git.git?.dirty === true && body.overrideDirty !== true) {
-    throw new ActionRefused(
-      `refusing to remove ${project.workingDir ?? 'the working directory'}: the working tree is dirty`,
-      `${git.git.staged} staged, ${git.git.unstaged} unstaged, ${git.git.untracked} untracked; pass overrideDirty after you have seen the preview`,
-      409,
-    )
-  }
-
-  if (body.directory && project.workingDir) {
-    try {
-      assertRemovableWorkingDir(project.workingDir)
-    } catch (error) {
-      throw new ActionRefused(
-        error instanceof Error ? error.message : 'refusing that working directory',
-        'directory removal is bounded to the Compose working-directory label',
-        400,
-      )
-    }
-  }
-
   const mode = body.volumes ? 'and-local-data' : 'keep-data'
   const runner = runnerOf(snapshot)
 
@@ -318,21 +263,19 @@ export async function removeProject(
 
   if (runner) {
     const verb: RunnerVerb = body.volumes ? 'down-volumes' : 'down'
-    const flags: RunnerFlag[] = body.directory ? ['directory'] : []
-    const status = await dispatchRunner(client, snapshot, config, { verb, project: name, flags })
-    const cleaned = await cleanupPorttaRecords(client, snapshot, config, db, name, { forget: body.directory })
+    const status = await dispatchRunner(client, snapshot, config, { verb, project: name })
+    const cleaned = await cleanupPorttaRecords(client, snapshot, config, db, name, { forget: false })
     return {
       ok: true,
       project: name,
       mode,
       volumes: body.volumes,
-      directory: body.directory,
       via: 'runner',
       removedContainers: members.map((container) => container.name),
       cleaned,
       remainingCommands: [],
       runner: status,
-      note: 'GitHub is not touched. The repository, its issues, branches and pull requests stay where they are.',
+      note: 'The project directory and its repository are not touched.',
     }
   }
 
@@ -365,10 +308,6 @@ export async function removeProject(
         : `docker compose --project-name ${name} down`,
     )
   }
-  if (body.directory && dir) {
-    remainingCommands.push(`rm -rf -- ${shellSingle(dir)}`)
-  }
-
   // Without the runner the directory stays, so the environment stays remembered.
   const cleaned = await cleanupPorttaRecords(client, snapshot, config, db, name, { forget: false })
   return {
@@ -376,13 +315,12 @@ export async function removeProject(
     project: name,
     mode,
     volumes: body.volumes,
-    directory: body.directory,
     via: 'iteration',
     removedContainers,
     cleaned,
     remainingCommands,
     runner: null,
-    note: 'GitHub is not touched. The repository, its issues, branches and pull requests stay where they are. The panel removed what it can; the printed commands finish the rest.',
+    note: 'The project directory and its repository are not touched. The panel removed what it can; the printed commands finish the rest.',
   }
 }
 

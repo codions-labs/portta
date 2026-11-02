@@ -68,10 +68,9 @@ exec path outside the four fails the build.
 
 The panel needs no Docker socket and no Docker CLI. What it gets from the host
 filesystem is listed in `docker/compose/features/web.yaml` and nothing else:
-`.env`, which its Settings page edits; `state/git` and `state/metrics`,
-read-only, written by the host collectors; `state/panel`, its own SQLite
-database; `state/ssh`, the credentials it manages; and the host daemon's token,
-read-only, when the daemon is enabled. It cannot pull an image, so
+`.env`, which its Settings page edits; `state/metrics`,
+read-only, written by the host collectors; and `state/panel`, its own SQLite
+database. It cannot pull an image, so
 `portta web up` pulls the bridge image on the host, where the CLI already has
 real Docker access.
 

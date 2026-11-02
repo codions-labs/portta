@@ -2,12 +2,13 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, delimiter, isAbsolute, join, resolve } from 'node:path'
 import type { Command } from 'commander'
-import { branchSuffix, composeNamespace, parseEnv } from 'portta-core'
+import { branchSuffix, composeNamespace, hasForwardAuth, hostLabel, parseEnv, protectionForHost } from 'portta-core'
 import { z } from 'portta-core/zod'
 import { gatewayContext } from '../context.js'
 import { PreconditionError, RefusedError, UsageError } from '../errors.js'
 import { Output } from '../output.js'
 import { runProcess } from '../process.js'
+import { generatePassword, openStore, protectedStore, readExposure, saveExposure } from './exposure.js'
 
 const Manifest = z.object({
   schemaVersion: z.literal(1),
@@ -46,6 +47,7 @@ const Service = z
         z.union([z.string(), z.object({ source: z.string().optional(), type: z.string().optional() }).passthrough()]),
       )
       .optional(),
+    labels: z.union([z.array(z.string()), z.record(z.string(), z.unknown())]).optional(),
     privileged: z.boolean().optional(),
     devices: z.array(z.string()).optional(),
     pid: z.string().optional(),
@@ -99,6 +101,8 @@ type RuntimePlan = {
     mode: 'auto' | 'manual'
     generatedOverlay: string
   }
+  /** The gateway profile the overlay was generated for. A different profile makes the plan stale. */
+  profile: string
   outcome: 'isolated' | 'manual' | 'not_supported'
   compatibility: { removeContainerNames: string[]; allowSharedNetworks: boolean; allowSharedVolumes: boolean }
   pending: Array<{ code: string; service?: string; detail: string; option: string }>
@@ -106,6 +110,8 @@ type RuntimePlan = {
     name: string
     containerPort: number | null
     route: 'http' | 'none'
+    /** The hostname a routed service answers on. Null for a private service. */
+    host: string | null
     networks: string[]
     networkMerge: 'merge' | 'replace'
     removeContainerName: boolean
@@ -122,7 +128,7 @@ function globals(command: Command) {
     yes?: boolean
   }
 }
-function idFor(workspace: string): string {
+export function idFor(workspace: string): string {
   return createHash('sha256').update(workspace).digest('hex').slice(0, 16)
 }
 function digest(path: string): string {
@@ -134,7 +140,7 @@ function digestIfPresent(path: string): string | null {
 function runtimeDirectory(root: string, id: string): string {
   return join(root, 'runtime', 'compose', id)
 }
-function planPath(root: string, id: string): string {
+export function planPath(root: string, id: string): string {
   return join(runtimeDirectory(root, id), 'plan.json')
 }
 function manifestPath(root: string, id: string): string {
@@ -203,10 +209,24 @@ function overlay(plan: RuntimePlan, network: string): string {
     .map((service) => {
       const reset = `    ports: !reset []\n`
       const containerName = service.removeContainerName ? '    container_name: !reset null\n' : ''
-      if (service.route === 'none') return `  ${service.name}:\n${reset}${containerName}`
+      // A service Portta keeps private must stay unrouted whatever its labels or
+      // its image say, so a public host forces the label off.
+      if (service.route === 'none') {
+        const off = plan.profile === 'remote-public' ? `    labels:\n      - ${yaml('traefik.enable=false')}\n` : ''
+        return `  ${service.name}:\n${reset}${containerName}${off}`
+      }
       const privateNetworks = service.networks.filter((name) => name !== 'portta')
       const finalNetworks = [...(privateNetworks.length ? privateNetworks : ['default']), 'portta']
-      return `  ${service.name}:\n${reset}${containerName}    networks:${service.networkMerge === 'replace' ? ' !override' : ''}\n${finalNetworks.map((name) => `      - ${name}`).join('\n')}\n    labels:\n      - ${yaml('traefik.enable=true')}\n      - ${yaml(`traefik.docker.network=${network}`)}\n      - ${yaml(`traefik.http.services.${plan.compose.projectName}-${service.name}.loadbalancer.server.port=${service.containerPort}`)}`
+      // On a public host every routed service passes through ForwardAuth. Which
+      // hostnames are open, and to whom, is the registry's decision, not a
+      // label: the router is named so the middleware attaches to the one
+      // Traefik would have made anyway, and its rule stays the default one.
+      const router = `${plan.compose.projectName}-${service.name}`
+      const gate =
+        plan.profile === 'remote-public'
+          ? `\n      - ${yaml(`traefik.http.routers.${router}.service=${router}`)}\n      - ${yaml(`traefik.http.routers.${router}.middlewares=portta-forward-auth@file`)}`
+          : ''
+      return `  ${service.name}:\n${reset}${containerName}    networks:${service.networkMerge === 'replace' ? ' !override' : ''}\n${finalNetworks.map((name) => `      - ${name}`).join('\n')}\n    labels:\n      - ${yaml('traefik.enable=true')}\n      - ${yaml(`traefik.docker.network=${network}`)}\n      - ${yaml(`traefik.http.services.${plan.compose.projectName}-${service.name}.loadbalancer.server.port=${service.containerPort}`)}${gate}`
     })
     .join('\n\n')
   return `# Generated by Portta. Source Compose files are immutable.\nservices:\n${blocks}\n\nnetworks:\n  portta:\n    external: true\n    name: ${yaml(network)}\n`
@@ -272,11 +292,12 @@ function composeArgs(plan: RuntimePlan, overlayFile = plan.compose.generatedOver
     ...plan.compose.profiles.flatMap((profile) => ['--profile', profile]),
   ]
 }
-async function stale(plan: RuntimePlan): Promise<boolean> {
+async function stale(plan: RuntimePlan, profile: string): Promise<boolean> {
   // A plan without manifest tracking is stale and is regenerated rather than
   // failing on missing fields.
   if (!('manifest' in plan) || !('capabilities' in plan) || !existsSync(plan.compose.generatedOverlay)) return true
   return (
+    plan.profile !== profile ||
     plan.capabilities.composeVersion !== (await requireCompose()) ||
     plan.inputs.some((input) => !existsSync(input.path) || digest(input.path) !== input.digest) ||
     digestIfPresent(plan.manifest.local.path) !== plan.manifest.local.digest ||
@@ -298,6 +319,67 @@ type AdoptionOptions = {
   removeContainerName?: string[]
   allowSharedNetworks?: boolean
   allowSharedVolumes?: boolean
+  /** Services to put behind a generated credential. Only meaningful on a public host. */
+  protect?: string[]
+  /** Services to open to everybody. Only meaningful on a public host. */
+  public?: string[]
+}
+
+/** Traefik reads label keys without regard to case, including labels baked into images. */
+function labelsOf(service: { labels?: string[] | Record<string, unknown> }): Array<[string, string]> {
+  const result: Array<[string, string]> = []
+  const labels = service.labels
+  if (Array.isArray(labels)) {
+    for (const entry of labels) {
+      const at = entry.indexOf('=')
+      result.push([(at < 0 ? entry : entry.slice(0, at)).toLowerCase(), at < 0 ? '' : entry.slice(at + 1)])
+    }
+  } else if (labels)
+    for (const [key, value] of Object.entries(labels)) result.push([key.toLowerCase(), String(value ?? '')])
+  return result
+}
+
+/**
+ * Traefik routing a public host cannot allow.
+ *
+ * On a public host every route must pass through ForwardAuth, and the only
+ * router Portta gates is the one it names. A project that brings its own router,
+ * a TCP or UDP route, or `traefik.enable` on a service Portta keeps private
+ * would be reachable with no decision at all, so the plan refuses it instead of
+ * trusting the label. The routed services' own generated labels are the only
+ * `traefik.*` labels allowed through.
+ */
+function routingViolations(
+  model: { services: Record<string, { labels?: string[] | Record<string, unknown> }> },
+  routed: ReadonlySet<string>,
+  projectName: string,
+): string[] {
+  const found: string[] = []
+  for (const [name, service] of Object.entries(model.services)) {
+    const router = `${projectName}-${name}`.toLowerCase()
+    const seen = new Map<string, string>()
+    for (const [key, value] of labelsOf(service)) {
+      if (!key.startsWith('traefik.')) continue
+      if (seen.has(key) && seen.get(key) !== value) found.push(`${name}: conflicting ${key}`)
+      seen.set(key, value)
+      if (key === 'traefik.enable') {
+        if (!routed.has(name) && ['true', '1', 't'].includes(value.trim().toLowerCase()))
+          found.push(`${name}: ${key}=${value}`)
+        continue
+      }
+      if (!routed.has(name)) {
+        found.push(`${name}: ${key}`)
+        continue
+      }
+      const generated =
+        key === 'traefik.docker.network' ||
+        key.startsWith(`traefik.http.services.${router}.`) ||
+        key === `traefik.http.routers.${router}.service` ||
+        key === `traefik.http.routers.${router}.middlewares`
+      if (!generated) found.push(`${name}: ${key}`)
+    }
+  }
+  return found
 }
 
 function manifestWithOptions(manifest: RuntimeManifest, options: AdoptionOptions): RuntimeManifest {
@@ -407,10 +489,12 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
       Array.isArray(service.networks) || Object.values(service.networks ?? {}).every((value) => value === null)
         ? ('replace' as const)
         : ('merge' as const)
+    const routed = candidate && port
     return {
       name,
       containerPort: candidate ? port : null,
-      route: candidate && port ? ('http' as const) : ('none' as const),
+      route: routed ? ('http' as const) : ('none' as const),
+      host: routed ? `${hostLabel({ project: projectName, service: name })}.${context.config.domain}` : null,
       networks: networks(service.networks),
       networkMerge,
       removeContainerName,
@@ -436,6 +520,59 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
           option: '--allow-shared-networks',
         })
     }
+  // Who may open each routed hostname. Only a public host asks: elsewhere the
+  // protection stays optional, as it always was. The answer lives in the
+  // registry, so asking once is enough and `runtime up` never asks again.
+  const protect = new Set(options.protect ?? [])
+  const open = new Set(options.public ?? [])
+  for (const name of [...protect, ...open]) {
+    const found = services.find((service) => service.name === name)
+    if (found?.route !== 'http')
+      throw new UsageError(
+        `no routed service named ${name}`,
+        'pass a service that gets a hostname, see `portta adopt --dry-run`',
+      )
+    if (protect.has(name) && open.has(name)) throw new UsageError(`${name} cannot be both --protect and --public`)
+  }
+  const publicHost = context.config.profile === 'remote-public'
+  if (publicHost && manifest.compose.mode === 'manual') {
+    findings.push({
+      code: 'manual_public',
+      detail: 'manual integration on a public host: Portta cannot put its services behind ForwardAuth',
+    })
+  } else if (publicHost) {
+    const routedNames = new Set(services.filter((service) => service.route === 'http').map((service) => service.name))
+    const violations = routingViolations(model, routedNames, projectName)
+    if (violations.length > 0)
+      throw new RefusedError(
+        'this project declares Traefik routing of its own, which a public host cannot gate',
+        `remove from the Compose files: ${violations.join('; ')}`,
+      )
+    const registry = readExposure(context.root)
+    for (const service of services) {
+      if (service.route !== 'http' || !service.host) continue
+      if (protect.has(service.name) || open.has(service.name)) continue
+      const record = protectionForHost(registry, service.host)
+      // A record answers the question only when it is this service's. One that
+      // names another project or service is somebody else's decision about a
+      // reused hostname, and is not inherited.
+      const mine =
+        record &&
+        (!record.project || record.project === projectName) &&
+        (!record.service || record.service === service.name)
+      if (mine) continue
+      pending.push({
+        code: 'public_exposure',
+        service: service.name,
+        detail: record
+          ? `${service.host} already has a decision that belongs to ${record.project ?? '?'}/${record.service ?? '?'}; decide again for ${service.name}`
+          : `${service.name} would answer at ${service.host} on a public host; decide who may open it`,
+        option: `--protect ${service.name}  or  --public ${service.name}`,
+      })
+    }
+  } else if (protect.size || open.size) {
+    throw new UsageError('--protect and --public apply to a public host', 'they decide who may open a routed hostname')
+  }
   for (const name of manifest.compatibility.removeContainerNames)
     if (!model.services[name]) throw new UsageError(`no service named ${name} for --remove-container-name`)
   const unsupported = findings.filter((finding) => finding.code === 'network_mode')
@@ -470,6 +607,7 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
       mode: manifest.compose.mode,
       generatedOverlay,
     },
+    profile: context.config.profile,
     outcome,
     compatibility: manifest.compatibility,
     pending,
@@ -511,7 +649,33 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
     renameSync(temporary, generatedOverlay)
     writeFileSync(planPath(context.root, id), `${JSON.stringify(plan, null, 2)}\n`, { mode: 0o600 })
   }
-  if (output.json) output.data(plan)
+  // The decisions go to the registry after the plan is valid and before anything
+  // runs. A generated password is returned once and kept nowhere: not in the plan,
+  // not in the manifest, only its hash in the registry.
+  const credentials: Array<{ service: string; host: string; user: string; password: string }> = []
+  if (!options.dryRun && (protect.size || open.size)) {
+    const entryPoint = context.config.tlsEnabled ? 'websecure' : 'web'
+    let registry = readExposure(context.root)
+    for (const service of services) {
+      if (!service.host) continue
+      const labels = { project: projectName, service: service.name, label: service.name }
+      if (protect.has(service.name)) {
+        const password = generatePassword()
+        registry = await protectedStore(registry, {
+          host: service.host,
+          entryPoint,
+          user: 'reviewer',
+          password,
+          ...labels,
+        })
+        credentials.push({ service: service.name, host: service.host, user: 'reviewer', password })
+      } else if (open.has(service.name)) {
+        registry = openStore(registry, { host: service.host, entryPoint, ...labels })
+      }
+    }
+    saveExposure(context.root, registry, context.config.profile)
+  }
+  if (output.json) output.data({ ...plan, ...(credentials.length ? { credentials } : {}) })
   else {
     output.line(`Outcome: ${outcome}`)
     output.line(`Environment: ${plan.id}`)
@@ -520,6 +684,9 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
       output.line(`  ${service.name}\t${service.route === 'http' ? `:${service.containerPort} -> routed` : 'private'}`)
     for (const finding of findings) output.warning(finding.detail)
     for (const decision of pending) output.line(`Decision: ${decision.option}`)
+    for (const entry of credentials)
+      output.line(`Credential: ${entry.host}  user ${entry.user}  password ${entry.password}`)
+    if (credentials.length) output.warning('the generated passwords are shown only now and are not stored anywhere')
   }
   return plan
 }
@@ -555,7 +722,10 @@ export async function initComposeRuntime(options: AdoptionOptions, command: Comm
   const directory = runtimeDirectory(context.root, id)
   mkdirSync(directory, { recursive: true, mode: 0o700 })
   writeFileSync(manifestPath(context.root, id), `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o600 })
-  return prepareComposeRuntime({ path: workspace, project: options.project }, command)
+  return prepareComposeRuntime(
+    { path: workspace, project: options.project, protect: options.protect, public: options.public },
+    command,
+  )
 }
 
 /** Canonical closed workflow for adopting a Compose project without modifying it. */
@@ -571,10 +741,10 @@ export async function runtimeAction(
   const workspace = resolve(options.path ?? process.cwd())
   const context = gatewayContext({ profile: globals(command).profile })
   let plan: RuntimePlan
-  if (action === 'up') {
+  if (action === 'up' || action === 'restart') {
     try {
       plan = readPlan(context.root, workspace)
-      if (await stale(plan))
+      if (await stale(plan, context.config.profile))
         plan = await prepareComposeRuntime({ path: workspace, project: plan.compose.projectName }, command)
     } catch (error) {
       if (!(error instanceof UsageError)) throw error
@@ -582,10 +752,17 @@ export async function runtimeAction(
     }
   } else plan = readPlan(context.root, workspace)
   const args = composeArgs(plan)
+  const publicStart = (action === 'up' || action === 'restart') && plan.profile === 'remote-public'
   const tail = options.tail ? ['--tail', options.tail] : []
   const commandArgs =
-    action === 'up'
-      ? [...args, 'up', '-d']
+    action === 'up' || publicStart
+      ? [
+          ...args,
+          'up',
+          '-d',
+          ...(publicStart ? ['--no-start'] : []),
+          ...(action === 'restart' ? ['--force-recreate'] : []),
+        ]
       : action === 'down'
         ? [...args, 'down']
         : action === 'restart'
@@ -602,4 +779,62 @@ export async function runtimeAction(
                 ]
               : [...args, 'config']
   await runProcess('docker', commandArgs, { cwd: workspace, stdio: action === 'logs' ? 'inherit' : 'stream' })
+  if (publicStart) {
+    // Created, not started: Traefik routes nothing that is not running, so the
+    // labels are checked before any of it can be reached. A restart recreates
+    // containers because Compose restart would keep their old routing labels.
+    await verifyGatedLabels(plan, workspace)
+    await runProcess('docker', [...args, 'up', '-d'], { cwd: workspace, stdio: 'stream' })
+  }
+}
+
+/**
+ * What the created containers carry, image labels included.
+ *
+ * The model Compose resolves cannot see the labels an image bakes in, and
+ * Traefik reads both. On a public host the containers are checked once they
+ * exist, and a project that would be routed outside ForwardAuth is taken down
+ * instead of left running.
+ */
+async function verifyGatedLabels(plan: RuntimePlan, workspace: string): Promise<void> {
+  const teardown = async (message: string, hint: string): Promise<never> => {
+    const down = await runProcess('docker', [...composeArgs(plan), 'down'], { cwd: workspace, reject: false })
+    throw new RefusedError(message, down.exitCode === 0 ? hint : `${hint}; the teardown also failed, check docker ps`)
+  }
+  // Anything that cannot be verified counts as a violation: this runs on a
+  // public host, where "could not check" must not mean "fine".
+  const listed = await runProcess('docker', [...composeArgs(plan), 'ps', '-aq'], { cwd: workspace, reject: false })
+  const ids = listed.stdout.split('\n').filter(Boolean)
+  if (listed.exitCode !== 0 || ids.length === 0)
+    return teardown('the created containers could not be listed, so their routing was not verified', 'try again')
+  const inspected = await runProcess('docker', ['inspect', '--format', '{{json .Config.Labels}}', ...ids], {
+    cwd: workspace,
+    reject: false,
+  })
+  const lines = inspected.stdout.split('\n').filter(Boolean)
+  if (inspected.exitCode !== 0 || lines.length !== ids.length)
+    return teardown('the created containers could not be inspected, so their routing was not verified', 'try again')
+  const routed = new Set(plan.services.filter((service) => service.route === 'http').map((service) => service.name))
+  const violations: string[] = []
+  for (const line of lines) {
+    let labels: Record<string, string> | null
+    try {
+      labels = JSON.parse(line) as Record<string, string> | null
+    } catch {
+      return teardown('a container label set could not be read, so its routing was not verified', 'try again')
+    }
+    const name = labels?.['com.docker.compose.service']
+    if (!name || !labels)
+      return teardown('a container has no Compose service label, so its routing was not verified', 'try again')
+    // A gated replica cannot vouch for another replica's image labels. Inspect
+    // each existing container on its own; inactive profiles have none to check.
+    violations.push(...routingViolations({ services: { [name]: { labels } } }, routed, plan.compose.projectName))
+    if (routed.has(name) && !hasForwardAuth(labels))
+      violations.push(`${name}: ForwardAuth is not enforced on every router`)
+  }
+  if (violations.length > 0)
+    return teardown(
+      'a container carries Traefik routing that a public host cannot gate, so the project was taken down',
+      `labels: ${violations.join('; ')}`,
+    )
 }
