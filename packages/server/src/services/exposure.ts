@@ -129,10 +129,17 @@ function entryPointOf(config: PanelConfig): string {
   return config.tlsEnabled ? 'websecure' : 'web'
 }
 
+/** The username a record will ask for, or null for none. A new decision defaults to `reviewer`. */
+function login(requested: string | null | undefined, previous: ProtectionRecord | null): string | null {
+  if (requested !== undefined) return requested
+  return previous?.mode === 'protected' ? (previous.user ?? null) : 'reviewer'
+}
+
 export async function protectService(
   config: PanelConfig,
   container: ContainerSummary,
-  options: { user?: string; unscoped?: boolean } = {},
+  /** `null` asks for the password alone; absent keeps what the host had. */
+  options: { user?: string | null; unscoped?: boolean } = {},
   containers: readonly ContainerSummary[] = [],
 ): Promise<ExposureChange> {
   // A credential typed over plain HTTP is a credential given away.
@@ -164,7 +171,7 @@ export async function protectService(
       host,
       entryPoints: [entryPointOf(config)],
       mode: 'protected',
-      user: options.user ?? previous?.user ?? 'reviewer',
+      ...(login(options.user, previous) !== null ? { user: login(options.user, previous) as string } : {}),
       hash,
       label: container.service ?? container.name,
       ...(container.environment ? { project: container.environment } : {}),

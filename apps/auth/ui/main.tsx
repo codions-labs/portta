@@ -20,6 +20,7 @@ interface AuthContext {
     host: string
     project?: string
     service?: string
+    passwordOnly?: boolean
     tech?: { id: string; label: string }
   }
 }
@@ -48,7 +49,7 @@ function PorttaMark() {
  * links go to clients and reviewers who have never heard of Portta, so the page
  * explains itself before it asks for anything.
  */
-function Reasons({ unavailable }: { unavailable: boolean }) {
+function Reasons({ unavailable, passwordOnly }: { unavailable: boolean; passwordOnly: boolean }) {
   const { t } = useTranslation('auth')
   const rows = unavailable
     ? [
@@ -73,7 +74,7 @@ function Reasons({ unavailable }: { unavailable: boolean }) {
           </span>
           <span>
             <b>{t(`${group}.${key}.title`)}</b>
-            <small>{t(`${group}.${key}.help`)}</small>
+            <small>{t(`${group}.${key}.help${passwordOnly && key === 'guests' ? 'PasswordOnly' : ''}`)}</small>
           </span>
         </div>
       ))}
@@ -88,6 +89,7 @@ function AuthPage() {
   const { protection, state } = context
   const unavailable = state === 'unavailable' || !protection
   const locked = context.lockedMinutes !== undefined
+  const passwordOnly = protection?.passwordOnly === true
 
   function submit(event: FormEvent<HTMLFormElement>) {
     if (pending) event.preventDefault()
@@ -114,7 +116,7 @@ function AuthPage() {
           <p>{t(unavailable ? 'unavailableLead' : 'explanation')}</p>
         </section>
 
-        <Reasons unavailable={unavailable} />
+        <Reasons unavailable={unavailable} passwordOnly={passwordOnly} />
 
         <section className="auth-card" aria-labelledby="destination-name">
           <div className="auth-card-body">
@@ -158,20 +160,24 @@ function AuthPage() {
                   </dl>
                 )}
 
-                <p className="auth-hint">{t('formHint')}</p>
+                <p className="auth-hint">{t(passwordOnly ? 'formHintPasswordOnly' : 'formHint')}</p>
 
                 {context.error && (
                   <p className="auth-error" role="alert">
-                    {locked ? t('locked', { count: context.lockedMinutes }) : t('invalid')}
+                    {locked
+                      ? t('locked', { count: context.lockedMinutes })
+                      : t(passwordOnly ? 'invalidPasswordOnly' : 'invalid')}
                   </p>
                 )}
 
                 <form method="post" action="/__portta/auth/login" onSubmit={submit} className="auth-form">
                   <input type="hidden" name="next" value={context.next} />
-                  <div className="auth-field">
-                    <label htmlFor="user">{t('username')}</label>
-                    <Input id="user" name="user" autoComplete="username" required autoFocus spellCheck={false} />
-                  </div>
+                  {passwordOnly ? null : (
+                    <div className="auth-field">
+                      <label htmlFor="user">{t('username')}</label>
+                      <Input id="user" name="user" autoComplete="username" required autoFocus spellCheck={false} />
+                    </div>
+                  )}
                   <div className="auth-field">
                     <label htmlFor="password">{t('password')}</label>
                     <div className="auth-password">
@@ -181,6 +187,7 @@ function AuthPage() {
                         type={visible ? 'text' : 'password'}
                         autoComplete="current-password"
                         required
+                        autoFocus={passwordOnly}
                       />
                       <button
                         type="button"

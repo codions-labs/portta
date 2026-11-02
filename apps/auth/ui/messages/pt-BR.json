@@ -21,7 +21,8 @@
     },
     "guests": {
       "title": "O acesso é só para convidados",
-      "help": "Quem cuida do projeto definiu um usuário e uma senha para que ele não fique aberto a qualquer pessoa na internet."
+      "help": "Quem cuida do projeto definiu um usuário e uma senha para que ele não fique aberto a qualquer pessoa na internet.",
+      "helpPasswordOnly": "Quem cuida do projeto definiu uma senha para que ele não fique aberto a qualquer pessoa na internet."
     },
     "private": {
       "title": "Sua senha não chega ao projeto",
@@ -53,5 +54,7 @@
   },
   "unavailableCardTitle": "Sem acesso por aqui",
   "unavailableCard": "O prazo deste link pode ter acabado, ou o acesso foi alterado. Quem enviou pode criar outro em poucos segundos.",
-  "unavailableHelp": "Não sabe quem enviou? Procure a mensagem em que recebeu este endereço."
+  "unavailableHelp": "Não sabe quem enviou? Procure a mensagem em que recebeu este endereço.",
+  "formHintPasswordOnly": "Use a senha que você recebeu.",
+  "invalidPasswordOnly": "Senha incorreta."
 }

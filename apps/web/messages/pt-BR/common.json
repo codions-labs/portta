@@ -209,7 +209,8 @@
       "public": "Qualquer pessoa",
       "publicDetail": "Sem login. Quem tiver o endereço abre.",
       "closed": "Ninguém",
-      "closedDetail": "O endereço responde que está fechado."
+      "closedDetail": "O endereço responde que está fechado.",
+      "passwordOnly": "Pedir só a senha, sem usuário"
     },
     "short": {
       "protected": "Senha",

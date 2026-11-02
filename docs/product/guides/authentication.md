@@ -419,7 +419,10 @@ portta protect remove demo-shop-web.example.com
 ```
 
 `protect host` creates or rotates the credential and prints a generated password
-once (`--password-stdin` takes yours). `protect status` never shows hashes.
+once (`--password-stdin` takes yours). It asks for a username beside the password,
+`reviewer` unless `--user` says otherwise; `--password-only` asks for the password alone,
+so whoever has it is in, which is what a link sent to a client usually wants. A host
+keeps the way it was set when its password is rotated. `protect status` never shows hashes.
 Removing a record closes the host on a public host. See
 [Run a public host](public-host.md).
 

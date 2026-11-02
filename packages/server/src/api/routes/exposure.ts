@@ -17,7 +17,9 @@ const protectBody = z
       .min(1)
       .max(64)
       .regex(/^[A-Za-z0-9._-]+$/)
-      .optional(),
+      .nullable()
+      .optional()
+      .describe('A login name to ask for beside the password. null asks for the password alone.'),
   })
   .strict()
 

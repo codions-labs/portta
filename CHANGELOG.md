@@ -8,6 +8,9 @@ All notable changes to Portta are documented here. The format follows
 
 ### Added
 
+- A protected site can ask for the password alone, with no username: `portta protect host
+  --password-only`, `user: null` in `PUT /api/services/{id}/exposure`, and a checkbox in the
+  service's panel. Its login page then shows one field.
 - Projects can carry tags, such as `cliente: Acme`: filter by one, and group the list by
   a key or by state. Stored in the panel's database, with `PUT /api/projects/{slug}/tags`.
 - Host > Containers selects several containers to start, stop, restart, read the

@@ -91,6 +91,20 @@ describe('who may open a service, from the panel', () => {
     expect(listed.openRouters).toEqual({ count: 0, names: [] })
   })
 
+  it('can ask for the password alone, and keeps asking that way until told otherwise', async () => {
+    const { app, authStore } = panel()
+    const first = await put(app, '/api/services/a-web/exposure', { user: null })
+    expect(first.status).toBe(200)
+    expect(((await first.json()) as { entry: { user: string | null } }).entry.user).toBeNull()
+    expect(readProtectionStore(authStore).protections[0]).not.toHaveProperty('user')
+
+    await put(app, '/api/services/a-web/exposure')
+    expect(readProtectionStore(authStore).protections[0]).not.toHaveProperty('user')
+
+    await put(app, '/api/services/a-web/exposure', { user: 'reviewer' })
+    expect(readProtectionStore(authStore).protections[0]?.user).toBe('reviewer')
+  })
+
   it('replaces the password when asked again, and the old one stops working', async () => {
     const { app, authStore } = panel()
     const first = (await (await put(app, '/api/services/a-web/exposure')).json()) as { password: string }

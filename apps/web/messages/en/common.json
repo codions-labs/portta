@@ -209,7 +209,8 @@
       "public": "Anybody",
       "publicDetail": "No login. Whoever has the address opens it.",
       "closed": "Nobody",
-      "closedDetail": "The address answers that it is closed."
+      "closedDetail": "The address answers that it is closed.",
+      "passwordOnly": "Ask for the password alone, with no username"
     },
     "short": {
       "protected": "Password",

@@ -16,15 +16,18 @@ import { Callout } from './shell-bits.tsx'
 import { Badge } from './ui/badge.tsx'
 import { Button } from './ui/button.tsx'
 import { ConfirmDialog } from './ui/confirm-dialog.tsx'
+import { Checkbox } from './ui/field.tsx'
 import { Segmented } from './ui/segmented.tsx'
 
 /** Deciding who may open one service's hostname, wherever the decision is offered. */
 export function useExposureDecision(container: ContainerSummary) {
   const queryClient = useQueryClient()
   const [password, setPassword] = useState<string | null>(null)
+  // Asked before choosing, since choosing is what makes the password.
+  const [passwordOnly, setPasswordOnly] = useState(false)
   const refresh = () => void queryClient.invalidateQueries({ queryKey: keys.exposure() })
   const protect = useMutation({
-    mutationFn: () => api.protectService(container.id),
+    mutationFn: () => api.protectService(container.id, passwordOnly ? { user: null } : {}),
     onSuccess: (result) => {
       setPassword(result.password ?? null)
       refresh()
@@ -49,6 +52,8 @@ export function useExposureDecision(container: ContainerSummary) {
     open,
     close,
     password,
+    passwordOnly,
+    setPasswordOnly,
     busy: protect.isPending || open.isPending || close.isPending,
     error: protect.error ?? open.error ?? close.error,
   }
@@ -155,6 +160,16 @@ export function ExposureChoice({
           )
         })}
       </div>
+      {current !== 'protected' ? (
+        <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-muted">
+          <Checkbox
+            checked={decision.passwordOnly}
+            disabled={decision.busy}
+            onChange={(event) => decision.setPasswordOnly(event.target.checked)}
+          />
+          {t('who.passwordOnly')}
+        </label>
+      ) : null}
       {dialog}
     </>
   )

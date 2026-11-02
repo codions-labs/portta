@@ -21,7 +21,8 @@
     },
     "guests": {
       "title": "Access is for guests only",
-      "help": "Whoever looks after the project set a username and a password so it is not open to anybody on the internet."
+      "help": "Whoever looks after the project set a username and a password so it is not open to anybody on the internet.",
+      "helpPasswordOnly": "Whoever looks after the project set a password so it is not open to anybody on the internet."
     },
     "private": {
       "title": "Your password never reaches the project",
@@ -53,5 +54,7 @@
   },
   "unavailableCardTitle": "No access here",
   "unavailableCard": "This link's time may have ended, or the access was changed. Whoever sent it can create another in a few seconds.",
-  "unavailableHelp": "Do not know who sent it? Look for the message where you got this address."
+  "unavailableHelp": "Do not know who sent it? Look for the message where you got this address.",
+  "formHintPasswordOnly": "Use the password you were given.",
+  "invalidPasswordOnly": "Wrong password."
 }

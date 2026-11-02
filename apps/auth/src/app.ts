@@ -30,7 +30,10 @@ interface LoginContext {
   error: boolean
   /** Whole minutes until another try, when too many wrong ones locked the page. */
   lockedMinutes?: number
-  protection?: Pick<ProtectionRecord, 'label' | 'host' | 'project' | 'service' | 'tech'>
+  protection?: Pick<ProtectionRecord, 'label' | 'host' | 'project' | 'service' | 'tech'> & {
+    /** Nobody is asked for a username: the password alone opens it. */
+    passwordOnly: boolean
+  }
 }
 
 function localeOf(c: Context): 'en' | 'pt-BR' {
@@ -145,6 +148,7 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
       protection: {
         label: protection.label,
         host: protection.host,
+        passwordOnly: protection.user === undefined,
         ...(protection.project ? { project: protection.project } : {}),
         ...(protection.service ? { service: protection.service } : {}),
         ...(protection.tech ? { tech: protection.tech } : {}),
@@ -227,7 +231,9 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     }
     const user = typeof body.user === 'string' ? body.user : ''
     const password = typeof body.password === 'string' ? body.password : ''
-    if (user !== protection.user || !protection.hash || !(await verifyPassword(password, protection.hash))) {
+    // A record with no username asks for none, and one that has a username still checks it.
+    const userMatches = protection.user === undefined || user === protection.user
+    if (!userMatches || !protection.hash || !(await verifyPassword(password, protection.hash))) {
       const result = await limiter.failure(key)
       if (!result.allowed) c.header('Retry-After', String(result.retryAfter))
       log({ event: 'login', scope: protection.scope, address, outcome: result.allowed ? 'refused' : 'locked' })
@@ -247,7 +253,8 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
         {
           scope: protection.scope,
           host,
-          user: protection.user,
+          // Somebody who only knew the password is nobody in particular, and a header is a string.
+          user: protection.user ?? 'guest',
           issuedAt,
           expiresAt: issuedAt + config.sessionSeconds,
           epoch: protection.epoch,

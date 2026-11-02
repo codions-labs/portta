@@ -76,7 +76,15 @@ describe('who may open a service', () => {
     await waitFor(() => expect(screen.getByRole('radio', { name: /Nobody/ })).toBeChecked())
     await userEvent.click(screen.getByRole('radio', { name: /Whoever has the password/ }))
     expect(await screen.findByText('abcde-fghij')).toBeInTheDocument()
-    expect(protectService).toHaveBeenCalledWith('c1')
+    expect(protectService).toHaveBeenCalledWith('c1', {})
+  })
+
+  it('asks for the password alone when told to, before the password exists', async () => {
+    renderWithQuery(<ExposurePanel container={container} />)
+    await waitFor(() => expect(screen.getByRole('radio', { name: /Nobody/ })).toBeChecked())
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Ask for the password alone, with no username' }))
+    await userEvent.click(screen.getByRole('radio', { name: /Whoever has the password/ }))
+    await waitFor(() => expect(protectService).toHaveBeenCalledWith('c1', { user: null }))
   })
 
   it('shows a protected host and offers a new password, opening and closing', async () => {

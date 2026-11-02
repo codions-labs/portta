@@ -292,7 +292,8 @@ Every routed hostname is in [Access](#access).
 ### Access
 
 Who may open what. **Sites** lists every address this host answers on, with who
-may open it on the row: **Password** generates a login and shows the password once,
+may open it on the row: **Password** generates a login and shows the password once (tick **Ask for the password
+alone** first, in the service's panel, to ask for no username at all),
 **Everybody** asks first and removes the login, **Closed** answers nobody. The
 decision applies on the next request. A temporary link is one click from the row.
 
