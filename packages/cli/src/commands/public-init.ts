@@ -153,7 +153,7 @@ export async function publicInit(
     next: [
       'portta up remote-public',
       'portta dns check',
-      `printf %s "$PASSWORD" | portta auth bootstrap --url https://${panelHost} --allow-remote --name <name> --email <email> --password-stdin`,
+      `printf %s "$PASSWORD" | portta auth bootstrap --url https://${plan.panelHost} --allow-remote --name <name> --email <email> --password-stdin`,
       'portta doctor',
     ],
   }
