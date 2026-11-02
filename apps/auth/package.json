@@ -35,7 +35,7 @@
     "@vitejs/plugin-react": "6.1.1",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
-    "concurrently": "9.2.5",
+    "concurrently": "10.0.6",
     "i18next": "^26.4.1",
     "lucide-react": "1.38.0",
     "react": "19.2.8",
