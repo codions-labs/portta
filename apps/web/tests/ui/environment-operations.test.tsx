@@ -70,7 +70,8 @@ describe('project operations', () => {
     const user = userEvent.setup({ delay: null })
     environmentRemovalPreview.mockResolvedValue(preview)
     renderWithQuery(<EnvironmentOperations project={project()} />)
-    await user.click(screen.getByRole('button', { name: 'Remove, keep data' }))
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove, keep data' }))
     expect(await screen.findByText(/Nothing outside this host changes/)).toBeInTheDocument()
     const submit = screen.getAllByRole('button', { name: 'Remove, keep data' }).at(-1)!
     expect(submit).toBeDisabled()

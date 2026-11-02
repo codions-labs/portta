@@ -223,11 +223,10 @@ environment, **Restart all**, and its Overview, Environments and Settings tabs. 
 
 ### Environments
 
-`/environments/<name>` is one environment: its services with their addresses,
-resources and logs, **Open / Test**,
-Start, Stop, Restart, Rebuild and the two named removals, a **Logs** tab that
-interleaves every service, and a **Settings** tab for presentation overrides
-and the hostname alias. See [Manage environments](environments.md) and the
+`/environments/<name>` is one environment: its services with their addresses and
+resources, the logs of every service under them, Restart, Stop, **More** and **Open
+site**, and a **Settings** tab for presentation overrides and the hostname alias.
+See [Manage environments](environments.md) and the
 [container console](container-console.md).
 
 ### Services and Docker
@@ -240,15 +239,14 @@ containers, with the networks and published ports. See
 
 #### Who may open a service
 
-Opening a service shows its drawer. On a public host the **Share with a client**
-section is where its hostname gets a decision: nobody has decided yet, so it is
-closed.
+Opening a service shows it beside the list. On a public host **Who may open** is
+where its hostname gets a decision: nobody has decided yet, so it is closed.
 
 ![Authentication disabled: the service drawer on a public host, where nobody has decided about the hostname and it is closed](../../images/auth-disabled-exposure-closed.png)
 
-**Protect with a password** generates a login and shows the password once; only
-its hash is stored. **Open to everybody** removes the login, **Close it** goes
-back to closed, and a new password replaces the old one. Every change applies on
+**Whoever has the password** generates a login and shows the password once; only
+its hash is stored. **Anybody** removes the login, **Nobody** goes back to closed,
+and a new password replaces the old one. Every change applies on
 the next request and recreates nothing. See
 [Run a public host](public-host.md).
 

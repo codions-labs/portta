@@ -204,7 +204,7 @@ describe('Environment page', () => {
       expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull()
       expect(screen.queryByRole('button', { name: 'Rebuild' })).toBeNull()
       expect(screen.queryByRole('button', { name: 'Remove, keep data' })).toBeNull()
-      expect(screen.queryByRole('button', { name: 'Open / Test' })).toBeNull()
+      expect(screen.queryByRole('link', { name: 'Open site' })).toBeNull()
       expect(
         await screen.findByText('Containers were removed. Start recreates them through the runner.'),
       ).toBeInTheDocument()
@@ -224,7 +224,7 @@ describe('Environment page', () => {
       await screen.findByRole('dialog', { name: 'Forget this environment?' })
       await userEvent.click(screen.getAllByRole('button', { name: 'Forget' }).at(-1)!)
       await waitFor(() => expect(forgetEnvironment).toHaveBeenCalledWith('alpha'))
-      await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/projects?view=environments'))
+      await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/projects'))
     })
   })
 })

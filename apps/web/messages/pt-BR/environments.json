@@ -40,14 +40,15 @@
     "githubUntouched": "Nada fora deste host muda.",
     "previewContainers": "{{count}} container(s) serão removidos.",
     "previewVolumes": "Volumes nomeados: {{names}}. O tamanho é desconhecido: o painel não inspeciona volumes.",
-    "typeName": "Digite {{name}} para confirmar."
+    "typeName": "Digite {{name}} para confirmar.",
+    "more": "Mais"
   },
   "collapsedService": "{{count}} serviço recolhido",
   "collapsedServices": "{{count}} serviços recolhidos",
   "archived": "arquivado",
   "running": "{{running}}/{{total}} em execução",
   "tabs": {
-    "overview": "Visão geral",
+    "overview": "Serviços",
     "services": "Serviços",
     "logs": "Logs",
     "settings": "Configurações"
@@ -121,7 +122,15 @@
   "servicesTable": {
     "empty": "Este ambiente não tem serviços",
     "fallback": "Medições ao vivo precisam que o painel sirva os serviços deste ambiente; mostrando o que os containers reportam.",
-    "emptyRemembered": "Os containers foram removidos. Iniciar recria pelo runner."
+    "emptyRemembered": "Os containers foram removidos. Iniciar recria pelo runner.",
+    "unhealthy": "Com problema",
+    "healthy": "Saudável",
+    "stopped": "Parado",
+    "privateAddress": "Só na rede do ambiente",
+    "connect": "Conectar",
+    "filterLogs": "Filtrar logs por {{name}}",
+    "openConsole": "Abrir console de {{name}}",
+    "details": "Detalhes de {{name}}"
   },
   "presence": {
     "remembered": "Não em execução"
@@ -129,5 +138,12 @@
   "settings": {
     "title": "Configurações",
     "description": "Substituições de apresentação, mantidas no banco do gateway. Nada é gravado dentro do projeto."
+  },
+  "openSite": "Abrir site",
+  "healthWord": {
+    "ok": "Saudável",
+    "partial": "Degradado",
+    "down": "Parado",
+    "unhealthy": "Com problema"
   }
 }

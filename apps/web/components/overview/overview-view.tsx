@@ -285,7 +285,7 @@ function NeedsYou({ data, closed }: { data: DevelopmentOverview; closed: string[
                 <>
                   <Button asChild size="sm">
                     <Link
-                      href={`/environments/${encodeURIComponent(item.environment ?? '')}/logs?service=${encodeURIComponent(item.service ?? '')}`}
+                      href={`/environments/${encodeURIComponent(item.environment ?? '')}?logs=${encodeURIComponent(item.service ?? '')}`}
                     >
                       {t('attention.logs')}
                     </Link>

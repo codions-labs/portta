@@ -21,9 +21,12 @@ import { useToast } from './ui/toast.tsx'
 export function ContainerActions({
   container,
   onShowDetails,
+  inPanel = false,
 }: {
   container: ContainerSummary
   onShowDetails?: () => void
+  /** Beside a service's own Logs button: the restart it is opened for, in place of the logs icon. */
+  inPanel?: boolean
 }) {
   const { t } = useTranslation('environments', { keyPrefix: 'containerActions' })
   const queryClient = useQueryClient()
@@ -54,15 +57,23 @@ export function ContainerActions({
   return (
     <>
       <div className="flex items-center justify-end gap-1">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          title={t('logs')}
-          aria-label={t('logs')}
-          onClick={() => setShowLogs(true)}
-        >
-          <ScrollText />
-        </Button>
+        {inPanel ? (
+          running ? (
+            <Button size="sm" disabled={act.isPending} onClick={() => act.mutate('restart')}>
+              {t('restart')}
+            </Button>
+          ) : null
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('logs')}
+            aria-label={t('logs')}
+            onClick={() => setShowLogs(true)}
+          >
+            <ScrollText />
+          </Button>
+        )}
         <Menu>
           <MenuTrigger asChild>
             <Button variant="ghost" size="icon-sm" aria-label={t('actionsFor', { name: container.name })}>

@@ -87,6 +87,16 @@
   --portta-info: #0369a1;
   --portta-agent: #6d28d9;
 
+  /* Logs read as a terminal in both themes. */
+  --portta-terminal: #0f172a;
+  --portta-terminal-fg: #e2e8f0;
+  --portta-terminal-dim: #94a3b8;
+  --portta-terminal-error: #fca5a5;
+  --portta-terminal-origin-1: #7dd3fc;
+  --portta-terminal-origin-2: #86efac;
+  --portta-terminal-origin-3: #c4b5fd;
+  --portta-terminal-origin-4: #fcd34d;
+
   /* What sits behind a dialog. */
   --portta-scrim: rgb(15 23 42 / 0.45);
 
@@ -135,6 +145,8 @@
   --portta-info: #7dd3fc;
   --portta-agent: #c4b5fd;
 
+  --portta-terminal: #0b1220;
+
   --portta-scrim: rgb(0 0 0 / 0.6);
 
   --portta-shadow-raised: 0 1px 2px rgb(0 0 0 / 0.3);
@@ -159,6 +171,14 @@
   --color-accent-hover: var(--portta-accent-hover);
   --color-accent-fg: var(--portta-accent-fg);
   --color-link: var(--portta-link);
+  --color-terminal: var(--portta-terminal);
+  --color-terminal-fg: var(--portta-terminal-fg);
+  --color-terminal-dim: var(--portta-terminal-dim);
+  --color-terminal-error: var(--portta-terminal-error);
+  --color-terminal-origin-1: var(--portta-terminal-origin-1);
+  --color-terminal-origin-2: var(--portta-terminal-origin-2);
+  --color-terminal-origin-3: var(--portta-terminal-origin-3);
+  --color-terminal-origin-4: var(--portta-terminal-origin-4);
   --color-sidebar: var(--portta-sidebar);
   --color-selection: var(--portta-selection);
   --color-focus: var(--portta-focus);

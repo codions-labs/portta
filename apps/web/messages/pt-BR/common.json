@@ -106,7 +106,9 @@
     "noMatch": "Nenhuma linha corresponde ao filtro",
     "noOutput": "Nenhuma saída ainda",
     "liveStream": "Transmitindo ao vivo",
-    "reconnecting": "reconectando…"
+    "reconnecting": "reconectando…",
+    "title": "Logs",
+    "live": "Ao vivo"
   },
   "container": {
     "status": "Status",
@@ -124,25 +126,30 @@
     "traefik": "Traefik",
     "mounts": "Montagens",
     "labels": "Labels",
-    "hostnameAlias": "Alias de hostname"
+    "hostnameAlias": "Alias de hostname",
+    "image": "Imagem"
   },
   "share": {
     "title": "Compartilhar",
     "revoke": "Revogar",
-    "ttl1h": "1 hora",
-    "ttl4h": "4 horas",
-    "ttl24h": "24 horas",
+    "ttl1h": "1 h",
+    "ttl4h": "4 h",
+    "ttl24h": "24 h",
     "private": "sem link",
-    "privateHint": "Ou envie um link temporário que deixa de funcionar sozinho.",
+    "privateHint": "Um endereço extra que para de funcionar sozinho. O site continua como está.",
     "expiresAfter": "O compartilhamento expira após",
-    "shareWithPassword": "Compartilhar com senha",
-    "sharePublicly": "Compartilhar publicamente",
+    "shareWithPassword": "Criar link com senha",
+    "sharePublicly": "Link público",
     "passwordLabel": "Senha:",
     "passwordHint": "Esta é a única vez em que ela é mostrada. Só o hash é guardado, aqui e no Traefik.",
     "expired": "expirado",
     "targetGone": "o destino sumiu",
     "expiresIn": "expira {{time}}",
-    "regeneratePassword": "Gerar nova senha"
+    "regeneratePassword": "Gerar nova senha",
+    "mode": {
+      "protected": "Com senha",
+      "public": "Público"
+    }
   },
   "traefikVerdict": {
     "title": "Veredito do Traefik",
@@ -194,6 +201,15 @@
     "remove": "Remover o login",
     "passwordLabel": "Senha:",
     "passwordHint": "Esta é a única vez que ela aparece. Entregue a quem precisa de acesso; só o hash é guardado.",
-    "severalHosts": "Este serviço responde em vários endereços. Decida cada um com `portta protect host <host>`."
+    "severalHosts": "Este serviço responde em vários endereços. Decida cada um com `portta protect host <host>`.",
+    "who": {
+      "label": "Quem pode abrir",
+      "protected": "Quem tem a senha",
+      "protectedDetail": "Um login e uma senha geradas pelo Portta.",
+      "public": "Qualquer pessoa",
+      "publicDetail": "Sem login. Quem tiver o endereço abre.",
+      "closed": "Ninguém",
+      "closedDetail": "O endereço responde que está fechado."
+    }
   }
 }

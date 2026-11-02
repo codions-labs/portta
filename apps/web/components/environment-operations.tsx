@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Hammer, Trash2 } from 'lucide-react'
+import { ChevronDown, Hammer, Trash2 } from 'lucide-react'
 import type { Environment, EnvironmentRemovalPreview, ProjectRemoveResult, RunnerStatus } from 'portta-contracts'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -12,6 +12,7 @@ import { ErrorBox } from './shell-bits.tsx'
 import { Button } from './ui/button.tsx'
 import { Dialog } from './ui/dialog.tsx'
 import { Checkbox, Field, Input } from './ui/field.tsx'
+import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from './ui/menu.tsx'
 
 type RemoveMode = 'keep-data' | 'and-local-data'
 
@@ -21,27 +22,35 @@ export function EnvironmentOperations({ project }: { project: Environment }) {
   const [removeMode, setRemoveMode] = useState<RemoveMode | null>(null)
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
-      <Button
-        size="sm"
-        disabled={!project.operable.ok}
-        title={project.operable.ok ? t('rebuild') : (project.operable.reason ?? t('rebuildDisabled'))}
-        onClick={() => setRebuildOpen(true)}
-      >
-        <Hammer />
-        {t('rebuild')}
-      </Button>
-      <Button size="sm" variant="ghost" title={t('removeKeep')} onClick={() => setRemoveMode('keep-data')}>
-        <Trash2 />
-        {t('removeKeep')}
-      </Button>
-      <Button size="sm" variant="ghost" title={t('removeData')} onClick={() => setRemoveMode('and-local-data')}>
-        {t('removeData')}
-      </Button>
+    <>
+      <Menu>
+        <MenuTrigger asChild>
+          <Button>
+            {t('more')}
+            <ChevronDown className="opacity-60" />
+          </Button>
+        </MenuTrigger>
+        <MenuContent align="end">
+          <MenuItem
+            disabled={!project.operable.ok}
+            hint={project.operable.ok ? undefined : project.operable.reason}
+            onSelect={() => setRebuildOpen(true)}
+          >
+            <Hammer className="size-3.5" /> {t('rebuild')}
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem tone="danger" onSelect={() => setRemoveMode('keep-data')}>
+            <Trash2 className="size-3.5" /> {t('removeKeep')}
+          </MenuItem>
+          <MenuItem tone="danger" onSelect={() => setRemoveMode('and-local-data')}>
+            <Trash2 className="size-3.5" /> {t('removeData')}
+          </MenuItem>
+        </MenuContent>
+      </Menu>
 
       {rebuildOpen ? <RebuildDialog project={project} onClose={() => setRebuildOpen(false)} /> : null}
       {removeMode ? <RemoveDialog project={project} mode={removeMode} onClose={() => setRemoveMode(null)} /> : null}
-    </div>
+    </>
   )
 }
 

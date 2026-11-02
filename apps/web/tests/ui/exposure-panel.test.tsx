@@ -71,8 +71,8 @@ describe('who may open a service', () => {
 
   it('says a hostname nobody decided about is closed, and protects it with a password shown once', async () => {
     renderWithQuery(<ExposurePanel container={container} />)
-    expect(await screen.findByText('closed')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Protect with a password' }))
+    await waitFor(() => expect(screen.getByRole('radio', { name: /Nobody/ })).toBeChecked())
+    await userEvent.click(screen.getByRole('radio', { name: /Whoever has the password/ }))
     expect(await screen.findByText('abcde-fghij')).toBeInTheDocument()
     expect(protectService).toHaveBeenCalledWith('c1')
   })
@@ -92,16 +92,17 @@ describe('who may open a service', () => {
       ],
     })
     renderWithQuery(<ExposurePanel container={container} />)
-    expect(await screen.findByText('protected')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Open to everybody' }))
+    await waitFor(() => expect(screen.getByRole('radio', { name: /Whoever has the password/ })).toBeChecked())
+    expect(screen.getByRole('button', { name: 'New password' })).toBeEnabled()
+    await userEvent.click(screen.getByRole('radio', { name: /Anybody/ }))
     await waitFor(() => expect(openService).toHaveBeenCalledWith('c1'))
-    await userEvent.click(screen.getByRole('button', { name: 'Close it' }))
+    await userEvent.click(screen.getByRole('radio', { name: /Nobody/ }))
     await waitFor(() => expect(closeService).toHaveBeenCalledWith('c1'))
   })
 
   it('offers no control to somebody who may not decide', async () => {
     renderWithQuery(<ExposurePanel container={container} />, undefined, principal({ permissions: ['service:read'] }))
     expect(await screen.findByText('closed')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Protect with a password' })).toBeNull()
+    expect(screen.queryByRole('radio', { name: /Whoever has the password/ })).toBeNull()
   })
 })

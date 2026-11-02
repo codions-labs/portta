@@ -8,11 +8,11 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api/index.ts'
 import { keys, useShares } from '../lib/queries/index.ts'
 import { useFormat } from '../lib/use-format.ts'
-import { AddressLine, Mono } from './copy.tsx'
+import { AddressLine, CopyButton, Mono } from './copy.tsx'
 import { Callout } from './shell-bits.tsx'
 import { Badge } from './ui/badge.tsx'
 import { Button } from './ui/button.tsx'
-import { Select } from './ui/field.tsx'
+import { Segmented } from './ui/segmented.tsx'
 
 export function SharePanel({ container }: { container: ContainerSummary }) {
   const { t } = useTranslation('common', { keyPrefix: 'share' })
@@ -55,7 +55,7 @@ export function SharePanel({ container }: { container: ContainerSummary }) {
   const error = create.error ?? regenerate.error ?? revoke.error
 
   return (
-    <div className="space-y-2 text-xs">
+    <div className="space-y-2 text-sm">
       {share ? (
         <ActiveShare
           share={share}
@@ -64,31 +64,25 @@ export function SharePanel({ container }: { container: ContainerSummary }) {
           busy={revoke.isPending || regenerate.isPending}
         />
       ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge>{t('private')}</Badge>
-          <span className="text-subtle">{t('privateHint')}</span>
-          <Select
-            size="sm"
-            className="w-28"
-            value={ttl}
-            onChange={(event) => setTtl(Number(event.target.value))}
-            aria-label={t('expiresAfter')}
-          >
-            {ttls.map((option) => (
-              <option key={option.seconds} value={option.seconds}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-          <Button size="sm" disabled={create.isPending} onClick={() => create.mutate('protected')}>
-            <Share2 />
-            {t('shareWithPassword')}
-          </Button>
-          {query.data?.publicAllowed ? (
-            <Button size="sm" disabled={create.isPending} onClick={() => create.mutate('public')}>
-              {t('sharePublicly')}
+        <div className="space-y-2">
+          <p className="text-sm text-subtle">{t('privateHint')}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Segmented
+              label={t('expiresAfter')}
+              value={String(ttl)}
+              onChange={(next) => setTtl(Number(next))}
+              options={ttls.map((option) => ({ value: String(option.seconds), label: option.label }))}
+            />
+            <Button size="sm" disabled={create.isPending} onClick={() => create.mutate('protected')}>
+              <Share2 />
+              {t('shareWithPassword')}
             </Button>
-          ) : null}
+            {query.data?.publicAllowed ? (
+              <Button size="sm" variant="ghost" disabled={create.isPending} onClick={() => create.mutate('public')}>
+                {t('sharePublicly')}
+              </Button>
+            ) : null}
+          </div>
         </div>
       )}
 
@@ -101,6 +95,7 @@ export function SharePanel({ container }: { container: ContainerSummary }) {
               <Mono kind="text" tone="ink">
                 {password}
               </Mono>
+              <CopyButton value={password} label={t('passwordLabel')} className="ml-1 align-middle" />
             </>
           }
         >
@@ -135,7 +130,7 @@ function ActiveShare({
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={share.mode === 'public' ? 'danger' : 'warn'}>{share.mode}</Badge>
+        <Badge tone={share.mode === 'public' ? 'info' : 'ok'}>{t(`mode.${share.mode}`)}</Badge>
         {share.user ? <Mono kind="text">{share.user}</Mono> : null}
         <Badge tone={share.state === 'active' ? 'outline' : 'danger'}>
           {share.state === 'expired'

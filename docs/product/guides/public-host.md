@@ -93,7 +93,7 @@ portta protect status                        # every decision, without credentia
 ## Access for a client
 
 From the service drawer in the panel, in the Share with a client section:
-protect the service with a password (**Protect with a password**) and give the
+protect the service with a password (**Whoever has the password**) and give the
 person the URL and the password, or create a temporary link that expires on its
 own (1, 4 or 24 hours). Deciding for a hostname needs the `service:protect`
 permission, which only the owner and administrators hold. A temporary link has

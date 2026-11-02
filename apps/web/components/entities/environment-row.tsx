@@ -46,7 +46,7 @@ export function HostAccess({ mode }: { mode: 'protected' | 'public' | null }) {
 }
 
 /** An address with its two buttons, the way it reads in every list. */
-export function RouteLine({ route }: { route: RouteUrl }) {
+export function RouteLine({ route }: { route: Pick<RouteUrl, 'url' | 'host'> }) {
   const { t } = useTranslation('overview', { keyPrefix: 'quick' })
   return (
     <>

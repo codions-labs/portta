@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils.ts'
 import { useLogStream } from '../lib/ws.ts'
 import { CopyButton } from './copy.tsx'
-import { Empty, ErrorBox, Loading } from './shell-bits.tsx'
+import { Empty, ErrorBox, FilterChip, Loading } from './shell-bits.tsx'
 import { Badge } from './ui/badge.tsx'
 import { Button } from './ui/button.tsx'
 import { Input, Select } from './ui/field.tsx'
@@ -31,7 +31,12 @@ interface ViewerResponse extends Omit<LogsResponse, 'containerId' | 'name' | 'li
  * tones: stderr is red because it means something, and an origin that
  * happened to hash to red would say the same thing by accident.
  */
-const ORIGIN_TONES = ['text-accent', 'text-info', 'text-agent', 'text-ink', 'text-muted', 'text-subtle'] as const
+const ORIGIN_TONES = [
+  'text-terminal-origin-1',
+  'text-terminal-origin-2',
+  'text-terminal-origin-3',
+  'text-terminal-origin-4',
+]
 
 export function originTone(service: string): string {
   let hash = 0
@@ -50,6 +55,7 @@ export function LogViewer({
   selectedService,
   onSelectService,
   stream,
+  docked = false,
 }: {
   queryKey: readonly unknown[]
   load: (tail: number) => Promise<ViewerResponse>
@@ -66,11 +72,16 @@ export function LogViewer({
    * last lines instead.
    */
   stream?: { environment: string } | undefined
+  /**
+   * Under a list of services rather than on a page of its own: the services as
+   * chips, live from the start, and only the controls used while reading.
+   */
+  docked?: boolean
 }) {
   const { t } = useTranslation('common')
   const [tail, setTail] = useState(200)
   const [filter, setFilter] = useState('')
-  const [follow, setFollow] = useState(false)
+  const [follow, setFollow] = useState(docked)
 
   const live = useLogStream(stream?.environment ?? null, selectedService ?? null, {
     enabled: follow && stream !== undefined,
@@ -108,69 +119,119 @@ export function LogViewer({
 
   return (
     <div className={cn('flex min-h-0 flex-col', className)}>
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-line px-2 py-1.5">
-        {sources && onSelectService ? (
-          <Select
-            value={selectedService ?? ''}
-            onChange={(event) => onSelectService(event.target.value === '' ? null : event.target.value)}
-            size="sm"
-            className="w-44"
-            aria-label={t('logs.service')}
-          >
-            <option value="">{t('logs.allServices')}</option>
-            {sources.map((source) => (
-              <option key={source.containerId} value={source.service}>
-                {source.service}
-                {source.state === 'running' ? '' : ` (${source.state})`}
-              </option>
-            ))}
-          </Select>
-        ) : null}
-        <Input
-          value={filter}
-          onChange={(event) => setFilter(event.target.value)}
-          placeholder={t('logs.filterLines')}
-          size="sm"
-          className="w-48"
-          aria-label={t('logs.filterLogLines')}
-        />
-        <Select
-          value={String(tail)}
-          onChange={(event) => setTail(Number(event.target.value))}
-          size="sm"
-          className="w-28"
-          aria-label={t('logs.numberOfLines')}
-        >
-          <option value="100">100 {t('logs.lines')}</option>
-          <option value="200">200 {t('logs.lines')}</option>
-          <option value="500">500 {t('logs.lines')}</option>
-          <option value="1000">1000 {t('logs.lines')}</option>
-        </Select>
-        <Button
-          size="sm"
-          variant={follow ? 'primary' : 'default'}
-          onClick={() => {
-            if (follow) live.reset()
-            setFollow((value) => !value)
-          }}
-          title={polling ? t('logs.refreshEvery3s') : t('logs.liveStream')}
-        >
-          <RefreshCw className={cn(follow && polling && 'animate-spin')} />
-          {follow ? t('following') : t('follow')}
-        </Button>
-        {follow && live.state === 'retrying' ? (
-          <span role="status" className="text-2xs text-warn">
-            {t('logs.reconnecting')}
-          </span>
-        ) : null}
-        <Button size="sm" onClick={() => void query.refetch()}>
-          {t('refresh')}
-        </Button>
-        <div className="ml-auto flex items-center gap-1">
-          <span className="text-xs text-subtle">{t('logs.lineCount', { count: lines.length })}</span>
-          <CopyButton value={asText} label={t('copyLog')} />
+      {docked ? (
+        <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-2.5">
+          <h2 className="text-lg font-semibold text-ink">{t('logs.title')}</h2>
+          {sources && onSelectService ? (
+            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('logs.service')}>
+              <FilterChip active={!selectedService} onClick={() => onSelectService(null)}>
+                {t('logs.allServices')}
+              </FilterChip>
+              {sources.map((source) => (
+                <FilterChip
+                  key={source.containerId}
+                  active={selectedService === source.service}
+                  onClick={() => onSelectService(source.service)}
+                >
+                  {source.service}
+                </FilterChip>
+              ))}
+            </div>
+          ) : null}
+          <div className="ml-auto flex flex-wrap items-center gap-1.5">
+            <Input
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              placeholder={t('logs.filterLines')}
+              size="sm"
+              className="w-44"
+              aria-label={t('logs.filterLogLines')}
+            />
+            <Button
+              size="sm"
+              aria-pressed={follow}
+              onClick={() => {
+                if (follow) live.reset()
+                setFollow((value) => !value)
+              }}
+              title={polling ? t('logs.refreshEvery3s') : t('logs.liveStream')}
+            >
+              <span aria-hidden className={cn('size-2 rounded-full', follow ? 'bg-ok' : 'bg-subtle')} />
+              {t('logs.live')}
+            </Button>
+            {follow && live.state === 'retrying' ? (
+              <span role="status" className="text-2xs text-warn">
+                {t('logs.reconnecting')}
+              </span>
+            ) : null}
+            <CopyButton value={asText} label={t('copyLog')} />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-line px-2 py-1.5">
+          {sources && onSelectService ? (
+            <Select
+              value={selectedService ?? ''}
+              onChange={(event) => onSelectService(event.target.value === '' ? null : event.target.value)}
+              size="sm"
+              className="w-44"
+              aria-label={t('logs.service')}
+            >
+              <option value="">{t('logs.allServices')}</option>
+              {sources.map((source) => (
+                <option key={source.containerId} value={source.service}>
+                  {source.service}
+                  {source.state === 'running' ? '' : ` (${source.state})`}
+                </option>
+              ))}
+            </Select>
+          ) : null}
+          <Input
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder={t('logs.filterLines')}
+            size="sm"
+            className="w-48"
+            aria-label={t('logs.filterLogLines')}
+          />
+          <Select
+            value={String(tail)}
+            onChange={(event) => setTail(Number(event.target.value))}
+            size="sm"
+            className="w-28"
+            aria-label={t('logs.numberOfLines')}
+          >
+            <option value="100">100 {t('logs.lines')}</option>
+            <option value="200">200 {t('logs.lines')}</option>
+            <option value="500">500 {t('logs.lines')}</option>
+            <option value="1000">1000 {t('logs.lines')}</option>
+          </Select>
+          <Button
+            size="sm"
+            variant={follow ? 'primary' : 'default'}
+            onClick={() => {
+              if (follow) live.reset()
+              setFollow((value) => !value)
+            }}
+            title={polling ? t('logs.refreshEvery3s') : t('logs.liveStream')}
+          >
+            <RefreshCw className={cn(follow && polling && 'animate-spin')} />
+            {follow ? t('following') : t('follow')}
+          </Button>
+          {follow && live.state === 'retrying' ? (
+            <span role="status" className="text-2xs text-warn">
+              {t('logs.reconnecting')}
+            </span>
+          ) : null}
+          <Button size="sm" onClick={() => void query.refetch()}>
+            {t('refresh')}
+          </Button>
+          <div className="ml-auto flex items-center gap-1">
+            <span className="text-xs text-subtle">{t('logs.lineCount', { count: lines.length })}</span>
+            <CopyButton value={asText} label={t('copyLog')} />
+          </div>
+        </div>
+      )}
 
       {sources && (failed.length > 0 || notRunning.length > 0 || approximateOrder) ? (
         <div
@@ -194,7 +255,7 @@ export function LogViewer({
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-auto bg-surface-2/50 scroll-thin">
+      <div className="min-h-0 flex-1 overflow-auto bg-terminal scroll-thin">
         {query.isPending ? <Loading label={t('logs.readingLogs')} /> : null}
         {query.error ? (
           <div className="p-3">
@@ -203,15 +264,15 @@ export function LogViewer({
         ) : null}
         {query.data && lines.length === 0 ? <Empty title={filter ? t('logs.noMatch') : t('logs.noOutput')} /> : null}
         {lines.length > 0 ? (
-          <pre className="p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap">
+          <pre className="px-5 py-3 font-mono text-xs leading-relaxed whitespace-pre-wrap">
             {lines.map((line, index) => (
-              <div key={index} className={line.stream === 'stderr' ? 'text-danger' : 'text-ink/90'}>
+              <div key={index} className={line.stream === 'stderr' ? 'text-terminal-error' : 'text-terminal-fg'}>
                 {showOrigin && line.service ? (
                   <span className={cn('mr-2 inline-block', originTone(line.service))}>
                     {line.service.padEnd(gutter, ' ').slice(0, gutter)} |
                   </span>
                 ) : null}
-                {line.timestamp ? <span className="mr-2 text-subtle">{line.timestamp.slice(11, 19)}</span> : null}
+                {line.timestamp ? <span className="mr-2 text-terminal-dim">{line.timestamp.slice(11, 19)}</span> : null}
                 {line.text}
               </div>
             ))}

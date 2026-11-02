@@ -40,14 +40,15 @@
     "githubUntouched": "Nothing outside this host changes.",
     "previewContainers": "{{count}} container(s) will be removed.",
     "previewVolumes": "Named volumes: {{names}}. Size is unknown: the panel cannot inspect volumes.",
-    "typeName": "Type {{name}} to confirm."
+    "typeName": "Type {{name}} to confirm.",
+    "more": "More"
   },
   "collapsedService": "{{count}} collapsed service",
   "collapsedServices": "{{count}} collapsed services",
   "archived": "archived",
   "running": "{{running}}/{{total}} running",
   "tabs": {
-    "overview": "Overview",
+    "overview": "Services",
     "services": "Services",
     "logs": "Logs",
     "settings": "Settings"
@@ -121,7 +122,15 @@
   "servicesTable": {
     "empty": "This environment has no services",
     "fallback": "Live measurements need the panel to serve this environment's services; showing what the containers report.",
-    "emptyRemembered": "Containers were removed. Start recreates them through the runner."
+    "emptyRemembered": "Containers were removed. Start recreates them through the runner.",
+    "unhealthy": "Has a problem",
+    "healthy": "Healthy",
+    "stopped": "Stopped",
+    "privateAddress": "Only on the environment's network",
+    "connect": "Connect",
+    "filterLogs": "Filter logs by {{name}}",
+    "openConsole": "Open console of {{name}}",
+    "details": "Details of {{name}}"
   },
   "presence": {
     "remembered": "Not running"
@@ -129,5 +138,12 @@
   "settings": {
     "title": "Settings",
     "description": "Presentation overrides, kept in the gateway's database. Nothing is written inside the project."
+  },
+  "openSite": "Open site",
+  "healthWord": {
+    "ok": "Healthy",
+    "partial": "Degraded",
+    "down": "Stopped",
+    "unhealthy": "Has a problem"
   }
 }
