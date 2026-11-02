@@ -120,7 +120,7 @@ project Docker is running: an observation, read locally.
 | `envs services` | `--project <name>` |
 | `envs analyze <path>` | Read-only. `--file <path>` names the Compose file (relative to `<path>` or absolute) when it is not `compose.yaml` in `<path>`; the project directory is then the file's. |
 | `envs namespace` | `--path`, `--base`, `--suffix`, `--no-check` |
-| `adopt <path>` | Canonical isolated Compose adoption. `--dry-run --json` reports the Runtime Plan and pending decisions without writing state. Repeat `--service <name:port>` to choose an HTTP surface; `--project <name>` sets an explicit Compose project namespace; `--remove-container-name <service>`, `--allow-shared-networks`, and `--allow-shared-volumes` record explicit compatibility decisions. `--manual` records a project-owned integration without Portta mutations. |
+| `adopt <path>` | Canonical isolated Compose adoption. `--dry-run --json` reports the Runtime Plan and pending decisions without writing state. Repeat `--service <name:port>` to choose an HTTP surface; `--project <name>` sets an explicit Compose project namespace; `--remove-container-name <service>`, `--allow-shared-networks`, and `--allow-shared-volumes` record explicit compatibility decisions. `--manual` records a project-owned integration without Portta mutations. On a public host, `--protect <service>` asks for a generated credential (printed once) and `--public <service>` lets everybody open it; adopt stops with a pending `public_exposure` until every routed service has one. |
 | `runtime up\|down\|restart\|status\|config [path]` | Reuse the validated persisted Runtime Plan; `up` reconciles stale source inputs before starting. |
 | `runtime logs [path]` | `--service <name>`, `--no-follow`, `--tail <lines>` |
 
@@ -199,8 +199,9 @@ arguments directly to the selected client. `psql` and `mysql` also accept
 | `auth token create` | `--name`, `--human`, `--scopes <a,b>`, `--expires-in-days`; the secret is shown once. |
 | `auth token revoke <id>` | Global flags only. Somebody else's needs `user:update`. |
 | `protect host <host>` | `--user`, `--password-stdin`, `--entrypoint`, `--label`, `--project`, `--service`; creates or rotates a protected-host record. |
+| `protect open <host>` | `--entrypoint`, `--label`, `--project`, `--service`; records that everybody may open the host, with no login. Takes effect at once, with no container recreated. |
 | `protect status [host]` | Read-only; never returns credential hashes. |
-| `protect remove <host>` | Removes the record; the consumer project's middleware label is unchanged. |
+| `protect remove <host>` | Removes the decision. On a public host the site is closed afterwards, because no record means closed. |
 | `auth reset-password <email>` | `--password-stdin`; otherwise a password is generated and shown once. Runs inside the panel container and ends every session of that account. |
 | `users list` | Global flags only. |
 | `users create` | `--name`, `--email`, `--role`, `--projects`, `--password-stdin`; a generated password is shown once. |

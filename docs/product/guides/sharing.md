@@ -3,12 +3,13 @@
 Somebody wants to look at the branch you are on. A share is "show this one
 thing to this one person until tomorrow": an **additional hostname** for one
 service, with an expiry, and it changes nothing about the project. Routing on
-the VPN reaches everyone on the tailnet, and `PUBLIC_ENABLED=true` puts
-**every opted-in service on the host** on the internet; a share is neither.
+the VPN reaches everyone on the tailnet, and on a public host each site has a
+standing decision ([Run a public host](public-host.md)); a share is neither: it
+is one extra address that ends by itself.
 
 ```text
 Exposure   Protected · reviewer · expires in 6 h        Revoke   Regenerate
-           https://storefront-web-a7f3.share.dev.example.com
+           https://storefront-web-a7f3-share.dev.example.com
 ```
 
 ## The three states
@@ -19,8 +20,11 @@ Exposure   Protected · reviewer · expires in 6 h        Revoke   Regenerate
 | `protected` | An additional hostname behind a generated password |
 | `public` | An additional hostname with no password. Refused unless `PUBLIC_ENABLED=true` and `PUBLIC_DOMAIN` is set |
 
-Shared hostnames live under `share.<domain>`, kept visibly apart from project
-hostnames and covered by one wildcard record.
+A shared hostname is one DNS label,
+`<project>-<service>-<id>-share.<domain>`, so the wildcard certificate a host
+already has covers it. Project and service are shortened when needed to keep
+the id and the suffix inside the 63 octets a label may have
+([ADR 0023](../../development/adr/0023-flat-hostname-labels.md)).
 
 ## Making one
 
@@ -56,7 +60,7 @@ Traefik already watches and hot-reloads:
 http:
   routers:
     portta-share-a7f3:
-      rule: "Host(`storefront-web-a7f3.share.dev.example.com`)"
+      rule: "Host(`storefront-web-a7f3-share.dev.example.com`)"
       entryPoints: [websecure]
       middlewares: [portta-forward-auth]
       service: portta-share-a7f3
