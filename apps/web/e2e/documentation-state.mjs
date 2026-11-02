@@ -6,6 +6,42 @@ import { initialState } from './documentation-host.mjs'
 
 // Owned, synthetic collector output: documentation never reads this host's
 // account, metrics, credentials or environment file.
+/** What the collector would read from two working directories of the demonstration host. */
+const GIT = {
+  'demo-shop': (now) => ({
+    path: '~/projects/demo-shop',
+    branch: 'develop',
+    detached: false,
+    upstream: 'origin/develop',
+    ahead: 2,
+    behind: 0,
+    head: { sha: 'a41f2c9', subject: 'fix(cart): valida o SKU antes de adicionar', author: 'Ada Lovelace', at: now - 7200 },
+    changed: 2,
+    untracked: 1,
+    files: [
+      { path: 'src/cart/validate.ts', status: 'M' },
+      { path: 'compose.yaml', status: 'M' },
+      { path: 'notes.md', status: 'U' },
+    ],
+    lastChangeAt: now - 720,
+    collectedAt: now - 60,
+  }),
+  'demo-shop-issue312': (now) => ({
+    path: '~/projects/demo-shop/.worktrees/issue312',
+    branch: 'issue312',
+    detached: false,
+    upstream: 'origin/issue312',
+    ahead: 0,
+    behind: 0,
+    head: { sha: '7be03d1', subject: 'feat(checkout): novo resumo do pedido', author: 'Ada Lovelace', at: now - 2400 },
+    changed: 0,
+    untracked: 0,
+    files: [],
+    lastChangeAt: now - 2400,
+    collectedAt: now - 60,
+  }),
+}
+
 export function documentationState({ mode = 'disabled', profile = 'local' } = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'portta-docs-'))
   const metricsDir = join(directory, 'metrics')
@@ -110,6 +146,7 @@ export function documentationState({ mode = 'disabled', profile = 'local' } = {}
     memoryUsedBytes: containers.reduce((total, container) => total + container.memoryUsedBytes, 0),
     networkRxBytes: 204800,
     networkTxBytes: 102400,
+    ...(GIT[name] ? { git: GIT[name](Math.floor(Date.now() / 1000)) } : {}),
   }))
   const refresh = () => {
     snapshot.collectedAt = Math.floor(Date.now() / 1000)

@@ -872,6 +872,50 @@ export const ContainerResourceMetrics = named(
 )
 export type ContainerResourceMetrics = z.infer<typeof ContainerResourceMetrics>
 
+/**
+ * Where a project's code stands, read on the host from its working directory.
+ *
+ * Read-only and local: nothing here asks a remote anything, so `ahead` and `behind`
+ * are against the remote-tracking branch as it was last fetched, not against GitHub now.
+ */
+export const GitState = named(
+  z
+    .object({
+      path: z.string().describe('The working directory it was read from'),
+      branch: z.string().nullable().describe('Null when HEAD is detached or the repository has no commit yet'),
+      detached: z.boolean(),
+      upstream: z.string().nullable(),
+      ahead: z.number().int().nullable().describe('Commits not yet pushed; null without an upstream'),
+      behind: z.number().int().nullable().describe('Commits not yet pulled, as last fetched; null without an upstream'),
+      head: z
+        .object({
+          sha: z.string(),
+          subject: z.string(),
+          author: z.string(),
+          at: unixSeconds,
+        })
+        .strict()
+        .nullable(),
+      changed: z.number().int().describe('Tracked files with changes not committed'),
+      untracked: z.number().int(),
+      files: z
+        .array(
+          z
+            .object({
+              path: z.string(),
+              status: z.enum(['M', 'A', 'D', 'U']).describe('Modified, added, deleted or new (untracked)'),
+            })
+            .strict(),
+        )
+        .describe('The first of them: changed + untracked can be longer'),
+      lastChangeAt: unixSeconds.nullable().describe('The newest of the last commit and the files not committed'),
+      collectedAt: unixSeconds,
+    })
+    .strict(),
+  'GitState',
+)
+export type GitState = z.infer<typeof GitState>
+
 export const ProjectResourceMetrics = named(
   z
     .object({
@@ -884,6 +928,7 @@ export const ProjectResourceMetrics = named(
       networkRxBytes: nullableNumber,
       networkTxBytes: nullableNumber,
       containers: z.array(ContainerResourceMetrics),
+      git: GitState.nullable().optional(),
     })
     .strict(),
   'ProjectResourceMetrics',

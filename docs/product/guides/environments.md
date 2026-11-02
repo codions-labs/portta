@@ -217,3 +217,18 @@ is linked to, never embedded: it is a good tool and duplicating it would need
 the insecure-mode API exposed more widely than it already is. See
 [ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md), and
 [Security](../concepts/security.md) for what enabling that API costs.
+
+## Where the code stands
+
+An environment's page has a **Code** card when the collector could read the folder it
+was started from: the branch, the last commit with who made it and when, how many files
+are not committed (and which), how many commits are not pushed, and when anything last
+changed. A badge says it in a word: **Has changes**, **Not pushed**, **Behind the remote**,
+**No remote** or **All pushed**. When the containers started before the last commit, it
+says what is up may not have it and points to Rebuild.
+
+It is read on the host by the collector (`portta host collect`), never by the panel, and
+never from GitHub: nothing here contacts a remote, so *not pushed* and *behind* are as of
+the last fetch somebody did. Only file names and their status are read, not what is in
+them, and nothing writes to the repository. The reasoning is in
+[ADR 0056](../../development/adr/0056-the-collector-reads-where-the-code-stands.md).

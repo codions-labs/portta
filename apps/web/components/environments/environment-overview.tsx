@@ -14,6 +14,7 @@ import { ResourceUsage } from '@/components/entities/resource-usage'
 import { ServiceDetails, ServiceDrawer } from '@/components/entities/service-drawer'
 import type { ServiceSection } from '@/components/entities/service-row'
 import { EnvironmentLogs } from '@/components/environment-logs'
+import { EnvironmentGit } from '@/components/environments/environment-git'
 import { ServiceIcon } from '@/components/service-icon'
 import { Empty, Loading } from '@/components/shell-bits'
 import { StatusDot } from '@/components/ui/badge'
@@ -256,6 +257,7 @@ export function EnvironmentOverview({ name }: { name: string }) {
     <div className="space-y-4">
       {served.error ? <p className="text-sm text-subtle">{t('servicesTable.fallback')}</p> : null}
       <Card>{list(false)}</Card>
+      <EnvironmentGit environment={environment} />
       {mayReadLogs && environment.presence !== 'remembered' ? (
         <EnvironmentLogs project={environment} service={logsFor} docked onSelectService={filterLogs} />
       ) : null}

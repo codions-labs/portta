@@ -15,7 +15,8 @@ already have better tools for (Claude Code, Codex, OpenCode, Pi, herdr, Orca,
 Portta decides **where a project runs and how it is reached**: a hostname per
 service, no published ports, private databases, a decision per site about who
 may open it, and an environment per branch or worktree. It does not run AI, hold
-a model credential, track issues or manage git.
+a model credential, track issues or manage git. It reads where a project's code
+stands, which is not managing it: see [0056](0056-the-collector-reads-where-the-code-stands.md).
 
 Agents learn the host through three layers, none of which executes a model: a
 global instruction block, a session hook that prints `portta agent context`, and

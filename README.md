@@ -29,7 +29,7 @@ Running several projects, branches or agent worktrees side by side on one server
 
 ## What Portta is not
 
-Portta does not run AI, manage git, track issues or deploy releases. It gives your tools a place to run projects and a way to reach them. It is host infrastructure installed once, not a parent Compose project, and it never edits your repository.
+Portta does not run AI, manage git, track issues or deploy releases. It reads where a project's code stands (branch, last commit, what is not committed or pushed) on the host, never asking a remote and never writing to the repository. It gives your tools a place to run projects and a way to reach them. It is host infrastructure installed once, not a parent Compose project, and it never edits your repository.
 
 ## Status
 

@@ -2,6 +2,7 @@ import { loadavg } from 'node:os'
 import {
   aggregateProjects,
   type ContainerIdentity,
+  composeProjectOf,
   detectRuntime,
   dockerCliStatsToRaw,
   emptySnapshot,
@@ -12,6 +13,7 @@ import {
   serviceOf,
 } from 'portta-core'
 import { dockerOperatingSystem, inspectContainers, readContainerStats } from '../docker.js'
+import { readGit } from './git.js'
 import { loadInstance } from './store.js'
 
 type Settled<T> = PromiseSettledResult<T>
@@ -90,7 +92,22 @@ async function collectProjects(): Promise<MetricsSnapshot['projects']> {
       service: serviceOf(identity.labels),
     })
   })
-  return aggregateProjects(metrics, identities)
+  const projects = aggregateProjects(metrics, identities)
+
+  // Each compose project's working directory, from the label Compose puts on its containers.
+  const directories = new Map<string, string>()
+  for (const identity of identities) {
+    const project = composeProjectOf(identity.labels)
+    const directory = identity.labels['com.docker.compose.project.working_dir']
+    if (project && directory && !directories.has(project)) directories.set(project, directory)
+  }
+  return Promise.all(
+    projects.map(async (project) => {
+      const directory = directories.get(project.composeProject)
+      const git = directory ? await readGit(directory) : null
+      return git ? { ...project, git } : project
+    }),
+  )
 }
 
 export async function collectSnapshot(root: string, now = Date.now()): Promise<MetricsSnapshot> {

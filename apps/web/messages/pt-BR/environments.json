@@ -145,5 +145,44 @@
     "partial": "Degradado",
     "down": "Parado",
     "unhealthy": "Com problema"
+  },
+  "git": {
+    "title": "Código",
+    "verdict": {
+      "changed": "Com alterações",
+      "unpushed": "Sem enviar",
+      "behind": "Atrás do remoto",
+      "noUpstream": "Sem remoto",
+      "clean": "Tudo enviado"
+    },
+    "branch": "Branch",
+    "detached": "HEAD solto, sem branch",
+    "lastCommit": "Último commit",
+    "noCommit": "Ainda sem commit",
+    "uncommitted": "Sem commit",
+    "none": "Nenhum",
+    "files_one": "{{count}} arquivo",
+    "files_other": "{{count}} arquivos",
+    "unpushed": "Sem enviar",
+    "noUpstreamValue": "Esta branch não acompanha um remoto",
+    "commitsTo_one": "{{count}} commit para {{upstream}}",
+    "commitsTo_other": "{{count}} commits para {{upstream}}",
+    "allPushed": "Tudo enviado para {{upstream}}",
+    "behind": "Sem baixar",
+    "commits_one": "{{count}} commit",
+    "commits_other": "{{count}} commits",
+    "lastChange": "Última alteração",
+    "folder": "Pasta",
+    "startedBefore": "Os contêineres subiram antes do último commit. O site no ar pode não ter essas mudanças. Use Reconstruir, no menu Mais.",
+    "filesAria": "Arquivos alterados",
+    "status": {
+      "M": "Alterado",
+      "A": "Adicionado",
+      "D": "Removido",
+      "U": "Novo"
+    },
+    "moreFiles_one": "e mais {{count}} arquivo",
+    "moreFiles_other": "e mais {{count}} arquivos",
+    "readOn": "Lido neste host, sem consultar o GitHub · {{time}}"
   }
 }

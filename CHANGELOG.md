@@ -8,6 +8,9 @@ All notable changes to Portta are documented here. The format follows
 
 ### Added
 
+- An environment's page shows where its code stands: branch, last commit, what is not
+  committed or pushed and when it last changed. The host collector reads it, read-only and
+  without asking any remote.
 - A protected site can ask for the password alone, with no username: `portta protect host
   --password-only`, `user: null` in `PUT /api/services/{id}/exposure`, and a checkbox in the
   service's panel. Its login page then shows one field.

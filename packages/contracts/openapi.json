@@ -5211,6 +5211,158 @@
         ],
         "additionalProperties": false
       },
+      "GitState": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The working directory it was read from"
+          },
+          "branch": {
+            "description": "Null when HEAD is detached or the repository has no commit yet",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detached": {
+            "type": "boolean"
+          },
+          "upstream": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ahead": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Commits not yet pushed; null without an upstream"
+          },
+          "behind": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Commits not yet pulled, as last fetched; null without an upstream"
+          },
+          "head": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "sha": {
+                    "type": "string"
+                  },
+                  "subject": {
+                    "type": "string"
+                  },
+                  "author": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "number",
+                    "description": "Unix timestamp in seconds"
+                  }
+                },
+                "required": [
+                  "sha",
+                  "subject",
+                  "author",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "changed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Tracked files with changes not committed"
+          },
+          "untracked": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "M",
+                    "A",
+                    "D",
+                    "U"
+                  ],
+                  "description": "Modified, added, deleted or new (untracked)"
+                }
+              },
+              "required": [
+                "path",
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The first of them: changed + untracked can be longer"
+          },
+          "lastChangeAt": {
+            "anyOf": [
+              {
+                "type": "number",
+                "description": "Unix timestamp in seconds"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The newest of the last commit and the files not committed"
+          },
+          "collectedAt": {
+            "type": "number",
+            "description": "Unix timestamp in seconds"
+          }
+        },
+        "required": [
+          "path",
+          "branch",
+          "detached",
+          "upstream",
+          "ahead",
+          "behind",
+          "head",
+          "changed",
+          "untracked",
+          "files",
+          "lastChangeAt",
+          "collectedAt"
+        ],
+        "additionalProperties": false
+      },
       "ProjectResourceMetrics": {
         "type": "object",
         "properties": {
@@ -5257,6 +5409,16 @@
             "items": {
               "$ref": "#/components/schemas/ContainerResourceMetrics"
             }
+          },
+          "git": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GitState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
