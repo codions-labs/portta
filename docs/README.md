@@ -37,6 +37,8 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 - [Expose the gateway through Tailscale](product/guides/tailscale.md) — Attach the gateway to your private tailnet.
 - [Configure persistent Tailscale services](product/guides/tailscale-services.md) — Give selected services stable private addresses.
 - [Publish through Cloudflare Tunnel](product/guides/cloudflare-tunnel.md) — Publish HTTPS routes through a Cloudflare Tunnel.
+- [Deploy Portta on a server](product/guides/deploy.md) — Deploy Portta on a server step by step.
+- [Run a public host](product/guides/public-host.md) — Run many projects on a public server with a decision per site.
 - [Enable public access](product/guides/public-access.md) — Enable deliberate internet access to selected routes.
 
 ### Guides / Authentication and sharing
@@ -50,7 +52,7 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 - [Open a TCP bridge](product/guides/tcp-access.md) — Open temporary loopback bridges to private services.
 - [Configure TCP routing](product/guides/tcp-routing.md) — Route supported TCP protocols by hostname.
 
-### Guides / Issues and integrations
+### Guides / API
 
 - [Use the Portta API](product/guides/use-api.md) — Authenticate API clients and find the endpoint contract.
 

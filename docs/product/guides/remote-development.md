@@ -4,8 +4,8 @@ The same gateway, the same commands, one host away. Two modes:
 
 | Profile | Who can reach it | Typical use |
 |---|---|---|
-| `remote-private` | your tailnet only | the default and the recommendation |
-| `remote-public` | the internet | demos, webhooks, external testing (opt-in) |
+| `remote-private` | your tailnet only | when only you and your team need it |
+| `remote-public` | the internet | clients, webhooks, demos: see [Run a public host](public-host.md) |
 
 > **Verification status.** The local profile is exercised end to end by CI on
 > every change. The remote profiles are validated by configuration tests (every

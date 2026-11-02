@@ -41,10 +41,9 @@ does not restart anything itself. Consumer projects keep running throughout.
 
 It changes **who can reach Traefik**. That is all.
 
-It does not publish anything new. A service is still routed only when it sets
-`traefik.enable=true`, and databases and caches are still never on the shared
-network. What was invisible stays invisible; what was already routed becomes
-reachable from the internet.
+It does not publish anything new. Only services that `portta adopt` routes get a
+hostname, databases and caches are never on the shared network, and every routed
+hostname needs a decision before it opens: see [Run a public host](public-host.md).
 
 Never public, in any profile:
 
@@ -80,25 +79,6 @@ Public mode raises `aliasHeadersStrategy` to `delete`, so a client cannot
 forge a header Traefik manages by exploiting a backend that normalises
 underscores.
 
-Anything routed is public unless its router opts into authentication. Portta
-ships a working ForwardAuth middleware and one credential per protected host:
-
-```bash
-portta protect host demo-web.example.com --project demo --service web
-```
-
-The router then opts in with a label the project owns; see
-[Protecting a project hostname](authentication.md#protecting-a-project-hostname).
-
-## Deciding
-
-Use the private profile. It is the default recommendation because it gives you
-the same thing, remote access from anywhere, without an open port.
-
-Public mode earns its keep for external webhooks, a demo for someone who cannot
-join your tailnet, or testing something that must see a public certificate.
-When the reason passes, turn it off:
-
-```bash
-portta public disable
-```
+Every routed hostname passes through the ForwardAuth middleware, and the
+registry decides: a login, everybody, or nothing. A hostname nobody decided
+about is closed. See [Run a public host](public-host.md).

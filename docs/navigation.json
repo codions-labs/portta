@@ -126,6 +126,16 @@
           "description": "Publish HTTPS routes through a Cloudflare Tunnel."
         },
         {
+          "source": "docs/product/guides/deploy.md",
+          "slug": "deploy",
+          "description": "Deploy Portta on a server step by step."
+        },
+        {
+          "source": "docs/product/guides/public-host.md",
+          "slug": "public-host",
+          "description": "Run many projects on a public server with a decision per site."
+        },
+        {
           "source": "docs/product/guides/public-access.md",
           "slug": "public-access",
           "description": "Enable deliberate internet access to selected routes."
@@ -175,7 +185,7 @@
     },
     {
       "title": "Guides",
-      "category": "Issues and integrations",
+      "category": "API",
       "audience": "user",
       "sequential": false,
       "pages": [

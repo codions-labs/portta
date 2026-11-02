@@ -19,6 +19,8 @@ export const DOC_PATHS: Record<string, string> = {
   "docs/product/guides/tailscale.md": "tailscale",
   "docs/product/guides/tailscale-services.md": "tailscale-services",
   "docs/product/guides/cloudflare-tunnel.md": "cloudflare-tunnel",
+  "docs/product/guides/deploy.md": "deploy",
+  "docs/product/guides/public-host.md": "public-host",
   "docs/product/guides/public-access.md": "public-access",
   "docs/product/guides/authentication.md": "authentication",
   "docs/product/guides/sharing.md": "sharing",

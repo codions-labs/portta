@@ -6,6 +6,47 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - Unreleased
+
+Portta now does one thing: many Docker projects on one host, each at
+`project-service.<domain>`, with no published ports, private databases, a
+decision per site about who may open it, and agents that know all of this when
+their session starts.
+
+### Added
+
+- Public hosts. Every routed service on the `remote-public` profile passes
+  through ForwardAuth, and the registry decides per hostname: protected by a
+  login, open to everybody, or closed because nobody decided. `portta adopt`
+  stops until each routed service has a decision (`--protect`, `--public`), and
+  `portta protect open|host|remove` and the panel change it with no restart.
+  A project that routes Traefik itself is refused on a public host.
+- Access for a client from the panel: a permanent login or a temporary link,
+  copying URL and password together. Temporary links answer on one DNS label,
+  `<project>-<service>-<id>-share.<domain>`, so one wildcard certificate covers
+  them.
+- The panel can operate projects on a public host with `PORTTA_RUNNER_PUBLIC`,
+  only on its own domain with sign-in and TLS. The container console requires
+  two-factor authentication on an exposed panel.
+- `portta agent context`, `portta agents install|status|uninstall`, and the
+  skills `portta-host-context`, `portta-dockerize` and `portta-adopt-compose`,
+  so Claude Code, Codex, OpenCode and Pi learn where they run at session start.
+- A project directory may sit at any depth under Projects Home.
+- Guides: `public-host` and `deploy`.
+
+### Removed
+
+- Taskflow, the host daemon, the MCP server, issues, work sessions, activity,
+  the repository scan, panel-managed SSH keys, `portta remote`, the agent
+  permissions setting, removing a working directory from the panel, and the
+  module system. There is no migration: the database baseline was regenerated.
+- `portta envs init`, `portta prepare` and `portta init`, which repeated `adopt`.
+
+### Changed
+
+- The panel keeps Overview, Projects, Environments, Services, Docker, Network,
+  Access, Gateway, Docs and Settings, and its layout is checked at 375 px.
+
 ## [0.1.0] - 2026-09-18
 
 ### Added
