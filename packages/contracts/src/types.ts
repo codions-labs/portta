@@ -847,6 +847,12 @@ export const HostMetrics = named(
       load: HostLoad.nullable(),
       storage: HostStorageInfo.nullable(),
       gpu: z.array(HostGpuInfo),
+      gpuMemory: z
+        .object({ usedBytes: z.number(), totalBytes: z.number() })
+        .strict()
+        .nullable()
+        .optional()
+        .describe('Memory used and present on the GPUs, from nvidia-smi; absent on other GPUs'),
       temperatureCelsius: nullableNumber.describe('CPU package temperature in Celsius, where the platform reports one'),
       battery: HostBatteryInfo.nullable().describe('Absent on a host with no battery'),
     })
@@ -929,6 +935,7 @@ export const ProjectResourceMetrics = named(
       own: z.literal(true).optional().describe("Set on Portta's own containers (gateway, panel, proxies)"),
       cpuUtilisation: nullableNumber,
       memoryUsedBytes: nullableNumber,
+      gpuMemoryBytes: nullableNumber.optional().describe("What its containers hold of the GPU's memory"),
       containerCount: z.number().int(),
       networkRxBytes: nullableNumber,
       networkTxBytes: nullableNumber,

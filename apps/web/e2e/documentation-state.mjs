@@ -155,6 +155,10 @@ export function documentationState({ mode = 'disabled', profile = 'local' } = {}
     networkTxBytes: 102400,
     ...(GIT[name] ? { git: GIT[name](Math.floor(Date.now() / 1000)) } : {}),
   }))
+  snapshot.host.gpuMemory = { usedBytes: 10 * GiB, totalBytes: 24 * GiB }
+  for (const project of snapshot.projects) {
+    if (project.composeProject === 'demo-shop') project.gpuMemoryBytes = 6 * GiB
+  }
   snapshot.dockerStorage = {
     collectedAt: Math.floor(Date.now() / 1000),
     projects: [...projects.keys()].map((name, index) => ({

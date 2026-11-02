@@ -48,7 +48,11 @@ beforeEach(() =>
         { composeProject: 'portta', volumeBytes: 4 * GB, layerBytes: 0 },
       ],
     },
-    projects: [project('shop', 3 * GB, 0.3), project('blog', 1 * GB, 0.1), project('portta', 0.5 * GB, 0.05, true)],
+    projects: [
+      { ...project('shop', 3 * GB, 0.3), gpuMemoryBytes: 6 * GB },
+      project('blog', 1 * GB, 0.1),
+      project('portta', 0.5 * GB, 0.05, true),
+    ],
     host: {
       hostname: 'vps-01',
       manufacturer: null,
@@ -92,6 +96,7 @@ beforeEach(() =>
         usedPercent: 0.41,
       },
       gpu: [],
+      gpuMemory: { usedBytes: 10 * GB, totalBytes: 24 * GB },
       temperatureCelsius: null,
       battery: null,
     },
@@ -125,6 +130,13 @@ describe('the server page', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Disk' }))
     expect(await screen.findByText('Projects use 15% of the disk in use.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /shop/ })).toHaveAttribute('href', '/environments/shop')
+  })
+
+  it('splits the GPU memory when the server has one', async () => {
+    renderWithQuery(<HostHealthView />, 'en')
+    expect(await screen.findByRole('group', { name: 'Server GPU memory' })).toHaveTextContent('42%')
+    await userEvent.click(screen.getByRole('button', { name: 'GPU' }))
+    expect(await screen.findByText('Projects hold 60% of the GPU memory in use.')).toBeInTheDocument()
   })
 
   it('shows the disk whole when the collector has not reported it', async () => {

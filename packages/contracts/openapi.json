@@ -5065,6 +5065,30 @@
               "$ref": "#/components/schemas/HostGpuInfo"
             }
           },
+          "gpuMemory": {
+            "description": "Memory used and present on the GPUs, from nvidia-smi; absent on other GPUs",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "usedBytes": {
+                    "type": "number"
+                  },
+                  "totalBytes": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "usedBytes",
+                  "totalBytes"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "temperatureCelsius": {
             "description": "CPU package temperature in Celsius, where the platform reports one",
             "type": [
@@ -5401,6 +5425,13 @@
             ]
           },
           "memoryUsedBytes": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "gpuMemoryBytes": {
+            "description": "What its containers hold of the GPU's memory",
             "type": [
               "number",
               "null"

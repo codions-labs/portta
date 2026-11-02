@@ -3,6 +3,7 @@
 // opens a path or imports the library — fixtures stay kernel-free.
 
 import type { DockerStorage } from './docker-storage.ts'
+import type { GpuMemory } from './gpu-usage.ts'
 
 export const METRICS_VERSION = 1
 export const COLLECT_INTERVAL_MS = 5_000
@@ -104,6 +105,8 @@ export interface HostMetrics {
   load: HostLoad | null
   storage: HostStorageInfo | null
   gpu: HostGpuInfo[]
+  /** Memory used and present on the GPUs, summed; read from nvidia-smi, so absent on other GPUs. */
+  gpuMemory?: GpuMemory | null
   /** CPU package temperature in Celsius, where the platform reports one. */
   temperatureCelsius: number | null
   battery: HostBatteryInfo | null
@@ -130,6 +133,8 @@ export interface ProjectResourceMetrics {
   composeProject: string
   /** Portta's own containers, so a reading can tell the gateway and panel from the projects it serves. */
   own?: true
+  /** What its containers hold of the GPU's memory; absent where that is not read. */
+  gpuMemoryBytes?: number | null
   cpuUtilisation: number | null
   memoryUsedBytes: number | null
   containerCount: number

@@ -88,6 +88,17 @@ describe('what the server is used for', () => {
     expect(projectsOfUsed(split)).toBeCloseTo(48 / 208)
   })
 
+  it('splits the GPU memory by what each project holds, and says nothing without it', () => {
+    const withGpu = { ...host, gpuMemory: { usedBytes: 10 * GB, totalBytes: 24 * GB } } as unknown as HostMetrics
+    const held = (name: string, bytes: number, own = false) => ({ ...project(name, 1, 1, own), gpuMemoryBytes: bytes })
+    const split = usageSplit('gpu', withGpu, [held('shop', 6 * GB), held('portta', 1 * GB, true)])!
+    expect(split.total).toBe(24 * GB)
+    expect(split.projects).toBe(6 * GB)
+    expect(split.portta).toBe(1 * GB)
+    expect(split.system).toBe(3 * GB)
+    expect(usageSplit('gpu', host, [])).toBeNull()
+  })
+
   it('does not split the disk before the collector reports it', () => {
     const split = usageSplit('disk', host, [project('shop', 1, 1)])!
     expect(split.used).toBe(208 * GB)

@@ -130,12 +130,14 @@ export function UsageCards() {
   const memory = usageSplit('memory', host, projects)
   const cpu = usageSplit('cpu', host, projects)
   const disk = usageSplit('disk', host, projects, metrics.data?.dockerStorage)
+  const gpu = usageSplit('gpu', host, projects)
   const others = readingsFor(host, history.data, format, to as never).filter((reading) => !SPLIT.has(reading.id))
   return (
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label={t('resources')}>
       {memory ? <UsageCard kind="memory" split={memory} points={points.map((p) => p.host.memoryUsedPercent)} /> : null}
       {cpu ? <UsageCard kind="cpu" split={cpu} points={points.map((p) => p.host.cpuUtilisation)} /> : null}
       {disk ? <UsageCard kind="disk" split={disk} points={points.map((p) => p.host.storageUsedPercent)} /> : null}
+      {gpu ? <UsageCard kind="gpu" split={gpu} points={[]} /> : null}
       {others.map((reading) => (
         <ReadingCard
           key={reading.id}
@@ -190,20 +192,22 @@ export function WhoUsesServer({ kind, onKind }: { kind: UsageKind; onKind: (kind
             aria-label={t('who.resource')}
             className="inline-flex gap-0.5 rounded-lg bg-surface-2 p-0.5"
           >
-            {(['memory', 'cpu', 'disk'] as const).map((item) => (
-              <button
-                key={item}
-                type="button"
-                aria-pressed={kind === item}
-                onClick={() => onKind(item)}
-                className={cn(
-                  'h-7 rounded-md px-2.5 text-xs font-medium focus-ring',
-                  kind === item ? 'bg-surface font-semibold text-link shadow-raised' : 'text-muted hover:text-ink',
-                )}
-              >
-                {t(`kind.${item}`)}
-              </button>
-            ))}
+            {(['memory', 'cpu', 'disk', 'gpu'] as const)
+              .filter((item) => item !== 'gpu' || host.gpuMemory)
+              .map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  aria-pressed={kind === item}
+                  onClick={() => onKind(item)}
+                  className={cn(
+                    'h-7 rounded-md px-2.5 text-xs font-medium focus-ring',
+                    kind === item ? 'bg-surface font-semibold text-link shadow-raised' : 'text-muted hover:text-ink',
+                  )}
+                >
+                  {t(`kind.${item}`)}
+                </button>
+              ))}
           </div>
         }
       />

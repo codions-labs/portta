@@ -60,7 +60,11 @@
       "15m": "15 min",
       "30m": "30 min",
       "1h": "1 h"
-    }
+    },
+    "gpu": "GPU memory",
+    "ofGpu": "of {{total}}",
+    "disk": "Disk",
+    "diskHint": "volumes and containers"
   },
   "settings": {
     "title": "Project",

@@ -42,7 +42,8 @@
       "kind": {
         "memory": "Memória",
         "cpu": "CPU",
-        "disk": "Disco"
+        "disk": "Disco",
+        "gpu": "GPU"
       },
       "who": {
         "title": "O que está usando o servidor",
@@ -51,7 +52,8 @@
         "verdict": {
           "memory": "Os projetos usam {{percent}} da memória em uso.",
           "cpu": "Os projetos usam {{percent}} da CPU em uso.",
-          "disk": "Os projetos ocupam {{percent}} do disco em uso."
+          "disk": "Os projetos ocupam {{percent}} do disco em uso.",
+          "gpu": "Os projetos usam {{percent}} da memória de GPU em uso."
         },
         "rest": "Os outros {{percent}} são do sistema, do Portta e de outros programas.",
         "diskNote": "O disco aparece inteiro até o coletor informar o que cada projeto guarda nele. Atualize-o com portta up.",
@@ -60,7 +62,8 @@
         "empty": "Nenhum projeto usa este recurso agora.",
         "unmeasured": "O servidor não informa este recurso.",
         "diskScope": "Conta para o projeto: os volumes e a camada de escrita dos contêineres. Imagens, arquivos nas pastas dos projetos e o resto do disco entram como sistema."
-      }
+      },
+      "gpu": "Memória de GPU do servidor"
     },
     "clock": {
       "title": "Hora e fuso",

@@ -6,7 +6,7 @@
 
 import type { DockerStorageInfo, HostMetrics, ProjectResourceMetrics } from 'portta-contracts'
 
-export type UsageKind = 'memory' | 'cpu' | 'disk'
+export type UsageKind = 'memory' | 'cpu' | 'disk' | 'gpu'
 
 export interface ProjectShare {
   /** The compose project, which is what the environment page is addressed by. */
@@ -35,8 +35,9 @@ export interface UsageSplit {
 const finite = (value: number | null | undefined): value is number =>
   typeof value === 'number' && Number.isFinite(value)
 
-function usedBy(kind: 'memory' | 'cpu', project: ProjectResourceMetrics): number {
-  const value = kind === 'memory' ? project.memoryUsedBytes : project.cpuUtilisation
+function usedBy(kind: 'memory' | 'cpu' | 'gpu', project: ProjectResourceMetrics): number {
+  const value =
+    kind === 'memory' ? project.memoryUsedBytes : kind === 'gpu' ? project.gpuMemoryBytes : project.cpuUtilisation
   return finite(value) && value > 0 ? value : 0
 }
 
@@ -92,9 +93,20 @@ export function usageSplit(
 ): UsageSplit | null {
   if (kind === 'disk') return diskSplit(host, projects, storage)
 
-  const total = kind === 'memory' ? host.memoryTotalBytes : host.cpu.logicalCores
+  const total =
+    kind === 'memory'
+      ? host.memoryTotalBytes
+      : kind === 'gpu'
+        ? (host.gpuMemory?.totalBytes ?? null)
+        : host.cpu.logicalCores
   const rawUsed =
-    kind === 'memory' ? host.memoryUsedBytes : finite(host.cpuUtilisation) && total ? host.cpuUtilisation * total : null
+    kind === 'memory'
+      ? host.memoryUsedBytes
+      : kind === 'gpu'
+        ? (host.gpuMemory?.usedBytes ?? null)
+        : finite(host.cpuUtilisation) && total
+          ? host.cpuUtilisation * total
+          : null
   if (!finite(total) || total <= 0 || !finite(rawUsed)) return null
   const used = Math.min(total, Math.max(0, rawUsed))
 

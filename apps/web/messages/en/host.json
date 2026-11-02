@@ -42,7 +42,8 @@
       "kind": {
         "memory": "Memory",
         "cpu": "CPU",
-        "disk": "Disk"
+        "disk": "Disk",
+        "gpu": "GPU"
       },
       "who": {
         "title": "What is using the server",
@@ -51,7 +52,8 @@
         "verdict": {
           "memory": "Projects use {{percent}} of the memory in use.",
           "cpu": "Projects use {{percent}} of the CPU in use.",
-          "disk": "Projects use {{percent}} of the disk in use."
+          "disk": "Projects use {{percent}} of the disk in use.",
+          "gpu": "Projects hold {{percent}} of the GPU memory in use."
         },
         "rest": "The other {{percent}} is the system, Portta and other programs.",
         "diskNote": "The disk is shown as a whole until the collector reports what each project keeps on it. Update it with portta up.",
@@ -60,7 +62,8 @@
         "empty": "No project is using this resource right now.",
         "unmeasured": "The server does not report this resource.",
         "diskScope": "Counted for a project: its volumes and the writable layer of its containers. Images, files in project folders and everything else on the disk count as the system."
-      }
+      },
+      "gpu": "Server GPU memory"
     },
     "clock": {
       "title": "Time and time zone",

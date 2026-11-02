@@ -332,7 +332,7 @@ own containers, and the system and everything else running there. Below, **What 
 using the server** names the share the projects take of what is in use and lists them
 from the largest, as a share of the server. The disk is split the same way, by what each
 project keeps on the Docker disk: its volumes and the writable layer of its containers.
-Images, files in project folders and everything else count as the system. That reading is
+Images, files in project folders and everything else count as the system. On a server with an NVIDIA GPU the same split is offered for its memory, and each project's page shows what it holds. That reading is
 refreshed every five minutes, so the disk bar can lag behind memory and CPU. The page also shows the time zone
 the server's clock is set to, with its local time, next to the system, hardware and
 runtime details. The time zone is read by the collector on the machine, so it needs a

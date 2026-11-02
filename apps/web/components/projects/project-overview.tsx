@@ -41,6 +41,9 @@ export function ProjectOverview({ project }: { project: Project; readOnly?: bool
   const selected = chosen ?? adopted.find((environment) => environment.runningCount > 0)?.name ?? adopted[0]?.name
   const environment = selected ? known.get(selected) : undefined
   const measured = (metrics.data?.projects ?? []).find((entry) => entry.composeProject === selected)
+  const stored = (metrics.data?.dockerStorage?.projects ?? [])
+    .filter((entry) => entry.composeProject === selected)
+    .reduce((sum, entry) => sum + entry.volumeBytes + entry.layerBytes, 0)
   const points = (history.data?.points ?? []).map(
     (point) => point.projects.find((entry) => entry.id === measured?.id) ?? null,
   )
@@ -100,6 +103,17 @@ export function ProjectOverview({ project }: { project: Project; readOnly?: bool
           unit={memoryLimit ? t('overview.ofLimit', { limit: bytes(memoryLimit) }) : undefined}
           points={points.map((point) => point?.memoryUsedBytes ?? null)}
         />
+        {metrics.data?.host?.gpuMemory ? (
+          <ReadingCard
+            label={t('overview.gpu')}
+            value={bytes(measured?.gpuMemoryBytes ?? 0)}
+            unit={t('overview.ofGpu', { total: bytes(metrics.data.host.gpuMemory.totalBytes) })}
+            points={[]}
+          />
+        ) : null}
+        {stored ? (
+          <ReadingCard label={t('overview.disk')} value={bytes(stored)} unit={t('overview.diskHint')} points={[]} />
+        ) : null}
         <ReadingCard
           label={t('overview.services')}
           value={environment ? String(environment.runningCount) : '—'}

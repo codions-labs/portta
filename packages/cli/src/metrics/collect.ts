@@ -2,6 +2,7 @@ import { loadavg } from 'node:os'
 import {
   aggregateProjects,
   type ContainerIdentity,
+  composeProjectOf,
   detectRuntime,
   dockerCliStatsToRaw,
   emptySnapshot,
@@ -13,6 +14,7 @@ import {
 } from 'portta-core'
 import { dockerOperatingSystem, inspectContainers, readContainerStats } from '../docker.js'
 import { readGit, workingDirectories } from './git.js'
+import { type GpuReading, readGpu } from './gpu.js'
 import { readDockerStorage } from './storage.js'
 import { loadInstance } from './store.js'
 
@@ -74,7 +76,18 @@ function matchIdentity(row: { id: string; name: string }, identities: ContainerI
   return { id: row.id || row.name, name: row.name || row.id.slice(0, 12), labels: {} }
 }
 
-async function collectProjects(root: string): Promise<MetricsSnapshot['projects']> {
+/** What the containers of one project hold of the GPU's memory. */
+function gpuMemoryOf(composeProject: string, identities: ContainerIdentity[], gpu: GpuReading | null): number {
+  if (!gpu) return 0
+  let total = 0
+  for (const [id, bytes] of gpu.byContainer) {
+    const identity = identities.find((item) => item.id.startsWith(id) || id.startsWith(item.id))
+    if (identity && composeProjectOf(identity.labels) === composeProject) total += bytes
+  }
+  return total
+}
+
+async function collectProjects(root: string, gpu: GpuReading | null): Promise<MetricsSnapshot['projects']> {
   const [inspected, stats] = await Promise.all([inspectContainers(false), readContainerStats()])
   if (inspected.length === 0 && stats.length === 0) return []
 
@@ -100,7 +113,9 @@ async function collectProjects(root: string): Promise<MetricsSnapshot['projects'
     projects.map(async (project) => {
       const directory = directories.get(project.composeProject)
       const git = directory ? await readGit(directory) : null
-      const measured = project.composeProject === ownProject ? { ...project, own: true as const } : project
+      const held = gpuMemoryOf(project.composeProject, identities, gpu)
+      const withGpu = held > 0 ? { ...project, gpuMemoryBytes: held } : project
+      const measured = project.composeProject === ownProject ? { ...withGpu, own: true as const } : withGpu
       return git ? { ...measured, git } : measured
     }),
   )
@@ -152,11 +167,14 @@ export async function collectSnapshot(root: string, now = Date.now()): Promise<M
     storage: filesystemForPath(root, mounts),
   })
 
+  const gpu = await readGpu(now)
+  if (gpu?.memory) snapshot.host.gpuMemory = gpu.memory
+
   const runtimeName = value(operatingSystem) ?? null
   snapshot.runtime = { name: detectRuntime(runtimeName) }
 
   try {
-    snapshot.projects = await collectProjects(root)
+    snapshot.projects = await collectProjects(root, gpu)
   } catch {
     snapshot.projects = []
   }
