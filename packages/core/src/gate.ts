@@ -45,3 +45,21 @@ export function ungatedContainers(containers: ContainerRecord[]): string[] {
     .map((container) => container.name)
     .sort()
 }
+
+const LOOPBACK = new Set(['127.0.0.1', '::1', 'localhost'])
+
+/**
+ * Whether this gateway's Traefik already answers on an address other than
+ * loopback. Only then is a restart harmless to the services it routes: a
+ * gateway bound to loopback, as the local profile is, would start answering the
+ * network the moment the profile became public.
+ */
+export function gatewayAlreadyPublic(containers: ContainerRecord[]): boolean {
+  return containers.some(
+    (container) =>
+      container.state === 'running' &&
+      container.labels['portta.managed'] === 'true' &&
+      container.labels['portta.component'] === 'traefik' &&
+      container.ports.some((port) => port.publicPort !== null && !LOOPBACK.has(port.ip)),
+  )
+}

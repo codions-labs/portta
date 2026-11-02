@@ -7,6 +7,7 @@ import {
   type ContainerRecord,
   databaseFileFor,
   databaseFiles,
+  gatewayAlreadyPublic,
   parseAliases,
   patchEnvFile,
   prepareEnvFile,
@@ -227,12 +228,7 @@ export async function upCommand(
   if (context.config.profile === 'remote-public') {
     const present = await inspectContainers(true)
     const ungated = ungatedContainers(present)
-    const serving = present.some(
-      (item) =>
-        item.state === 'running' &&
-        item.labels['portta.managed'] === 'true' &&
-        item.labels['portta.component'] === 'traefik',
-    )
+    const serving = gatewayAlreadyPublic(present)
     const advice = 'run portta runtime down <path>, then portta adopt and portta runtime up it again'
     // Starting the gateway is what would open them. Once it already serves, a restart
     // changes nothing, so it only warns and leaves the host reachable for the fix.

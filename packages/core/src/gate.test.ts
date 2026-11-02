@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ungatedContainers } from './gate.ts'
+import { gatewayAlreadyPublic, ungatedContainers } from './gate.ts'
 import type { ContainerRecord } from './inventory.ts'
 
 function container(name: string, labels: Record<string, string>, state = 'running'): ContainerRecord {
@@ -57,5 +57,25 @@ describe('containers that would route with no login gate', () => {
       'traefik.http.routers.shop.middlewares': 'Portta-Forward-Auth@file',
     }
     expect(ungatedContainers([container('shop-1', labels)])).toEqual([])
+  })
+})
+
+describe('a gateway that already answers the network', () => {
+  const traefik = (ip: string | null, state = 'running'): ContainerRecord => ({
+    ...container('portta-traefik-1', { 'portta.managed': 'true', 'portta.component': 'traefik' }, state),
+    ports: [{ ip: ip ?? '', privatePort: 443, publicPort: ip ? 443 : null, type: 'tcp' }],
+  })
+
+  it('is one that publishes on an address other than loopback', () => {
+    expect(gatewayAlreadyPublic([traefik('0.0.0.0')])).toBe(true)
+    expect(gatewayAlreadyPublic([traefik('203.0.113.10')])).toBe(true)
+  })
+
+  it('is not one bound to loopback, stopped, or publishing nothing', () => {
+    expect(gatewayAlreadyPublic([traefik('127.0.0.1')])).toBe(false)
+    expect(gatewayAlreadyPublic([traefik('::1')])).toBe(false)
+    expect(gatewayAlreadyPublic([traefik('0.0.0.0', 'exited')])).toBe(false)
+    expect(gatewayAlreadyPublic([traefik(null)])).toBe(false)
+    expect(gatewayAlreadyPublic([])).toBe(false)
   })
 })
