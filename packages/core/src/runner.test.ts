@@ -112,12 +112,37 @@ describe('composeFilesFromLabel', () => {
 })
 
 describe('runnerRefusal', () => {
-  it('refuses a publicly exposed panel', () => {
+  const PUBLIC = {
+    PORTTA_PROFILE: 'remote-public',
+    PORTTA_WEB_EXPOSE: 'domain',
+    PORTTA_AUTH_MODE: 'required',
+    TLS_ENABLED: 'true',
+    PORTTA_RUNNER_PUBLIC: 'true',
+  }
+
+  it('refuses a publicly exposed panel, whatever else is set', () => {
     expect(runnerRefusal({ PORTTA_WEB_EXPOSE: 'public' })).toContain('on the host instead')
+    expect(runnerRefusal({ ...PUBLIC, PORTTA_WEB_EXPOSE: 'public' })).toContain('on the host instead')
   })
 
-  it('refuses the remote-public profile', () => {
-    expect(runnerRefusal({ PORTTA_PROFILE: 'remote-public' })).toContain('on the host only')
+  it('refuses the remote-public profile unless the operator opted in', () => {
+    expect(runnerRefusal({ PORTTA_PROFILE: 'remote-public' })).toContain('PORTTA_RUNNER_PUBLIC=true')
+    expect(runnerRefusal({ ...PUBLIC, PORTTA_RUNNER_PUBLIC: 'false' })).toContain('PORTTA_RUNNER_PUBLIC=true')
+  })
+
+  it('accepts the remote-public profile only with all four conditions', () => {
+    expect(runnerRefusal(PUBLIC)).toBeNull()
+    expect(runnerRefusal({ ...PUBLIC, PORTTA_WEB_EXPOSE: 'vpn' })).toContain('PORTTA_WEB_EXPOSE=domain')
+    expect(runnerRefusal({ ...PUBLIC, PORTTA_AUTH_MODE: 'disabled' })).toContain('PORTTA_AUTH_MODE=required')
+    expect(runnerRefusal({ ...PUBLIC, TLS_ENABLED: 'false' })).toContain('TLS_ENABLED=true')
+    expect(runnerRefusal({ ...PUBLIC, PORTTA_AUTH_MODE: undefined, TLS_ENABLED: undefined })).toContain(
+      'PORTTA_AUTH_MODE=required, TLS_ENABLED=true',
+    )
+  })
+
+  it('leaves the other profiles as they were', () => {
+    expect(runnerRefusal({})).toBeNull()
+    expect(runnerRefusal({ PORTTA_PROFILE: 'remote-private', PORTTA_WEB_EXPOSE: 'vpn' })).toBeNull()
   })
 })
 

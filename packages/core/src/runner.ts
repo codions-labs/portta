@@ -11,6 +11,8 @@
 //
 // This is the source of truth used by the TypeScript CLI.
 
+import { isTrue } from './config.ts'
+
 import { porttaImages } from './images.ts'
 
 export const RUNNER_CONTAINER = 'portta-runner'
@@ -162,16 +164,32 @@ export function runnerSpec(root: string, version: string): string {
 /**
  * Why this host must not prepare a runner, or null when it may.
  *
- * The same public-exposure refusals as the applier: handing Compose over a
- * panel reachable from the internet is a different decision from handing it
- * over loopback.
+ * Handing Compose over a panel reachable from the internet is a different
+ * decision from handing it over loopback. A public host allows it only when
+ * the operator said so with `PORTTA_RUNNER_PUBLIC=true` and the panel is
+ * everything a reachable panel has to be: on its own domain, behind sign-in,
+ * over TLS. `PORTTA_WEB_EXPOSE=public` publishes the panel without TLS, so it is
+ * refused whatever else is set. The switch is not a panel setting: it is read
+ * from `.env` and cannot be written through the panel, so the panel cannot
+ * release itself.
  */
 export function runnerRefusal(env: Record<string, string | undefined>): string | null {
-  if ((env.PORTTA_WEB_EXPOSE ?? 'local') === 'public') {
+  const expose = env.PORTTA_WEB_EXPOSE ?? 'local'
+  if (expose === 'public') {
     return 'the panel is exposed publicly: operate projects on the host instead'
   }
   if ((env.PORTTA_PROFILE ?? 'local') === 'remote-public') {
-    return 'the remote-public profile operates projects on the host only'
+    if (!isTrue(env.PORTTA_RUNNER_PUBLIC)) {
+      return 'the remote-public profile operates projects on the host only: set PORTTA_RUNNER_PUBLIC=true to operate them from the panel'
+    }
+    const missing = [
+      expose === 'domain' ? null : 'PORTTA_WEB_EXPOSE=domain',
+      (env.PORTTA_AUTH_MODE ?? '') === 'required' ? null : 'PORTTA_AUTH_MODE=required',
+      isTrue(env.TLS_ENABLED) ? null : 'TLS_ENABLED=true',
+    ].filter((entry): entry is string => entry !== null)
+    if (missing.length > 0) {
+      return `the panel cannot operate projects on a public host without ${missing.join(', ')}`
+    }
   }
   return null
 }
