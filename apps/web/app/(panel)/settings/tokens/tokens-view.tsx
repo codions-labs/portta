@@ -15,7 +15,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
 import { CreateTokenDialog } from '@/components/settings/create-token-dialog'
-import { Empty, ErrorBox, Loading, PageHeader, ViewToolbar } from '@/components/shell-bits'
+import { SettingsHeading } from '@/components/settings/settings-shell'
+import { Empty, ErrorBox, Loading, ViewToolbar } from '@/components/shell-bits'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -52,7 +53,7 @@ export function TokensView() {
 
   return (
     <>
-      <PageHeader
+      <SettingsHeading
         title={t('tokens.title')}
         description={t('tokens.description')}
         actions={

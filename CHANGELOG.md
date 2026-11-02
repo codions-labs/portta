@@ -23,6 +23,9 @@ All notable changes to Portta are documented here. The format follows
   and running diagnostics on every tab. Health leads with its readings, who uses the
   most and what its last check found; Containers is one list by origin; Network and
   Gateway keep what is read most, with the rest one click away.
+- Settings keeps its sections beside the page, grouped by this host and people, with
+  a search that opens the setting it finds. Addresses is three choices and the result
+  they give, and saving sits at the foot of the section.
 - Access answers one question per row: who may open each site, decided in place,
   with opening to everybody asking first. Databases have one button, Connect, and
   what it takes to use the bridge appears under the row.

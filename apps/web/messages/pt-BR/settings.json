@@ -1,10 +1,9 @@
 {
   "title": "Configurações",
-  "description": "Como o Portta nomeia os projetos, quem pode alcançá-los e como este painel é acessado.",
+  "description": "Como os projetos se chamam, quem chega até eles e como este painel é acessado.",
   "notWritable": "O painel não pode gravar {{path}}. Edite no host.",
   "sectionNotFound": "A seção de configurações “{{group}}” não existe",
   "chooseGroup": "Escolha um dos grupos disponíveis.",
-  "secretsNote": "Segredos nunca são retornados pela API: o painel só informa se um token está definido. Valores são gravados em {{path}} com mode 600.",
   "learnMore": "Saiba mais",
   "configureDns": "Configurar DNS",
   "configureTls": "Configurar TLS",
@@ -13,7 +12,7 @@
   "valueDerived": "Derivado automaticamente",
   "valueEnvironment": "Definido pelo ambiente em execução",
   "envVar": "Variável de ambiente",
-  "restartPending": "Estas alterações passam a valer depois que o gateway for recriado. Salve agora e use a barra de aplicação em seguida.",
+  "restartPending": "Estas alterações passam a valer depois que o gateway for recriado. Salve agora e aplique em seguida.",
   "dashboard": {
     "title": "Dashboard do Traefik",
     "description": "O endereço que este host está servindo agora. Aplique as configurações salvas pela barra no rodapé.",
@@ -25,16 +24,26 @@
     "openDisabled": "Nenhum endereço utilizável daqui. O URL de loopback só funciona no host."
   },
   "projectDomain": {
-    "title": "Endereços resultantes",
-    "description": "O Portta monta o hostname de cada projeto a partir desta base.",
-    "formula": "Como um hostname é formado",
-    "formulaPattern": "<projeto>-<serviço>.<base>",
-    "base": "Domínio base",
-    "examples": "Um projeto chamado loja responderia em:",
-    "stateOk": "utilizável",
-    "stateLimited": "requer atenção",
-    "stateBroken": "não resolve",
-    "note": "Isto escolhe apenas o nome. Quem alcança o Traefik é decidido em Acesso aos projetos."
+    "cardTitle": "Como os projetos são chamados",
+    "cardDescription": "Um nome não abre nada sozinho. Quem pode abrir fica em Acesso.",
+    "modes": {
+      "local": {
+        "title": "Só nesta máquina",
+        "help": "Usa localhost, sem DNS. Só funciona aqui."
+      },
+      "auto": {
+        "title": "Automático, pelo IP",
+        "help": "Usa sslip.io ou nip.io. Sem registro nem conta."
+      },
+      "custom": {
+        "title": "Seu domínio",
+        "help": "Para um domínio seu, com registro curinga."
+      }
+    },
+    "wildcardBefore": "Crie um registro",
+    "wildcardAfter": "apontando para este host.",
+    "wildcardExample": "seu-dominio.com",
+    "preview": "Seus endereços ficarão assim:"
   },
   "panel": {
     "network": "Rede do painel",
@@ -538,5 +547,29 @@
     "empty": "Nada registrado ainda.",
     "emptyHint": "As entradas aparecem conforme contas, tokens e configurações mudam.",
     "older": "Entradas mais antigas"
+  },
+  "rail": {
+    "host": "Este host",
+    "people": "Pessoas",
+    "items": {
+      "projects": "Projetos",
+      "project-domain": "Endereços",
+      "project-access": "Acesso aos sites",
+      "tls": "Certificados e DNS",
+      "panel": "Painel",
+      "traefik": "Traefik"
+    }
+  },
+  "search": {
+    "placeholder": "Buscar configuração, como TLS",
+    "aria": "Buscar configuração",
+    "empty": "Nenhuma configuração encontrada"
+  },
+  "savedIn": "Salvo em",
+  "savedInSecrets": "sem expor segredos",
+  "pendingApply": {
+    "title_one": "{{count}} alteração salva ainda não vale.",
+    "title_other": "{{count}} alterações salvas ainda não valem.",
+    "body": "Aplique pelo terminal. Os contêineres do gateway serão recriados."
   }
 }

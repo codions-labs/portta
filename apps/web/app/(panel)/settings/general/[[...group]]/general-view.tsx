@@ -1,30 +1,32 @@
 'use client'
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Save } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import type { ConfigField } from 'portta-contracts'
-import { exampleHostnames, resolveDomain, slug } from 'portta-core/browser'
+import { exampleHostnames, resolveDomain } from 'portta-core/browser'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CopyButton, Mono } from '@/components/copy'
 import { DashboardCard } from '@/components/dashboard-card'
-import { ProjectDomainCard } from '@/components/domain-card'
 import { PanelSettings } from '@/components/settings/panel-settings'
 import { ProjectAccessSettings } from '@/components/settings/project-access-settings'
+import { ProjectDomainSettings } from '@/components/settings/project-domain-settings'
 import { RestartSummary } from '@/components/settings/restart-summary'
+import { hostGroupItems } from '@/components/settings/sections'
 import { SettingsGroup } from '@/components/settings/settings-group'
-import { SettingsNav } from '@/components/settings/settings-nav'
+import { useReportDirty } from '@/components/settings/settings-shell'
 import { displayValue, fieldByKey, valuesOf } from '@/components/settings/values'
 import { isFieldVisible } from '@/components/settings/visibility'
-import { Callout, Empty, ErrorBox, Loading, PageHeader } from '@/components/shell-bits'
+import { Callout, Empty, ErrorBox, Loading } from '@/components/shell-bits'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Dialog } from '@/components/ui/dialog'
 import { api } from '@/lib/api'
 import { useCan } from '@/lib/permissions'
 import { keys, useConfig } from '@/lib/queries'
 
-export function GeneralView({ group }: { group: string | null }) {
+export function GeneralView({ group, field: focused = null }: { group: string | null; field?: string | null }) {
   const { t } = useTranslation('settings')
   const { t: tc } = useTranslation('common')
   const queryClient = useQueryClient()
@@ -38,12 +40,23 @@ export function GeneralView({ group }: { group: string | null }) {
 
   const view = query.data
   const groups = view?.groups ?? []
-  const activeGroup = groups.find((name) => slug(name) === group) ?? (group === null ? groups[0] : undefined)
+  const items = useMemo(() => hostGroupItems(groups), [groups])
+  // `dns` and `tls` are one subject, and either address opens it.
+  const active = group === null ? items[0] : items.find((item) => item.slugs.includes(group))
+  const apply = useQuery({ queryKey: keys.apply(), queryFn: () => api.applyStatus(), enabled: mayManage })
 
   useEffect(() => {
-    const first = groups[0]
-    if (group === null && first) router.replace(`/settings/general/${slug(first)}`)
-  }, [group, groups, router])
+    const first = items[0]
+    if (group === null && first && groups.length > 0) router.replace(first.href)
+  }, [group, groups, items, router])
+
+  // Arriving from the search: put the setting in front of whoever asked for it.
+  useEffect(() => {
+    if (!focused || !view) return
+    const target = document.getElementById(focused)
+    target?.scrollIntoView({ block: 'center' })
+    target?.focus({ preventScroll: true })
+  }, [focused, view])
 
   const save = useMutation({
     mutationFn: () => api.patchConfig(draft),
@@ -70,6 +83,7 @@ export function GeneralView({ group }: { group: string | null }) {
     }
     return counts
   }, [draft, view])
+  useReportDirty(dirtyCounts)
 
   if (query.isPending) return <Loading />
   if (query.error) return <ErrorBox error={query.error} />
@@ -78,8 +92,9 @@ export function GeneralView({ group }: { group: string | null }) {
   const dirty = Object.keys(draft).length > 0
   const allFields = view.fields
   const currentValues = valuesOf(allFields, draft)
-  const groupFields = activeGroup ? allFields.filter((field) => field.group === activeGroup) : []
-  const visibleFields = groupFields.filter((field) => isFieldVisible(field.key, currentValues))
+  const fieldsOf = (name: string) => allFields.filter((field) => field.group === name)
+  const groupFields = active ? active.groups.flatMap(fieldsOf) : []
+  const pendingCount = allFields.filter((field) => field.pending).length
   const liveDomain = (() => {
     const resolved = resolveDomain({
       mode: currentValues.PORTTA_DOMAIN_MODE || view.projectDomain.mode,
@@ -119,38 +134,40 @@ export function GeneralView({ group }: { group: string | null }) {
     else save.mutate()
   }
 
+  const footer = (
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-line px-5 py-3">
+      <span className="min-w-0 text-xs text-subtle">
+        {t('savedIn')} <Mono kind="path">{view.envFile.path}</Mono>, {t('savedInSecrets')}
+      </span>
+      {mayManage ? (
+        <span className="flex flex-wrap items-center gap-2">
+          {dirty ? <Badge tone="warn">{tc('unsaved', { count: Object.keys(draft).length })}</Badge> : null}
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={!dirty || save.isPending}
+            onClick={() => {
+              setDraft({})
+              setSaved(false)
+            }}
+          >
+            {tc('discard')}
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            disabled={!dirty || save.isPending || !view.envFile.writable}
+            onClick={requestSave}
+          >
+            {save.isPending ? tc('saving') : tc('save')}
+          </Button>
+        </span>
+      ) : null}
+    </div>
+  )
+
   return (
     <>
-      <PageHeader
-        title={t('title')}
-        description={t('description')}
-        actions={
-          mayManage ? (
-            <>
-              {dirty ? <Badge tone="warn">{tc('unsaved', { count: Object.keys(draft).length })}</Badge> : null}
-              <Button
-                variant="ghost"
-                disabled={!dirty || save.isPending}
-                onClick={() => {
-                  setDraft({})
-                  setSaved(false)
-                }}
-              >
-                {tc('discard')}
-              </Button>
-              <Button
-                variant="primary"
-                disabled={!dirty || save.isPending || !view.envFile.writable}
-                onClick={requestSave}
-              >
-                <Save />
-                {save.isPending ? tc('saving') : tc('save')}
-              </Button>
-            </>
-          ) : null
-        }
-      />
-
       {!view.envFile.writable ? (
         <Callout tone="warn" className="mb-4">
           {t('notWritable', { path: view.envFile.path })}
@@ -171,11 +188,10 @@ export function GeneralView({ group }: { group: string | null }) {
 
       <RestartSummary fields={allFields} draft={draft} />
 
-      <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-start">
-        <SettingsNav groups={groups} active={activeGroup ?? null} dirtyCounts={dirtyCounts} />
-        {activeGroup ? (
-          <div className="min-w-0 flex-1 space-y-4">
-            {activeGroup === 'Panel' ? (
+      {active ? (
+        <div className="space-y-4">
+          {active.groups.includes('Panel') ? (
+            <>
               <PanelSettings
                 fields={groupFields}
                 values={currentValues}
@@ -184,7 +200,10 @@ export function GeneralView({ group }: { group: string | null }) {
                 onChange={setValue}
                 onPatch={patchValues}
               />
-            ) : activeGroup === 'Project access' ? (
+              <Card>{footer}</Card>
+            </>
+          ) : active.groups.includes('Project access') ? (
+            <>
               <ProjectAccessSettings
                 fields={groupFields}
                 values={currentValues}
@@ -193,20 +212,51 @@ export function GeneralView({ group }: { group: string | null }) {
                 onChange={setValue}
                 onPatch={patchValues}
               />
-            ) : (
-              <SettingsGroup name={activeGroup} fields={visibleFields} valueFor={valueFor} onChange={setValue} />
-            )}
-            {activeGroup === 'Project domain' ? <ProjectDomainCard domain={liveDomain} /> : null}
-            {activeGroup === 'Traefik' ? <DashboardCard /> : null}
-          </div>
-        ) : (
-          <div className="min-w-0 flex-1 rounded-lg border border-line bg-surface">
-            <Empty title={t('sectionNotFound', { group: group ?? '' })} hint={t('chooseGroup')} />
-          </div>
-        )}
-      </div>
-
-      <p className="mt-4 text-xs text-subtle">{t('secretsNote', { path: view.envFile.path })}</p>
+              <Card>{footer}</Card>
+            </>
+          ) : active.groups.includes('Project domain') ? (
+            <ProjectDomainSettings
+              fields={groupFields}
+              values={currentValues}
+              domain={liveDomain}
+              valueFor={valueFor}
+              onChange={setValue}
+              disabled={!mayManage}
+              footer={footer}
+            />
+          ) : (
+            active.groups.map((name, index) => (
+              <SettingsGroup
+                key={name}
+                name={name}
+                fields={fieldsOf(name).filter((field) => isFieldVisible(field.key, currentValues))}
+                valueFor={valueFor}
+                onChange={setValue}
+                footer={index === active.groups.length - 1 ? footer : undefined}
+              />
+            ))
+          )}
+          {active.groups.includes('Traefik') ? <DashboardCard /> : null}
+          {/* With an applier the bar at the top of the shell has the button. */}
+          {mayManage && pendingCount > 0 && apply.data && !apply.data.available && !dirty ? (
+            <Callout tone="warn" title={t('pendingApply.title', { count: pendingCount })}>
+              {t('pendingApply.body')}
+              <span className="mt-2 flex items-center gap-1 rounded-md bg-terminal py-1 pr-1 pl-3 text-terminal-fg">
+                <span className="min-w-0 flex-1 truncate font-mono text-xs">{view.applyCommand}</span>
+                <CopyButton
+                  value={view.applyCommand}
+                  label={tc('copyCommand')}
+                  className="text-terminal-dim hover:text-terminal-fg"
+                />
+              </span>
+            </Callout>
+          ) : null}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-line bg-surface">
+          <Empty title={t('sectionNotFound', { group: group ?? '' })} hint={t('chooseGroup')} />
+        </div>
+      )}
 
       <Dialog
         open={confirmPublic}

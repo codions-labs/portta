@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await serverTranslation('settings')
-  return { title: t('sections.general') }
+  return { title: t('title') }
 }
 
 /**
@@ -16,8 +16,15 @@ export async function generateMetadata(): Promise<Metadata> {
  * The group is a path segment rather than a query so a bookmark is a group, and
  * an optional one so `/settings/general` lands on the first.
  */
-export default async function GeneralSettingsPage({ params }: { params: Promise<{ group?: string[] }> }) {
+export default async function GeneralSettingsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ group?: string[] }>
+  searchParams: Promise<{ field?: string }>
+}) {
   await pageNeeds('settings:read')
   const { group } = await params
-  return <GeneralView group={group?.[0] ?? null} />
+  const { field } = await searchParams
+  return <GeneralView group={group?.[0] ?? null} field={field ?? null} />
 }

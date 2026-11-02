@@ -56,11 +56,11 @@ test.describe('what each role can reach', () => {
     // 3. The developer: nothing about accounts.
     await signIn(page, PEOPLE.developer.email, PASSWORD)
     await page.goto('/settings')
-    await expect(page).toHaveURL(/\/settings\/environment$/, { timeout: 20_000 })
-    await expect(page.getByRole('link', { name: 'Environment', exact: true })).toBeVisible()
+    await expect(page).toHaveURL(/\/settings\/tokens$/, { timeout: 20_000 })
+    await expect(page.getByRole('link', { name: 'API tokens', exact: true })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Users', exact: true })).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Audit', exact: true })).toHaveCount(0)
-    await expect(page.getByRole('link', { name: 'General', exact: true })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Addresses', exact: true })).toHaveCount(0)
 
     // The page a role never has is not part of their panel: 404, not a door.
     await page.goto('/settings/users')

@@ -308,12 +308,14 @@ are the checks the panel can make from inside its container. See
 
 ### Settings
 
-**General** (Projects, project addresses, project access, TLS, DNS, the panel
-and Traefik) is listed to whoever holds `settings:read`. Host readiness and
-security findings are the **Health** section of Host, for whoever holds
-`metrics:read`.
-**Users**, **API tokens**, **Security** and **Audit** appear with
-authentication enabled; with it disabled a bookmark into one of them says the
+One page with the sections beside it, in two groups, and a search that finds a
+setting by name, by what it does or by its variable, and opens it. **This host**
+(Projects, Addresses, Site access, Certificates and DNS, Panel and Traefik) is listed
+to whoever holds `settings:read`. Saving is at the foot of the section, and a change
+that is saved but not in effect says what to run. Host readiness and security
+findings are the **Health** section of Host, for whoever holds `metrics:read`.
+**People** (Users, API tokens, Security and Audit) appears with authentication
+enabled; with it disabled a bookmark into one of them says the
 panel does not sign people in. Every section is described in
 [Configure the panel](panel-settings.md); the accounts pages are shown in
 [Authentication](authentication.md).

@@ -11,7 +11,8 @@ import { ScrollText } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
-import { Empty, ErrorBox, Loading, PageHeader, ToolbarSelect, ViewToolbar } from '@/components/shell-bits'
+import { SettingsHeading } from '@/components/settings/settings-shell'
+import { Empty, ErrorBox, Loading, ToolbarSelect, ViewToolbar } from '@/components/shell-bits'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -34,7 +35,7 @@ export function AuditView() {
 
   return (
     <>
-      <PageHeader title={t('audit.title')} description={t('audit.description')} />
+      <SettingsHeading title={t('audit.title')} description={t('audit.description')} />
       {mayListUsers ? (
         <ViewToolbar>
           <ToolbarSelect

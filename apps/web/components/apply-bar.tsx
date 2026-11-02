@@ -1,6 +1,7 @@
 'use client'
 
 import { Clock, Loader2 } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import type { ApplyStatus } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
 import { toneBorder, toneText, toneWash } from '../lib/tone.ts'
@@ -28,6 +29,7 @@ export function ApplyBar({ readOnly }: { readOnly: boolean }) {
   const { t: tc } = useTranslation('common')
   const machine = useApply()
   const status = machine.status
+  const pathname = usePathname()
 
   // An apply already in flight opens its own dialog: useApply resumes from the
   // applier's state, so a reload or a second tab lands back in the progress
@@ -39,6 +41,8 @@ export function ApplyBar({ readOnly }: { readOnly: boolean }) {
   if (!status.pendingRestart && !applying) return dialog
 
   const canApply = status.available && !readOnly
+  // The `.env` section says this itself, beside what was just saved.
+  if (!applying && !canApply && !readOnly && pathname.startsWith('/settings/general')) return dialog
   const pendingCount = status.pendingChanges.length || status.pendingKeys.length
   const needsRecreate =
     status.pendingChanges.some((change) => change.restartRequired) || status.pendingChanges.length === 0

@@ -15,8 +15,9 @@ import { useTranslation } from 'react-i18next'
 import { CreateUserDialog } from '@/components/settings/create-user-dialog'
 import { PasswordDialog } from '@/components/settings/password-dialog'
 import { ProjectAccessDialog } from '@/components/settings/project-access-dialog'
+import { SettingsHeading } from '@/components/settings/settings-shell'
 import { UserSessionsDialog } from '@/components/settings/user-sessions-dialog'
-import { ErrorBox, Loading, PageHeader } from '@/components/shell-bits'
+import { ErrorBox, Loading } from '@/components/shell-bits'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -249,7 +250,7 @@ export function UsersView() {
 
   return (
     <>
-      <PageHeader
+      <SettingsHeading
         title={t('users.title')}
         description={t('users.description')}
         actions={

@@ -62,8 +62,8 @@ export function useShares(enabled = true) {
   return useQuery({ queryKey: keys.shares(), queryFn: api.shares, enabled })
 }
 
-export function useConfig() {
-  return useQuery({ queryKey: keys.config(), queryFn: api.config })
+export function useConfig(enabled = true) {
+  return useQuery({ queryKey: keys.config(), queryFn: api.config, enabled })
 }
 
 /** The collector writes every five seconds; the panel reads at the same pace. */

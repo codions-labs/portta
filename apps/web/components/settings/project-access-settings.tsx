@@ -17,6 +17,7 @@ import {
 } from './access.ts'
 import { ConfigField as ConfigFieldControl } from './config-field.tsx'
 import { GroupIntro, LearnMore } from './learn-more.tsx'
+import { OptionCard } from './option-card.tsx'
 import { SettingsSection } from './settings-group.tsx'
 import { fieldByKey } from './values.ts'
 
@@ -88,22 +89,14 @@ export function ProjectAccessSettings({
           <fieldset className="grid gap-2">
             <legend className="sr-only">{t('projectAccess.title')}</legend>
             {(['local', 'private', 'public'] as const).map((option) => (
-              <label
+              <OptionCard
                 key={option}
-                className="flex cursor-pointer items-start gap-2 rounded-md border border-line px-2.5 py-2 text-sm hover:bg-fill"
-              >
-                <input
-                  type="radio"
-                  name="project-access"
-                  className="mt-0.5"
-                  checked={kind === option}
-                  onChange={() => setKind(option)}
-                />
-                <span>
-                  <span className="block font-medium text-ink">{t(`projectAccess.kinds.${option}`)}</span>
-                  <span className="block text-xs text-subtle">{t(`projectAccess.kindHelp.${option}`)}</span>
-                </span>
-              </label>
+                name="project-access"
+                checked={kind === option}
+                onSelect={() => setKind(option)}
+                title={t(`projectAccess.kinds.${option}`)}
+                help={t(`projectAccess.kindHelp.${option}`)}
+              />
             ))}
           </fieldset>
 

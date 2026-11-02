@@ -1,10 +1,9 @@
 {
   "title": "Settings",
-  "description": "How Portta names projects, who can reach them, and how this panel is reached.",
+  "description": "What projects are called, who reaches them and how this panel is opened.",
   "notWritable": "The panel cannot write {{path}}. Edit it on the host instead.",
   "sectionNotFound": "Settings section “{{group}}” does not exist",
   "chooseGroup": "Choose one of the available groups.",
-  "secretsNote": "Secrets are never returned by the API: the panel only reports whether a token is set. Values are written to {{path}} with mode 600.",
   "learnMore": "Learn more",
   "configureDns": "Configure DNS",
   "configureTls": "Configure TLS",
@@ -13,7 +12,7 @@
   "valueDerived": "Derived automatically",
   "valueEnvironment": "Set by the running environment",
   "envVar": "Environment variable",
-  "restartPending": "These changes take effect after the gateway is recreated. Save now, then use the apply bar.",
+  "restartPending": "These changes take effect after the gateway is recreated. Save now, then apply them.",
   "dashboard": {
     "title": "Traefik dashboard",
     "description": "The address this host is serving right now. Apply saved settings from the bar at the bottom.",
@@ -25,16 +24,26 @@
     "openDisabled": "No usable address from here. The loopback URL only works on the host."
   },
   "projectDomain": {
-    "title": "Resulting addresses",
-    "description": "Portta builds each project hostname from this base.",
-    "formula": "How a hostname is formed",
-    "formulaPattern": "<project>-<service>.<base>",
-    "base": "Base domain",
-    "examples": "A project called loja would answer on:",
-    "stateOk": "usable",
-    "stateLimited": "needs attention",
-    "stateBroken": "not resolvable",
-    "note": "This chooses the name only. Who can reach Traefik is decided under Project access."
+    "cardTitle": "What projects are called",
+    "cardDescription": "A name opens nothing by itself. Who may open it is in Access.",
+    "modes": {
+      "local": {
+        "title": "Only on this machine",
+        "help": "Uses localhost, no DNS. Only works here."
+      },
+      "auto": {
+        "title": "Automatic, from the IP",
+        "help": "Uses sslip.io or nip.io. No record, no account."
+      },
+      "custom": {
+        "title": "Your domain",
+        "help": "For a domain you own, with a wildcard record."
+      }
+    },
+    "wildcardBefore": "Create a record",
+    "wildcardAfter": "pointing at this host.",
+    "wildcardExample": "your-domain.com",
+    "preview": "Your addresses will look like:"
   },
   "panel": {
     "network": "Panel network",
@@ -538,5 +547,29 @@
     "empty": "Nothing recorded yet.",
     "emptyHint": "Entries appear as accounts, tokens and settings are changed.",
     "older": "Older entries"
+  },
+  "rail": {
+    "host": "This host",
+    "people": "People",
+    "items": {
+      "projects": "Projects",
+      "project-domain": "Addresses",
+      "project-access": "Site access",
+      "tls": "Certificates and DNS",
+      "panel": "Panel",
+      "traefik": "Traefik"
+    }
+  },
+  "search": {
+    "placeholder": "Search settings, such as TLS",
+    "aria": "Search settings",
+    "empty": "No setting found"
+  },
+  "savedIn": "Saved in",
+  "savedInSecrets": "with no secret exposed",
+  "pendingApply": {
+    "title_one": "{{count}} saved change is not in effect yet.",
+    "title_other": "{{count}} saved changes are not in effect yet.",
+    "body": "Apply from the terminal. The gateway's containers will be recreated."
   }
 }

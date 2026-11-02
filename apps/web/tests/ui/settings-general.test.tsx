@@ -111,7 +111,7 @@ describe('the General settings', () => {
   it('hides Save from somebody who may only read the settings', async () => {
     const readOnly = principal({ permissions: ['settings:read'] })
     renderWithQuery(<GeneralView group="panel" />, undefined, readOnly)
-    await screen.findByRole('link', { name: 'Panel' })
+    await screen.findByText(/Saved in/)
     expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
   })
 })

@@ -4,10 +4,15 @@
  * The API still returns every key so a save can write derived ones. The page
  * hides what the current mode does not ask the operator to decide.
  */
-const HIDDEN = new Set(['PORTTA_WEB_HOST', 'PORTTA_PANEL_ADVERTISED_HOST', 'PORTTA_PANEL_URL', 'PORTTA_WEB_EXPOSE'])
+export const ALWAYS_HIDDEN = new Set([
+  'PORTTA_WEB_HOST',
+  'PORTTA_PANEL_ADVERTISED_HOST',
+  'PORTTA_PANEL_URL',
+  'PORTTA_WEB_EXPOSE',
+])
 
 export function isFieldVisible(key: string, values: Record<string, string>): boolean {
-  if (HIDDEN.has(key)) return false
+  if (ALWAYS_HIDDEN.has(key)) return false
 
   const mode = values.PORTTA_DOMAIN_MODE || 'local'
   const publicOn = values.PUBLIC_ENABLED === 'true'
