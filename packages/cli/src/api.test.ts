@@ -27,9 +27,7 @@ describe('the kind of actor a command declares', () => {
     ).toBe('human')
   })
 
-  // `portta mcp` is the surface agents drive, so it says agent outright rather
-  // than leaning on a default that is now the other way round.
-  it('while portta mcp declares agent, whatever the environment says', () => {
+  it('a caller that declares agent outright is believed, whatever the environment says', () => {
     expect(panelHeaders({ PORTTA_ACTOR_KIND: 'human' }, 'claude', 'agent')['X-Portta-Actor-Kind']).toBe('agent')
   })
 })

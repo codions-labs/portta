@@ -18,13 +18,46 @@ import {
   searchDocumentation,
 } from 'portta-core'
 import { z } from 'portta-core/zod'
-import { type DocumentationOperation, type DocumentationReader, remoteDocumentationReader } from 'portta-mcp'
 import { CliError, PreconditionError, UsageError } from '../errors.js'
 import { Output } from '../output.js'
 import { clientFor } from './work.js'
 
-export type { DocumentationOperation, DocumentationReader }
-export { remoteDocumentationReader }
+export type DocumentationOperation = 'list' | 'search' | 'show'
+export type DocumentationReader = (
+  operation: DocumentationOperation,
+  input: Record<string, unknown>,
+) => Promise<Record<string, unknown>>
+/**
+ * A reader over the panel's own documentation routes. `request` is one GET
+ * that answers parsed JSON or throws; a failure is reported, never replaced
+ * by another corpus.
+ */
+export function remoteDocumentationReader(request: (path: string) => Promise<unknown>): DocumentationReader {
+  return async (operation, input) => {
+    const query = (
+      operation === 'list'
+        ? DocumentationListQuery
+        : operation === 'search'
+          ? DocumentationSearchQuery
+          : DocumentationPageQuery
+    ).parse(input)
+    const params = new URLSearchParams(
+      Object.entries(query)
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)] as [string, string]),
+    )
+    const path =
+      operation === 'list' ? '/documentation' : operation === 'search' ? '/documentation/search' : '/documentation/page'
+    const result = await request(`${path}?${params}`)
+    return (
+      operation === 'list'
+        ? DocumentationIndex
+        : operation === 'search'
+          ? DocumentationSearchResponse
+          : DocumentationPageResponse
+    ).parse(result)
+  }
+}
 
 /** The corpus as it ships: gzip, because it is 1.6 MB of JSON and 400 KB of it. */
 export const CORPUS_FILE = 'documentation.json.gz'

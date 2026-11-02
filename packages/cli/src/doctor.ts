@@ -42,7 +42,6 @@ import { composeArguments, type GatewayContext } from './context.js'
 import { inspectContainers } from './docker.js'
 import { collectEnvironmentChecks } from './environment/index.js'
 import { fileMode, isPrivateAddress, locate } from './host.js'
-import { CLI_MODULES, moduleDoctorChecks } from './modules/index.js'
 import { runProcess } from './process.js'
 
 const MIN_COMPOSE_MAJOR = 2
@@ -933,9 +932,6 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
           ),
     )
   }
-
-  // --- official modules ----------------------------------------------------
-  add(...(await moduleDoctorChecks(context, CLI_MODULES)))
 
   return checks
 }

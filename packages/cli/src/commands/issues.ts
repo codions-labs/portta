@@ -1,7 +1,7 @@
 // `portta issues`: the work, from the terminal or from an agent.
 //
-// Every verb is one call to the panel API, the same one the UI and `portta mcp`
-// use. Nothing is computed here — which provider a Project uses, which
+// Every verb is one call to the panel API, the same one the UI
+// uses. Nothing is computed here — which provider a Project uses, which
 // repository that means, and whether a write reached GitHub are the panel's
 // answers, printed.
 //

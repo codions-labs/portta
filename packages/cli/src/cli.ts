@@ -70,7 +70,6 @@ import {
   versionCommand,
 } from './commands/lifecycle.js'
 import { backupCommand, repairCommand, restoreCommand } from './commands/maintenance.js'
-import { mcpCommand } from './commands/mcp.js'
 import {
   dnsCheck,
   dnsSetup,
@@ -128,7 +127,6 @@ import {
 } from './commands/users.js'
 import { webBuild, webDisable, webDown, webLogs, webOpen, webRestart, webStatus, webUp } from './commands/web.js'
 import { CliError, EXIT } from './errors.js'
-import { CLI_MODULES, moduleEnvironment, registerModuleCommands } from './modules/index.js'
 import { Output, schemaFor, setJsonSchema } from './output.js'
 import { setProcessReporter } from './process.js'
 import { cliVersionLine } from './version.js'
@@ -693,7 +691,7 @@ describe(program.command('repair'), 'Recreate what is missing and fix what is pr
   .option('--dry-run', 'print the plan without changing anything')
   .action(repairCommand)
 
-/** Every work command talks to the panel API, as the UI and `portta mcp` do. */
+/** Every work command talks to the panel API, as the UI does. */
 function panelOptions(command: Command, includeActor = true): Command {
   const configured = command
     .option('--url <url>', 'the panel API base URL; defaults to the local panel')
@@ -801,13 +799,6 @@ describe(docsOptions(docs.command('show <slug>')), 'Read a document or heading s
   .option('--anchor <id>', 'heading anchor')
   .action((slug, _options, command) => docsCommand('show', slug, command))
 
-describe(program.command('mcp'), 'Serve the panel verbs to an agent over stdio (MCP)')
-  .option('--url <url>', 'the panel API base URL; defaults to the local panel')
-  .option('--allow-remote', 'permit a non-loopback panel URL, which is where a credential would be sent')
-  .option('--actor <name>', 'recorded on every write as X-Portta-Actor', 'agent')
-  .option('--docs-source <source>', 'documentation source: local or panel', 'local')
-  .action(mcpCommand)
-
 const remote = describe(program.command('remote'), 'Operate a gateway on another host over SSH')
 describe(remote.command('bootstrap <target>'), 'Prepare a host and start the gateway there')
   .option('--profile <name>', 'profile to configure', 'remote-private')
@@ -883,9 +874,6 @@ describe(toolbox.command('run [args...]'), 'Run a command in an ephemeral toolbo
   .allowUnknownOption(true)
   .allowExcessArguments(true)
   .action((args, _options, command) => toolboxRun(args, command))
-
-// Official modules add their groups after every base command.
-registerModuleCommands(program, { env: moduleEnvironment() }, CLI_MODULES)
 
 /**
  * `portta status | head -3` is an ordinary thing to type, and it made Node

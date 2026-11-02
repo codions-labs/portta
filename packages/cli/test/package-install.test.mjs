@@ -42,15 +42,12 @@ test('the packed npm package installs, runs, and ships its runtime assets outsid
 
     // The build splits the shared graph into chunks that the entry points
     // import by relative path, and `files` has to carry all of them. One lone
-    // .js would mean the split silently collapsed back into three copies.
+    // .js would mean the split silently collapsed back into two copies.
     const chunks = readdirSync(join(installed, 'dist')).filter((name) => name.endsWith('.js'))
-    assert.ok(chunks.length > 3, `expected chunks beside the entry points, got ${chunks.join(', ')}`)
+    assert.ok(chunks.length > 2, `expected chunks beside the entry points, got ${chunks.join(', ')}`)
 
-    // The host daemon, the Taskflow supervisor and the module's assets ship
-    // beside the CLI that starts them.
-    for (const file of ['host.js', 'supervisor.js', 'assets/workflows', 'assets/skills/portta-workflows/SKILL.md']) {
-      assert.equal(existsSync(join(installed, 'dist', file)), true, `missing dist/${file}`)
-    }
+    // The host daemon ships beside the CLI that starts it.
+    assert.equal(existsSync(join(installed, 'dist', 'host.js')), true, 'missing dist/host.js')
 
     // What the npm page shows: the build writes both from the repository root.
     assert.equal(existsSync(join(installed, 'LICENSE')), true)
@@ -60,12 +57,6 @@ test('the packed npm package installs, runs, and ships its runtime assets outsid
     assert.equal(/\]\((?!https?:|mailto:|#)/.test(readme), false, 'the packed README keeps a relative link')
 
     assert.match(run(executable, ['--help'], installRoot), /portta/)
-    const flowHelp = spawnSync(executable, ['flow', '--help'], {
-      cwd: installRoot,
-      encoding: 'utf8',
-    })
-    assert.equal(flowHelp.status, 0, flowHelp.stderr)
-    assert.match(flowHelp.stdout, /Usage: portta flow/)
     const output = run(executable, ['--version'], installRoot)
     // A packed CLI is always a build, so it names when it was built.
     const matched = /^portta (\S+) \(built \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\)$/.exec(output)

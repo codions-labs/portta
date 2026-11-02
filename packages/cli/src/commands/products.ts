@@ -1,7 +1,7 @@
 // `portta projects`: the product, from the terminal or from an agent.
 //
 // A Project is a decision the panel persists, so every verb here is one call
-// to the panel API — the same answers the UI and `portta mcp` get. `envs` is
+// to the panel API — the same answers the UI gets. `envs` is
 // the other noun: what Docker is running, read locally.
 
 import type { Command } from 'commander'
