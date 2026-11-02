@@ -17,8 +17,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t('title') }
 }
 
-export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
-  const { view } = await searchParams
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; new?: string }>
+}) {
+  const { view, new: create } = await searchParams
   if (view === 'services') {
     await pageNeeds('service:read')
     return <ServicesView />
@@ -35,5 +39,5 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
   // Read here, not fetched: the request would leave the process and come back
   // through the same dispatcher to reach code this render already has.
   const [projects, overview] = await Promise.all([readProjects(deps, principal), developmentOverview(deps, principal)])
-  return <ProjectsView initialProjects={projects} initialOverview={overview} />
+  return <ProjectsView initialProjects={projects} initialOverview={overview} startCreating={create === '1'} />
 }

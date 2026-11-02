@@ -52,13 +52,16 @@ const STATES: ProjectState[] = ['running', 'partial', 'unhealthy', 'idle', 'arch
 export function ProjectsView({
   initialProjects,
   initialOverview,
+  startCreating = false,
 }: {
   initialProjects: ProjectSummary[]
   initialOverview: DevelopmentOverview
+  /** Arrived from an "Add project" elsewhere in the panel. */
+  startCreating?: boolean
 }) {
   const { t } = useTranslation('projects')
   const [filters, setFilters] = useState<ProjectFilters>(DEFAULT_PROJECT_FILTERS)
-  const [creating, setCreating] = useState(false)
+  const [creating, setCreating] = useState(startCreating)
   // Cards until the browser has read its storage: the server cannot know the
   // preference, and a first render that disagrees with its HTML is thrown
   // away and rebuilt, which costs more than the re-render nobody sees.
@@ -213,7 +216,7 @@ export function ProjectsView({
         )}
       </section>
 
-      {creating ? <CreateProjectDialog open onOpenChange={setCreating} /> : null}
+      {creating && mayCreate ? <CreateProjectDialog open onOpenChange={setCreating} /> : null}
     </>
   )
 }

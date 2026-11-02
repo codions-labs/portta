@@ -4,13 +4,20 @@
   "gatewayRunning": "Gateway em execução",
   "gatewayDown": "Gateway inativo",
   "attention": {
-    "title": "Precisa de atenção",
-    "none": "Nada precisa de atenção.",
+    "title": "Precisa de você",
+    "none": "Nada precisa de você.",
     "count": "{{count}} para agir",
     "count_one": "{{count}} para agir",
     "count_other": "{{count}} para agir",
     "hostPressure": "Host sob pressão: {{reasons}}",
-    "serviceUnhealthy": "{{environment}}/{{service}} não está saudável"
+    "serviceUnhealthy": "{{environment}}/{{service}} não está saudável",
+    "unhealthyDetail": "A verificação de saúde está falhando",
+    "logs": "Ver logs",
+    "restart": "Reiniciar",
+    "details": "Ver detalhes",
+    "decide": "Decidir",
+    "closedSites_one": "{{count}} site está fechado porque ninguém decidiu",
+    "closedSites_other": "{{count}} sites estão fechados porque ninguém decidiu"
   },
   "projects": {
     "title": "Projetos",
@@ -117,5 +124,50 @@
   },
   "gateway": {
     "label": "Gateway"
+  },
+  "addProject": "Adicionar projeto",
+  "summary": {
+    "running_one": "{{count}} ambiente no ar neste host.",
+    "running_other": "{{count}} ambientes no ar neste host.",
+    "needsYou_one": "{{count}} coisa precisa de você.",
+    "needsYou_other": "{{count}} coisas precisam de você.",
+    "allGood": "Nada precisa de você."
+  },
+  "metric": {
+    "label": "Resumo deste host",
+    "environments": "Ambientes",
+    "ofRunning": "de {{total}} no ar",
+    "services": "Serviços",
+    "ofHealthy": "de {{total}} saudáveis",
+    "sites": "Sites",
+    "live": "no ar",
+    "undecided_one": "{{count}} sem decisão",
+    "undecided_other": "{{count}} sem decisão",
+    "hostUse": "Uso do host",
+    "cpu": "CPU",
+    "memory": "Memória",
+    "disk": "Disco"
+  },
+  "quick": {
+    "title": "Abrir rápido",
+    "empty": "Nada rodando ainda",
+    "noProject": "Sem projeto",
+    "noAddress": "Sem endereço",
+    "open": "Abrir em nova aba",
+    "problem": "Com problema",
+    "healthy": "Saudável"
+  },
+  "open": {
+    "title": "Abertos agora",
+    "all": "Ver tudo",
+    "none": "Nenhuma ponte ou link temporário aberto.",
+    "bridge": "Ponte local",
+    "noExpiry": "Sem prazo",
+    "expiresAt": "Expira sozinha",
+    "close": "Fechar",
+    "protectedLink": "Link temporário com senha",
+    "publicLink": "Link temporário público",
+    "expiresIn": "Expira em {{time}}",
+    "revoke": "Revogar"
   }
 }

@@ -29,7 +29,7 @@
     "work": "Work"
   },
   "environments": "Environments",
-  "commandPalette": "Command menu",
+  "commandPalette": "Search or run",
   "commandPlaceholder": "Type a command or search…",
   "commandNoResults": "Nothing matches",
   "commandGroups": {

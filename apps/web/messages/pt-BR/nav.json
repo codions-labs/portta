@@ -29,7 +29,7 @@
     "work": "Trabalho"
   },
   "environments": "Ambientes",
-  "commandPalette": "Menu de comandos",
+  "commandPalette": "Buscar ou executar",
   "commandPlaceholder": "Digite um comando ou busque…",
   "commandNoResults": "Nada corresponde",
   "commandGroups": {

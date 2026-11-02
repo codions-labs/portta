@@ -42,8 +42,8 @@ export function useNetwork() {
   return useQuery({ queryKey: keys.network(), queryFn: api.network })
 }
 
-export function useAccess() {
-  return useQuery({ queryKey: keys.access(), queryFn: api.access })
+export function useAccess(enabled = true) {
+  return useQuery({ queryKey: keys.access(), queryFn: api.access, enabled })
 }
 
 export function useServiceConnection(project: string, service: string, enabled: boolean) {
@@ -54,12 +54,12 @@ export function useServiceConnection(project: string, service: string, enabled: 
   })
 }
 
-export function useExposure() {
-  return useQuery({ queryKey: keys.exposure(), queryFn: api.exposure })
+export function useExposure(enabled = true) {
+  return useQuery({ queryKey: keys.exposure(), queryFn: api.exposure, enabled })
 }
 
-export function useShares() {
-  return useQuery({ queryKey: keys.shares(), queryFn: api.shares })
+export function useShares(enabled = true) {
+  return useQuery({ queryKey: keys.shares(), queryFn: api.shares, enabled })
 }
 
 export function useConfig() {

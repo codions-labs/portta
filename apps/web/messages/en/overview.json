@@ -4,13 +4,20 @@
   "gatewayRunning": "Gateway running",
   "gatewayDown": "Gateway down",
   "attention": {
-    "title": "Needs attention",
-    "none": "Nothing needs attention.",
+    "title": "Needs you",
+    "none": "Nothing needs you.",
     "count": "{{count}} to act on",
     "count_one": "{{count}} to act on",
     "count_other": "{{count}} to act on",
     "hostPressure": "Host under pressure: {{reasons}}",
-    "serviceUnhealthy": "{{environment}}/{{service}} is unhealthy"
+    "serviceUnhealthy": "{{environment}}/{{service}} is unhealthy",
+    "unhealthyDetail": "Its health check is failing",
+    "logs": "View logs",
+    "restart": "Restart",
+    "details": "View details",
+    "decide": "Decide",
+    "closedSites_one": "{{count}} site is closed because nobody decided",
+    "closedSites_other": "{{count}} sites are closed because nobody decided"
   },
   "projects": {
     "title": "Projects",
@@ -117,5 +124,50 @@
   },
   "gateway": {
     "label": "Gateway"
+  },
+  "addProject": "Add project",
+  "summary": {
+    "running_one": "{{count}} environment running on this host.",
+    "running_other": "{{count}} environments running on this host.",
+    "needsYou_one": "{{count}} thing needs you.",
+    "needsYou_other": "{{count}} things need you.",
+    "allGood": "Nothing needs you."
+  },
+  "metric": {
+    "label": "Summary of this host",
+    "environments": "Environments",
+    "ofRunning": "of {{total}} running",
+    "services": "Services",
+    "ofHealthy": "of {{total}} healthy",
+    "sites": "Sites",
+    "live": "live",
+    "undecided_one": "{{count}} undecided",
+    "undecided_other": "{{count}} undecided",
+    "hostUse": "Host usage",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "disk": "Disk"
+  },
+  "quick": {
+    "title": "Quick open",
+    "empty": "Nothing running yet",
+    "noProject": "No project",
+    "noAddress": "No address",
+    "open": "Open in a new tab",
+    "problem": "Has a problem",
+    "healthy": "Healthy"
+  },
+  "open": {
+    "title": "Open now",
+    "all": "View all",
+    "none": "No bridge or temporary link is open.",
+    "bridge": "Local bridge",
+    "noExpiry": "No expiry",
+    "expiresAt": "Expires by itself",
+    "close": "Close",
+    "protectedLink": "Temporary link with a password",
+    "publicLink": "Public temporary link",
+    "expiresIn": "Expires in {{time}}",
+    "revoke": "Revoke"
   }
 }

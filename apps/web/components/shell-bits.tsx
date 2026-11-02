@@ -337,6 +337,36 @@ export function StatTile({
   )
 }
 
+/** A number a page opens with: what it counts, a round icon, the value and its context beside it. */
+export function MetricCard({
+  label,
+  icon,
+  value,
+  unit,
+}: {
+  label: string
+  icon?: ReactNode
+  value: ReactNode
+  unit?: ReactNode
+}) {
+  return (
+    <div role="group" aria-label={label} className="rounded-xl border border-line bg-surface px-5 py-4 shadow-raised">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium tracking-[0.12em] text-subtle uppercase">{label}</span>
+        {icon ? (
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink [&_svg]:size-4">
+            {icon}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 font-heading text-4xl font-semibold tabular-nums">
+        {value}
+        {unit ? <span className="font-sans text-lg font-medium tracking-normal text-subtle">{unit}</span> : null}
+      </div>
+    </div>
+  )
+}
+
 export function KeyValue({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-baseline gap-3 py-1">

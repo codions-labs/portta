@@ -24,7 +24,7 @@ import { Tooltip } from '@/components/ui/tooltip'
 import { type Locale, useLocale } from '@/lib/i18n/use-locale'
 import { useLive } from '@/lib/live'
 import { usePrincipal } from '@/lib/principal'
-import { useDevelopmentOverview, useMetricsCurrent, useStatus } from '@/lib/queries'
+import { useClosedHosts, useDevelopmentOverview, useMetricsCurrent, useStatus } from '@/lib/queries'
 import { useShortcut } from '@/lib/shortcuts'
 import { type Theme, useThemeChoice } from '@/lib/theme'
 import { cn } from '@/lib/utils'
@@ -110,7 +110,7 @@ function ShellControls({
           {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
         </button>
       </Tooltip>
-      <UserMenu />
+      <UserMenu className={cn(!vertical && 'md:hidden')} />
     </div>
   )
 }
@@ -126,14 +126,15 @@ export function Shell({ children }: { children: ReactNode }) {
   const status = useStatus()
   const metrics = useMetricsCurrent()
   const overview = useDevelopmentOverview()
+  const closedHosts = useClosedHosts()
 
   const active = activeHref(pathname)
   const gateway = status.data?.gateway
-  const attention = overview.data?.attention.length ?? 0
+  const attention = (overview.data?.attention.length ?? 0) + (closedHosts.length > 0 ? 1 : 0)
 
   const gatewayTitle = gateway?.up ? t('gatewayUp') : t('gatewayDown')
   const hostname = metrics.data?.host?.hostname ?? metrics.data?.instance.hostname ?? null
-  const hostDetail = gateway ? [gateway.gatewayVersion, gateway.profile].filter(Boolean).join(' · ') : '…'
+  const hostDetail = gateway ? [gateway.profile, gateway.domain].filter(Boolean).join(' · ') : '…'
 
   // A page a role does not hold is not in that person's rail: it would answer
   // 404, and a navigation entry that cannot be followed is a worse answer than
@@ -306,10 +307,15 @@ export function Shell({ children }: { children: ReactNode }) {
               controls either way, moved by order rather than duplicated. */}
           <div
             className={cn(
-              'order-1 flex items-center px-2 py-2 md:order-none md:mt-auto md:px-0 md:pt-3 md:pb-0',
-              sidebarCollapsed && 'md:justify-center',
+              'order-1 flex items-center px-2 py-2 md:order-none md:mt-auto md:flex-col md:items-stretch md:gap-1 md:px-0 md:pt-3 md:pb-0',
+              sidebarCollapsed && 'md:items-center',
             )}
           >
+            {sidebarCollapsed ? null : (
+              <div className="hidden md:block">
+                <UserMenu full />
+              </div>
+            )}
             <ShellControls
               docs={Boolean(status.data?.gateway.panel.docs)}
               collapsed={sidebarCollapsed}
@@ -328,7 +334,7 @@ export function Shell({ children }: { children: ReactNode }) {
               with overflow-hidden (the Overview's readings strip, a Card) would
               collapse to its border. A child that fills the leftover height has
               flex-1, grows from a basis of 0, and never needs to shrink. */}
-          <div className="mx-auto flex min-h-full w-full max-w-[84rem] flex-col px-4 py-5 md:px-8 md:py-8 [&>*]:shrink-0">
+          <div className="mx-auto flex min-h-full w-full max-w-[76rem] flex-col px-4 py-5 md:px-8 md:py-8 [&>*]:shrink-0">
             {children}
           </div>
         </main>
