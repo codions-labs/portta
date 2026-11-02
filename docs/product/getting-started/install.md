@@ -6,7 +6,8 @@ needed.
 ## Requirements
 
 - Node 24 or newer, including npm;
-- Docker Engine 24 or newer with Docker Compose 2.24.4 or newer;
+- Docker Engine 24 or newer with Docker Compose v2 (2.24.4 or newer to adopt
+  projects);
 - a POSIX host and shell.
 
 Setup does not install those prerequisites or request elevated privileges. It
@@ -47,7 +48,8 @@ It does not enable the panel. `.env.example` ships with `PORTTA_WEB=false`,
 Setup ends by printing where it installed, how to start the panel
 (`portta web up`) and how to check the installation (`portta doctor`).
 
-To install a specific published version or choose a directory:
+Setup also accepts `--skip-pull` to start without pulling images. To install a
+specific published version or choose a directory:
 
 ```bash
 npx @codions/portta@0.1.0 setup --dir /opt/portta --yes
@@ -97,11 +99,6 @@ The directory contains the current release runtime and the host's state:
 assets are updated from the npm package. Setup refuses a non-empty directory
 that is not a Portta installation. See [Update Portta](../guides/update.md).
 
-## Next
-
-- A project on this machine: [Configure your first environment](first-environment.md).
-- A server on the internet, with a domain: [Deploy Portta on a server](../guides/deploy.md).
-
 ## Check the gateway
 
 ```bash
@@ -150,6 +147,15 @@ printf %s "$PASSWORD" | portta auth bootstrap \
 
 `public` and `domain` access refuse to start while authentication is disabled.
 Project exposure remains a separate, explicit decision.
+
+## Next
+
+- A project on this machine: [Configure your first environment](first-environment.md).
+- A server on the internet, with a domain: [Deploy Portta on a server](../guides/deploy.md).
+- Coding agents on this host: `portta agents install` teaches Claude Code,
+  Codex, OpenCode and Pi how to use it.
+
+## Reference
 
 See [Use the web panel](../guides/web-ui.md#reaching-it),
 [Configure authentication](../guides/authentication.md), the

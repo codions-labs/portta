@@ -71,7 +71,7 @@ For a server on the internet, with every project at `project-service.example.com
 1. Create two DNS-only records pointing at the server: `A example.com` and `A *.example.com`. The wildcard does not cover the domain itself, which is where the panel lives.
 2. Create a Cloudflare API token with **Zone, DNS, Edit** on that zone, used to issue one wildcard certificate.
 3. On the server, `npm install -g @codions/portta && portta setup`.
-4. Put the public profile, the domain and the token in `~/portta/.env`, then `portta up remote-public`.
+4. `portta public init --domain example.com --email you@example.com --cloudflare-token-stdin --yes < token-file` writes the public profile, the domain and the token to `~/portta/.env`; then `portta up remote-public`.
 5. `portta dns check && portta doctor`, then open `https://example.com` and create the owner.
 
 The [deploy guide](docs/product/guides/deploy.md) has each step with the exact records and values, and [Run a public host](docs/product/guides/public-host.md) explains the per-site decisions.

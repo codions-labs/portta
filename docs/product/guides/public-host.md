@@ -21,7 +21,10 @@ The [deploy guide](deploy.md) walks through the DNS records and the token.
 
 ## Configuration
 
-These keys go in `~/portta/.env` (or are set with `portta config set`):
+`portta public init --domain example.com --email you@example.com --cloudflare-token-stdin --yes < token-file`
+writes all of these in one step, prints the DNS records to create and starts
+nothing (`--dry-run` shows the plan first). To set them by hand, these keys go
+in `~/portta/.env` (or are set with `portta config set`):
 
 ```env
 PORTTA_PROFILE=remote-public

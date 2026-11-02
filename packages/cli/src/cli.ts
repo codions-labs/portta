@@ -73,6 +73,7 @@ import {
   servicesCommand,
 } from './commands/projects.js'
 import { openHost, protectHost, protectStatus, unprotectHost } from './commands/protect.js'
+import { publicInit } from './commands/public-init.js'
 import { projectsResolve } from './commands/resolve.js'
 import { setupCommand } from './commands/setup.js'
 import { shareGc, shareList, shareRevoke } from './commands/share.js'
@@ -379,6 +380,17 @@ describe(publicCommand.command('status'), 'Show current public exposure').action
 describe(publicCommand.command('enable'), 'Enable public HTTP after confirmation').action((_options, command) =>
   publicEnable(command),
 )
+describe(
+  publicCommand.command('init'),
+  'Configure this host as a public server: domain, TLS and panel, without starting anything',
+)
+  .requiredOption('--domain <domain>', 'the base domain, such as example.com')
+  .requiredOption('--email <address>', 'the ACME contact')
+  .option('--panel-host <host>', 'where the panel answers; the domain or a name under it (default: the domain)')
+  .option('--ip <address>', "the server's public IP, used only to print the DNS records")
+  .option('--cloudflare-token-stdin', 'read the Cloudflare DNS token from one line of standard input')
+  .option('--dry-run', 'print the plan and the DNS records; write nothing')
+  .action(publicInit)
 describe(publicCommand.command('disable'), 'Disable public HTTP').action((_options, command) => publicDisable(command))
 const dns = describe(program.command('dns'), 'Inspect or configure wildcard DNS')
 describe(dns.command('check'), 'Resolve a wildcard probe').action((_options, command) => dnsCheck(command))

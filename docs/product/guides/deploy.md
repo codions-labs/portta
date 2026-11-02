@@ -104,7 +104,23 @@ see [Update Portta](update.md).
 
 ## 5. Configure
 
-Open `~/portta/.env` and set these values, replacing the ones that exist:
+Let Portta write the settings. Save the token from step 3 in a file only you
+can read, then:
+
+```bash
+portta public init --domain example.com --email you@example.com \
+  --ip 203.0.113.10 --cloudflare-token-stdin --yes < token-file
+```
+
+The token is read from standard input, never from an argument, and is never
+printed. Add `--dry-run` first to see the plan and the DNS records without
+writing anything. `--panel-host panel.example.com` moves the panel off the
+bare domain. The command writes `~/portta/.env`, starts nothing, and refuses
+while TCP entrypoints are on or a running service has no login gate. Running
+it again with the same arguments changes nothing.
+
+The values it writes are the reference below. To set them by hand instead, open
+`~/portta/.env` and set these, replacing the ones that exist:
 
 ```env
 PORTTA_PROFILE=remote-public
