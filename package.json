@@ -30,9 +30,9 @@
     "docs:check": "node --import tsx tooling/docs.mjs --check"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.12",
+    "@biomejs/biome": "2.6.4",
     "esbuild": "0.28.2",
-    "tsx": "4.23.13"
+    "tsx": "4.23.15"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1"

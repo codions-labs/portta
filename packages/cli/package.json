@@ -54,7 +54,7 @@
     "portta-contracts": "0.1.0",
     "portta-core": "0.1.0",
     "typescript": "7.0.2",
-    "vitest": "4.1.12",
-    "tsx": "4.23.13"
+    "vitest": "5.0.5",
+    "tsx": "4.23.15"
   }
 }

@@ -3225,7 +3225,8 @@
               "name",
               "state",
               "health"
-            ]
+            ],
+            "additionalProperties": false
           },
           "routes": {
             "type": "array",
@@ -3261,7 +3262,8 @@
                   "name",
                   "target",
                   "proxied"
-                ]
+                ],
+                "additionalProperties": false
               },
               {
                 "type": "null"
@@ -15913,7 +15915,8 @@
                         "version",
                         "revision",
                         "hash"
-                      ]
+                      ],
+                      "additionalProperties": false
                     },
                     "groups": {
                       "type": "array",
@@ -15949,7 +15952,8 @@
                           "audience",
                           "sequential",
                           "slugs"
-                        ]
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "pages": {
@@ -16003,7 +16007,8 @@
                           "source",
                           "url",
                           "kind"
-                        ]
+                        ],
+                        "additionalProperties": false
                       }
                     }
                   },
@@ -16011,7 +16016,8 @@
                     "identity",
                     "groups",
                     "pages"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -16118,7 +16124,8 @@
                         "version",
                         "revision",
                         "hash"
-                      ]
+                      ],
+                      "additionalProperties": false
                     },
                     "results": {
                       "type": "array",
@@ -16170,14 +16177,16 @@
                           "url",
                           "anchor",
                           "excerpt"
-                        ]
+                        ],
+                        "additionalProperties": false
                       }
                     }
                   },
                   "required": [
                     "identity",
                     "results"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -16269,7 +16278,8 @@
                         "version",
                         "revision",
                         "hash"
-                      ]
+                      ],
+                      "additionalProperties": false
                     },
                     "page": {
                       "type": "object",
@@ -16339,7 +16349,8 @@
                               "text",
                               "level",
                               "line"
-                            ]
+                            ],
+                            "additionalProperties": false
                           }
                         }
                       },
@@ -16355,13 +16366,15 @@
                         "kind",
                         "markdown",
                         "headings"
-                      ]
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
                     "identity",
                     "page"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }

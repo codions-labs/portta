@@ -58,7 +58,7 @@ test.describe('administering a panel that asks who you are', () => {
     const dialog = page.getByRole('dialog')
     await dialog.getByLabel(/^Name/).fill('laptop')
     await dialog.getByRole('button', { name: 'New token' }).click()
-    const secret = (await page.getByRole('dialog').locator('pre').innerText()).trim()
+    const secret = ((await page.getByRole('dialog').locator('pre').textContent()) ?? '').trim()
     expect(secret.startsWith('ptt_')).toBe(true)
     await page.getByRole('button', { name: 'I copied it' }).click()
     await expect(page.getByRole('dialog')).toHaveCount(0)
