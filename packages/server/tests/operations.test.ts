@@ -120,7 +120,6 @@ describe('POST /api/environments/:project/operations/remove', () => {
     const response = await post(app, '/api/environments/alpha/operations/remove', {
       confirmation: 'ALPHA',
       volumes: false,
-      directory: false,
     })
     expect(response.status).toBe(400)
     expect(await response.json()).toMatchObject({ error: expect.stringContaining('confirmation') })
@@ -133,7 +132,6 @@ describe('POST /api/environments/:project/operations/remove', () => {
     const response = await post(app, '/api/environments/alpha/operations/remove', {
       confirmation: 'alpha',
       volumes: false,
-      directory: false,
     })
     expect(response.status).toBe(200)
     const body = (await response.json()) as ProjectRemoveResult
@@ -143,7 +141,7 @@ describe('POST /api/environments/:project/operations/remove', () => {
     expect(docker.calls.filter((call) => call.method === 'remove').length).toBeGreaterThan(0)
     expect(body.remainingCommands.some((command) => command.includes('--volumes'))).toBe(false)
     expect(body.remainingCommands.some((command) => command.includes('rm -rf'))).toBe(false)
-    expect(body.note).toContain('GitHub')
+    expect(body.note).toContain('repository are not touched')
   })
 
   it('keep-data with the runner writes down, not down-volumes', async () => {
@@ -151,7 +149,6 @@ describe('POST /api/environments/:project/operations/remove', () => {
     const response = await post(app, '/api/environments/alpha/operations/remove', {
       confirmation: 'alpha',
       volumes: false,
-      directory: false,
     })
     expect(response.status).toBe(200)
     expect(requestFile(config.runnerDir)).toEqual({ verb: 'down', project: 'alpha', flags: [] })
@@ -164,87 +161,18 @@ describe('POST /api/environments/:project/operations/remove', () => {
     await post(app, '/api/environments/alpha/operations/remove', {
       confirmation: 'alpha',
       volumes: true,
-      directory: false,
     })
     expect(requestFile(config.runnerDir)).toEqual({ verb: 'down-volumes', project: 'alpha', flags: [] })
   })
 
-  it('refuses directory removal on a dirty tree unless overridden', async () => {
-    const gitDir = mkdtempSync(join(tmpdir(), 'portta-git-'))
-    const key = 'abcdef012345'
-    writeFileSync(
-      join(gitDir, 'index.json'),
-      JSON.stringify({
-        version: 1,
-        collectedAt: Math.floor(Date.now() / 1000),
-        environments: { alpha: key },
-        repositories: [],
-      }),
-    )
-    writeFileSync(
-      join(gitDir, `${key}.json`),
-      JSON.stringify({
-        collectedAt: Math.floor(Date.now() / 1000),
-        workingDir: '/srv/dev/alpha',
-        git: {
-          dirty: true,
-          staged: 1,
-          unstaged: 2,
-          untracked: 0,
-          detached: false,
-          head: { sha: 'abc', shortSha: 'abc', subject: '', author: '', date: 0 },
-        },
-      }),
-    )
-    const { app, config } = makeApp({ containers: [...PROJECT_A, RUNNER] }, { gitDir, ...isolated() })
-    const refused = await post(app, '/api/environments/alpha/operations/remove', {
-      confirmation: 'alpha',
-      volumes: true,
-      directory: true,
-    })
-    expect(refused.status).toBe(409)
-    expect(await refused.json()).toMatchObject({ error: expect.stringContaining('dirty') })
-    expect(existsSync(join(config.runnerDir, 'request.json'))).toBe(false)
-
-    const allowed = await post(app, '/api/environments/alpha/operations/remove', {
-      confirmation: 'alpha',
-      volumes: true,
-      directory: true,
-      overrideDirty: true,
-    })
-    expect(allowed.status).toBe(200)
-    expect(requestFile(config.runnerDir)).toEqual({ verb: 'down-volumes', project: 'alpha', flags: ['directory'] })
-  })
-
-  it('refuses a directory that walks up', async () => {
-    const walked: FakeContainer[] = PROJECT_A.map((entry) => ({
-      ...entry,
-      labels: {
-        ...entry.labels,
-        'com.docker.compose.project.working_dir': '/srv/dev/../etc',
-      },
-    }))
-    const { app } = makeApp({ containers: [...walked, RUNNER] }, isolated())
+  it('has no way to remove the working directory', async () => {
+    const { app, config } = makeApp({ containers: [...PROJECT_A, RUNNER] }, isolated())
     const response = await post(app, '/api/environments/alpha/operations/remove', {
       confirmation: 'alpha',
       volumes: true,
       directory: true,
     })
     expect(response.status).toBe(400)
-    expect(await response.json()).toMatchObject({ error: expect.stringContaining('walks up') })
-  })
-
-  it('without the runner, directory removal is a printed command', async () => {
-    const { app } = makeApp({ containers: PROJECT_A }, isolated())
-    const body = (await (
-      await post(app, '/api/environments/alpha/operations/remove', {
-        confirmation: 'alpha',
-        volumes: true,
-        directory: true,
-      })
-    ).json()) as ProjectRemoveResult
-    expect(body.via).toBe('iteration')
-    expect(body.remainingCommands.some((command) => command.startsWith("rm -rf -- '/srv/dev/alpha'"))).toBe(true)
-    expect(body.remainingCommands.some((command) => command.includes('down --volumes'))).toBe(true)
+    expect(existsSync(join(config.runnerDir, 'request.json'))).toBe(false)
   })
 })

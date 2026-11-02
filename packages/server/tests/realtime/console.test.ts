@@ -69,7 +69,6 @@ async function fixture(options: { missing?: boolean; attachDelay?: number; princ
     hub: panel.hub,
     verdict: panel.verdict,
     db: seeded.database,
-    forge: panel.forge,
     security: panel.security,
     auth: null,
     principals: panel.principals,

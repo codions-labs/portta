@@ -7,32 +7,20 @@
 //
 // The `user` and `session` resources come from Better Auth's admin plugin: its
 // endpoints authorise against exactly those, so they are spread in rather than
-// restated. Everything else is Portta's, and an official module adds its own
-// resources after the base ones, from the manifests in `portta-core/modules`.
+// restated. Everything else is Portta's.
 
 import { createAccessControl } from 'better-auth/plugins/access'
 import { defaultStatements } from 'better-auth/plugins/admin/access'
 import { ROLES, type Role as RoleName } from 'portta-core'
-import {
-  MODULES,
-  type ModuleManifest,
-  type ModuleStatements,
-  modulePermissions,
-  moduleRoleGrants,
-} from 'portta-core/modules'
 
-const baseStatements = {
+export const statements = {
   ...defaultStatements,
   project: ['read', 'create', 'update', 'delete', 'members'],
-  repository: ['read', 'manage'],
-  issue: ['read', 'write'],
   environment: ['read', 'operate', 'destroy', 'settings'],
   service: ['read', 'operate'],
   container: ['read', 'operate', 'destroy', 'console'],
   logs: ['read'],
   metrics: ['read'],
-  activity: ['read'],
-  worksession: ['read', 'write'],
   /** Bridges, forwarders and shares: the ways into a running environment. */
   access: ['read', 'open', 'manage'],
   gateway: ['read', 'operate'],
@@ -40,35 +28,14 @@ const baseStatements = {
   settings: ['read', 'manage'],
   token: ['read', 'create', 'revoke'],
   audit: ['read'],
-  ssh: ['read', 'manage'],
 } as const
-
-/**
- * The base statements followed by the modules' own.
- *
- * A module resource that reuses a base one would widen what an existing
- * permission means, so it is refused when this file loads. The type is the
- * base object intersected with what the registry adds, which for no modules is
- * the base object alone.
- */
-export function withModuleStatements<const M extends readonly ModuleManifest[]>(
-  modules: M,
-): typeof baseStatements & ModuleStatements<M> {
-  const added = modulePermissions(modules)
-  for (const resource of Object.keys(added)) {
-    if (resource in baseStatements) throw new Error(`a module cannot redefine the ${resource} resource`)
-  }
-  return { ...baseStatements, ...added } as typeof baseStatements & ModuleStatements<M>
-}
-
-export const statements = withModuleStatements(MODULES)
 
 export const ac = createAccessControl(statements)
 
 export type Statements = typeof statements
 export type Resource = keyof Statements
 
-/** `issue:write` — the flat form every route, token scope and setting uses. */
+/** `logs:read` — the flat form every route and token scope uses. */
 export type Permission = {
   [R in Resource]: `${R & string}:${Statements[R][number]}`
 }[Resource]
@@ -98,38 +65,26 @@ export const admin = ac.newRole({ ...withoutImpersonation } as never)
 
 export const developer = ac.newRole({
   project: ['read'],
-  repository: ['read', 'manage'],
-  issue: ['read', 'write'],
   environment: ['read', 'operate', 'settings'],
   service: ['read', 'operate'],
   container: ['read', 'operate'],
   logs: ['read'],
   metrics: ['read'],
-  activity: ['read'],
-  worksession: ['read', 'write'],
   access: ['read', 'open'],
   gateway: ['read'],
-  ssh: ['read'],
   token: ['read', 'create', 'revoke'],
-  ...moduleRoleGrants(MODULES, 'developer'),
 } as never)
 
 export const viewer = ac.newRole({
   project: ['read'],
-  repository: ['read'],
-  issue: ['read'],
   environment: ['read'],
   service: ['read'],
   container: ['read'],
   logs: ['read'],
   metrics: ['read'],
-  activity: ['read'],
-  worksession: ['read'],
   access: ['read'],
   gateway: ['read'],
-  ssh: ['read'],
   token: ['read', 'create', 'revoke'],
-  ...moduleRoleGrants(MODULES, 'viewer'),
 } as never)
 
 export const roles = { owner, admin, developer, viewer } as const
@@ -157,12 +112,11 @@ export const READ_PERMISSIONS: readonly Permission[] = PERMISSIONS.filter((permi
 /**
  * What an agent holds unless the operator says otherwise.
  *
- * A developer's permissions minus the two that change how the panel itself
- * behaves: an agent works on issues and environments, it does not reconfigure
- * an environment or re-register a repository.
+ * A developer's permissions minus the one that changes how the panel itself
+ * behaves: an agent works on environments, it does not reconfigure one.
  */
 export const AGENT_DEFAULT_PERMISSIONS: readonly Permission[] = [...permissionsOf('developer')].filter(
-  (permission) => permission !== 'environment:settings' && permission !== 'repository:manage',
+  (permission) => permission !== 'environment:settings',
 )
 
 export function isPermission(value: unknown): value is Permission {
@@ -170,7 +124,7 @@ export function isPermission(value: unknown): value is Permission {
 }
 
 /**
- * `['issue:read', 'issue:write']` → `{ issue: ['read', 'write'] }`.
+ * `['logs:read', 'metrics:read']` → `{ logs: ['read'], metrics: ['read'] }`.
  *
  * The apiKey plugin stores scopes in the nested form; every other surface in
  * Portta names them flat, because that is what a route declares and what an

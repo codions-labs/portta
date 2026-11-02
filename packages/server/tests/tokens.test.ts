@@ -81,7 +81,7 @@ describe('creating one', () => {
   it('refuses a scope the maker does not hold, and names it', async () => {
     const refused = await send('POST', '/api/auth/tokens', 'dev', {
       name: 'too much',
-      scopes: ['issue:read', 'settings:manage'],
+      scopes: ['environment:read', 'settings:manage'],
     })
     expect(refused.status).toBe(400)
     expect((await json(refused)).error).toContain('settings:manage')
@@ -91,11 +91,11 @@ describe('creating one', () => {
     const created = await json(
       await send('POST', '/api/auth/tokens', 'dev', {
         name: 'reader',
-        scopes: ['issue:read'],
+        scopes: ['environment:read'],
       }),
     )
     const me = await json(await bearer(created.token))
-    expect(me.permissions).toEqual(['issue:read'])
+    expect(me.permissions).toEqual(['environment:read'])
   })
 })
 
@@ -148,10 +148,10 @@ describe('a token that outlives its owner’s standing', () => {
     const created = await json(
       await send('POST', '/api/auth/tokens', 'dev', {
         name: 'writer',
-        scopes: ['issue:write'],
+        scopes: ['environment:operate'],
       }),
     )
-    expect((await json(await bearer(created.token))).permissions).toEqual(['issue:write'])
+    expect((await json(await bearer(created.token))).permissions).toEqual(['environment:operate'])
 
     await send('PATCH', `/api/users/${ids.developer}/role`, 'owner', { role: 'viewer' })
     // The token was never touched. What it holds is recomputed per request, so

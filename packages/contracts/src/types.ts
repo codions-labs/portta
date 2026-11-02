@@ -3,7 +3,6 @@
 // Responses are validated in tests, not on the production hot path.
 
 import type { ProjectLocation as CoreProjectLocation } from 'portta-core/browser'
-import { TASK_PROVIDERS } from 'portta-core/browser'
 import { z } from 'portta-core/zod'
 
 const named = <T extends z.ZodType>(schema: T, ref: string): T => schema.meta({ ref }) as T
@@ -114,40 +113,6 @@ export const MountSummary = named(
 )
 export type MountSummary = z.infer<typeof MountSummary>
 
-/**
- * What the gateway decided about a project, as opposed to what the project
- * declared. Always additive: the derived name and hostname stay where they
- * were, so nothing is ever only-renamed.
- */
-export const IssueLinkSource = named(
-  z.enum(['manual', 'label', 'branch', 'namespace']).describe('Why this environment is linked to this issue'),
-  'IssueLinkSource',
-)
-export type IssueLinkSource = z.infer<typeof IssueLinkSource>
-
-/**
- * The issue an environment is being worked on, when the panel can tell.
- *
- * A ref and a title, not an embedded issue: rendering a list of environments
- * would otherwise mean one provider call per row, and an environment outlives
- * the provider's availability — the panel can still say what a stack is for
- * when GitHub is unreachable.
- */
-export const EnvironmentIssue = named(
-  z
-    .object({
-      ref: z.string().describe('github:owner/repo#113 or linear:ENG-42'),
-      label: z.string().describe('The short form a person reads: portta#113, ENG-42'),
-      url: z.string().nullable().describe('Where it is on the provider; null when the ref alone cannot say'),
-      source: IssueLinkSource,
-      reason: z.string().describe('A sentence the UI can show instead of a bare source'),
-      panelUrl: z.string().nullable().describe('Where the panel shows it, when a Project claims this environment'),
-    })
-    .strict(),
-  'EnvironmentIssue',
-)
-export type EnvironmentIssue = z.infer<typeof EnvironmentIssue>
-
 export const EnvironmentOverrides = named(
   z
     .object({
@@ -196,9 +161,6 @@ export const ContainerSummary = named(
       workingDir: z.string().nullable(),
       namespace: z.string().nullable(),
       group: z.string().nullable().describe('Optional portta.project logical project label'),
-      repo: z.string().nullable().describe('Optional portta.repo label as supplied by the project'),
-      repoUrl: z.string().nullable().describe('Repository web address derived from repo'),
-      gitRoot: z.string().nullable().describe('Optional portta.git.root label'),
       networks: z.array(z.string()),
       onGatewayNetwork: z.boolean(),
       traefikEnabled: z.boolean(),
@@ -287,7 +249,6 @@ export const EnvironmentPorttaRecords = named(
       overrides: z.number().int(),
       aliases: z.number().int(),
       projectLinks: z.number().int(),
-      issueLinks: z.number().int(),
       accessBridges: z.array(z.string()),
       accessForwarders: z.array(z.string()),
       accessFiles: z.array(z.string()),
@@ -322,18 +283,8 @@ export const EnvironmentRemovalPreview = named(
           .strict(),
       ),
       workingDir: z.string().nullable(),
-      git: z
-        .object({
-          collected: z.boolean(),
-          dirty: z.boolean(),
-          staged: z.number().int(),
-          unstaged: z.number().int(),
-          untracked: z.number().int(),
-        })
-        .strict(),
       records: EnvironmentPorttaRecords,
       runnerAvailable: z.boolean(),
-      directoryRemovalAvailable: z.boolean(),
     })
     .strict(),
   'EnvironmentRemovalPreview',
@@ -356,9 +307,6 @@ export const Environment = named(
       startable: EnvironmentStartable.describe('Whether start can iterate existing containers, or needs the runner'),
       namespace: z.string().nullable(),
       group: z.string().nullable().describe('Optional portta.project label; a hint, not a Project'),
-      repo: z.string().nullable(),
-      repoUrl: z.string().nullable(),
-      gitRoot: z.string().nullable(),
       services: z.array(ContainerSummary),
       serviceCount: z.number().int(),
       runningCount: z.number().int(),
@@ -375,9 +323,6 @@ export const Environment = named(
       startedAt: unixSeconds.nullable(),
       uptimeSeconds: z.number().nullable(),
       overrides: EnvironmentOverrides.optional().describe('Absent when nothing was overridden'),
-      issue: EnvironmentIssue.nullable()
-        .optional()
-        .describe('The issue this environment is running for, when the panel can tell'),
       location: z.enum(['managed', 'external', 'escaped', 'missing', 'inaccessible']).optional(),
     })
     .strict(),
@@ -386,7 +331,7 @@ export const Environment = named(
 export type Environment = z.infer<typeof Environment>
 
 export const AdoptionSource = named(
-  z.enum(['manual', 'label', 'repo-match', 'path']).describe('Why this environment belongs to this Project'),
+  z.enum(['manual', 'label', 'path']).describe('Why this environment belongs to this Project'),
   'AdoptionSource',
 )
 export type AdoptionSource = z.infer<typeof AdoptionSource>
@@ -413,175 +358,6 @@ export type ProjectLocation = z.infer<typeof ProjectLocation>
 const _projectLocations: readonly CoreProjectLocation[] = ProjectLocation.options
 void _projectLocations
 
-/**
- * A repository's GitHub coordinate, derived from its remote. Optional metadata
- * on a Repository; it does not define the Repository.
- *
- * Only what the remote itself says. Portta holds no copy of GitHub's view of a
- * repository (private, archived, default branch): `gh` answers those questions
- * when something actually needs them (ADR 0018).
- */
-export const ProjectGitHubRepository = named(
-  z
-    .object({
-      slug: z.string().describe('owner/name'),
-      htmlUrl: z.string(),
-      role: z.string().nullable().describe('api | web | mobile | services | infra | docs | other'),
-      position: z.number().int(),
-    })
-    .strict(),
-  'ProjectGitHubRepository',
-)
-export type ProjectGitHubRepository = z.infer<typeof ProjectGitHubRepository>
-
-export const GitHead = named(
-  z
-    .object({
-      sha: z.string(),
-      shortSha: z.string(),
-      subject: z.string(),
-      author: z.string(),
-      date: unixSeconds,
-    })
-    .strict(),
-  'GitHead',
-)
-export type GitHead = z.infer<typeof GitHead>
-
-export const RepositoryProvider = named(
-  z.enum(['local', 'github', 'gitlab', 'bitbucket', 'other']).describe('Where the remote lives, if there is one'),
-  'RepositoryProvider',
-)
-export type RepositoryProvider = z.infer<typeof RepositoryProvider>
-
-export const Commit = named(
-  z
-    .object({
-      sha: z.string(),
-      shortSha: z.string(),
-      subject: z.string(),
-      author: z.string(),
-      date: unixSeconds,
-      url: z.string().nullable().describe('The commit on the forge, when the remote is one whose shape is known'),
-    })
-    .strict(),
-  'Commit',
-)
-export type Commit = z.infer<typeof Commit>
-
-/** One file an agent reads before it works, as the host scan found it. */
-export const InstructionFile = named(
-  z
-    .object({
-      path: z.string().describe('Relative to the repository root'),
-      audience: z.string().describe('any, claude, cursor, copilot, gemini, cline or windsurf'),
-      sizeBytes: z.number().int(),
-      modifiedAt: unixSeconds,
-      sha256: z.string(),
-      dirty: z.boolean().describe('True when the working tree differs from HEAD for this file'),
-      content: z.string().nullable().describe('Null when the file is over the collection bound'),
-      truncated: z.boolean(),
-    })
-    .strict(),
-  'InstructionFile',
-)
-export type InstructionFile = z.infer<typeof InstructionFile>
-
-/**
- * A reference to one specification document the project keeps — a decision
- * record, an OpenSpec or Spec Kit document — never its content. Where it is,
- * which convention recognised it, what it is called, and the hash and dirty
- * flag that say which version is meant.
- */
-export const SpecificationReference = named(
-  z
-    .object({
-      path: z.string().describe('Relative to the repository root'),
-      provider: z.string().describe('The convention that recognised it: adr, openspec or spec-kit'),
-      kind: z
-        .string()
-        .describe(
-          'What it is within that convention: decision, specification, change, design, tasks, plan, constitution, context, research, data-model or quickstart',
-        ),
-      title: z.string().nullable().describe('The first heading or front matter title, when there is one'),
-      sizeBytes: z.number().int(),
-      modifiedAt: unixSeconds,
-      sha256: z.string(),
-      dirty: z.boolean().describe('True when the working tree differs from HEAD for this file'),
-    })
-    .strict(),
-  'SpecificationReference',
-)
-export type SpecificationReference = z.infer<typeof SpecificationReference>
-
-/** The compact Git line a list shows for a repository. */
-export const RepositoryGitSummary = named(
-  z
-    .object({
-      branch: z.string().nullable(),
-      detached: z.boolean(),
-      head: GitHead,
-      dirty: z.boolean(),
-      changed: z.number().int().describe('staged + unstaged + untracked + unmerged'),
-      ahead: z.number().int(),
-      behind: z.number().int(),
-      base: z
-        .string()
-        .nullable()
-        .describe('The upstream ref ahead and behind are measured against, such as origin/main'),
-      collectedAt: unixSeconds,
-      stale: z.boolean(),
-    })
-    .strict(),
-  'RepositoryGitSummary',
-)
-export type RepositoryGitSummary = z.infer<typeof RepositoryGitSummary>
-
-/**
- * A repository of a Project: a decision (name, path, remote, role), joined with
- * what the host scan observed about it. GitHub is optional metadata on top.
- */
-export const Repository = named(
-  z
-    .object({
-      id: z.string(),
-      projectId: z.string(),
-      name: z.string(),
-      role: z.string().nullable().describe('api | web | mobile | services | infra | docs | other'),
-      provider: RepositoryProvider,
-      localPath: z.string().nullable().describe('Where it lives on the host, as registered'),
-      relativePath: z.string().nullable().describe('Inside the Project, when the Project is managed'),
-      remoteUrl: z.string().nullable(),
-      position: z.number().int(),
-      scanKey: z.string().nullable().describe('The host scan this repository matched, when one did'),
-      scanPath: z.string().nullable().describe('The git root the host scanned, when one matched'),
-      git: RepositoryGitSummary.nullable(),
-      github: ProjectGitHubRepository.nullable(),
-      environments: z.array(z.string()).describe('Compose projects running from this repository, per the scan'),
-      instructionCount: z.number().int(),
-    })
-    .strict(),
-  'Repository',
-)
-export type Repository = z.infer<typeof Repository>
-
-/** A git root the host scanned that no Project has registered yet. */
-export const DiscoveredRepository = named(
-  z
-    .object({
-      key: z.string(),
-      path: z.string(),
-      name: z.string(),
-      remote: z.string().nullable(),
-      location: ProjectLocation.nullable(),
-      relativePath: z.string().nullable().describe('One- or two-level path under Projects Home, when managed'),
-      environments: z.array(z.string()),
-    })
-    .strict(),
-  'DiscoveredRepository',
-)
-export type DiscoveredRepository = z.infer<typeof DiscoveredRepository>
-
 export const ProjectEnvironment = named(
   z
     .object({
@@ -600,9 +376,6 @@ export const ProjectEnvironment = named(
 )
 export type ProjectEnvironment = z.infer<typeof ProjectEnvironment>
 
-/** Repeated from work-types.ts rather than imported: that file imports this one. */
-const TaskProvider = z.enum(TASK_PROVIDERS)
-
 export const ProjectSummary = named(
   z
     .object({
@@ -611,14 +384,8 @@ export const ProjectSummary = named(
       name: z.string(),
       description: z.string().nullable(),
       archived: z.boolean(),
-      taskProvider: TaskProvider.nullable().describe(
-        'Null means derived: GitHub when a repository has a GitHub remote',
-      ),
-      /** The Linear team, when the provider is Linear. Null otherwise. */
-      linearTeam: z.string().nullable(),
       relativePath: z.string().nullable(),
       location: ProjectLocation,
-      repositoryCount: z.number().int(),
       environmentCount: z.number().int(),
       runningEnvironmentCount: z.number().int(),
       /**
@@ -652,155 +419,15 @@ export const Project = named(
       name: z.string(),
       description: z.string().nullable(),
       archived: z.boolean(),
-      taskProvider: TaskProvider.nullable().describe(
-        'Null means derived: GitHub when a repository has a GitHub remote',
-      ),
-      /** The Linear team, when the provider is Linear. GitHub needs no equivalent: its coordinate is the remote. */
-      linearTeam: z.string().nullable(),
-      /** Where this Project's work actually is, once the provider is resolved. */
-      work: z
-        .object({
-          provider: TaskProvider.nullable(),
-          /** `owner/repo` for GitHub, the team key for Linear. Null when nothing is linked. */
-          coordinate: z.string().nullable(),
-          /** Why there is nothing to read, when there is nothing to read. */
-          reason: z.string().nullable(),
-        })
-        .strict(),
       relativePath: z.string().nullable(),
       resolvedPath: z.string().nullable(),
       location: ProjectLocation,
-      repositories: z.array(Repository),
       environments: z.array(ProjectEnvironment),
     })
     .strict(),
   'Project',
 )
 export type Project = z.infer<typeof Project>
-
-export const GitInfo = named(
-  z
-    .object({
-      branch: z.string().nullable().describe('Null on a detached HEAD'),
-      detached: z.boolean(),
-      head: GitHead,
-      staged: z.number().int(),
-      unstaged: z.number().int(),
-      untracked: z.number().int(),
-      unmerged: z.number().int(),
-      dirty: z.boolean(),
-      upstream: z.string().nullable(),
-      ahead: z.number().int(),
-      behind: z.number().int(),
-      remote: z.string().nullable().describe('Remote as Git reports it, or the portta.repo label'),
-    })
-    .strict(),
-  'GitInfo',
-)
-export type GitInfo = z.infer<typeof GitInfo>
-
-export const ForgePullRequest = named(
-  z
-    .object({
-      number: z.number().int(),
-      title: z.string(),
-      state: z.string(),
-      draft: z.boolean(),
-      reviewDecision: z.string().nullable(),
-      checks: z.string().nullable(),
-      url: z.string().nullable(),
-      headRefName: z.string().nullable(),
-    })
-    .strict(),
-  'ForgePullRequest',
-)
-export type ForgePullRequest = z.infer<typeof ForgePullRequest>
-
-export const Forge = named(
-  z
-    .object({
-      kind: z.string(),
-      collectedAt: unixSeconds,
-      authenticated: z.boolean().describe('False when gh was present but not signed in'),
-      reason: z.string().nullable(),
-      pulls: z.array(ForgePullRequest),
-    })
-    .strict(),
-  'Forge',
-)
-export type Forge = z.infer<typeof Forge>
-
-const ProjectRemote = z
-  .object({
-    url: z.string(),
-    host: z.string(),
-    slug: z.string(),
-    kind: z.string(),
-    repoUrl: z.string(),
-  })
-  .strict()
-
-const ProjectGitLinks = z
-  .object({
-    repo: z.string().nullable(),
-    commit: z.string().nullable(),
-    branch: z.string().nullable(),
-  })
-  .strict()
-
-export const ProjectGit = named(
-  z
-    .object({
-      project: z.string(),
-      collected: z.boolean().describe('False when no scan file exists'),
-      collectedAt: unixSeconds.nullable(),
-      ageSeconds: z.number().nullable(),
-      stale: z.boolean(),
-      staleAfterSeconds: z.number(),
-      workingDir: z.string().nullable(),
-      git: GitInfo.nullable(),
-      remote: ProjectRemote.nullable(),
-      links: ProjectGitLinks,
-      forge: Forge.nullable(),
-      reason: z.string().nullable().describe('Why Git metadata is absent, when known'),
-      refreshCommand: z.string().describe('Exact host command that refreshes this snapshot'),
-    })
-    .strict()
-    .describe('Metadata collected by portta repos scan for one project'),
-  'ProjectGit',
-)
-export type ProjectGit = z.infer<typeof ProjectGit>
-
-/** Everything the host scan collected about one repository. */
-export const RepositoryGit = named(
-  z
-    .object({
-      key: z.string(),
-      collected: z.boolean().describe('False when no scan file exists for this repository'),
-      collectedAt: unixSeconds.nullable(),
-      ageSeconds: z.number().nullable(),
-      stale: z.boolean(),
-      staleAfterSeconds: z.number(),
-      path: z.string().nullable().describe('The git root on the host'),
-      name: z.string().nullable(),
-      git: GitInfo.nullable(),
-      remote: ProjectRemote.nullable(),
-      links: ProjectGitLinks,
-      commits: z.array(Commit).describe('Most recent first, metadata only'),
-      instructions: z.array(InstructionFile),
-      specifications: z
-        .array(SpecificationReference)
-        .describe('Decision records and specification documents, as references'),
-      environments: z.array(z.string()).describe('Compose projects whose working directory sits under this root'),
-      forge: Forge.nullable(),
-      reason: z.string().nullable(),
-      refreshCommand: z.string(),
-    })
-    .strict()
-    .describe('Collected by portta repos scan for one repository'),
-  'RepositoryGit',
-)
-export type RepositoryGit = z.infer<typeof RepositoryGit>
 
 export const TraefikRouter = named(
   z
@@ -1318,38 +945,6 @@ export const OverviewCounts = named(
 )
 export type OverviewCounts = z.infer<typeof OverviewCounts>
 
-/**
- * Whether this installation can read and write issues, and what is missing.
- *
- * Never a token and never a key: `gh` holds GitHub's credential on the host and
- * Linear's is an environment variable there. What the panel is allowed to say
- * is whether the tool exists, whether somebody is signed in, and as whom — so
- * the screen can name the one command that fixes it.
- */
-export const ProviderStatus = named(
-  z
-    .object({
-      available: z.boolean().describe('The tool or key exists on the host at all'),
-      authenticated: z.boolean(),
-      account: z.string().nullable().describe('Who the host is signed in as'),
-      reason: z.string().nullable().describe('Why not, when it is not'),
-    })
-    .strict(),
-  'ProviderStatus',
-)
-export type ProviderStatus = z.infer<typeof ProviderStatus>
-
-export const ForgeStatus = named(
-  z
-    .object({
-      github: ProviderStatus,
-      linear: ProviderStatus,
-    })
-    .strict(),
-  'ForgeStatus',
-)
-export type ForgeStatus = z.infer<typeof ForgeStatus>
-
 export const Overview = named(
   z
     .object({
@@ -1358,7 +953,6 @@ export const Overview = named(
       urls: z.array(RouteUrl),
       problems: z.array(Diagnostic),
       generatedAt: unixSeconds,
-      forge: ForgeStatus.optional().describe('Absent on a panel built before work moved to an external provider'),
     })
     .strict(),
   'Overview',
@@ -1897,7 +1491,6 @@ export const ProjectRemoveResult = named(
       project: z.string(),
       mode: z.enum(['keep-data', 'and-local-data']),
       volumes: z.boolean(),
-      directory: z.boolean(),
       via: z.enum(['runner', 'iteration']),
       removedContainers: z.array(z.string()),
       cleaned: EnvironmentPorttaRecords,
@@ -2023,9 +1616,6 @@ export const LiveEventKind = named(
     'project',
     'config',
     'hello',
-    'session',
-    'activity',
-    'repository',
   ]),
   'LiveEventKind',
 )

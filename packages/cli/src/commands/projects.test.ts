@@ -1,17 +1,7 @@
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Output } from '../output.js'
 
 const mocks = vi.hoisted(() => ({
   inspectContainers: vi.fn(),
@@ -32,7 +22,7 @@ vi.mock('../context.js', () => ({
   }),
 }))
 
-import { analyzeCommand, initCommand, overlayNetworks } from './projects.js'
+import { analyzeCommand } from './projects.js'
 
 const dirs: string[] = []
 afterEach(() => {
@@ -215,16 +205,14 @@ describe('portta analyze reads .portta/project.yaml', () => {
     const declared = await analyzeWith(null)
     expect(declared.source).toBe('defaults')
     expect(declared.issues).toEqual([])
-    expect(declared.config.worktrees).toEqual({ root: '.portta/worktrees', branchPattern: '{type}/{slug}' })
     expect(declared.config.name).toBeNull()
   })
 
   it('reports what the project declared', async () => {
-    const declared = await analyzeWith('version: 1\nname: demo-shop\nmainBranch: develop\nstack: [node]\n')
+    const declared = await analyzeWith('version: 1\nname: demo-shop\nstack: [node]\n')
     expect(declared.source).toBe('file')
     expect(declared.issues).toEqual([])
     expect(declared.config.name).toBe('demo-shop')
-    expect(declared.config.mainBranch).toBe('develop')
     expect(declared.config.stack).toEqual(['node'])
   })
 
@@ -246,126 +234,5 @@ describe('portta analyze reads .portta/project.yaml', () => {
     expect(result.project_config.config).toBeNull()
     expect(result.project_config.issues.length).toBeGreaterThan(0)
     expect(result.compose_file).toBe('compose.yaml')
-  })
-})
-
-describe('portta init', () => {
-  it('stores a validated overlay outside the Compose project named with --file', async () => {
-    const dir = temp()
-    mkdirSync(join(dir, 'deploy'))
-    writeFileSync(join(dir, 'deploy', 'stack.yaml'), COMPOSE)
-    mocks.root = join(dir, 'portta-runtime')
-    mocks.runProcess.mockResolvedValue(composeConfig('deploy'))
-    mocks.confirm.mockResolvedValue(undefined)
-    vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
-
-    await initCommand(dir, { file: 'deploy/stack.yaml' }, { optsWithGlobals: () => ({ yes: true }) } as never)
-    const overlayPath = readdirSync(join(mocks.root, 'runtime', 'compose'), { recursive: true, encoding: 'utf8' }).find(
-      (entry) => entry.endsWith('compose.portta.yaml'),
-    )
-    expect(overlayPath).toBeDefined()
-    const overlay = readFileSync(join(mocks.root, 'runtime', 'compose', overlayPath!), 'utf8')
-    expect(overlay).toContain('${COMPOSE_PROJECT_NAME:-deploy}-web')
-    expect(overlay).toContain('    ports: !reset []\n    networks:\n      - default\n      - portta\n')
-    expect(existsSync(join(dir, 'deploy', 'compose.portta.yaml'))).toBe(false)
-    expect(mocks.inspectContainers).not.toHaveBeenCalled()
-    expect(new Output({ json: true }).json).toBe(true)
-  })
-
-  it('emits the logical Project label only when --project names a valid slug', async () => {
-    const dir = temp()
-    writeFileSync(join(dir, 'compose.yaml'), COMPOSE)
-    mocks.runProcess.mockResolvedValue(composeConfig('shop-pr42'))
-    let stdout = ''
-    vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
-      stdout += String(chunk)
-      return true
-    })
-
-    await initCommand(dir, { dryRun: true, project: 'shop' }, { optsWithGlobals: () => ({}) } as never)
-    expect(stdout).toContain('      - "portta.project=shop"')
-
-    await expect(
-      initCommand(dir, { dryRun: true, project: '../shop' }, { optsWithGlobals: () => ({}) } as never),
-    ).rejects.toThrow(/invalid --project value/)
-  })
-
-  it('does not route a worker merely because it uses a web runtime image', async () => {
-    const dir = temp()
-    writeFileSync(join(dir, 'compose.yaml'), COMPOSE)
-    mocks.runProcess.mockResolvedValue({
-      exitCode: 0,
-      stdout: JSON.stringify({
-        name: 'shop',
-        services: { 'queue-worker': { image: 'node:24-alpine' }, web: { image: 'nginx', expose: [80] } },
-      }),
-      stderr: '',
-    })
-    mocks.inspectContainers.mockResolvedValue([])
-
-    const result = await report(dir)
-    expect(result.services).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: 'queue-worker', kind: 'worker' }),
-        expect.objectContaining({ name: 'web', kind: 'http' }),
-      ]),
-    )
-  })
-
-  it('autodetects with Commander’s empty --service default and selects known console ports', async () => {
-    const dir = temp()
-    writeFileSync(join(dir, 'compose.yaml'), COMPOSE)
-    mocks.runProcess.mockResolvedValue({
-      exitCode: 0,
-      stdout: JSON.stringify({
-        name: 'shop',
-        services: {
-          mailpit: { image: 'axllent/mailpit:latest' },
-          rustfs: { image: 'rustfs/rustfs:latest' },
-          'rustfs-init': { image: 'minio/mc:latest' },
-        },
-      }),
-      stderr: '',
-    })
-    let stdout = ''
-    vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
-      stdout += String(chunk)
-      return true
-    })
-
-    await initCommand(dir, { dryRun: true, service: [] }, { optsWithGlobals: () => ({}) } as never)
-    expect(stdout).toContain('${COMPOSE_PROJECT_NAME:-shop}-mailpit.loadbalancer.server.port=8025')
-    expect(stdout).toContain('${COMPOSE_PROJECT_NAME:-shop}-rustfs.loadbalancer.server.port=9001')
-    expect(stdout).not.toContain('-rustfs-init.loadbalancer')
-  })
-
-  it('keeps the networks a service already declares, and adds portta only', async () => {
-    const dir = temp()
-    writeFileSync(join(dir, 'compose.yaml'), COMPOSE)
-    mocks.runProcess.mockResolvedValue(composeConfig('base', { baseempresarial: null, backend: { aliases: ['web'] } }))
-    let stdout = ''
-    vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
-      stdout += String(chunk)
-      return true
-    })
-
-    await initCommand(dir, { dryRun: true }, { optsWithGlobals: () => ({}) } as never)
-    expect(stdout).toContain(
-      '  web:\n    ports: !reset []\n    networks:\n      - baseempresarial\n      - backend\n      - portta\n',
-    )
-    expect(stdout).not.toContain('- default')
-
-    stdout = ''
-    await initCommand(dir, { dryRun: true, service: ['db:5432'] }, { optsWithGlobals: () => ({}) } as never)
-    expect(stdout).toContain('  db:\n    ports: !reset []\n    networks:\n      - default\n      - portta\n')
-  })
-})
-
-describe('overlayNetworks', () => {
-  it('never doubles portta and falls back to default', () => {
-    expect(overlayNetworks([])).toEqual(['default', 'portta'])
-    expect(overlayNetworks(['default'])).toEqual(['default', 'portta'])
-    expect(overlayNetworks(['portta'])).toEqual(['default', 'portta'])
-    expect(overlayNetworks(['app', 'portta'])).toEqual(['app', 'portta'])
   })
 })

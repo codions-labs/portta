@@ -2,13 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   classifyProjectLocation,
   defaultProjectsHome,
-  firstLevelCandidateName,
   isDescendantPath,
   normalizeProjectsHome,
   ProjectsHomeError,
   parseRelativeProjectPath,
-  relativePathFromWorkingDir,
-  relativeRepositoryPath,
   resolveProjectPath,
 } from './projects-home.ts'
 
@@ -43,9 +40,14 @@ describe('parseRelativeProjectPath and resolveProjectPath', () => {
     expect(resolveProjectPath('/srv/projects', 'funat')).toBe('/srv/projects/funat')
   })
 
-  it('refuses absolute paths, nested paths and traversal', () => {
+  it('accepts a path of any depth under the Home', () => {
+    expect(parseRelativeProjectPath('brasil-data-hub/base-empresarial')).toBe('brasil-data-hub/base-empresarial')
+    expect(resolveProjectPath('/srv/projects', 'grupo/app')).toBe('/srv/projects/grupo/app')
+  })
+
+  it('refuses absolute paths, hidden segments and traversal', () => {
     expect(() => parseRelativeProjectPath('/srv/projects/funat')).toThrow(ProjectsHomeError)
-    expect(() => parseRelativeProjectPath('brasil-data-hub/base-empresarial')).toThrow(ProjectsHomeError)
+    expect(() => parseRelativeProjectPath('brasil-data-hub/.base')).toThrow(ProjectsHomeError)
     expect(() => parseRelativeProjectPath('../etc')).toThrow(ProjectsHomeError)
     expect(() => parseRelativeProjectPath('funat/..')).toThrow(ProjectsHomeError)
     expect(() => parseRelativeProjectPath('.')).toThrow(ProjectsHomeError)
@@ -109,53 +111,5 @@ describe('classifyProjectLocation', () => {
         readable: false,
       }),
     ).toBe('inaccessible')
-  })
-})
-
-describe('relativePathFromWorkingDir', () => {
-  it('backfills only an unambiguous first-level child', () => {
-    expect(relativePathFromWorkingDir('/srv/projects', '/srv/projects/funat')).toBe('funat')
-    expect(relativePathFromWorkingDir('/srv/projects', '/srv/projects/brasil-data-hub/base-empresarial')).toBe(
-      'brasil-data-hub',
-    )
-  })
-
-  it('refuses anything it cannot prove', () => {
-    expect(relativePathFromWorkingDir('/srv/projects', '/Users/fabio/demo-shop')).toBeNull()
-    expect(relativePathFromWorkingDir('/srv/projects', '/srv/projects')).toBeNull()
-    expect(relativePathFromWorkingDir('/srv/projects', '/srv/projects/.hidden')).toBeNull()
-    expect(isDescendantPath('/srv/projects', '/srv/projects/funat/apps')).toBe(true)
-    expect(isDescendantPath('/srv/projects', '/srv/projectx')).toBe(false)
-  })
-})
-
-describe('firstLevelCandidateName', () => {
-  it('drops hidden and well-known junk', () => {
-    expect(firstLevelCandidateName('funat')).toBe(true)
-    expect(firstLevelCandidateName('.git')).toBe(false)
-    expect(firstLevelCandidateName('node_modules')).toBe(false)
-    expect(firstLevelCandidateName('lost+found')).toBe(false)
-    expect(firstLevelCandidateName('')).toBe(false)
-  })
-})
-
-describe('relativeRepositoryPath', () => {
-  it('keeps one or two segments under the Home', () => {
-    expect(relativeRepositoryPath('/srv/projects', '/srv/projects/funat')).toBe('funat')
-    expect(relativeRepositoryPath('/srv/projects/', '/srv/projects/brasil-data-hub/base-empresarial')).toBe(
-      'brasil-data-hub/base-empresarial',
-    )
-  })
-
-  it('answers null outside the Home, at the Home, deeper than two levels, and across hidden names', () => {
-    expect(relativeRepositoryPath('/srv/projects', '/Users/fabio/demo-shop')).toBeNull()
-    expect(relativeRepositoryPath('/srv/projects', '/srv/projects')).toBeNull()
-    expect(relativeRepositoryPath('/srv/projects', '/srv/projectx/funat')).toBeNull()
-    expect(relativeRepositoryPath('/srv/projects', '/srv/projects/a/b/c')).toBeNull()
-    expect(relativeRepositoryPath('/srv/projects', '/srv/projects/.hidden')).toBeNull()
-    expect(relativeRepositoryPath('/srv/projects', '/srv/projects/ws/.hidden')).toBeNull()
-    expect(relativeRepositoryPath('/srv/projects', '/srv/projects/node_modules/x')).toBeNull()
-    expect(relativeRepositoryPath('/', '/srv/projects')).toBeNull()
-    expect(relativeRepositoryPath('/srv/projects', 'relative/path')).toBeNull()
   })
 })

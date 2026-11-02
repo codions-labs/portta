@@ -9,7 +9,7 @@ import { resolvePath } from './resolve.js'
 // The registry as `GET /projects` and `GET /projects/:slug` answer it.
 interface Registered {
   slug: string
-  repositories: Array<{ name: string; localPath?: string | null; remoteUrl?: string | null }>
+  resolvedPath: string | null
 }
 
 function client(projects: Registered[], refuse = false): PanelClient {
@@ -22,20 +22,7 @@ function client(projects: Registered[], refuse = false): PanelClient {
       if (path === '/projects') return { projects: projects.map((p) => ({ slug: p.slug })) }
       const slug = decodeURIComponent(path.slice('/projects/'.length))
       const project = projects.find((p) => p.slug === slug)!
-      return {
-        id: `id-${project.slug}`,
-        slug: project.slug,
-        name: project.slug,
-        resolvedPath: null,
-        repositories: project.repositories.map((r, index) => ({
-          id: `${project.slug}-${index}`,
-          name: r.name,
-          localPath: r.localPath ?? null,
-          relativePath: null,
-          remoteUrl: r.remoteUrl ?? null,
-          scanPath: null,
-        })),
-      }
+      return { id: `id-${project.slug}`, slug: project.slug, name: project.slug, resolvedPath: project.resolvedPath }
     },
   } as unknown as PanelClient
 }
@@ -64,7 +51,6 @@ beforeEach(async () => {
   mkdirSync(join(repo, 'packages', 'api'), { recursive: true })
   await git(repo, 'init', '-q', '-b', 'main')
   await git(repo, 'commit', '-q', '--allow-empty', '-m', 'first')
-  await git(repo, 'remote', 'add', 'origin', 'git@github.com:acme/shop.git')
   worktree = join(root, 'shop-issue-59')
   await git(repo, 'worktree', 'add', '-q', '-b', 'issue-59', worktree)
   vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
@@ -76,17 +62,7 @@ afterEach(() => {
 })
 
 describe('portta projects resolve', () => {
-  const registry = [
-    {
-      slug: 'shop',
-      repositories: [{ name: 'shop', localPath: () => repo, remoteUrl: 'https://github.com/acme/shop' }],
-    },
-  ]
-  const registered = () =>
-    registry.map((p) => ({
-      slug: p.slug,
-      repositories: p.repositories.map((r) => ({ ...r, localPath: r.localPath() })),
-    }))
+  const registered = (): Registered[] => [{ slug: 'shop', resolvedPath: repo }]
 
   it('answers the same Project from the root, a subdirectory and a worktree', async () => {
     const fromRoot = await resolvePath(repo, client(registered()))
@@ -95,10 +71,7 @@ describe('portta projects resolve', () => {
     expect(fromRoot).toMatchObject({
       resolved: true,
       basis: 'root',
-      certain: true,
-      project: { slug: 'shop' },
-      repository: { name: 'shop', path: repo },
-      git: { branch: 'main' },
+      project: { slug: 'shop', path: repo },
       worktree: null,
     })
     expect(fromSubdirectory).toMatchObject({
@@ -111,7 +84,6 @@ describe('portta projects resolve', () => {
       resolved: true,
       basis: 'worktree',
       project: { slug: 'shop' },
-      git: { branch: 'issue-59' },
       worktree: { path: worktree, mainPath: repo },
     })
   })
@@ -123,11 +95,18 @@ describe('portta projects resolve', () => {
     expect(outcome).toMatchObject({ resolved: false, error: { kind: 'unknown', candidates: [] } })
   })
 
-  it('names both candidates on ambiguity and chooses neither', async () => {
-    const twice = [
-      ...registered(),
-      { slug: 'shop-fork', repositories: [{ name: 'shop', localPath: repo, remoteUrl: null }] },
-    ]
+  it('lets the deepest Project directory win when Projects nest', async () => {
+    const nested = [...registered(), { slug: 'api', resolvedPath: join(repo, 'packages', 'api') }]
+    expect(await resolvePath(join(repo, 'packages', 'api'), client(nested))).toMatchObject({
+      resolved: true,
+      basis: 'root',
+      project: { slug: 'api' },
+    })
+    expect(await resolvePath(repo, client(nested))).toMatchObject({ resolved: true, project: { slug: 'shop' } })
+  })
+
+  it('names both candidates on a tie and chooses neither', async () => {
+    const twice = [...registered(), { slug: 'shop-fork', resolvedPath: repo }]
     const outcome = await resolvePath(repo, client(twice))
     expect(outcome).toMatchObject({ resolved: false, error: { kind: 'ambiguous' } })
     expect(outcome.resolved === false && outcome.error.candidates.map((c) => c.slug).sort()).toEqual([
@@ -136,26 +115,9 @@ describe('portta projects resolve', () => {
     ])
   })
 
-  it('tells a stale registration from absence when only the remote matches', async () => {
-    const moved = [
-      {
-        slug: 'shop',
-        repositories: [{ name: 'shop', localPath: join(root, 'gone'), remoteUrl: 'git@github.com:acme/shop.git' }],
-      },
-    ]
-    const outcome = await resolvePath(repo, client(moved))
-    expect(outcome).toMatchObject({
-      resolved: false,
-      error: { kind: 'stale', candidates: [{ slug: 'shop', basis: 'remote' }] },
-    })
-  })
-
-  it('declares a remote-only match as inferred', async () => {
-    const clone = join(root, 'shop-clone')
-    await git(root, 'clone', '-q', repo, clone)
-    await git(clone, 'remote', 'set-url', 'origin', 'git@github.com:acme/shop.git')
-    const outcome = await resolvePath(clone, client(registered()))
-    expect(outcome).toMatchObject({ resolved: true, basis: 'remote', certain: false, project: { slug: 'shop' } })
+  it('ignores a Project whose directory is not on this host', async () => {
+    const outcome = await resolvePath(repo, client([{ slug: 'shop', resolvedPath: join(root, 'gone') }]))
+    expect(outcome).toMatchObject({ resolved: false, error: { kind: 'unknown' } })
   })
 
   it('reports a refusal as unauthorized', async () => {

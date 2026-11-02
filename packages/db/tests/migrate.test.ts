@@ -50,25 +50,20 @@ describe('the migrations', () => {
 
     for (const expected of [
       'accounts',
-      'activity_events',
       'api_keys',
       'audit_log',
-      'environment_issues',
       'environment_settings',
       'environments',
       'instance',
       'project_environments',
       'project_members',
       'projects',
-      'repositories',
       'service_settings',
       'sessions',
       'settings',
-      'ssh_keys',
       'two_factors',
       'users',
       'verifications',
-      'work_sessions',
     ]) {
       expect(tables, expected).toContain(expected)
     }

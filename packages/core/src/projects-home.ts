@@ -59,8 +59,9 @@ export function normalizeProjectsHome(input: string, cwd = '/', userHome = ''): 
 }
 
 /**
- * The stored location of a managed Project: one relative segment, or a
- * relative path that stays inside the Home. Never absolute, never `..`.
+ * The stored location of a managed Project: a relative path of any depth that
+ * stays inside the Home (`group/project`). Never absolute, never `..`, and no
+ * hidden segment.
  */
 export function parseRelativeProjectPath(value: string): string {
   const trimmed = value.trim()
@@ -81,13 +82,10 @@ export function parseRelativeProjectPath(value: string): string {
   if (parts.some((part) => part === '..' || part === '')) {
     throw new ProjectsHomeError('refusing a relative path that walks up')
   }
-  if (parts.length !== 1) {
-    throw new ProjectsHomeError('a managed Project is a first-level directory of Projects Home')
-  }
-  if (HIDDEN.test(parts[0]!)) {
+  if (parts.some((part) => HIDDEN.test(part))) {
     throw new ProjectsHomeError('refusing a hidden directory as a managed Project')
   }
-  return parts[0]!
+  return parts.join('/')
 }
 
 /** Effective path of a managed Project, lexical only. */
@@ -141,50 +139,4 @@ export function classifyProjectLocation(input: {
     return 'escaped'
   }
   return 'external'
-}
-
-/** First-level names that may be offered as Project candidates. */
-export function firstLevelCandidateName(name: string): boolean {
-  if (name === '' || HIDDEN.test(name)) return false
-  if (IGNORED_FIRST_LEVEL.has(name)) return false
-  if (name.includes('/') || name.includes('\0')) return false
-  return true
-}
-
-/**
- * Derive a relative path from an Environment working directory, only when
- * the directory is a first-level child of the Home (or a descendant of one).
- * Ambiguous or escaped paths return null — never a guessed Project.
- */
-export function relativePathFromWorkingDir(home: string, workingDir: string): string | null {
-  try {
-    const normalizedHome = normalizeProjectsHome(home)
-    const normalizedDir = posix.normalize(workingDir)
-    if (!normalizedDir.startsWith('/') || normalizedDir.includes('\0')) return null
-    if (!isDescendantPath(normalizedHome, normalizedDir) || normalizedDir === normalizedHome) return null
-    const relative = normalizedDir.slice(normalizedHome.length).replace(/^\/+/, '')
-    const first = relative.split('/')[0]
-    if (!first || !firstLevelCandidateName(first)) return null
-    return first
-  } catch {
-    return null
-  }
-}
-
-/**
- * Path of a repository root relative to Projects Home: one segment for a
- * Project, two for a repository inside a workspace directory. Both sides
- * should be realpaths. Null when the root is not a strict descendant of the
- * Home, sits deeper than two levels, or crosses a hidden or ignored name.
- */
-export function relativeRepositoryPath(homeRealpath: string, rootRealpath: string): string | null {
-  const home = posix.normalize(homeRealpath).replace(/\/+$/, '')
-  const root = posix.normalize(rootRealpath).replace(/\/+$/, '')
-  if (home === '' || home === '/' || !home.startsWith('/') || !root.startsWith('/')) return null
-  if (root.includes('\0') || !isDescendantPath(home, root) || root === home) return null
-  const parts = root.slice(home.length).replace(/^\/+/, '').split('/')
-  if (parts.length === 0 || parts.length > 2) return null
-  if (!firstLevelCandidateName(parts[0]!)) return null
-  if (parts.length === 2 && (parts[1] === '' || HIDDEN.test(parts[1]!))) return null
-  return parts.join('/')
 }

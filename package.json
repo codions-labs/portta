@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=portta-core && npm run build --workspace=portta-contracts && npm run build --workspace=portta-mcp && npm run build --workspace=portta-db && npm run build --workspace=portta-host && npm run build --workspace=portta-auth-core && npm run build --workspace=portta-server && npm run build --workspace=portta-auth && npm run build --workspace=portta-web && npm run build --workspace=@codions/portta",
+    "build": "npm run build --workspace=portta-core && npm run build --workspace=portta-contracts && npm run build --workspace=portta-db && npm run build --workspace=portta-auth-core && npm run build --workspace=portta-server && npm run build --workspace=portta-auth && npm run build --workspace=portta-web && npm run build --workspace=@codions/portta",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "biome lint --error-on-warnings .",

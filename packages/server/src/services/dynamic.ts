@@ -27,8 +27,6 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { join } from 'node:path'
-import { moduleEndpointsFile } from 'portta-core'
-import { MODULES } from 'portta-core/modules'
 
 /** The fixed part of the write surface. Nothing is added here without an ADR. */
 export const GENERATED_FILES = {
@@ -37,22 +35,7 @@ export const GENERATED_FILES = {
   auth: 'portta-auth.yaml',
 } as const
 
-/** One file per registered module. */
-export const MODULE_FILES: readonly string[] = MODULES.map((module) => moduleEndpointsFile(module.id))
-
-const ALLOWED: readonly string[] = [...Object.values(GENERATED_FILES), ...MODULE_FILES]
-
-/** The file a module's routes live in, refusing a module this build does not have. */
-export function moduleFile(moduleId: string): string {
-  const name = moduleEndpointsFile(moduleId)
-  if (!MODULE_FILES.includes(name)) {
-    throw new DynamicWriteRefused(
-      `${moduleId} is not a registered module`,
-      'modules are composed at build time; see ADR 0046',
-    )
-  }
-  return name
-}
+const ALLOWED: readonly string[] = Object.values(GENERATED_FILES)
 
 export class DynamicWriteRefused extends Error {
   status = 403

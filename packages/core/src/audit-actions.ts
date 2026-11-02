@@ -5,8 +5,7 @@
 // publishes, and the page that filters by it. A vocabulary with three
 // definitions is three vocabularies.
 //
-// Issues, sessions and commits are development activity and are not in it:
-// `activity_events` is the work record, and this is the sensitive writes.
+// Only the sensitive writes are in it.
 // See docs/development/adr/0035-authentication-lives-in-the-panel.md and 03 §9.
 
 export const AUDIT_ACTIONS = [
@@ -48,10 +47,6 @@ export const AUDIT_ACTIONS = [
   'settings.changed',
   'settings.discarded',
   'database.migrated',
-  'ssh.key_created',
-  'ssh.key_imported',
-  'ssh.key_removed',
-  'ssh.key_tested',
   'container.console_opened',
   'container.console_closed',
 ] as const

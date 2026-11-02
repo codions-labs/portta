@@ -16,54 +16,10 @@ import { z } from './zod.ts'
 export const PROJECT_CONFIG_FILE = 'project.yaml'
 export const PROJECT_CONFIG_PATH = `.portta/${PROJECT_CONFIG_FILE}`
 
-/** What a project gets when it declares nothing. */
-export const PROJECT_CONFIG_DEFAULTS = {
-  worktreeRoot: '.portta/worktrees',
-  branchPattern: '{type}/{slug}',
-} as const
-
-/** The placeholders a branch pattern may use. Anything else is refused: an
- *  unknown one is either a typo that would land in a branch name literally, or
- *  a host-shaped value trying to get in through a template. */
-export const BRANCH_PATTERN_PLACEHOLDERS = ['type', 'slug'] as const
-
-/** The working-agreement types a branch may start with. The pattern fills `{type}`. */
-export const BRANCH_TYPES = ['fix', 'feat', 'refactor', 'docs'] as const
-export type BranchType = (typeof BRANCH_TYPES)[number]
-
-export function isBranchType(value: string): value is BranchType {
-  return (BRANCH_TYPES as readonly string[]).includes(value)
-}
-
-/** Fill `{type}` and `{slug}` in a pattern the project already accepted. */
-export function applyBranchPattern(pattern: string, values: { type: string; slug: string }): string {
-  return pattern.replaceAll('{type}', values.type).replaceAll('{slug}', values.slug)
-}
-
-/** Two to four kebab-case words from a title, which is what a branch slug is. */
-export function slugFromTitle(title: string): string {
-  const words = title
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^\p{Letter}\p{Number}]+/gu, ' ')
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word !== '')
-    .slice(0, 4)
-  return (words.length > 0 ? words : ['work']).join('-')
-}
-
-export function proposedIssueBranch(pattern: string, title: string, type: string = 'fix'): string {
-  return applyBranchPattern(pattern, { type, slug: slugFromTitle(title) })
-}
-
 export interface ProjectConfig {
   version: 1
   /** The project's own name. Null when it does not declare one; the directory decides. */
   name: string | null
-  /** The branch work is cut from. Null when it does not declare one. */
-  mainBranch: string | null
-  worktrees: { root: string; branchPattern: string }
   /** Informative only: what the project is built with. Never decides behaviour. */
   stack: string[]
   /** Which instruction files an agent should read here. */
@@ -116,32 +72,12 @@ const repoRelativePath = (label: string) =>
     }
   })
 
-const branchPattern = portable('the branch pattern').superRefine((value, ctx) => {
-  const used = [...value.matchAll(/\{([^}]*)\}/g)].map((match) => match[1] ?? '')
-  const allowed = new Set<string>(BRANCH_PATTERN_PLACEHOLDERS)
-  for (const placeholder of used) {
-    if (!allowed.has(placeholder)) {
-      ctx.addIssue({
-        code: 'custom',
-        message: `unknown placeholder {${placeholder}}; the branch pattern accepts ${BRANCH_PATTERN_PLACEHOLDERS.map((name) => `{${name}}`).join(' and ')}`,
-      })
-    }
-  }
-})
-
 // `.strict()` is the main guard, not a nicety: it is what refuses `domain:`,
 // `url:`, `hostname:` or `port:` before any per-field rule has to recognise
 // them. A field this schema does not know is a field nobody agreed travels.
 const Schema = z.strictObject({
   version: z.literal(1),
   name: portable('the project name').optional(),
-  mainBranch: portable('the main branch').optional(),
-  worktrees: z
-    .strictObject({
-      root: repoRelativePath('the worktree root').optional(),
-      branchPattern: branchPattern.optional(),
-    })
-    .optional(),
   stack: z
     .array(
       z
@@ -159,11 +95,6 @@ export function defaultProjectConfig(): ProjectConfig {
   return {
     version: 1,
     name: null,
-    mainBranch: null,
-    worktrees: {
-      root: PROJECT_CONFIG_DEFAULTS.worktreeRoot,
-      branchPattern: PROJECT_CONFIG_DEFAULTS.branchPattern,
-    },
     stack: [],
     instructions: [],
   }
@@ -187,17 +118,11 @@ export function parseProjectConfig(document: unknown): ProjectConfigResult {
     }
   }
   const value = parsed.data
-  const defaults = defaultProjectConfig()
   return {
     ok: true,
     config: {
       version: 1,
       name: value.name ?? null,
-      mainBranch: value.mainBranch ?? null,
-      worktrees: {
-        root: value.worktrees?.root ?? defaults.worktrees.root,
-        branchPattern: value.worktrees?.branchPattern ?? defaults.worktrees.branchPattern,
-      },
       stack: value.stack ?? [],
       instructions: value.instructions ?? [],
     },

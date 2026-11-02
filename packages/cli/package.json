@@ -61,7 +61,6 @@
     "esbuild": "0.28.2",
     "portta-contracts": "0.1.0",
     "portta-core": "0.1.0",
-    "portta-host": "0.1.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
     "tsx": "4.23.13"

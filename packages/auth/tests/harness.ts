@@ -14,7 +14,6 @@ import { createHash } from 'node:crypto'
 import type { Db } from 'portta-db'
 import { createTestDb, resetTestDb, type TestDatabase } from 'portta-db/testing'
 import { afterAll } from 'vitest'
-import type { Permission } from '../src/access-control.ts'
 import { type Auth, createAuth } from '../src/auth.ts'
 import { hasOwner } from '../src/bootstrap.ts'
 import { createPrincipalResolver, type PrincipalResolver } from '../src/principal.ts'
@@ -33,7 +32,6 @@ export interface HarnessOptions {
   mode?: 'open' | 'protected'
   readOnly?: boolean
   development?: boolean
-  agentPermissions?: readonly Permission[]
   /** Better Auth's own scrypt instead of the cheap test hash. */
   realPasswords?: boolean
 }
@@ -86,7 +84,6 @@ export async function harness(options: HarnessOptions = {}): Promise<Harness> {
     security,
     db: handle,
     auth: security.mode === 'protected' ? auth : null,
-    ...(options.agentPermissions ? { agentPermissions: async () => options.agentPermissions! } : {}),
   })
 
   return { db: handle, auth, authFor, security, resolver }

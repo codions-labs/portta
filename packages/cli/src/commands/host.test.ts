@@ -25,7 +25,7 @@ vi.mock('../metrics/lifecycle.js', async () => {
   return { ...actual, startCollector: mocks.startCollector }
 })
 
-import { collectHostResources, ensureHostToken, ensureMetricsCollector } from './host.js'
+import { collectHostResources, ensureMetricsCollector } from './host.js'
 
 const roots: string[] = []
 afterEach(() => {
@@ -86,25 +86,5 @@ describe('host collection', () => {
 
     await expect(ensureMetricsCollector(undefined, new Output())).resolves.toBeUndefined()
     expect(stderr).toContain('warning: Host metrics collector could not start: no gateway here')
-  })
-})
-
-describe('the host daemon token', () => {
-  // Compose turns a bind mount of a missing file into a directory, which the
-  // daemon could then never write its token into. The overlay that mounts it
-  // now comes with the panel rather than with Task Flow, because the panel
-  // reads issues through the daemon (ADR 0018) — so this has to hold for every
-  // installation with a panel.
-  it('exists before the panel overlay mounts it, whenever the panel is on', () => {
-    const root = mkdtempSync(join(tmpdir(), 'portta-host-token-'))
-    try {
-      expect(ensureHostToken({ root, config: { webEnabled: false } })).toBeNull()
-      expect(existsSync(join(root, 'state/host/token'))).toBe(false)
-      const file = ensureHostToken({ root, config: { webEnabled: true } })
-      expect(file).toBe(join(root, 'state/host/token'))
-      expect(readFileSync(join(root, 'state/host/token'), 'utf8').trim()).not.toBe('')
-    } finally {
-      rmSync(root, { recursive: true, force: true })
-    }
   })
 })

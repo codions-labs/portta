@@ -8,16 +8,11 @@ import { principalOf } from 'portta-auth-core/hono'
 import { ApiError, LiveEvent } from 'portta-contracts'
 import { z } from 'portta-core/zod'
 import type { PanelConfig } from '../config.ts'
-import { type ModuleApiTag, moduleTags, SERVER_MODULES } from '../modules/index.ts'
 
-type BaseApiTag =
+export type ApiTag =
   | 'Status'
   | 'Projects'
-  | 'Repositories'
   | 'Environments'
-  | 'Issues'
-  | 'Sessions'
-  | 'Activity'
   | 'Services'
   | 'Docker'
   | 'Network'
@@ -29,9 +24,6 @@ type BaseApiTag =
   | 'Documentation'
   | 'Authentication'
   | 'Users'
-  | 'SSH'
-
-export type ApiTag = BaseApiTag | ModuleApiTag
 
 export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 500 | 502 | 503
 
@@ -247,21 +239,7 @@ export function openApiOptions(version: string): Partial<GenerateSpecOptions> {
       tags: [
         { name: 'Status', description: 'Liveness and overview.' },
         { name: 'Projects', description: 'The product the operator recognises. Persisted. See ADR 0031.' },
-        {
-          name: 'Repositories',
-          description:
-            "A Project's code: registered here, observed by the host scan. GitHub is optional metadata on it.",
-        },
         { name: 'Environments', description: 'Compose environments running on this host.' },
-        { name: 'Issues', description: 'The GitHub issue projection, and writes that go back to GitHub.' },
-        {
-          name: 'Sessions',
-          description: 'Who is working on what, since when, and what came out. A person or an agent.',
-        },
-        {
-          name: 'Activity',
-          description: 'What happened in the development flow: issues, sessions, commits, environments. Not a log.',
-        },
         { name: 'Services', description: 'Containers belonging to adopted projects.' },
         { name: 'Docker', description: 'Bounded host inventory and lifecycle operations.' },
         { name: 'Network', description: 'Routes, networks, DNS, TLS and VPN state.' },
@@ -276,8 +254,6 @@ export function openApiOptions(version: string): Partial<GenerateSpecOptions> {
           name: 'Users',
           description: 'The accounts this panel signs in, their roles, and the Projects each one reaches.',
         },
-        { name: 'SSH', description: 'The SSH keys Portta owns, for the hosts it reaches on your behalf.' },
-        ...moduleTags(SERVER_MODULES),
       ],
       components: {
         securitySchemes: {

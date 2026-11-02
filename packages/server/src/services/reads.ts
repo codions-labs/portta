@@ -10,13 +10,11 @@
 // that will forget.
 
 import { authorize, Forbidden, type Principal } from 'portta-auth-core'
-import type { ActivityEvent, Project, ProjectSummary, Repository, Session } from 'portta-contracts'
+import type { Project, ProjectSummary } from 'portta-contracts'
 import { requireDatabase } from '../db/index.ts'
 import type { AppDeps } from '../deps.ts'
 import { projectScope, visible } from './access-control.ts'
-import { activityView, loadNames, sessionView } from './activity-view.ts'
 import { loadProjectCatalog, toProject, toProjectSummary } from './catalog.ts'
-import { loadScans, toRepository } from './repositories.ts'
 
 /** A page asking for something that is not there, said the way `notFound()` reads. */
 export class NotVisible extends Error {
@@ -44,68 +42,13 @@ export async function readProject(deps: AppDeps, principal: Principal, slug: str
     throw error
   }
   const catalog = await loadProjectCatalog(db, await deps.cache.get(), deps.config)
-  return toProject(
-    record,
-    catalog.repositoriesByProject.get(record.id) ?? [],
-    catalog.environments.get(record.id) ?? [],
-    deps.config.projectsHome,
-  )
+  return toProject(record, catalog.environments.get(record.id) ?? [], deps.config.projectsHome)
 }
 
 /** Every Project this principal can open. */
 export async function readProjects(deps: AppDeps, principal: Principal): Promise<ProjectSummary[]> {
   const db = requireDatabase(deps.db)
   const catalog = await loadProjectCatalog(db, await deps.cache.get(), deps.config)
-  const summaries = catalog.records.map((record) =>
-    toProjectSummary(
-      record,
-      (catalog.repositoriesByProject.get(record.id) ?? []).length,
-      catalog.environments.get(record.id) ?? [],
-    ),
-  )
+  const summaries = catalog.records.map((record) => toProjectSummary(record, catalog.environments.get(record.id) ?? []))
   return visible(principal, summaries, (summary) => projectScope(summary.id))
-}
-
-export async function readRepositories(deps: AppDeps, principal: Principal, slug: string): Promise<Repository[]> {
-  const db = requireDatabase(deps.db)
-  const project = await readProject(deps, principal, slug)
-  if (!project) return []
-  const scans = loadScans(deps.config)
-  const rows = await db.repositories.list(project.id)
-  return rows.map((row) => toRepository(deps.config, row, scans))
-}
-
-export async function readRepository(deps: AppDeps, principal: Principal, id: string): Promise<Repository | null> {
-  const db = requireDatabase(deps.db)
-  const row = await db.repositories.find(id)
-  if (!row) return null
-  try {
-    authorize(principal, 'repository:read', { projectId: projectScope(row.projectId) })
-  } catch (error) {
-    if (error instanceof Forbidden) return null
-    throw error
-  }
-  return toRepository(deps.config, row, loadScans(deps.config))
-}
-
-export async function readActivity(
-  deps: AppDeps,
-  principal: Principal,
-  query: { projectId?: string; issueRef?: string; limit?: number } = {},
-): Promise<ActivityEvent[]> {
-  const db = requireDatabase(deps.db)
-  const rows = await db.activity.list({ limit: 50, ...query })
-  const names = await loadNames(db)
-  return visible(principal, rows, (row) => projectScope(row.projectId)).map((row) => activityView(names, row))
-}
-
-export async function readSessions(
-  deps: AppDeps,
-  principal: Principal,
-  query: { projectId?: string; issueRef?: string; status?: ('active' | 'ended' | 'abandoned')[]; limit?: number } = {},
-): Promise<Session[]> {
-  const db = requireDatabase(deps.db)
-  const rows = await db.sessions.list({ limit: 50, ...query })
-  const names = await loadNames(db)
-  return visible(principal, rows, (row) => projectScope(row.projectId)).map((row) => sessionView(names, row))
 }

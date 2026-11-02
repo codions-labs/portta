@@ -34,8 +34,7 @@ import {
   requireDemoStacks,
   waitForPanel,
 } from './demo.js'
-import { ensureHostToken, ensureMetricsCollector, stopMetricsCollector } from './host.js'
-import { refreshRepositories } from './repos.js'
+import { ensureMetricsCollector, stopMetricsCollector } from './host.js'
 import { ensureRunner, removeRunner } from './runner.js'
 import { finishWebUp, prepareWebUp, syncForwardAuth, webUp } from './web.js'
 
@@ -224,7 +223,6 @@ export async function upCommand(
   await ensureNetwork(context.config.network)
   if (context.config.tcpEnabled) await ensureNetwork(context.config.accessNetwork)
   ensureAuthState(context.root)
-  ensureHostToken(context)
   output.progress(builds ? 'starting components, building local images' : 'starting components')
   const wait = !options.attach
   const started = await compose(
@@ -246,7 +244,6 @@ export async function upCommand(
     )
   }
 
-  await refreshRepositories(context.config.profile, output)
   await ensureMetricsCollector(context.config.profile, output)
 
   // The optional applier, so the panel can recreate these containers itself.

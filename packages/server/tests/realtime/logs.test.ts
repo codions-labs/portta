@@ -58,7 +58,6 @@ function panelDeps(panel: ReturnType<typeof makeApp>): AppDeps {
     hub: panel.hub,
     verdict: panel.verdict,
     db: panel.db,
-    forge: panel.forge,
     security: panel.security,
     auth: null,
     principals: panel.principals,

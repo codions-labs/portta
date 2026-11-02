@@ -7,12 +7,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { inArray } from 'drizzle-orm'
 import type { Environment, EnvironmentRunnerStartResult } from 'portta-contracts'
-import {
-  activityEvents,
-  environments as environmentsTable,
-  projectEnvironments,
-  projects as projectsTable,
-} from 'portta-db'
+import { auditLog, environments as environmentsTable, projectEnvironments, projects as projectsTable } from 'portta-db'
 import { describe, expect, it } from 'vitest'
 import type { EnvironmentRecord } from '../src/db/environments.ts'
 import { loadProjectCatalog } from '../src/services/catalog.ts'
@@ -34,8 +29,6 @@ const GAMMA: EnvironmentRecord = {
   composeProject: 'gamma',
   workingDir: '/srv/dev/gamma',
   configFiles: ['/srv/dev/gamma/compose.yaml', '/srv/shared/base.yaml'],
-  repoUrl: 'git@github.com:acme/gamma.git',
-  repoSubpath: null,
   firstSeenAt: new Date(0),
   lastSeenAt: new Date(0),
   updatedAt: new Date(0),
@@ -47,7 +40,6 @@ const ALPHA: EnvironmentRecord = {
   composeProject: 'alpha',
   workingDir: '/srv/dev/alpha',
   configFiles: [],
-  repoUrl: null,
 }
 
 /** Unplaced: the panel saw it once but never learnt where Compose ran. */
@@ -75,8 +67,6 @@ async function withRecords(records: EnvironmentRecord[], adopted: string[] = [])
       composeProject: record.composeProject,
       workingDir: record.workingDir,
       configFiles: record.configFiles,
-      repoUrl: record.repoUrl,
-      repoSubpath: record.repoSubpath,
     })),
   )
   const [project] = await seeded.db
@@ -101,9 +91,9 @@ async function withRecords(records: EnvironmentRecord[], adopted: string[] = [])
     )
     return names.filter((name) => !remaining.has(name))
   }
-  const activity = () => seeded.db.select().from(activityEvents)
+  const audited = () => seeded.db.select().from(auditLog)
 
-  return { db: seeded.database, projectId: String(project!.id), forgotten, activity }
+  return { db: seeded.database, projectId: String(project!.id), forgotten, audited }
 }
 
 describe('GET /api/environments with remembered rows', () => {
@@ -128,7 +118,6 @@ describe('GET /api/environments with remembered rows', () => {
       workingDir: '/srv/dev/gamma',
       configFiles: GAMMA.configFiles,
     })
-    expect(gamma.repoUrl).toBe('git@github.com:acme/gamma.git')
   })
 
   it('without the runner, startable carries the exact compose command', async () => {
@@ -194,7 +183,7 @@ describe('POST /api/environments/:project/actions/start for a remembered one', (
   })
 
   it('with the runner: writes an up request carrying the paths and starts it', async () => {
-    const { db, activity } = await withRecords([GAMMA])
+    const { db, audited } = await withRecords([GAMMA])
     const config = isolated()
     const { app, docker } = makeApp({ containers: [...PROJECT_A, RUNNER] }, config, db)
     const response = await post(app, '/api/environments/gamma/actions/start')
@@ -210,8 +199,8 @@ describe('POST /api/environments/:project/actions/start for a remembered one', (
       configFiles: ['/srv/dev/gamma/compose.yaml', '/srv/shared/base.yaml'],
     })
     expect(docker.calls.some((call) => call.method === 'start' && call.args[0] === 'gw-runner')).toBe(true)
-    expect(await activity()).toContainEqual(
-      expect.objectContaining({ kind: 'environment.started', summary: expect.stringContaining('gamma') }),
+    expect(await audited()).toContainEqual(
+      expect.objectContaining({ action: 'environment.started', resourceName: 'gamma' }),
     )
   })
 
@@ -245,13 +234,13 @@ describe('POST /api/environments/:project/actions/start for a remembered one', (
 
 describe('DELETE /api/environments/:project', () => {
   it('forgets a remembered environment', async () => {
-    const { db, forgotten, activity } = await withRecords([GAMMA])
+    const { db, forgotten, audited } = await withRecords([GAMMA])
     const { app } = makeApp({ containers: PROJECT_A }, {}, db)
     const response = await del(app, '/api/environments/gamma')
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ ok: true, forgotten: 'gamma' })
     expect(await forgotten()).toEqual(['gamma'])
-    expect(await activity()).toContainEqual(expect.objectContaining({ kind: 'environment.forgotten' }))
+    expect(await audited()).toContainEqual(expect.objectContaining({ action: 'environment.forgotten' }))
   })
 
   it('refuses a live one: stop and remove it first', async () => {
@@ -299,8 +288,6 @@ describe('removal keeps the environment remembered', () => {
     composeProject: 'alpha',
     workingDir: '/srv/dev/alpha',
     configFiles: ['/srv/dev/alpha/compose.yaml'],
-    repoUrl: null,
-    repoSubpath: null,
     firstSeenAt: new Date(0),
     lastSeenAt: new Date(0),
     updatedAt: new Date(0),
@@ -312,20 +299,7 @@ describe('removal keeps the environment remembered', () => {
     await post(app, '/api/environments/alpha/operations/remove', {
       confirmation: 'alpha',
       volumes: true,
-      directory: false,
     })
     expect(await forgotten()).toEqual([])
-  })
-
-  it('removing the directory forgets it in the same step', async () => {
-    const { db, forgotten } = await withRecords([alpha])
-    const { app } = makeApp({ containers: [...PROJECT_A, RUNNER] }, isolated(), db)
-    const response = await post(app, '/api/environments/alpha/operations/remove', {
-      confirmation: 'alpha',
-      volumes: true,
-      directory: true,
-    })
-    expect(response.status).toBe(200)
-    expect(await forgotten()).toEqual(['alpha'])
   })
 })

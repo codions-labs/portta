@@ -21,8 +21,7 @@ import { ensureInstallationDirectories } from '../installation-directories.js'
 import { requireLocalRelease, selectLocalRelease } from '../local-release.js'
 import { Output } from '../output.js'
 import { runProcess } from '../process.js'
-import { ensureHostToken, ensureMetricsCollector, stopMetricsCollector } from './host.js'
-import { refreshRepositories } from './repos.js'
+import { ensureMetricsCollector, stopMetricsCollector } from './host.js'
 
 function globals(command: Command) {
   return command.optsWithGlobals() as {
@@ -183,7 +182,6 @@ export async function webUp(options: WebUpOptions, command: Command): Promise<vo
   output.step('panel')
   if (!options.dev) await requireLocalRelease(context)
   await ensureNetwork(context.config.network)
-  ensureHostToken(context)
   // This was silent and can be slow on a cold pull; `reject: false` meant a
   // failure produced no output at all.
   output.progress('pulling alpine/socat:1.8.1.3')
@@ -243,7 +241,6 @@ export async function finishWebUp(
 ): Promise<void> {
   const { context, values, output } = prepared
   if (refreshHost) {
-    await refreshRepositories(context.config.profile, output)
     await ensureMetricsCollector(context.config.profile, output)
   }
   const running = gatewayContext({ profile: globals(command).profile, overrides: values })

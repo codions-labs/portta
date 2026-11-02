@@ -25,7 +25,7 @@ export const RUNNER_COMPONENT = 'runner'
 export const RUNNER_VERBS = ['up', 'stop', 'restart', 'build', 'down', 'down-volumes'] as const
 export type RunnerVerb = (typeof RUNNER_VERBS)[number]
 
-export const RUNNER_FLAGS = ['no-cache', 'directory'] as const
+export const RUNNER_FLAGS = ['no-cache'] as const
 export type RunnerFlag = (typeof RUNNER_FLAGS)[number]
 
 export interface RunnerRequest {
@@ -76,9 +76,6 @@ export function parseRunnerRequest(value: unknown): RunnerRequest {
   }
   if (flags.includes('no-cache') && body.verb !== 'build') {
     throw new Error('no-cache is only valid with build')
-  }
-  if (flags.includes('directory') && body.verb !== 'down-volumes') {
-    throw new Error('directory is only valid with down-volumes')
   }
   const request: RunnerRequest = { verb: body.verb, project: body.project, flags: flags.length > 0 ? flags : undefined }
   if (body.workingDir !== undefined || body.configFiles !== undefined) {

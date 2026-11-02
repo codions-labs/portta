@@ -80,12 +80,10 @@ describe('parseRunnerRequest', () => {
     expect(up('/srv/dev/gamma', ['/srv/dev/gamma/../x/compose.yaml'])).toThrow('walks up')
   })
 
-  it('accepts directory only on down-volumes', () => {
-    expect(parseRunnerRequest({ verb: 'down-volumes', project: 'alpha', flags: ['directory'] }).flags).toEqual([
+  it('refuses a flag it does not know', () => {
+    expect(() => parseRunnerRequest({ verb: 'down-volumes', project: 'alpha', flags: ['directory'] })).toThrow(
       'directory',
-    ])
-    expect(() => parseRunnerRequest({ verb: 'down', project: 'alpha', flags: ['directory'] })).toThrow('directory')
-    expect(() => parseRunnerRequest({ verb: 'build', project: 'alpha', flags: ['directory'] })).toThrow('directory')
+    )
   })
 })
 

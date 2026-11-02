@@ -1,30 +1,9 @@
-import type { Environment, IssueSummary, Project, RepositoryGit, Session } from 'portta-contracts'
+import type { Environment, Project } from 'portta-contracts'
 import { describe, expect, it } from 'vitest'
 import { emptyMetrics } from '../src/services/metrics.ts'
 import { attentionFor, buildOverview, type OverviewInput, projectPulses } from '../src/services/overview-view.ts'
 
 const NOW = 1_800_000_000_000
-
-function issue(number: number, overrides: Partial<IssueSummary> = {}): IssueSummary {
-  return {
-    ref: `github:acme/api#${number}`,
-    provider: 'github',
-    key: String(number),
-    title: `Issue ${number}`,
-    state: 'open',
-    stateReason: null,
-    labels: [],
-    assignees: [],
-    milestone: null,
-    author: null,
-    commentCount: 0,
-    createdAt: 1,
-    updatedAt: number,
-    url: `https://github.com/acme/api/issues/${number}`,
-    panelUrl: `/projects/shop/issues/github%3Aacme%2Fapi%23${number}`,
-    ...overrides,
-  }
-}
 
 function environment(name: string, overrides: Partial<Environment> = {}): Environment {
   return {
@@ -35,9 +14,6 @@ function environment(name: string, overrides: Partial<Environment> = {}): Enviro
     startable: { ok: true, reason: null, via: 'iteration' },
     namespace: null,
     group: null,
-    repo: null,
-    repoUrl: null,
-    gitRoot: null,
     services: [],
     serviceCount: 2,
     runningCount: 2,
@@ -52,40 +28,6 @@ function environment(name: string, overrides: Partial<Environment> = {}): Enviro
   } as Environment
 }
 
-const scan = {
-  collected: true,
-  git: {
-    branch: 'main',
-    dirty: true,
-    staged: 1,
-    unstaged: 2,
-    untracked: 0,
-    unmerged: 0,
-    ahead: 3,
-    behind: 0,
-    remote: 'git@github.com:acme/api.git',
-    head: { sha: 'a'.repeat(40), shortSha: 'aaaaaaa', subject: 'Add totals', author: 'Ada', date: 100 },
-    detached: false,
-    upstream: 'origin/main',
-  },
-  commits: [
-    { sha: 'a'.repeat(40), shortSha: 'aaaaaaa', subject: 'Add totals', author: 'Ada', email: 'a@x', date: 100 },
-    { sha: 'b'.repeat(40), shortSha: 'bbbbbbb', subject: 'Start', author: 'Ada', email: 'a@x', date: 50 },
-  ],
-  instructions: [
-    {
-      path: 'AGENTS.md',
-      audience: 'any',
-      sizeBytes: 10,
-      modifiedAt: 1,
-      sha256: 'x',
-      dirty: false,
-      content: '# rules',
-      truncated: false,
-    },
-  ],
-} as unknown as RepositoryGit
-
 const project = {
   id: '1',
   slug: 'shop',
@@ -95,25 +37,6 @@ const project = {
   relativePath: 'shop',
   resolvedPath: '/srv/projects/shop',
   location: 'managed',
-  repositories: [
-    {
-      id: '7',
-      projectId: '1',
-      name: 'api',
-      role: 'api',
-      provider: 'github',
-      localPath: '/srv/projects/shop',
-      relativePath: null,
-      remoteUrl: null,
-      position: 0,
-      scanKey: 'abcdef012345',
-      scanPath: '/srv/projects/shop',
-      git: { branch: 'main' },
-      github: null,
-      environments: ['shop'],
-      instructionCount: 1,
-    },
-  ],
   environments: [
     {
       environment: 'shop',
@@ -132,37 +55,14 @@ function input(overrides: Partial<OverviewInput> = {}): OverviewInput {
     now: NOW,
     projects: [project],
     environments: [environment('shop')],
-    work: { available: true, assigned: [issue(1), issue(2)], unavailableReason: null },
-    sessions: [
-      {
-        id: 's1',
-        project: 'shop',
-        issueRef: 'github:acme/api#1',
-        repository: null,
-        environment: 'shop',
-        actor: 'claude',
-        actorKind: 'agent',
-        agent: 'claude-code',
-        status: 'active',
-        startedAt: 1,
-        lastActivityAt: 2,
-        endedAt: null,
-        summary: null,
-        headBefore: null,
-        headAfter: null,
-        commits: [],
-      } satisfies Session,
-    ],
-    scans: new Map([['abcdef012345', scan]]),
     metrics: emptyMetrics(),
     problems: [],
     gatewayUp: true,
-    lastActivity: new Map([['shop', { at: 5, summary: 'claude started #1' }]]),
     ...overrides,
   }
 }
 
-describe('the development dashboard', () => {
+describe('the overview', () => {
   it('raises attention for an unhealthy service, a degraded environment and a failing diagnostic, worst first', () => {
     const unhealthy = environment('shop', {
       runningCount: 1,
@@ -191,13 +91,12 @@ describe('the development dashboard', () => {
     expect(projectPulses(input({ environments: [stillDown] }))[0]?.health).toBe('partial')
   })
 
-  it('orders projects by recent activity and puts archived ones last', () => {
+  it('orders projects by name and puts archived ones last', () => {
     const archived = {
       ...project,
       slug: 'old',
       name: 'Old',
       archived: true,
-      repositories: [],
       environments: [],
     } as unknown as Project
     const pulses = projectPulses(input({ projects: [archived, project] }))
@@ -206,7 +105,7 @@ describe('the development dashboard', () => {
   })
 })
 
-describe('the host verdict on the dashboard', () => {
+describe('the host verdict on the overview', () => {
   function measured(host: Partial<NonNullable<ReturnType<typeof emptyMetrics>['host']>>) {
     const metrics = emptyMetrics()
     metrics.stale = false

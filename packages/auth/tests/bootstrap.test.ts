@@ -132,7 +132,7 @@ describe('an administrator creating a user', () => {
     expect(row).toMatchObject({ role: 'viewer' })
   })
 
-  // A developer holds `issue:write`, not `user:create`. Creating accounts is the
+  // A developer holds `environment:operate`, not `user:create`. Creating accounts is the
   // one thing that lets somebody escalate themselves, so it stays with the two
   // administrative roles.
   it('is refused to a developer', async () => {

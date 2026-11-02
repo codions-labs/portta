@@ -8,7 +8,6 @@ import { principalMiddleware, SetupRequired } from 'portta-auth-core/hono'
 import { ZodError } from 'zod'
 import { DatabaseUnavailable } from '../db/index.ts'
 import type { AppDeps } from '../deps.ts'
-import { mountModuleRoutes, SERVER_MODULES } from '../modules/index.ts'
 import { originAllowed } from '../origin.ts'
 import { eventRoutes } from '../realtime/sse.ts'
 import { AccessError } from '../services/access.ts'
@@ -17,15 +16,12 @@ import { AUDITED_AUTH_PATHS, auditAuthExchange } from '../services/audit-auth.ts
 import { DockerAccessDenied } from '../services/docker/allowlist.ts'
 import { DockerApiError } from '../services/docker/client.ts'
 import { DynamicWriteRefused } from '../services/dynamic.ts'
-import { FORGE_HTTP_STATUS, ForgeUnavailable } from '../services/issues/host-client.ts'
 import { OverrideRefused } from '../services/overrides.ts'
 import { ValidationError } from '../services/settings.ts'
 import { ShareRefused } from '../services/shares.ts'
-import { SshKeyRefused } from '../services/ssh-keys.ts'
 import { UnknownUser, UserRefused, UsersUnavailable } from '../services/users.ts'
 import { registerOpenApiRoutes } from './openapi.ts'
 import { accessRoutes } from './routes/access.ts'
-import { activityRoutes } from './routes/activity.ts'
 import { auditRoutes } from './routes/audit.ts'
 import { authRoutes } from './routes/auth.ts'
 import { configRoutes } from './routes/config.ts'
@@ -35,18 +31,12 @@ import { dockerRoutes } from './routes/docker.ts'
 import { environmentRoutes } from './routes/environments.ts'
 import { gatewayRoutes } from './routes/gateway.ts'
 import { hostRoutes } from './routes/host.ts'
-import { issueRoutes } from './routes/issues.ts'
-import { mcpRoutes } from './routes/mcp.ts'
 import { networkRoutes } from './routes/network.ts'
 import { overrideRoutes } from './routes/overrides.ts'
 import { projectRoutes } from './routes/projects.ts'
-import { repositoryRoutes } from './routes/repositories.ts'
 import { runnerRoutes } from './routes/runner.ts'
 import { serviceRoutes } from './routes/services.ts'
-import { sessionRoutes } from './routes/sessions.ts'
-import { settingsRoutes } from './routes/settings.ts'
 import { shareRoutes } from './routes/shares.ts'
-import { sshRoutes } from './routes/ssh.ts'
 import { statusRoutes } from './routes/status.ts'
 import { tokenRoutes } from './routes/tokens.ts'
 import { tunnelRoutes } from './routes/tunnel.ts'
@@ -90,10 +80,8 @@ function isPorttaAuthPath(path: string): boolean {
 
 export function createApi(deps: AppDeps): Hono {
   const api = new Hono()
-  // The API's own answers to its own failures, so a request that re-enters it
-  // from inside the process (the MCP transport) gets the same JSON a client
-  // over the wire gets. Mounted under `createApp`, this handler is the one
-  // Hono keeps for these routes; it is the same function either way.
+  // The API's own answers to its own failures. Mounted under `createApp`, this
+  // handler is the one Hono keeps for these routes.
   api.onError(handleError)
 
   // Better Auth's own endpoints, before the principal is resolved: sign-in has
@@ -180,7 +168,6 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', runnerRoutes(deps))
   api.route('/', overrideRoutes(deps))
   api.route('/', projectRoutes(deps))
-  api.route('/', repositoryRoutes(deps))
   api.route('/', serviceRoutes(deps))
   api.route('/', dockerRoutes(deps))
   api.route('/', networkRoutes(deps))
@@ -192,21 +179,12 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', configRoutes(deps))
   api.route('/', databaseRoutes(deps))
   api.route('/', eventRoutes(deps))
-  api.route('/', issueRoutes(deps))
-  api.route('/', sessionRoutes(deps))
-  api.route('/', activityRoutes(deps))
   api.route('/', developmentRoutes(deps))
   api.route('/', authRoutes(deps))
   api.route('/', userRoutes(deps))
   api.route('/', tokenRoutes(deps))
   api.route('/', auditRoutes(deps))
-  api.route('/', settingsRoutes(deps))
   api.route('/', documentationRoutes(deps))
-  api.route('/', sshRoutes(deps))
-  // After every base route, so a module can only add paths under its own prefix.
-  mountModuleRoutes(api, deps, deps.modules ?? SERVER_MODULES)
-  // After the modules, because it serves their tools; and only when asked for.
-  if (deps.config.mcpHttp) mcpRoutes(deps, api)
   registerOpenApiRoutes(api, deps.config)
 
   api.all('*', (c) => c.json({ error: `no such endpoint: ${c.req.path}` }, 404))
@@ -246,8 +224,7 @@ const handleError: ErrorHandler = (error, c) => {
     error instanceof AccessError ||
     error instanceof ShareRefused ||
     error instanceof OverrideRefused ||
-    error instanceof DynamicWriteRefused ||
-    error instanceof SshKeyRefused
+    error instanceof DynamicWriteRefused
   ) {
     return c.json({ error: error.message, hint: error.hint }, error.status as 400)
   }
@@ -293,13 +270,6 @@ const handleError: ErrorHandler = (error, c) => {
       { error: error.message, hint: 'existing Docker-backed pages remain available; run portta db status' },
       503,
     )
-  }
-  // A provider degrades the way the database does, and each way it can
-  // degrade keeps its own status: "gh is not installed", "nobody is signed
-  // in", "this account cannot see that repository" and "GitHub is
-  // rate-limiting you" are four different things to fix.
-  if (error instanceof ForgeUnavailable) {
-    return c.json({ error: error.message, hint: error.hint }, FORGE_HTTP_STATUS[error.kind])
   }
   if (error instanceof DockerAccessDenied) {
     return c.json({ error: error.message, hint: 'this is a panel limit, not a Docker one' }, 403)

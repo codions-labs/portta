@@ -1,11 +1,9 @@
 export const workspaces = [
   'portta-core',
   'portta-contracts',
-  'portta-mcp',
   'portta-db',
   'portta-auth-core',
   '@codions/portta',
-  'portta-host',
   'portta-auth',
   'portta-server',
   'portta-web',

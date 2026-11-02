@@ -2,7 +2,7 @@
 // path writes here and nothing here disappears when nothing is running.
 
 import { asc, eq, inArray } from 'drizzle-orm'
-import { parseRelativeProjectPath, TASK_PROVIDERS, type TaskProvider } from 'portta-core'
+import { parseRelativeProjectPath } from 'portta-core'
 import { z } from 'portta-core/zod'
 import { type Db, environments, projectEnvironments, projects } from 'portta-db'
 
@@ -12,11 +12,7 @@ export interface ProjectRecord {
   name: string
   description: string | null
   archived: boolean
-  /** Null means "not chosen": the panel derives GitHub from the repository's remote. */
-  taskProvider: TaskProvider | null
-  /** The Linear team, when the provider is Linear. Uppercase, such as `ENG`. */
-  linearTeam: string | null
-  /** First-level directory under Projects Home. Null when unmanaged / not yet placed. */
+  /** Directory under Projects Home, at any depth. Null when unmanaged / not yet placed. */
   relativePath: string | null
   createdAt: Date
   updatedAt: Date
@@ -35,8 +31,8 @@ const Slug = z
   .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, 'must be a lowercase slug')
 
 /**
- * The first-level directory under Projects Home, never an absolute path and
- * never the identity (ADR 0031). Validated the same way the core does.
+ * The directory under Projects Home, never an absolute path and never the
+ * identity (ADR 0031). Validated the same way the core does.
  */
 const RelativePath = z.string().transform((value, ctx) => {
   try {
@@ -53,14 +49,6 @@ const CreateProject = z
     name: z.string().min(1).max(120),
     description: z.string().max(2000).nullable().default(null),
     relativePath: RelativePath.nullable().default(null),
-    taskProvider: z.enum(TASK_PROVIDERS).nullable().default(null),
-    linearTeam: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .regex(/^[A-Z][A-Z0-9]{0,9}$/, 'a Linear team key is up to ten uppercase letters or digits')
-      .nullable()
-      .default(null),
   })
   .strict()
 
@@ -70,14 +58,6 @@ const UpdateProject = z
     description: z.string().max(2000).nullable().optional(),
     archived: z.boolean().optional(),
     relativePath: RelativePath.nullable().optional(),
-    taskProvider: z.enum(TASK_PROVIDERS).nullable().optional(),
-    linearTeam: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .regex(/^[A-Z][A-Z0-9]{0,9}$/, 'a Linear team key is up to ten uppercase letters or digits')
-      .nullable()
-      .optional(),
   })
   .strict()
 
@@ -113,8 +93,6 @@ export class ProjectsRepository {
     if (parsed.name !== undefined) changes.name = parsed.name
     if (Object.hasOwn(parsed, 'description')) changes.description = parsed.description ?? null
     if (parsed.archived !== undefined) changes.archived = parsed.archived
-    if (Object.hasOwn(parsed, 'taskProvider')) changes.taskProvider = parsed.taskProvider ?? null
-    if (Object.hasOwn(parsed, 'linearTeam')) changes.linearTeam = parsed.linearTeam ?? null
     if (Object.hasOwn(parsed, 'relativePath')) changes.relativePath = parsed.relativePath ?? null
     const [row] = await this.db.update(projects).set(changes).where(eq(projects.slug, slug)).returning()
     return row ? toRecord(row) : null

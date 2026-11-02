@@ -43,23 +43,24 @@ describe('what a new token holds', () => {
   it('is narrowed to the role, whatever the role is', () => {
     const scopes = scopesFor('viewer', { actorKind: 'agent' })
     expect(scopes.every((scope) => permissionsOf('viewer').has(scope))).toBe(true)
-    expect(scopes).not.toContain('issue:write')
+    expect(scopes).not.toContain('environment:operate')
   })
 
   it('refuses a scope the owner does not hold, and names it', () => {
-    expect(() => scopesFor('viewer', { scopes: ['issue:read', 'environment:destroy'] })).toThrow(/environment:destroy/)
-    expect(() => scopesFor('viewer', { scopes: ['issue:read', 'environment:destroy'] })).toThrow(TokenRefused)
+    expect(() => scopesFor('viewer', { scopes: ['environment:read', 'environment:destroy'] })).toThrow(
+      /environment:destroy/,
+    )
+    expect(() => scopesFor('viewer', { scopes: ['environment:read', 'environment:destroy'] })).toThrow(TokenRefused)
   })
 
   it('refuses a scope that is not a permission at all', () => {
-    expect(() => scopesFor('owner', { scopes: ['issue:read', 'everything:always'] })).toThrow(/everything:always/)
+    expect(() => scopesFor('owner', { scopes: ['environment:read', 'everything:always'] })).toThrow(/everything:always/)
   })
 
   it('takes exactly what was asked for, when it fits', () => {
-    expect(scopesFor('developer', { scopes: ['issue:write', 'issue:read', 'issue:read'] })).toEqual([
-      'issue:read',
-      'issue:write',
-    ])
+    expect(scopesFor('developer', { scopes: ['environment:operate', 'environment:read', 'environment:read'] })).toEqual(
+      ['environment:operate', 'environment:read'],
+    )
   })
 })
 
@@ -76,11 +77,11 @@ describe('creating one', () => {
 
   it('answers as the principal its owner is, narrowed to its scopes', async () => {
     const { instance, userId } = await panel()
-    const created = await createToken(instance, { userId, name: 'ci', scopes: ['issue:read', 'logs:read'] })
+    const created = await createToken(instance, { userId, name: 'ci', scopes: ['environment:read', 'logs:read'] })
 
     const principal = await instance.resolver.fromHeaders(bearer(created.token))
     expect(principal).toMatchObject({ kind: 'token', role: 'owner', actorKind: 'agent' })
-    expect([...principal!.permissions].sort()).toEqual(['issue:read', 'logs:read'])
+    expect([...principal!.permissions].sort()).toEqual(['environment:read', 'logs:read'])
   })
 
   it('refuses to belong to a banned account', async () => {

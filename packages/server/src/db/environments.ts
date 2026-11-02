@@ -5,17 +5,8 @@
 // it (ADR 0013, ADR 0031).
 
 import { and, count, desc, eq, sql } from 'drizzle-orm'
-import { parseIssueRef } from 'portta-core'
 import { z } from 'portta-core/zod'
-import {
-  type Db,
-  environmentIssues,
-  environmentSettings,
-  environments,
-  projectEnvironments,
-  serviceSettings,
-} from 'portta-db'
-import type { IssueLinkSource, StoredIssueLink } from '../services/issues/environments.ts'
+import { type Db, environmentSettings, environments, projectEnvironments, serviceSettings } from 'portta-db'
 
 export interface EnvironmentRecord {
   id: string
@@ -23,8 +14,6 @@ export interface EnvironmentRecord {
   workingDir: string | null
   /** The Compose files as the daemon last recorded them; empty when never observed. */
   configFiles: string[]
-  repoUrl: string | null
-  repoSubpath: string | null
   firstSeenAt: Date
   lastSeenAt: Date
   updatedAt: Date
@@ -35,14 +24,11 @@ export interface SeenEnvironment {
   workingDir?: string | null
   /** Only a non-empty list overwrites: a stale row keeps its last known paths. */
   configFiles?: string[]
-  repoUrl?: string | null
-  repoSubpath?: string | null
 }
 
 export interface EnvironmentRecordCounts {
   overrides: number
   projectLinks: number
-  issueLinks: number
 }
 
 const SeenEnvironmentSchema = z
@@ -50,8 +36,6 @@ const SeenEnvironmentSchema = z
     composeProject: z.string().min(1).max(255),
     workingDir: z.string().min(1).nullable().optional(),
     configFiles: z.array(z.string().min(1)).optional(),
-    repoUrl: z.string().min(1).nullable().optional(),
-    repoSubpath: z.string().min(1).nullable().optional(),
   })
   .strict()
 
@@ -85,8 +69,6 @@ export class EnvironmentsRepository {
         composeProject: input.composeProject,
         workingDir: input.workingDir ?? null,
         configFiles,
-        repoUrl: input.repoUrl ?? null,
-        repoSubpath: input.repoSubpath ?? null,
       })
       .onConflictDoUpdate({
         target: environments.composeProject,
@@ -96,8 +78,6 @@ export class EnvironmentsRepository {
           // files" is a length check on the document rather than `cardinality`.
           // `'[]'` and `''` both mean it saw none.
           configFiles: sql`case when json_array_length(coalesce(excluded.config_files, '[]')) > 0 then excluded.config_files else ${environments.configFiles} end`,
-          repoUrl: sql`coalesce(excluded.repo_url, ${environments.repoUrl})`,
-          repoSubpath: sql`coalesce(excluded.repo_subpath, ${environments.repoSubpath})`,
           lastSeenAt: NOW,
           updatedAt: NOW,
         },
@@ -122,73 +102,24 @@ export class EnvironmentsRepository {
 
   /**
    * What Portta itself stored about an environment. Used by removal preview and
-   * by `forget`. Nothing here talks to GitHub or to Docker.
+   * by `forget`. Nothing here talks to Docker.
    */
   async recordCounts(composeProject: string): Promise<EnvironmentRecordCounts> {
     const environment = await this.find(composeProject)
-    if (!environment) return { overrides: 0, projectLinks: 0, issueLinks: 0 }
+    if (!environment) return { overrides: 0, projectLinks: 0 }
     const id = Number(environment.id)
-    const [settings, services, projects, issues] = await Promise.all([
+    const [settings, services, projects] = await Promise.all([
       this.db.select({ n: count() }).from(environmentSettings).where(eq(environmentSettings.environmentId, id)),
       this.db.select({ n: count() }).from(serviceSettings).where(eq(serviceSettings.environmentId, id)),
       this.db.select({ n: count() }).from(projectEnvironments).where(eq(projectEnvironments.environmentId, id)),
-      this.db.select({ n: count() }).from(environmentIssues).where(eq(environmentIssues.environmentId, id)),
     ])
     return {
       overrides: (settings[0]?.n ?? 0) + (services[0]?.n ?? 0),
       projectLinks: projects[0]?.n ?? 0,
-      issueLinks: issues[0]?.n ?? 0,
     }
   }
 
-  /**
-   * Every stored environment-to-issue link, joined to the environment's name.
-   *
-   * The resolver above works in Compose project names because that is what a
-   * Docker snapshot has; the row keys on the environment id because that is
-   * what cascades. This is the one place the two meet.
-   */
-  async listIssueLinks(): Promise<StoredIssueLink[]> {
-    const rows = await this.db
-      .select({
-        composeProject: environments.composeProject,
-        issueRef: environmentIssues.issueRef,
-        source: environmentIssues.source,
-        branch: environmentIssues.branch,
-      })
-      .from(environmentIssues)
-      .innerJoin(environments, eq(environments.id, environmentIssues.environmentId))
-    return rows.map((row) => ({ ...row, source: row.source as IssueLinkSource }))
-  }
-
-  /**
-   * Linking by hand, which outranks every inference.
-   *
-   * The ref is validated here rather than trusted: it arrives from a request
-   * body, and a ref nothing can parse would be a row that resolves to an issue
-   * that does not exist, forever.
-   */
-  async linkIssue(composeProject: string, issueRef: string, branch: string | null = null): Promise<void> {
-    if (!parseIssueRef(issueRef)) throw new Error(`not an issue reference: ${issueRef}`)
-    const id = await this.idOf(composeProject)
-    if (id === null) throw new Error(`no such environment: ${composeProject}`)
-    await this.db
-      .insert(environmentIssues)
-      .values({ environmentId: id, issueRef, source: 'manual', branch })
-      .onConflictDoUpdate({
-        target: environmentIssues.environmentId,
-        set: { issueRef, source: 'manual', branch, linkedAt: NOW },
-      })
-  }
-
-  /** Unlinking falls back to inference, which is why this removes rather than nulls. */
-  async unlinkIssue(composeProject: string): Promise<void> {
-    const id = await this.idOf(composeProject)
-    if (id === null) return
-    await this.db.delete(environmentIssues).where(eq(environmentIssues.environmentId, id))
-  }
-
-  /** Drops the row. Settings, project links and issue links cascade. */
+  /** Drops the row. Settings and project links cascade. */
   async forget(composeProject: string): Promise<EnvironmentRecordCounts> {
     const counts = await this.recordCounts(composeProject)
     await this.db.delete(environments).where(eq(environments.composeProject, composeProject))

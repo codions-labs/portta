@@ -10,7 +10,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { resolveSecurityMode } from 'portta-auth-core'
-import { type AppDeps, createApi, generateOpenApi, SERVER_MODULES } from 'portta-server'
+import { type AppDeps, createApi, generateOpenApi } from 'portta-server'
 import { loadConfig } from 'portta-server/config'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -36,8 +36,6 @@ const deps = {
   config: loadConfig({ gatewayVersion: version }),
   security: resolveSecurityMode({}),
   auth: null,
-  // Every registered module: the contract describes what the build contains.
-  modules: SERVER_MODULES,
 } as unknown as AppDeps
 const rendered = `${JSON.stringify(await generateOpenApi(createApi(deps), version), null, 2)}\n`
 

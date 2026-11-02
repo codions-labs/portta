@@ -3,13 +3,11 @@ import { HTTPException } from 'hono/http-exception'
 import { ApplyResult, ApplyStatus, Diagnostic, GatewayStatus, LogsResponse, TraefikVerdict } from 'portta-contracts'
 import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
-import { moduleDiagnostics, SERVER_MODULES } from '../../modules/index.ts'
 import { ActionRefused } from '../../services/actions.ts'
 import { applier, applyStatus } from '../../services/apply.ts'
 import { diagnose } from '../../services/diagnostics.ts'
 import { DockerApiError } from '../../services/docker/client.ts'
 import { componentOf, gatewayStatus, RESTARTABLE_COMPONENTS } from '../../services/gateway.ts'
-import { forgeStatus } from '../../services/issues/host-client.ts'
 import { loadAliases } from '../../services/overrides.ts'
 import { record } from '../audit.ts'
 import { documentRoute, tailParameter } from '../openapi.ts'
@@ -75,11 +73,7 @@ export function gatewayRoutes(deps: AppDeps): Hono {
       // Traefik's verdict is worth a network call here, where the user asked for
       // diagnostics, and never on a page render.
       const verdict = await deps.verdict.get(true)
-      const forge = await forgeStatus(deps.forge)
-      const checks = [
-        ...diagnose(snapshot, deps.config, verdict, [], deps.db.status(), loadAliases(deps.config), forge),
-        ...(await moduleDiagnostics(deps, deps.modules ?? SERVER_MODULES)),
-      ]
+      const checks = diagnose(snapshot, deps.config, verdict, [], deps.db.status(), loadAliases(deps.config))
       return c.json({
         checks,
         failures: checks.filter((check) => check.status === 'fail').length,

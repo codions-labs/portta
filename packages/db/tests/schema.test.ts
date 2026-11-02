@@ -14,9 +14,8 @@ import { eq, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { projectMembers } from '../src/schema/access.ts'
 import { apiKeys, sessions, users } from '../src/schema/auth.ts'
-import { environmentIssues, environments, projectEnvironments } from '../src/schema/environments.ts'
-import { projects, repositories } from '../src/schema/projects.ts'
-import { activityEvents, workSessions } from '../src/schema/work.ts'
+import { environments, projectEnvironments } from '../src/schema/environments.ts'
+import { projects } from '../src/schema/projects.ts'
 import { createTestDb, resetTestDb, type TestDatabase } from '../src/test-db.ts'
 
 /**
@@ -78,30 +77,11 @@ describe('the vocabularies the database owns', () => {
   it('refuses a value nothing in portta-core names, for every vocabulary the panel writes', () => {
     const projectId = aProject('alpha')
     const environmentId = anEnvironment('one')
-    db().insert(repositories).values({ projectId, name: 'api' }).run()
     const cases: Array<[string, string]> = [
       ["INSERT INTO users (id, name, email, role) VALUES ('u', 'u', 'u@x', 'superuser')", 'users_role_check'],
-      [`UPDATE projects SET task_provider = 'jira' WHERE id = ${projectId}`, 'projects_task_provider_check'],
-      [`UPDATE repositories SET provider = 'sourcehut' WHERE project_id = ${projectId}`, 'repositories_provider_check'],
       [
         `INSERT INTO project_environments (project_id, environment_id, source) VALUES (${projectId}, ${environmentId}, 'vibes')`,
         'project_environments_source_check',
-      ],
-      [
-        `INSERT INTO environment_issues (environment_id, issue_ref, source) VALUES (${environmentId}, 'github:a/b#1', 'telepathy')`,
-        'environment_issues_source_check',
-      ],
-      [
-        `INSERT INTO work_sessions (project_id, actor, actor_kind) VALUES (${projectId}, 'a', 'robot')`,
-        'work_sessions_actor_kind_check',
-      ],
-      [
-        `INSERT INTO work_sessions (project_id, actor, actor_kind, status) VALUES (${projectId}, 'a', 'human', 'paused')`,
-        'work_sessions_status_check',
-      ],
-      [
-        `INSERT INTO activity_events (kind, summary, source) VALUES ('k', 's', 'telegram')`,
-        'activity_events_source_check',
       ],
       [
         `INSERT INTO audit_log (principal_kind, actor, action, resource_type) VALUES ('daemon', 'a', 'x.y', 'r')`,
@@ -126,18 +106,14 @@ describe('the vocabularies the database owns', () => {
     expect(db().select().from(users).all()).toHaveLength(4)
   })
 
-  it('accepts both providers work can live in, and no third', () => {
-    const projectId = aProject('alpha')
-    for (const provider of ['github', 'linear'] as const) {
-      db().update(projects).set({ taskProvider: provider }).where(eq(projects.id, projectId)).run()
-    }
-    // Null is not a third mode: it means "not chosen", and the panel derives it.
-    db().update(projects).set({ taskProvider: null }).where(eq(projects.id, projectId)).run()
-    expect(db().select().from(projects).all()[0]?.taskProvider).toBeNull()
-  })
 })
 
 describe('the checks the database keeps', () => {
+  it('accepts a project path at any depth under Projects Home', () => {
+    db().insert(projects).values({ slug: 'a', name: 'A', relativePath: 'group/a' }).run()
+    expect(db().select().from(projects).all()[0]?.relativePath).toBe('group/a')
+  })
+
   it('refuses a project path that walks up out of Projects Home', () => {
     const refusal = refusalFor(() =>
       db().insert(projects).values({ slug: 'a', name: 'A', relativePath: '../escape' }).run(),
@@ -152,16 +128,6 @@ describe('the checks the database keeps', () => {
     expect(refusalFor(() => db().insert(environments).values({ composeProject: '  ' }).run())).toMatch(
       /environments_compose_project_check/,
     )
-  })
-
-  // A ref with no provider addresses nothing, and the whole point of storing a
-  // ref rather than an id is that it says where to look.
-  it('refuses an issue ref with no provider', () => {
-    const environmentId = anEnvironment('one')
-    const refusal = refusalFor(() =>
-      db().insert(environmentIssues).values({ environmentId, issueRef: '113', source: 'manual' }).run(),
-    )
-    expect(refusal).toMatch(/environment_issues_ref_check/)
   })
 
   it('refuses a second instance row', () => {
@@ -189,64 +155,14 @@ describe('what a removal takes with it', () => {
     expect(db().select().from(projectMembers).all()).toHaveLength(0)
   })
 
-  // The attribution survives the person: `actor` keeps the name, so a session
-  // does not become anonymous when somebody leaves.
-  it('leaves a work session standing when the user who opened it is removed', () => {
-    const userId = aUser('u2', 'u2@example.test')
-    const projectId = aProject('alpha')
-    db().insert(workSessions).values({ projectId, actor: 'u2', actorKind: 'human', userId }).run()
-
-    db().delete(users).where(eq(users.id, userId)).run()
-
-    const [row] = db().select().from(workSessions).all()
-    expect(row?.actor).toBe('u2')
-    expect(row?.userId).toBeNull()
-  })
-
-  it('takes a project’s sessions, activity and memberships', () => {
+  it('takes a project’s memberships', () => {
     const userId = aUser('u3', 'u3@example.test')
     const projectId = aProject('alpha')
-    db().insert(workSessions).values({ projectId, actor: 'a', actorKind: 'human' }).run()
-    db().insert(activityEvents).values({ kind: 'issue.linked', summary: 's', projectId }).run()
     db().insert(projectMembers).values({ projectId, userId }).run()
 
     db().delete(projects).where(eq(projects.id, projectId)).run()
 
-    expect(db().select().from(workSessions).all()).toHaveLength(0)
-    expect(db().select().from(activityEvents).all()).toHaveLength(0)
     expect(db().select().from(projectMembers).all()).toHaveLength(0)
-  })
-
-  it('forgets the issue link when the environment is forgotten', () => {
-    const environmentId = anEnvironment('one')
-    db().insert(environmentIssues).values({ environmentId, issueRef: 'github:a/b#1', source: 'manual' }).run()
-
-    db().delete(environments).where(eq(environments.id, environmentId)).run()
-
-    expect(db().select().from(environmentIssues).all()).toHaveLength(0)
-  })
-})
-
-describe('an environment runs for at most one issue', () => {
-  it('gives an issue many environments and an environment one issue', () => {
-    const first = anEnvironment('one')
-    const second = anEnvironment('two')
-
-    // One issue, two environments: normal.
-    db()
-      .insert(environmentIssues)
-      .values([
-        { environmentId: first, issueRef: 'github:a/b#1', source: 'manual' },
-        { environmentId: second, issueRef: 'github:a/b#1', source: 'branch' },
-      ])
-      .run()
-
-    // Two issues, one environment: "what is this running for" would have two
-    // answers, so the primary key refuses it.
-    const refusal = refusalFor(() =>
-      db().insert(environmentIssues).values({ environmentId: first, issueRef: 'github:a/b#2', source: 'manual' }).run(),
-    )
-    expect(refusal).toMatch(/UNIQUE constraint|PRIMARY KEY/i)
   })
 })
 
@@ -261,14 +177,5 @@ describe('an environment belongs to at most one project', () => {
       db().insert(projectEnvironments).values({ projectId: second, environmentId, source: 'manual' }).run(),
     )
     expect(refusal).toMatch(/project_environments_one_project_per_env|UNIQUE constraint/i)
-  })
-})
-
-describe('one project, one name per repository', () => {
-  it('refuses a duplicate repository name inside a project', () => {
-    const projectId = aProject('alpha')
-    db().insert(repositories).values({ projectId, name: 'api' }).run()
-    const refusal = refusalFor(() => db().insert(repositories).values({ projectId, name: 'api' }).run())
-    expect(refusal).toMatch(/repositories_project_id_name_key|UNIQUE constraint/i)
   })
 })

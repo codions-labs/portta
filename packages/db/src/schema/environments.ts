@@ -1,5 +1,4 @@
-// What this host has been observed running, the overrides on it, and the issue
-// it is being worked on.
+// What this host has been observed running, and the overrides on it.
 //
 // An Environment is identity plus a cache of where it was last seen. It is
 // never deleted because a container vanished; only an explicit removal forgets
@@ -8,7 +7,7 @@
 import { relations, sql } from 'drizzle-orm'
 import { check, index, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createdAt, id, json, ref, updatedAt, vocabulary, vocabularyCheck } from './columns.ts'
-import { ADOPTION_SOURCE_VALUES, ISSUE_ENVIRONMENT_SOURCE_VALUES } from './enums.ts'
+import { ADOPTION_SOURCE_VALUES } from './enums.ts'
 import { projects } from './projects.ts'
 
 export const environments = sqliteTable(
@@ -27,8 +26,6 @@ export const environments = sqliteTable(
      * every time — nothing queries inside it.
      */
     configFiles: json<string[]>('config_files').notNull().default(sql`('[]')`),
-    repoUrl: text('repo_url'),
-    repoSubpath: text('repo_subpath'),
     firstSeenAt: createdAt('first_seen_at'),
     lastSeenAt: createdAt('last_seen_at'),
     updatedAt: updatedAt(),
@@ -36,9 +33,6 @@ export const environments = sqliteTable(
   (table) => [
     check('environments_compose_project_check', sql`trim(${table.composeProject}) <> ''`),
     index('environments_last_seen_idx').on(table.lastSeenAt),
-    index('environments_repo_coordinate_idx')
-      .on(table.repoUrl, table.repoSubpath)
-      .where(sql`${table.repoUrl} IS NOT NULL`),
   ],
 )
 
@@ -63,37 +57,6 @@ export const projectEnvironments = sqliteTable(
     // An environment belongs to at most one Project: two Projects claiming one
     // running environment would make "which product is this" unanswerable.
     uniqueIndex('project_environments_one_project_per_env').on(table.environmentId),
-  ],
-)
-
-/**
- * Which issue an environment is being worked on, and how Portta knows.
- *
- * This is what is left of the old `task_environments` once Portta stopped
- * owning a task: the link is real Portta functionality — "what is this running
- * for" — but the thing on the other end is now an issue in GitHub or Linear,
- * named by a ref rather than by a row.
- *
- * The environment is the primary key, not half of a pair: one environment is
- * being worked on for at most one issue, so the question has one answer. The
- * same issue may have several environments.
- */
-export const environmentIssues = sqliteTable(
-  'environment_issues',
-  {
-    environmentId: ref('environment_id')
-      .primaryKey()
-      .references(() => environments.id, { onDelete: 'cascade' }),
-    /** `github:owner/repo#113` or `linear:ENG-42`. Never a database id. */
-    issueRef: text('issue_ref').notNull(),
-    source: vocabulary('source', ISSUE_ENVIRONMENT_SOURCE_VALUES).notNull(),
-    branch: text('branch'),
-    linkedAt: createdAt('linked_at'),
-  },
-  (table) => [
-    vocabularyCheck('environment_issues', table.source, ISSUE_ENVIRONMENT_SOURCE_VALUES),
-    check('environment_issues_ref_check', sql`trim(${table.issueRef}) <> '' AND instr(${table.issueRef}, ':') > 1`),
-    index('environment_issues_ref_idx').on(table.issueRef),
   ],
 )
 
@@ -131,24 +94,16 @@ export const serviceSettings = sqliteTable(
   ],
 )
 
-export const environmentsRelations = relations(environments, ({ many, one }) => ({
+export const environmentsRelations = relations(environments, ({ many }) => ({
   projectLinks: many(projectEnvironments),
   settings: many(environmentSettings),
   serviceSettings: many(serviceSettings),
-  issue: one(environmentIssues, { fields: [environments.id], references: [environmentIssues.environmentId] }),
 }))
 
 export const projectEnvironmentsRelations = relations(projectEnvironments, ({ one }) => ({
   project: one(projects, { fields: [projectEnvironments.projectId], references: [projects.id] }),
   environment: one(environments, {
     fields: [projectEnvironments.environmentId],
-    references: [environments.id],
-  }),
-}))
-
-export const environmentIssuesRelations = relations(environmentIssues, ({ one }) => ({
-  environment: one(environments, {
-    fields: [environmentIssues.environmentId],
     references: [environments.id],
   }),
 }))
