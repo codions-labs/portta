@@ -16,7 +16,6 @@ import type repositories from '../../messages/en/repositories.json'
 import type services from '../../messages/en/services.json'
 import type sessions from '../../messages/en/sessions.json'
 import type settings from '../../messages/en/settings.json'
-import type { ModuleResources } from '../../modules/index.ts'
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -40,6 +39,6 @@ declare module 'i18next' {
       diagnostics: typeof diagnostics
       errors: typeof errors
       auth: typeof auth
-    } & ModuleResources<'en'>
+    }
   }
 }

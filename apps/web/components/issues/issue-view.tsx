@@ -232,7 +232,6 @@ export function IssueView({ project, issueRef, readOnly }: { project: Project; i
 
         <IssueProperties
           issue={data}
-          projectSlug={project.slug}
           {...(vocabulary.data ? { vocabulary: vocabulary.data } : {})}
           readOnly={!mayWrite}
           onPatch={(body) => patch.mutate(body)}

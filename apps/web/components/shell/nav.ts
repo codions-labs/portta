@@ -9,7 +9,6 @@ import {
   Settings as SettingsIcon,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
-import { type ModuleNavLabelKey, moduleNavItems, type WebModule } from '@/modules'
 
 export type BaseNavLabelKey =
   | 'overview'
@@ -21,13 +20,11 @@ export type BaseNavLabelKey =
   | 'gateway'
   | 'settings'
 
-export type NavLabelKey = BaseNavLabelKey | ModuleNavLabelKey
-
 export type NavGroupKey = 'groups.development' | 'groups.infrastructure'
 
 export interface NavItem {
   href: string
-  labelKey: NavLabelKey
+  labelKey: BaseNavLabelKey
   icon: ComponentType<{ className?: string }>
   /**
    * What somebody needs to hold for this entry to be theirs.
@@ -37,8 +34,6 @@ export interface NavItem {
    * would answer 404 to the person reading it.
    */
   permission?: string
-  /** The module the entry belongs to; it shows only while that module is on. */
-  module?: string
 }
 
 export interface NavGroup {
@@ -52,7 +47,7 @@ export interface NavGroup {
  * is the set of technical perspectives over the same host. Settings sits
  * alone at the end because it is neither.
  */
-const BASE_NAV_GROUPS: NavGroup[] = [
+export const NAV_GROUPS: NavGroup[] = [
   {
     labelKey: 'groups.development',
     items: [
@@ -79,30 +74,9 @@ const BASE_NAV_GROUPS: NavGroup[] = [
   },
 ]
 
-/**
- * The base groups with each module's entries appended to the group they name.
- *
- * Appended, never interleaved: the base order is a decision, and a module adds
- * to it rather than reopening it.
- */
-export function withModuleNav(groups: readonly NavGroup[], modules?: readonly WebModule[]): NavGroup[] {
-  const added = moduleNavItems(modules)
-  return groups.map((group) => ({
-    ...group,
-    items: [
-      ...group.items,
-      ...added
-        .filter((item) => item.group === group.labelKey)
-        .map(({ group: _group, labelKey, ...item }) => ({ ...item, labelKey: labelKey as NavLabelKey })),
-    ],
-  }))
-}
-
-export const NAV_GROUPS: NavGroup[] = withModuleNav(BASE_NAV_GROUPS)
-
-/** Whether an entry belongs in this person's rail: held, and its module on. */
-export function navItemVisible(item: NavItem, permissions: ReadonlySet<string>, modules: ReadonlySet<string>): boolean {
-  return (!item.permission || permissions.has(item.permission)) && (!item.module || modules.has(item.module))
+/** Whether an entry belongs in this person's rail: the permission it needs is held. */
+export function navItemVisible(item: NavItem, permissions: ReadonlySet<string>): boolean {
+  return !item.permission || permissions.has(item.permission)
 }
 
 /** Which sidebar entry a path belongs to. `/projects/x/activity` is still Projects. */

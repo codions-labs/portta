@@ -28,9 +28,7 @@ import { useMetricsCurrent, useStatus } from '@/lib/queries'
 import { useShortcut } from '@/lib/shortcuts'
 import { type Theme, useThemeChoice } from '@/lib/theme'
 import { cn } from '@/lib/utils'
-import { moduleText } from '@/modules'
-import { useModules } from '@/modules/registered'
-import { activeHref, type BaseNavLabelKey, NAV_GROUPS, navItemVisible } from './nav'
+import { activeHref, NAV_GROUPS, navItemVisible } from './nav'
 import { useSidebarCollapsed } from './use-sidebar'
 import { UserMenu } from './user-menu'
 
@@ -126,7 +124,6 @@ function ShellControls({
 export function Shell({ children }: { children: ReactNode }) {
   const { t } = useTranslation('nav')
   const permissions = new Set(usePrincipal().permissions)
-  const modules = useModules()
   const pathname = usePathname()
   const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -214,7 +211,7 @@ export function Shell({ children }: { children: ReactNode }) {
               // A page a role does not hold is not in that person's rail: it
               // would answer 404, and a navigation entry that cannot be
               // followed is a worse answer than no entry.
-              const items = group.items.filter((item) => navItemVisible(item, permissions, modules))
+              const items = group.items.filter((item) => navItemVisible(item, permissions))
               if (items.length === 0) return null
               return (
                 <div
@@ -237,7 +234,7 @@ export function Shell({ children }: { children: ReactNode }) {
                   {items.map((item) => {
                     const Icon = item.icon
                     const current = active === item.href
-                    const label = item.module ? moduleText(t, item.labelKey) : t(item.labelKey as BaseNavLabelKey)
+                    const label = t(item.labelKey)
                     const link = (
                       <Link
                         key={item.href}

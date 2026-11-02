@@ -7,9 +7,8 @@
 // because that is what both providers accept — and because two people editing
 // the same issue then merge instead of clobbering each other.
 
-import { Boxes, GitBranch } from 'lucide-react'
-import Link from 'next/link'
-import type { Issue, IssueEnvironmentLink, IssueVocabulary, IssueWorktreeLink } from 'portta-contracts'
+import { Boxes } from 'lucide-react'
+import type { Issue, IssueEnvironmentLink, IssueVocabulary } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
 import { Empty, Eyebrow, NoValue } from '@/components/shell-bits'
@@ -17,20 +16,17 @@ import { Badge, StatusIndicator } from '@/components/ui/badge'
 import { PopoverClose } from '@/components/ui/popover'
 import type { PatchIssueInput } from '@/lib/api'
 import { useFormat } from '@/lib/use-format'
-import { taskflowPaths } from '@/modules/taskflow/lib/navigation.ts'
 import { IssueAssignees, IssueLabels, IssueStateBadge } from './issue-badges.tsx'
 import { PropertyChoice, PropertyMenu, PropertyRow } from './property-row.tsx'
 import { useProviderName } from './provider.ts'
 
 export function IssueProperties({
   issue,
-  projectSlug,
   vocabulary,
   readOnly,
   onPatch,
 }: {
   issue: Issue
-  projectSlug: string
   vocabulary?: IssueVocabulary
   readOnly: boolean
   onPatch: (body: PatchIssueInput) => void
@@ -136,68 +132,8 @@ export function IssueProperties({
         </PropertyRow>
       </dl>
 
-      <IssueWorktrees issue={issue} projectSlug={projectSlug} />
       <IssueEnvironments issue={issue} providerName={providerName(issue.provider)} />
     </aside>
-  )
-}
-
-function IssueWorktrees({ issue, projectSlug }: { issue: Issue; projectSlug: string }) {
-  const { t } = useTranslation('issues')
-  return (
-    <section className="space-y-1.5">
-      <Eyebrow>{t('detail.worktrees')}</Eyebrow>
-      {issue.worktrees.length === 0 ? (
-        <Empty compact icon={GitBranch} title={t('detail.noWorktrees')} />
-      ) : (
-        <ul className="overflow-hidden rounded-md border border-line">
-          {issue.worktrees.map((link) => (
-            <WorktreeLink key={`${link.path}:${link.branch}`} link={link} projectSlug={projectSlug} />
-          ))}
-        </ul>
-      )}
-    </section>
-  )
-}
-
-function WorktreeLink({ link, projectSlug }: { link: IssueWorktreeLink; projectSlug: string }) {
-  const { t } = useTranslation('issues')
-  const paths = taskflowPaths(projectSlug)
-  return (
-    <li className="border-b border-line-subtle px-2.5 py-1.5 text-sm last:border-b-0 hover:bg-fill">
-      {link.branch ? (
-        <Link
-          className="block truncate rounded-xs font-medium underline-offset-2 hover:underline focus-ring"
-          href={paths.worktree(link.branch)}
-        >
-          {link.branch}
-        </Link>
-      ) : (
-        <span className="text-subtle">{t('detail.noWorktrees')}</span>
-      )}
-      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-2xs">
-        {link.runId ? (
-          <Link
-            className="rounded-xs text-accent underline-offset-2 hover:underline focus-ring"
-            href={paths.run(link.runId)}
-          >
-            {t('detail.run')}
-            {link.runStatus ? ` · ${link.runStatus}` : ''}
-          </Link>
-        ) : null}
-        {link.pullRequestUrl ? (
-          <a
-            className="rounded-xs text-accent underline-offset-2 hover:underline focus-ring"
-            href={link.pullRequestUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t('detail.pr')}
-            {link.pullRequestState ? ` · ${link.pullRequestState}` : ''}
-          </a>
-        ) : null}
-      </div>
-    </li>
   )
 }
 

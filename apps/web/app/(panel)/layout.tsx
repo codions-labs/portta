@@ -4,10 +4,8 @@ import type { ReactNode } from 'react'
 import { Shell } from '@/components/shell/shell'
 import { PrincipalProvider } from '@/lib/principal'
 import { serverDeps } from '@/lib/server/deps'
-import { registeredModuleIds } from '@/lib/server/modules'
 import { getPrincipal } from '@/lib/server/principal'
 import { panelPrincipal } from '@/lib/server/principal-view'
-import { ModulesProvider } from '@/modules/registered'
 
 /**
  * Every panel page is rendered inside the shell, and behind this check.
@@ -31,9 +29,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
 
   return (
     <PrincipalProvider principal={panelPrincipal(principal)}>
-      <ModulesProvider ids={registeredModuleIds()}>
-        <Shell>{children}</Shell>
-      </ModulesProvider>
+      <Shell>{children}</Shell>
     </PrincipalProvider>
   )
 }

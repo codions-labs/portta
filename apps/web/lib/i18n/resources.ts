@@ -3,8 +3,7 @@
 // The JSON is imported rather than fetched: the panel is offline software, and
 // a locale that arrives over the network is a locale that can fail to arrive.
 // Both halves read this — `client.ts` for the browser, `server.ts` for a Server
-// Component — so a namespace exists once. Each official module's namespaces
-// follow the base ones, from `modules/index.ts`.
+// Component — so a namespace exists once.
 
 import enAccess from '../../messages/en/access.json' with { type: 'json' }
 import enActivity from '../../messages/en/activity.json' with { type: 'json' }
@@ -42,55 +41,48 @@ import ptRepositories from '../../messages/pt-BR/repositories.json' with { type:
 import ptServices from '../../messages/pt-BR/services.json' with { type: 'json' }
 import ptSessions from '../../messages/pt-BR/sessions.json' with { type: 'json' }
 import ptSettings from '../../messages/pt-BR/settings.json' with { type: 'json' }
-import { withModuleResources } from '../../modules/index.ts'
 
 export const RESOURCES = {
-  en: withModuleResources(
-    {
-      common: enCommon,
-      nav: enNav,
-      overview: enOverview,
-      projects: enProjects,
-      repositories: enRepositories,
-      environments: enEnvironments,
-      issues: enIssues,
-      sessions: enSessions,
-      activity: enActivity,
-      services: enServices,
-      docker: enDocker,
-      network: enNetwork,
-      access: enAccess,
-      gateway: enGateway,
-      settings: enSettings,
-      diagnostics: enDiagnostics,
-      errors: enErrors,
-      auth: enAuth,
-    },
-    'en',
-  ),
-  'pt-BR': withModuleResources(
-    {
-      common: ptCommon,
-      nav: ptNav,
-      overview: ptOverview,
-      projects: ptProjects,
-      repositories: ptRepositories,
-      environments: ptEnvironments,
-      issues: ptIssues,
-      sessions: ptSessions,
-      activity: ptActivity,
-      services: ptServices,
-      docker: ptDocker,
-      network: ptNetwork,
-      access: ptAccess,
-      gateway: ptGateway,
-      settings: ptSettings,
-      diagnostics: ptDiagnostics,
-      errors: ptErrors,
-      auth: ptAuth,
-    },
-    'pt-BR',
-  ),
+  en: {
+    common: enCommon,
+    nav: enNav,
+    overview: enOverview,
+    projects: enProjects,
+    repositories: enRepositories,
+    environments: enEnvironments,
+    issues: enIssues,
+    sessions: enSessions,
+    activity: enActivity,
+    services: enServices,
+    docker: enDocker,
+    network: enNetwork,
+    access: enAccess,
+    gateway: enGateway,
+    settings: enSettings,
+    diagnostics: enDiagnostics,
+    errors: enErrors,
+    auth: enAuth,
+  },
+  'pt-BR': {
+    common: ptCommon,
+    nav: ptNav,
+    overview: ptOverview,
+    projects: ptProjects,
+    repositories: ptRepositories,
+    environments: ptEnvironments,
+    issues: ptIssues,
+    sessions: ptSessions,
+    activity: ptActivity,
+    services: ptServices,
+    docker: ptDocker,
+    network: ptNetwork,
+    access: ptAccess,
+    gateway: ptGateway,
+    settings: ptSettings,
+    diagnostics: ptDiagnostics,
+    errors: ptErrors,
+    auth: ptAuth,
+  },
 } as const
 
 export const LOCALES = ['en', 'pt-BR'] as const

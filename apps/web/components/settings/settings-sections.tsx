@@ -7,14 +7,12 @@ import { usePathname } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { usePrincipal } from '@/lib/principal'
 import { cn } from '@/lib/utils'
-import { moduleText } from '@/modules'
-import { useModules } from '@/modules/registered'
-import { type BaseSettingsSectionId, visibleSections } from './sections'
+import { visibleSections } from './sections'
 
 export function SettingsSections({ signsPeopleIn }: { signsPeopleIn: boolean }) {
   const { t } = useTranslation('settings')
   const pathname = usePathname()
-  const sections = visibleSections({ permissions: usePrincipal().permissions, signsPeopleIn, modules: useModules() })
+  const sections = visibleSections({ permissions: usePrincipal().permissions, signsPeopleIn })
 
   return (
     <nav
@@ -34,7 +32,7 @@ export function SettingsSections({ signsPeopleIn }: { signsPeopleIn: boolean }) 
               selected ? 'text-ink after:bg-accent' : 'text-subtle after:bg-transparent hover:text-ink',
             )}
           >
-            {section.labelKey ? moduleText(t, section.labelKey) : t(`sections.${section.id as BaseSettingsSectionId}`)}
+            {t(`sections.${section.id}`)}
           </Link>
         )
       })}

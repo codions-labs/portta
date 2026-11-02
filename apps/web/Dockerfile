@@ -60,7 +60,6 @@ COPY apps/web/tsconfig.json apps/web/next.config.ts apps/web/postcss.config.mjs 
 COPY apps/web/app ./apps/web/app
 COPY apps/web/components ./apps/web/components
 COPY apps/web/lib ./apps/web/lib
-COPY apps/web/modules ./apps/web/modules
 COPY apps/web/messages ./apps/web/messages
 COPY apps/web/server ./apps/web/server
 COPY apps/web/public ./apps/web/public

@@ -1,6 +1,5 @@
 import { test as base, expect } from '@playwright/test'
 import { startPanel } from './resources.mjs'
-import { startTaskflowHost } from './taskflow-host.mjs'
 
 type Panel = Awaited<ReturnType<typeof startPanel>>
 const OWNER = { name: 'Ada Lovelace', email: 'ada@example.test', password: 'an-end-to-end-password' }
@@ -11,15 +10,11 @@ export const test = base.extend<{ engineURL: string; ownerReady: void }, { panel
     // biome-ignore lint/correctness/noEmptyPattern: Playwright reads the destructuring pattern to know which fixtures a function needs
     async ({}, use, info) => {
       const protectedPanel = ['auth', 'protected'].includes(info.project.name)
-      // The Taskflow project runs its panel against a fake host daemon.
-      const host = info.project.name === 'taskflow' ? await startTaskflowHost() : null
-      const env = host ? { PORTTA_HOST_URL: host.url, PORTTA_RUNTIME_HOST_TOKEN_FILE: host.tokenFile } : {}
-      const panel = await startPanel({ mode: protectedPanel ? 'required' : 'disabled', env })
+      const panel = await startPanel({ mode: protectedPanel ? 'required' : 'disabled' })
       try {
         await use(panel)
       } finally {
         await panel.close()
-        await host?.close()
       }
     },
     { scope: 'worker', timeout: 90_000 },
