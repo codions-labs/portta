@@ -30,6 +30,7 @@ import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, api } from '../lib/api/index.ts'
 import { copyText } from '../lib/clipboard.ts'
+import { requestConsole } from '../lib/console-request.ts'
 import { hostAccess } from '../lib/host-access.ts'
 import { type Locale, useLocale } from '../lib/i18n/use-locale.ts'
 import { navigate } from '../lib/navigation.ts'
@@ -371,9 +372,18 @@ function PaletteContent({ onClose, toggleSidebar }: { onClose: () => void; toggl
         : []),
       ...(mayConsole && running && !ours
         ? [
-            action('console', t('commandActions.console'), Terminal, go(`${page}&section=console`), {
-              altKey: 'C',
-            }),
+            action(
+              'console',
+              t('commandActions.console'),
+              Terminal,
+              () => {
+                requestConsole(environment.name, name)
+                go(page)()
+              },
+              {
+                altKey: 'C',
+              },
+            ),
           ]
         : []),
       action('details', t('commandActions.details'), Container, go(page)),

@@ -180,6 +180,14 @@ describe('Environment page', () => {
     expect(screen.getByLabelText('Service')).toHaveValue('')
   })
 
+  it('does not let a link start a shell, only the service it names opens', async () => {
+    const element = page('alpha', 'overview', 'web')
+    navigation.search = 'service=web&section=console'
+    renderWithQuery(element)
+    const summary = (await screen.findAllByText('Console')).find((node) => node.tagName === 'SUMMARY')
+    expect(summary?.closest('details')).not.toHaveAttribute('open')
+  })
+
   it('reads one service when the URL names it', async () => {
     renderWithQuery(page('alpha', 'logs', 'postgres'))
     await screen.findByText('postgres ready')

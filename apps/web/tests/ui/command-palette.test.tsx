@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { requestConsole, takeConsoleRequest } from '@/lib/console-request'
 import { folded } from '@/lib/utils'
 import { makeContainer, makeEnvironment } from './fixtures.ts'
 import { principal, renderWithQuery } from './render.tsx'
@@ -124,6 +125,15 @@ describe('the command menu', () => {
     expect(within(target).queryByRole('option', { name: /Open site/ })).toBeNull()
   })
 
+  it('asks for the console inside the tab, not through the address a link could carry', async () => {
+    await search('shop web')
+    await screen.findByRole('group', { name: 'demo-shop / web' })
+    await userEvent.keyboard('{Alt>}c{/Alt}')
+    await waitFor(() => expect(takeConsoleRequest('demo-shop', 'web')).toBe(true))
+    expect(takeConsoleRequest('demo-shop', 'web')).toBe(false)
+    expect(window.location.search).not.toContain('section=console')
+  })
+
   it('finds a page when no service answers to the words', async () => {
     await search('gateway')
     expect(await screen.findByRole('option', { name: /Gateway/ })).toBeInTheDocument()
@@ -133,6 +143,21 @@ describe('the command menu', () => {
   it('links to the sites waiting for a decision', async () => {
     await search('no decision')
     expect(await screen.findByRole('option', { name: 'Sites with no decision' })).toBeInTheDocument()
+  })
+
+  it('honours a request for the console once, for that service, and not for long', () => {
+    requestConsole('demo-shop', 'web')
+    expect(takeConsoleRequest('demo-shop', 'api')).toBe(false)
+    expect(takeConsoleRequest('demo-shop', 'web')).toBe(false)
+
+    requestConsole('demo-shop', 'web')
+    const now = Date.now()
+    const later = vi.spyOn(Date, 'now').mockReturnValue(now + 60_000)
+    expect(takeConsoleRequest('demo-shop', 'web')).toBe(false)
+    later.mockRestore()
+
+    requestConsole('demo-shop', 'web')
+    expect(takeConsoleRequest('demo-shop', 'web')).toBe(true)
   })
 
   it('searches without caring about accents', () => {

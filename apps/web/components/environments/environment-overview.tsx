@@ -19,6 +19,7 @@ import { Empty, Loading } from '@/components/shell-bits'
 import { StatusDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { takeConsoleRequest } from '@/lib/console-request'
 import { hostAccess } from '@/lib/host-access'
 import { useCan } from '@/lib/permissions'
 import { useEnvironment, useEnvironmentServices, useExposure } from '@/lib/queries'
@@ -183,9 +184,11 @@ export function EnvironmentOverview({ name }: { name: string }) {
   const room = useRoomForPanel()
   const mayReadLogs = useCan('logs:read')
   const [section, setSection] = useState<ServiceSection>(() => {
-    // Sites and the command menu link straight to these.
+    // Sites and the command menu link straight to these. Never the console: a
+    // link must not be able to start a shell, so that request stays in this tab.
+    if (takeConsoleRequest(name, params.get('service'))) return 'console'
     const asked = params.get('section')
-    return asked === 'share' || asked === 'console' || asked === 'access' ? asked : 'overview'
+    return asked === 'share' || asked === 'access' ? asked : 'overview'
   })
   const environment = environmentQuery.data
   if (!environment) return <Loading />
