@@ -38,10 +38,14 @@ afterEach(async () => {
 
 const seededDatabase = databasePerFile()
 
-async function app(dynamicDir = scratch(), options: { available?: boolean } = {}) {
+async function app(
+  dynamicDir = scratch(),
+  options: { available?: boolean } = {},
+  config: Partial<Parameters<typeof makeApp>[1]> = {},
+) {
   const seeded = await seededDatabase(options)
   return {
-    ...makeApp({ containers: [...GATEWAY, ...PROJECT_A] }, { dynamicDir }, seeded.database),
+    ...makeApp({ containers: [...GATEWAY, ...PROJECT_A] }, { dynamicDir, ...config }, seeded.database),
     seeded,
     db: seeded.database,
     dynamicDir,
@@ -124,6 +128,14 @@ describe('a hostname alias', () => {
     const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
     expect(written).toContain('Host(`shop.localhost`)')
     expect(written).toContain('http://alpha-web-1:80')
+  })
+
+  it('passes through ForwardAuth on a public host, so an alias nobody decided about is closed', async () => {
+    const instance = await app(scratch(), {}, { profile: 'remote-public', tlsEnabled: true })
+    const response = await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'shop' })
+    expect(response.status).toBe(200)
+    const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
+    expect(written).toContain('middlewares: [portta-forward-auth]')
   })
 
   it('targets the container name, never the Compose service alias', async () => {

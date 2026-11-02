@@ -331,7 +331,7 @@ describe('resetCommand', () => {
 
     await upCommand(undefined, { demo: true }, command())
 
-    expect(mocks.syncForwardAuth).toHaveBeenCalledWith(expect.any(String))
+    expect(mocks.syncForwardAuth).toHaveBeenCalledWith(expect.any(String), 'local')
     expect(mocks.demoStacksUp).toHaveBeenCalledTimes(1)
     expect(mocks.demoStacksUp).toHaveBeenCalledTimes(1)
     const up = mocks.runProcess.mock.calls.find((call) => ((call[1] ?? []) as string[]).includes('up'))

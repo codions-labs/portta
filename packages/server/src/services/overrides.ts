@@ -279,7 +279,7 @@ export function loadAliases(config: PanelConfig): StoredAlias[] {
 }
 
 export function saveAliases(config: PanelConfig, aliases: StoredAlias[]): void {
-  writeGenerated(config.dynamicDir, GENERATED_FILES.aliases, renderAliases(aliases))
+  writeGenerated(config.dynamicDir, GENERATED_FILES.aliases, renderAliases(aliases, config.profile === 'remote-public'))
 }
 
 /** Sorted so a rewrite of unchanged state produces an unchanged file. */

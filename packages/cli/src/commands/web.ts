@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Command } from 'commander'
 import {
@@ -6,10 +6,12 @@ import {
   isPanelAccess,
   isTrue,
   PANEL_ACCESS_MODES,
+  parseAliases,
   patchEnvFile,
   porttaImages,
   prepareEnvFile,
   readProtectionStore,
+  renderAliases,
   renderAuthDynamic,
   writeEnvFile,
   writeProtectionStore,
@@ -44,13 +46,18 @@ function setValues(root: string, values: Record<string, string>): void {
  * ForwardAuth for project hostnames and shares, rendered from the current
  * protection store.
  */
-export function syncForwardAuth(root: string): void {
+export function syncForwardAuth(root: string, profile?: string): void {
   const storePath = join(root, 'state/auth/protections.json')
   const store = readProtectionStore(storePath)
   writeProtectionStore(storePath, store)
   const dynamic = join(root, 'config/traefik/dynamic')
   mkdirSync(dynamic, { recursive: true })
   writeEnvFile(join(dynamic, 'portta-auth.yaml'), renderAuthDynamic(store))
+  // An alias the panel wrote on a private host must not become an open door when
+  // the host goes public: its router is rendered again for the profile now in use.
+  const aliasFile = join(dynamic, 'portta-aliases.yaml')
+  if (existsSync(aliasFile))
+    writeEnvFile(aliasFile, renderAliases(parseAliases(readFileSync(aliasFile, 'utf8')), profile === 'remote-public'))
 }
 
 /**

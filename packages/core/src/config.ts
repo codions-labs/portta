@@ -109,7 +109,6 @@ export interface GatewayConfig {
   publicIp: string | null
   webPort: number
   webReadOnly: boolean
-  /** The Task Flow module: the panel reaches the host daemon. Only meaningful with the panel on. */
   /**
    * Whether the panel signs people in.
    *

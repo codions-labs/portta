@@ -84,13 +84,13 @@ async function compose(
   })
 }
 
-function ensureAuthState(root: string): void {
+function ensureAuthState(root: string, profile?: string): void {
   const authDirectory = join(root, 'state/auth')
   mkdirSync(authDirectory, { recursive: true, mode: 0o700 })
   chmodSync(authDirectory, 0o700)
   const path = join(root, '.env')
   prepareEnvFile(path)
-  syncForwardAuth(root)
+  syncForwardAuth(root, profile)
 }
 
 /** major.minor, which is the granularity the API contract moves at. */
@@ -181,7 +181,7 @@ export async function bootstrapCommand(options: { skipPull?: boolean }, command:
   if (composeVersion.exitCode !== 0) throw new CliError('Docker Compose v2 is required', EXIT.precondition)
   prepareEnvFile(join(context.root, '.env'))
   ensureInstallationDirectories(context.root)
-  ensureAuthState(context.root)
+  ensureAuthState(context.root, context.config.profile)
   const network = await ensureNetwork(context.config.network)
   output.progress(`${network.padEnd(8)} shared network ${context.config.network}`)
   // Explicit build/dev overlays carry checkout-only tags. Ignore those while
@@ -222,7 +222,7 @@ export async function upCommand(
   // network explicitly before asking Compose to start the gateway.
   await ensureNetwork(context.config.network)
   if (context.config.tcpEnabled) await ensureNetwork(context.config.accessNetwork)
-  ensureAuthState(context.root)
+  ensureAuthState(context.root, context.config.profile)
   output.progress(builds ? 'starting components, building local images' : 'starting components')
   const wait = !options.attach
   const started = await compose(

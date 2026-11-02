@@ -1,4 +1,4 @@
-import { quoteDynamicValue } from './dynamic.ts'
+import { FORWARD_AUTH_MIDDLEWARE, quoteDynamicValue } from './dynamic.ts'
 
 /**
  * A hostname alias is a nickname, never a rename.
@@ -35,8 +35,13 @@ export function aliasRouterName(project: string, service: string): string {
   return `portta-alias-${project}-${service}`.replace(/[^a-zA-Z0-9-]/g, '-')
 }
 
-/** The canonical Traefik file renderer, used by both the panel and the CLI. */
-export function renderAliases(aliases: StoredAlias[]): string {
+/**
+ * The canonical Traefik file renderer, used by both the panel and the CLI.
+ *
+ * On a public host (`forwardAuth`) every alias passes through ForwardAuth, so a
+ * hostname nobody decided about is closed, exactly like the project's own.
+ */
+export function renderAliases(aliases: StoredAlias[], forwardAuth = false): string {
   const lines = [...HEADER, `${ALIASES_MARKER}${JSON.stringify(aliases)}`, '']
   if (aliases.length === 0) {
     lines.push('# No alias is set. A project is reached on the hostname it derives.')
@@ -49,6 +54,7 @@ export function renderAliases(aliases: StoredAlias[]): string {
     lines.push(`    ${router}:`)
     lines.push(`      rule: ${quoteDynamicValue(`Host(\`${alias.host}\`)`)}`)
     lines.push(`      entryPoints: [${alias.entryPoint}]`)
+    if (forwardAuth) lines.push(`      middlewares: [${FORWARD_AUTH_MIDDLEWARE}]`)
     lines.push(`      service: ${router}`)
   }
 
