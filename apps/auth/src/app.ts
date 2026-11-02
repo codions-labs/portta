@@ -195,7 +195,7 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
   app.post('/__portta/auth/login', async (c) => {
     const protection = findProtection(c)
     const host = forwardedHost(c)
-    if (!protection || protection.mode !== 'protected' || !host) return c.text('Protected destination not found.', 404)
+    if (protection?.mode !== 'protected' || !host) return c.text('Protected destination not found.', 404)
     if (!originAllowed(c, host)) return c.text('Origin refused.', 403)
     const address = clientAddress(c)
     const key = `${protection.scope}\u0000${address}`

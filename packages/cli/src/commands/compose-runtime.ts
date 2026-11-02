@@ -522,7 +522,7 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
   const open = new Set(options.public ?? [])
   for (const name of [...protect, ...open]) {
     const found = services.find((service) => service.name === name)
-    if (!found || found.route !== 'http')
+    if (found?.route !== 'http')
       throw new UsageError(
         `no routed service named ${name}`,
         'pass a service that gets a hostname, see `portta adopt --dry-run`',

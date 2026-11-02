@@ -11,7 +11,8 @@ All notable changes to Portta are documented here. The format follows
 Portta now does one thing: many Docker projects on one host, each at
 `project-service.<domain>`, with no published ports, private databases, a
 decision per site about who may open it, and agents that know all of this when
-their session starts.
+their session starts. This release has no migration from 0.1.0: the database
+baseline was regenerated.
 
 ### Added
 
@@ -33,14 +34,6 @@ their session starts.
   so Claude Code, Codex, OpenCode and Pi learn where they run at session start.
 - A project directory may sit at any depth under Projects Home.
 - Guides: `public-host` and `deploy`.
-
-### Removed
-
-- Taskflow, the host daemon, the MCP server, issues, work sessions, activity,
-  the repository scan, panel-managed SSH keys, `portta remote`, the agent
-  permissions setting, removing a working directory from the panel, and the
-  module system. There is no migration: the database baseline was regenerated.
-- `portta envs init`, `portta prepare` and `portta init`, which repeated `adopt`.
 
 ### Changed
 

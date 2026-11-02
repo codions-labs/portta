@@ -29,16 +29,6 @@
     "empty": "No project yet",
     "emptyHint": "Create one under Projects; environments on this host stay listed regardless."
   },
-  "code": {
-    "title": "Code",
-    "description": "Recent commits across every repository, and the repositories with local changes.",
-    "uncommitted": "{{count}} uncommitted",
-    "empty": "No commit collected yet",
-    "emptyHint": "The host collector scans every repository once a minute; portta repos scan does it now.",
-    "dirty": "Local changes",
-    "recent": "Recent commits",
-    "emptyHintShort": "The host collector scans every repository once a minute; to do it now, run"
-  },
   "resources": {
     "top": "Using this host",
     "topDescription": "Environments by memory. Stop one from here when the host is under pressure.",

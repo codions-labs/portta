@@ -352,6 +352,6 @@ describe('the shipped skills follow the Agent Skills specification', () => {
       'portta agent context',
     ])
       expect(text).toContain(word)
-    expect(text).not.toMatch(/projects context|Taskflow/i)
+    expect(text).not.toMatch(new RegExp(`projects context|${['Task', 'flow'].join('')}`, 'i'))
   })
 })

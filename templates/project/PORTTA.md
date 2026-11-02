@@ -2,7 +2,7 @@
 
 > Copy this file into the project and adjust the names. It covers only what
 > someone working on *this* project needs. The rules themselves live in the
-> Portta repository, which stays the single source of truth.
+> source repository of Portta, which stays the single source of truth.
 
 ## Prerequisites
 

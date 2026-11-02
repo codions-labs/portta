@@ -29,16 +29,6 @@
     "empty": "Nenhum projeto ainda",
     "emptyHint": "Crie um em Projetos; os environments deste host continuam listados de qualquer forma."
   },
-  "code": {
-    "title": "Código",
-    "description": "Commits recentes em todos os repositórios, e os repositórios com alterações locais.",
-    "uncommitted": "{{count}} sem commit",
-    "empty": "Nenhum commit coletado ainda",
-    "emptyHint": "O coletor do host varre cada repositório uma vez por minuto; portta repos scan faz isso agora.",
-    "dirty": "Alterações locais",
-    "recent": "Commits recentes",
-    "emptyHintShort": "O coletor do host varre cada repositório uma vez por minuto; para fazer agora, execute"
-  },
   "resources": {
     "top": "Usando este host",
     "topDescription": "Environments por memória. Pare um daqui quando o host estiver sob pressão.",

@@ -483,7 +483,7 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
   // no decision is closed, so a stopped auth service closes every project and a
   // routed service with no record is simply unreachable.
   if (config.profile === 'remote-public') {
-    if (!auth || auth.state !== 'running')
+    if (auth?.state !== 'running')
       add(
         check(
           'public.auth',

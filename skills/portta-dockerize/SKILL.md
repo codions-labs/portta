@@ -94,7 +94,7 @@ volumes:
 ```
 
 [templates/overlays](https://github.com/codions-labs/portta/tree/main/templates/overlays)
-in the Portta repository shows how the stacks Portta knows are wired. Use it as
+in the source repository of Portta shows how the stacks Portta knows are wired. Use it as
 a reference for service names and ports, not as something to copy labels from.
 
 ### 4. Check, then hand over
