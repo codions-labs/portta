@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { hasForwardAuth } from './forward-auth.ts'
 import { gatewayAlreadyPublic, ungatedContainers } from './gate.ts'
 import type { ContainerRecord } from './inventory.ts'
 
@@ -36,9 +37,47 @@ describe('containers that would route with no login gate', () => {
       ungatedContainers([
         container('portta-web-1', { 'traefik.enable': 'true', 'portta.managed': 'true' }),
         container('stopped-1', { 'traefik.enable': 'true' }, 'exited'),
-        container('db-1', { 'traefik.enable': 'true', 'traefik.tcp.routers.db.rule': 'HostSNI(`db.example.com`)' }),
+        container('db-1', {
+          'traefik.enable': 'true',
+          'traefik.tcp.routers.db.rule': 'HostSNI(`db.example.com`)',
+          'traefik.tcp.routers.db.entrypoints': 'postgres',
+        }),
       ]),
     ).toEqual([])
+  })
+
+  it.each(['web', 'websecure', 'postgres, WebSecure', ''])(
+    'refuses a TCP router that can take public HTTP traffic (%s)',
+    (entrypoints) => {
+      const tcp = {
+        'Traefik.Enable': 'true',
+        'Traefik.TCP.Routers.bypass.Rule': 'HostSNI(`app.example.com`)',
+        'Traefik.TCP.Routers.bypass.TLS.Passthrough': 'true',
+        ...(entrypoints ? { 'Traefik.TCP.Routers.bypass.EntryPoints': entrypoints } : {}),
+      }
+      expect(ungatedContainers([container('bypass-1', tcp)])).toEqual(['bypass-1'])
+      expect(ungatedContainers([container('bypass-1', { ...GATED, ...tcp })])).toEqual(['bypass-1'])
+      expect(hasForwardAuth({ ...GATED, ...tcp })).toBe(false)
+    },
+  )
+
+  it('only reports enforced HTTP protection for explicitly gated routers', () => {
+    expect(hasForwardAuth(GATED)).toBe(true)
+    expect(hasForwardAuth({ ...GATED, 'traefik.enable': 'false' })).toBe(false)
+    expect(hasForwardAuth({ 'traefik.enable': 'true' })).toBe(false)
+    expect(
+      hasForwardAuth({
+        'traefik.enable': 'true',
+        'traefik.tcp.routers.db.rule': 'HostSNI(`db.example.com`)',
+        'traefik.tcp.routers.db.entrypoints': 'postgres',
+      }),
+    ).toBe(false)
+  })
+
+  it('refuses conflicting label values that differ only by case', () => {
+    const labels = { ...GATED, 'Traefik.HTTP.Routers.shop-web.Middlewares': 'strip@docker' }
+    expect(hasForwardAuth(labels)).toBe(false)
+    expect(ungatedContainers([container('shop-web-1', labels)])).toEqual(['shop-web-1'])
   })
 
   it('counts a restarting, paused or created container, and reads labels case-insensitively', () => {

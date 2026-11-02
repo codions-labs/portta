@@ -7,16 +7,20 @@
 // with no container recreated and no Compose file edited.
 
 import { randomBytes } from 'node:crypto'
-import { chmodSync, mkdirSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import {
   emptyProtectionStore,
   hashPassword,
+  loadGatewayConfig,
   normalizeProtectionHost,
   type ProtectionStore,
+  parseAliases,
+  parseEnv,
   protectionForHost,
   readProtectionStore,
   removeProtection,
+  renderAliasesForStore,
   renderAuthDynamic,
   setProtection,
   writeEnvFile,
@@ -39,14 +43,26 @@ export function readExposure(root: string): ProtectionStore {
   return readProtectionStore(exposurePaths(root).store)
 }
 
-/** Registry first, then the generated Traefik file: an interrupted write never opens a host. */
-export function saveExposure(root: string, store: ProtectionStore): void {
+/** Conflicting aliases are suspended before their hostname's decision becomes active. */
+export function saveExposure(root: string, store: ProtectionStore, profile?: string): void {
   const target = exposurePaths(root)
   mkdirSync(dirname(target.store), { recursive: true, mode: 0o700 })
   chmodSync(dirname(target.store), 0o700)
   mkdirSync(dirname(target.dynamic), { recursive: true })
+  const aliasFile = join(dirname(target.dynamic), 'portta-aliases.yaml')
+  const aliases = existsSync(aliasFile) ? parseAliases(readFileSync(aliasFile, 'utf8')) : null
+  let publicHost = false
+  if (aliases !== null) {
+    const envFile = join(root, '.env')
+    publicHost =
+      (profile ??
+        loadGatewayConfig(existsSync(envFile) ? Object.fromEntries(parseEnv(readFileSync(envFile, 'utf8'))) : {})
+          .profile) === 'remote-public'
+    writeEnvFile(aliasFile, renderAliasesForStore(aliases, store, publicHost, readProtectionStore(target.store)))
+  }
   writeProtectionStore(target.store, store)
   writeEnvFile(target.dynamic, renderAuthDynamic(store))
+  if (aliases !== null) writeEnvFile(aliasFile, renderAliasesForStore(aliases, store, publicHost))
 }
 
 export function generatePassword(): string {

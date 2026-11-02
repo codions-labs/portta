@@ -115,7 +115,9 @@ portta public init --domain example.com --email you@example.com \
 The token is read from standard input, never from an argument, and is never
 printed. Add `--dry-run` first to see the plan and the DNS records without
 writing anything. `--panel-host panel.example.com` moves the panel off the
-bare domain. The command writes `~/portta/.env`, starts nothing, and refuses
+bare domain. The panel hostname must be the bare domain or exactly one label
+under it, so the requested wildcard certificate covers it. The command writes
+`~/portta/.env`, starts nothing, and refuses
 while TCP entrypoints are on or a running service has no login gate. Running
 it again with the same arguments changes nothing.
 

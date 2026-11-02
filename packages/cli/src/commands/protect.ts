@@ -52,7 +52,8 @@ export async function protectHost(
   const password = generated ? generatePassword() : readFileSync(0, 'utf8').trim()
   if (!password) throw new UsageError('no password on stdin')
 
-  const root = gatewayContext({ profile: globals(command).profile }).root
+  const context = gatewayContext({ profile: globals(command).profile })
+  const root = context.root
   const next = await protectedStore(readProtectionStore(exposurePaths(root).store), {
     host,
     entryPoint,
@@ -62,7 +63,7 @@ export async function protectHost(
     ...(options.project ? { project: options.project } : {}),
     ...(options.service ? { service: options.service } : {}),
   })
-  saveExposure(root, next)
+  saveExposure(root, next, context.config.profile)
   const output = new Output(globals(command))
   const result = {
     protection: publicRecord(protectionForHost(next, host)),
@@ -87,7 +88,8 @@ export async function openHost(
   command: Command,
 ): Promise<void> {
   const host = normalizeProtectionHost(hostInput)
-  const root = gatewayContext({ profile: globals(command).profile }).root
+  const context = gatewayContext({ profile: globals(command).profile })
+  const root = context.root
   const next = openStore(readProtectionStore(exposurePaths(root).store), {
     host,
     entryPoint: entryPointFor(command, options.entrypoint),
@@ -95,7 +97,7 @@ export async function openHost(
     ...(options.project ? { project: options.project } : {}),
     ...(options.service ? { service: options.service } : {}),
   })
-  saveExposure(root, next)
+  saveExposure(root, next, context.config.profile)
   const output = new Output(globals(command))
   if (output.json) output.data({ protection: publicRecord(protectionForHost(next, host)) })
   else {
@@ -106,15 +108,17 @@ export async function openHost(
 
 export async function unprotectHost(hostInput: string, command: Command): Promise<void> {
   const host = normalizeProtectionHost(hostInput)
-  const root = gatewayContext({ profile: globals(command).profile }).root
+  const context = gatewayContext({ profile: globals(command).profile })
+  const root = context.root
   const next = closedStore(readProtectionStore(exposurePaths(root).store), host)
   if (!next) throw new UsageError(`host has no protection record: ${host}`)
-  saveExposure(root, next)
+  saveExposure(root, next, context.config.profile)
   new Output(globals(command)).progress(`removed the record for ${host}; on a public host it is now closed`)
 }
 
 export async function protectStatus(hostInput: string | undefined, command: Command): Promise<void> {
-  const root = gatewayContext({ profile: globals(command).profile }).root
+  const context = gatewayContext({ profile: globals(command).profile })
+  const root = context.root
   const store = readProtectionStore(exposurePaths(root).store)
   const records = hostInput
     ? [protectionForHost(store, normalizeProtectionHost(hostInput))].filter((record) => record !== null)

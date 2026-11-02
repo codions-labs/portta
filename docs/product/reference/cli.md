@@ -211,7 +211,7 @@ arguments directly to the selected client. `psql` and `mysql` also accept
 | `users revoke <email> <project>` | Global flags only. Sends the whole list, with this Project removed. |
 | `users remove <email>` | Global flags only. |
 | `network status` | `--public-ip` explicitly permits one external lookup. |
-| `public init` | `--domain <d>` and `--email <a>` required; `--panel-host`, `--ip` (DNS records only), `--cloudflare-token-stdin` (one line, never an argument), `--dry-run`. Writes the public-server keys, starts nothing, needs confirmation. |
+| `public init` | `--domain <d>` and `--email <a>` required; `--panel-host` (the domain or one label under it, covered by the wildcard certificate), `--ip` (DNS records only), `--cloudflare-token-stdin` (one line, never an argument), `--dry-run`. Writes the public-server keys, starts nothing, needs confirmation. |
 | `public status\|enable\|disable` | Enable needs confirmation; TCP services are never published. |
 | `dns check\|status` | Read-only. |
 | `dns setup` | `--target <ip>`, `--dry-run`; Cloudflare needs a scoped token. |

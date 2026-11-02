@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, delimiter, isAbsolute, join, resolve } from 'node:path'
 import type { Command } from 'commander'
-import { branchSuffix, composeNamespace, hostLabel, parseEnv, protectionForHost } from 'portta-core'
+import { branchSuffix, composeNamespace, hasForwardAuth, hostLabel, parseEnv, protectionForHost } from 'portta-core'
 import { z } from 'portta-core/zod'
 import { gatewayContext } from '../context.js'
 import { PreconditionError, RefusedError, UsageError } from '../errors.js'
@@ -325,16 +325,17 @@ type AdoptionOptions = {
   public?: string[]
 }
 
-/** Service labels as `key -> value`, whichever spelling Compose resolved them to. */
-function labelsOf(service: { labels?: string[] | Record<string, unknown> }): Map<string, string> {
-  const result = new Map<string, string>()
+/** Traefik reads label keys without regard to case, including labels baked into images. */
+function labelsOf(service: { labels?: string[] | Record<string, unknown> }): Array<[string, string]> {
+  const result: Array<[string, string]> = []
   const labels = service.labels
   if (Array.isArray(labels)) {
     for (const entry of labels) {
       const at = entry.indexOf('=')
-      result.set(at < 0 ? entry : entry.slice(0, at), at < 0 ? '' : entry.slice(at + 1))
+      result.push([(at < 0 ? entry : entry.slice(0, at)).toLowerCase(), at < 0 ? '' : entry.slice(at + 1)])
     }
-  } else if (labels) for (const [key, value] of Object.entries(labels)) result.set(key, String(value ?? ''))
+  } else if (labels)
+    for (const [key, value] of Object.entries(labels)) result.push([key.toLowerCase(), String(value ?? '')])
   return result
 }
 
@@ -355,11 +356,15 @@ function routingViolations(
 ): string[] {
   const found: string[] = []
   for (const [name, service] of Object.entries(model.services)) {
-    const router = `${projectName}-${name}`
+    const router = `${projectName}-${name}`.toLowerCase()
+    const seen = new Map<string, string>()
     for (const [key, value] of labelsOf(service)) {
       if (!key.startsWith('traefik.')) continue
+      if (seen.has(key) && seen.get(key) !== value) found.push(`${name}: conflicting ${key}`)
+      seen.set(key, value)
       if (key === 'traefik.enable') {
-        if (!routed.has(name) && value.trim().toLowerCase() === 'true') found.push(`${name}: ${key}=${value}`)
+        if (!routed.has(name) && ['true', '1', 't'].includes(value.trim().toLowerCase()))
+          found.push(`${name}: ${key}=${value}`)
         continue
       }
       if (!routed.has(name)) {
@@ -668,7 +673,7 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
         registry = openStore(registry, { host: service.host, entryPoint, ...labels })
       }
     }
-    saveExposure(context.root, registry)
+    saveExposure(context.root, registry, context.config.profile)
   }
   if (output.json) output.data({ ...plan, ...(credentials.length ? { credentials } : {}) })
   else {
@@ -736,7 +741,7 @@ export async function runtimeAction(
   const workspace = resolve(options.path ?? process.cwd())
   const context = gatewayContext({ profile: globals(command).profile })
   let plan: RuntimePlan
-  if (action === 'up') {
+  if (action === 'up' || action === 'restart') {
     try {
       plan = readPlan(context.root, workspace)
       if (await stale(plan, context.config.profile))
@@ -747,10 +752,17 @@ export async function runtimeAction(
     }
   } else plan = readPlan(context.root, workspace)
   const args = composeArgs(plan)
+  const publicStart = (action === 'up' || action === 'restart') && plan.profile === 'remote-public'
   const tail = options.tail ? ['--tail', options.tail] : []
   const commandArgs =
-    action === 'up'
-      ? [...args, 'up', '-d', ...(plan.profile === 'remote-public' ? ['--no-start'] : [])]
+    action === 'up' || publicStart
+      ? [
+          ...args,
+          'up',
+          '-d',
+          ...(publicStart ? ['--no-start'] : []),
+          ...(action === 'restart' ? ['--force-recreate'] : []),
+        ]
       : action === 'down'
         ? [...args, 'down']
         : action === 'restart'
@@ -767,9 +779,10 @@ export async function runtimeAction(
                 ]
               : [...args, 'config']
   await runProcess('docker', commandArgs, { cwd: workspace, stdio: action === 'logs' ? 'inherit' : 'stream' })
-  if (action === 'up' && plan.profile === 'remote-public') {
+  if (publicStart) {
     // Created, not started: Traefik routes nothing that is not running, so the
-    // labels are checked before any of it can be reached.
+    // labels are checked before any of it can be reached. A restart recreates
+    // containers because Compose restart would keep their old routing labels.
     await verifyGatedLabels(plan, workspace)
     await runProcess('docker', [...args, 'up', '-d'], { cwd: workspace, stdio: 'stream' })
   }
@@ -801,7 +814,8 @@ async function verifyGatedLabels(plan: RuntimePlan, workspace: string): Promise<
   const lines = inspected.stdout.split('\n').filter(Boolean)
   if (inspected.exitCode !== 0 || lines.length !== ids.length)
     return teardown('the created containers could not be inspected, so their routing was not verified', 'try again')
-  const model: { services: Record<string, { labels?: Record<string, unknown> }> } = { services: {} }
+  const routed = new Set(plan.services.filter((service) => service.route === 'http').map((service) => service.name))
+  const violations: string[] = []
   for (const line of lines) {
     let labels: Record<string, string> | null
     try {
@@ -812,10 +826,12 @@ async function verifyGatedLabels(plan: RuntimePlan, workspace: string): Promise<
     const name = labels?.['com.docker.compose.service']
     if (!name || !labels)
       return teardown('a container has no Compose service label, so its routing was not verified', 'try again')
-    model.services[name] = { labels: { ...(model.services[name]?.labels ?? {}), ...labels } }
+    // A gated replica cannot vouch for another replica's image labels. Inspect
+    // each existing container on its own; inactive profiles have none to check.
+    violations.push(...routingViolations({ services: { [name]: { labels } } }, routed, plan.compose.projectName))
+    if (routed.has(name) && !hasForwardAuth(labels))
+      violations.push(`${name}: ForwardAuth is not enforced on every router`)
   }
-  const routed = new Set(plan.services.filter((service) => service.route === 'http').map((service) => service.name))
-  const violations = routingViolations(model, routed, plan.compose.projectName)
   if (violations.length > 0)
     return teardown(
       'a container carries Traefik routing that a public host cannot gate, so the project was taken down',

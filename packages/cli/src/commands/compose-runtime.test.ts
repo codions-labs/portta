@@ -605,7 +605,7 @@ describe('Compose runtime', () => {
     )
   })
 
-  it('regenerates a stale plan before up', async () => {
+  it.each(['up', 'restart'] as const)('regenerates a stale plan before %s', async (action) => {
     const workspace = temp()
     mocks.root = join(temp(), 'gateway')
     const source = join(workspace, 'compose.yaml')
@@ -623,9 +623,11 @@ describe('Compose runtime', () => {
     writeFileSync(source, 'services:\n  changed: {}\n')
     mocks.runProcess.mockClear()
 
-    await runtimeAction('up', { path: workspace }, command)
+    await runtimeAction(action, { path: workspace }, command)
     expect(mocks.runProcess.mock.calls.filter(([, args]) => args.includes('config')).length).toBe(2)
-    expect(mocks.runProcess.mock.calls.at(-1)?.[1]).toEqual(expect.arrayContaining(['up', '-d']))
+    expect(mocks.runProcess.mock.calls.at(-1)?.[1]).toEqual(
+      expect.arrayContaining(action === 'up' ? ['up', '-d'] : ['restart']),
+    )
   })
 
   it('keeps an explicit Compose namespace when it regenerates a stale plan', async () => {
@@ -800,19 +802,30 @@ describe('who may open a routed hostname on a public host', () => {
     await expect(prepareComposeRuntime({ path: workspace, protect: ['web'] }, command)).rejects.toThrow(/public host/)
   })
 
-  it('regenerates a plan made for another profile, so the question is asked on the way up', async () => {
-    const workspace = arrange()
-    mocks.profile = 'local'
-    await prepareComposeRuntime({ path: workspace }, command)
-    mocks.profile = 'remote-public'
-    await expect(runtimeAction('up', { path: workspace }, command)).rejects.toThrow(/not ready/)
-  })
+  it.each(['up', 'restart'] as const)(
+    'regenerates a plan made for another profile before %s, so missing decisions stop it',
+    async (action) => {
+      const workspace = arrange()
+      mocks.profile = 'local'
+      await prepareComposeRuntime({ path: workspace }, command)
+      mocks.profile = 'remote-public'
+      mocks.runProcess.mockClear()
+      await expect(runtimeAction(action, { path: workspace }, command)).rejects.toThrow(/not ready/)
+      expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up') || args.includes('restart'))).toBe(
+        false,
+      )
+    },
+  )
 
-  it('refuses a project that brings its own Traefik router, or routes a service Portta keeps private', async () => {
+  it.each([
+    { 'traefik.http.routers.mine.rule': 'Host(`x`)' },
+    { 'Traefik.HTTP.Routers.bypass.Rule': 'Host(`x`)' },
+    ['Traefik.HTTP.Routers.bypass.Rule=Host(`x`)'],
+  ])('refuses a project that brings its own Traefik router: %j', async (labels) => {
     const workspace = arrange()
     const labelled = {
       services: {
-        web: { ports: [{ target: 3000, published: '80' }], labels: { 'traefik.http.routers.mine.rule': 'Host(`x`)' } },
+        web: { ports: [{ target: 3000, published: '80' }], labels },
         api: { ports: [{ target: 4000, published: '81' }] },
       },
     }
@@ -838,9 +851,53 @@ describe('who may open a routed hostname on a public host', () => {
     expect(again.pending.map((entry) => entry.service)).toEqual([first.services[0]?.name])
   })
 
-  it('takes a project down when a created container carries routing the model did not show', async () => {
+  it('refuses ambiguous routing labels whose keys differ only by case', async () => {
     const workspace = arrange()
-    await prepareComposeRuntime({ path: workspace, protect: ['web'], public: ['api'] }, command)
+    const labelled = {
+      services: {
+        web: {
+          ...model.services.web,
+          labels: {
+            'traefik.http.routers.shop-web.middlewares': 'portta-forward-auth@file',
+            'Traefik.HTTP.Routers.shop-web.Middlewares': 'strip@docker',
+          },
+        },
+        api: model.services.api,
+      },
+    }
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version') ? result('2.24.4') : args.includes('branch') ? result('') : result(labelled),
+    )
+    await expect(
+      prepareComposeRuntime({ path: workspace, project: 'shop', public: ['web', 'api'] }, command),
+    ).rejects.toMatchObject({ hint: expect.stringContaining('conflicting') })
+  })
+
+  it.each(['up', 'restart'] as const)(
+    'takes a project down during %s when image labels add a mixed-case router',
+    async (action) => {
+      const workspace = arrange()
+      await prepareComposeRuntime({ path: workspace, protect: ['web'], public: ['api'] }, command)
+      const calls: string[][] = []
+      mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => {
+        calls.push(args)
+        if (args.includes('version')) return result('2.24.4')
+        if (args.includes('ps')) return result('c1\n')
+        if (args[0] === 'inspect')
+          return result(
+            JSON.stringify({ 'com.docker.compose.service': 'api', 'Traefik.HTTP.Routers.baked.Rule': 'Host(`x`)' }),
+          )
+        return result('')
+      })
+      await expect(runtimeAction(action, { path: workspace }, command)).rejects.toThrow(/taken down/)
+      expect(calls.some((args) => args.includes('down'))).toBe(true)
+      expect(calls.some((args) => args.includes('up') && !args.includes('--no-start'))).toBe(false)
+    },
+  )
+
+  it('recreates and inspects public containers before restarting even when an optional service has no container', async () => {
+    const workspace = arrange()
+    const plan = await prepareComposeRuntime({ path: workspace, protect: ['web'], public: ['api'] }, command)
     const calls: string[][] = []
     mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => {
       calls.push(args)
@@ -848,11 +905,74 @@ describe('who may open a routed hostname on a public host', () => {
       if (args.includes('ps')) return result('c1\n')
       if (args[0] === 'inspect')
         return result(
-          JSON.stringify({ 'com.docker.compose.service': 'api', 'traefik.http.routers.baked.rule': 'Host(`x`)' }),
+          JSON.stringify({
+            'com.docker.compose.service': 'web',
+            'traefik.enable': 'true',
+            [`traefik.http.routers.${plan.compose.projectName}-web.middlewares`]: 'portta-forward-auth@file',
+          }),
         )
       return result('')
     })
-    await expect(runtimeAction('up', { path: workspace }, command)).rejects.toThrow(/taken down/)
-    expect(calls.some((args) => args.includes('down'))).toBe(true)
+
+    await runtimeAction('restart', { path: workspace }, command)
+
+    const create = calls.findIndex((args) => args.includes('--force-recreate'))
+    const inspect = calls.findIndex((args) => args[0] === 'inspect')
+    const start = calls.findIndex((args) => args.includes('up') && !args.includes('--no-start'))
+    expect(create).toBeGreaterThanOrEqual(0)
+    expect(calls[create]).toContain('--no-start')
+    expect(inspect).toBeGreaterThan(create)
+    expect(start).toBeGreaterThan(inspect)
+    expect(calls.some((args) => args.includes('restart'))).toBe(false)
+  })
+
+  it('does not start a routed container whose inspected labels omit the gate', async () => {
+    const workspace = arrange()
+    await prepareComposeRuntime({ path: workspace, public: ['web', 'api'] }, command)
+    mocks.runProcess.mockClear()
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => {
+      if (args.includes('version')) return result('2.24.4')
+      if (args.includes('ps')) return result('c1\n')
+      if (args[0] === 'inspect')
+        return result(JSON.stringify({ 'com.docker.compose.service': 'web', 'traefik.enable': 'true' }))
+      return result('')
+    })
+    await expect(runtimeAction('up', { path: workspace }, command)).rejects.toMatchObject({
+      hint: expect.stringContaining('ForwardAuth is not enforced'),
+    })
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up') && !args.includes('--no-start'))).toBe(
+      false,
+    )
+  })
+
+  it('refuses an ungated replica even when a later replica of the same service carries the gate', async () => {
+    const workspace = arrange()
+    const plan = await prepareComposeRuntime({ path: workspace, public: ['web', 'api'] }, command)
+    mocks.runProcess.mockClear()
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => {
+      if (args.includes('version')) return result('2.24.4')
+      if (args.includes('ps')) return result('c1\nc2\n')
+      if (args[0] === 'inspect')
+        return result(
+          [
+            { 'com.docker.compose.service': 'web', 'traefik.enable': 'true' },
+            {
+              'com.docker.compose.service': 'web',
+              'traefik.enable': 'true',
+              [`traefik.http.routers.${plan.compose.projectName}-web.middlewares`]: 'portta-forward-auth@file',
+            },
+          ]
+            .map((labels) => JSON.stringify(labels))
+            .join('\n'),
+        )
+      return result('')
+    })
+
+    await expect(runtimeAction('up', { path: workspace }, command)).rejects.toMatchObject({
+      hint: expect.stringContaining('ForwardAuth is not enforced'),
+    })
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up') && !args.includes('--no-start'))).toBe(
+      false,
+    )
   })
 })

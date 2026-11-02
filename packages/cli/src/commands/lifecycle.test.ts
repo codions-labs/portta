@@ -310,6 +310,27 @@ describe('resetCommand', () => {
     expect(mocks.demoStacksUp).toHaveBeenCalledTimes(1)
   })
 
+  it('refuses public gateway startup when a TCP router uses HTTPS with datastore entrypoints off', async () => {
+    checkout()
+    mocks.gatewayContext().config.profile = 'remote-public'
+    mocks.inspectContainers.mockResolvedValue([
+      {
+        name: 'tcp-bypass',
+        state: 'running',
+        labels: {
+          'traefik.enable': 'true',
+          'traefik.tcp.routers.bypass.rule': 'HostSNI(`app.example.com`)',
+          'traefik.tcp.routers.bypass.entrypoints': 'websecure',
+          'traefik.tcp.routers.bypass.tls.passthrough': 'true',
+        },
+        ports: [],
+      },
+    ])
+
+    await expect(upCommand(undefined, {}, command())).rejects.toThrow(/tcp-bypass/)
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up'))).toBe(false)
+  })
+
   it('up --demo applies the demonstration after the gateway is up', async () => {
     checkout()
     mocks.requireDocker.mockResolvedValue(undefined)

@@ -386,7 +386,7 @@ describe(
 )
   .requiredOption('--domain <domain>', 'the base domain, such as example.com')
   .requiredOption('--email <address>', 'the ACME contact')
-  .option('--panel-host <host>', 'where the panel answers; the domain or a name under it (default: the domain)')
+  .option('--panel-host <host>', 'where the panel answers; the domain or one label under it (default: the domain)')
   .option('--ip <address>', "the server's public IP, used only to print the DNS records")
   .option('--cloudflare-token-stdin', 'read the Cloudflare DNS token from one line of standard input')
   .option('--dry-run', 'print the plan and the DNS records; write nothing')

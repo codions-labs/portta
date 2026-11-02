@@ -78,10 +78,17 @@ export function renderAliases(aliases: StoredAlias[], forwardAuth = false, suspe
  * service would inherit it, so it keeps its stored state but has no router until
  * the conflict is gone.
  */
-export function renderAliasesForStore(aliases: StoredAlias[], store: ProtectionStore, publicHost: boolean): string {
+export function renderAliasesForStore(
+  aliases: StoredAlias[],
+  store: ProtectionStore,
+  publicHost: boolean,
+  previousStore?: ProtectionStore,
+): string {
   const conflicts = (alias: StoredAlias): boolean => {
-    const decided = protectionForHost(store, alias.host)
-    return decided !== null && (decided.service !== alias.service || decided.project !== alias.project)
+    return [store, ...(previousStore ? [previousStore] : [])].some((candidate) => {
+      const decided = protectionForHost(candidate, alias.host)
+      return decided !== null && (decided.service !== alias.service || decided.project !== alias.project)
+    })
   }
   const suspended = publicHost ? aliases.filter(conflicts) : []
   return renderAliases(

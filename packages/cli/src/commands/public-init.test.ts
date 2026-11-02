@@ -16,7 +16,12 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('../context.js', () => ({
-  gatewayContext: () => ({ root: mocks.root, env: {}, config: { tcpEnabled: mocks.tcp }, composeFiles: [] }),
+  gatewayContext: () => ({
+    root: mocks.root,
+    env: {},
+    config: { tcpEnabled: mocks.tcp, publicDomain: 'example.com' },
+    composeFiles: [],
+  }),
 }))
 vi.mock('../docker.js', () => ({
   inspectContainers: async () => {
@@ -27,6 +32,7 @@ vi.mock('../docker.js', () => ({
 
 import { RefusedError, UsageError } from '../errors.js'
 import { setJsonSchema } from '../output.js'
+import { publicEnable } from './network.js'
 import { publicInit } from './public-init.js'
 
 const TOKEN = 'cf-secret-token-0123456789'
@@ -135,11 +141,14 @@ describe('public init', () => {
     expect(value('PUBLIC_ENABLED')).toBeUndefined()
   })
 
-  it('accepts a panel host under the domain and rejects others', async () => {
+  it('accepts a panel host covered by the wildcard certificate and rejects others before writing', async () => {
     await publicInit({ ...base, panelHost: 'panel.example.com' }, command())
     expect(value('PORTTA_PANEL_ADVERTISED_HOST')).toBe('panel.example.com')
-    await expect(publicInit({ ...base, panelHost: 'panel.other.com' }, command())).rejects.toBeInstanceOf(UsageError)
-    await expect(publicInit({ ...base, panelHost: 'badexample.com' }, command())).rejects.toBeInstanceOf(UsageError)
+    const before = env()
+    for (const panelHost of ['panel.other.com', 'badexample.com', 'admin.ops.example.com']) {
+      await expect(publicInit({ ...base, panelHost }, command())).rejects.toBeInstanceOf(UsageError)
+      expect(env()).toBe(before)
+    }
   })
 
   it.each([
@@ -167,6 +176,30 @@ describe('public init', () => {
     await expect(publicInit(base, command())).rejects.toThrow(/shop-web/)
     expect(value('PUBLIC_ENABLED')).toBeUndefined()
   })
+
+  it.each(['init', 'enable'] as const)(
+    'public %s refuses TCP on websecure even when datastore entrypoints are off',
+    async (action) => {
+      mocks.containers = [
+        {
+          name: 'tcp-bypass',
+          state: 'running',
+          labels: {
+            'traefik.enable': 'true',
+            'traefik.tcp.routers.bypass.rule': 'HostSNI(`app.example.com`)',
+            'traefik.tcp.routers.bypass.entrypoints': 'websecure',
+            'traefik.tcp.routers.bypass.tls.passthrough': 'true',
+          },
+          ports: [],
+        },
+      ]
+      const before = env()
+      await expect(action === 'init' ? publicInit(base, command()) : publicEnable(command())).rejects.toThrow(
+        /tcp-bypass/,
+      )
+      expect(env()).toBe(before)
+    },
+  )
 
   it('changes nothing the second time', async () => {
     await publicInit({ ...base, cloudflareTokenStdin: true }, command(true), { readStdin: async () => TOKEN })

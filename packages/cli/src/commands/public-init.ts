@@ -57,8 +57,11 @@ export function planPublicInit(options: PublicInitOptions): PublicInitPlan {
   if (!EMAIL.test(email)) throw new UsageError(`--email is not an email address: ${email}`)
   const panelHost = options.panelHost ?? domain
   if (!HOSTNAME.test(panelHost)) throw new UsageError(`--panel-host must be a lowercase hostname: ${panelHost}`)
-  if (panelHost !== domain && !panelHost.endsWith(`.${domain}`))
-    throw new UsageError(`--panel-host must be ${domain} or a name under it: ${panelHost}`)
+  if (
+    panelHost !== domain &&
+    (!panelHost.endsWith(`.${domain}`) || panelHost.split('.').length !== domain.split('.').length + 1)
+  )
+    throw new UsageError(`--panel-host must be ${domain} or one label under it, covered by *.${domain}: ${panelHost}`)
   const version = options.ip === undefined ? 0 : isIP(options.ip)
   if (options.ip !== undefined && version === 0)
     throw new UsageError(`--ip is not an IPv4 or IPv6 address: ${options.ip}`)
