@@ -36,9 +36,21 @@ What is never done:
   as of the last fetch somebody did, and the screen says it read the host, not GitHub.
 - **No write.** `GIT_OPTIONAL_LOCKS=0` keeps `status` from refreshing the index, and
   no command that changes a repository is run.
-- **No repository gets to run code.** The directory comes from a label any container
-  can carry, so `core.fsmonitor` (which a repository can point at a command) and the
-  hooks path are overridden for every call, prompts are off, and each call times out.
+- **No repository gets to run code.** The directory is named by a label any container
+  can carry, and a repository's own configuration can name commands that git runs even
+  to read: a clean filter during `status`, `core.fsmonitor`, a signature program during
+  `log`, a remote's helper. So the repository's local settings are read first, never the
+  owner's, and one that sets any such key is **not read at all**. On top of that,
+  `core.fsmonitor` and the hooks path are overridden, signatures and submodules are
+  ignored, `protocol.allow` is `never`, lazy fetching is off, bare repositories need to be
+  explicit, prompts are off, and each call times out.
+- **Not any directory.** The label is not taken at its word. A project whose containers
+  disagree about it has no folder, a path inside Portta's own installation has none (also
+  through a link), and neither has one the collector's user does not own, which is also
+  git's own rule for a repository. What is left is metadata of repositories that user
+  already owns, shown to people who may read the host's metrics.
+- **Nothing large.** Every string a repository supplies is cut to a fixed size, so a
+  repository cannot make the snapshot large.
 - **No content.** File names and their status, never what is in them. Reading files
   is a different decision, and a larger one.
 

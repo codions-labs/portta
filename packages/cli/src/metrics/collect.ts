@@ -2,7 +2,6 @@ import { loadavg } from 'node:os'
 import {
   aggregateProjects,
   type ContainerIdentity,
-  composeProjectOf,
   detectRuntime,
   dockerCliStatsToRaw,
   emptySnapshot,
@@ -13,7 +12,7 @@ import {
   serviceOf,
 } from 'portta-core'
 import { dockerOperatingSystem, inspectContainers, readContainerStats } from '../docker.js'
-import { readGit } from './git.js'
+import { readGit, workingDirectories } from './git.js'
 import { loadInstance } from './store.js'
 
 type Settled<T> = PromiseSettledResult<T>
@@ -74,7 +73,7 @@ function matchIdentity(row: { id: string; name: string }, identities: ContainerI
   return { id: row.id || row.name, name: row.name || row.id.slice(0, 12), labels: {} }
 }
 
-async function collectProjects(): Promise<MetricsSnapshot['projects']> {
+async function collectProjects(root: string): Promise<MetricsSnapshot['projects']> {
   const [inspected, stats] = await Promise.all([inspectContainers(false), readContainerStats()])
   if (inspected.length === 0 && stats.length === 0) return []
 
@@ -94,13 +93,7 @@ async function collectProjects(): Promise<MetricsSnapshot['projects']> {
   })
   const projects = aggregateProjects(metrics, identities)
 
-  // Each compose project's working directory, from the label Compose puts on its containers.
-  const directories = new Map<string, string>()
-  for (const identity of identities) {
-    const project = composeProjectOf(identity.labels)
-    const directory = identity.labels['com.docker.compose.project.working_dir']
-    if (project && directory && !directories.has(project)) directories.set(project, directory)
-  }
+  const directories = workingDirectories(identities, root)
   return Promise.all(
     projects.map(async (project) => {
       const directory = directories.get(project.composeProject)
@@ -150,7 +143,7 @@ export async function collectSnapshot(root: string, now = Date.now()): Promise<M
   snapshot.runtime = { name: detectRuntime(runtimeName) }
 
   try {
-    snapshot.projects = await collectProjects()
+    snapshot.projects = await collectProjects(root)
   } catch {
     snapshot.projects = []
   }

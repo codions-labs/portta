@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseGitHead, parseGitStatus } from './git.ts'
+import { parseGitHead, parseGitStatus, repositoryRunsCommands } from './git.ts'
 
 const STATUS = [
   '# branch.oid a41f2c9d0c1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a',
@@ -70,5 +70,46 @@ describe('parseGitHead', () => {
   it('says nothing for what is not a commit', () => {
     expect(parseGitHead('')).toBeNull()
     expect(parseGitHead('a\u001fb\u001fc\u001fnot-a-time')).toBeNull()
+  })
+})
+
+describe('what a repository is allowed to say', () => {
+  it('cuts what it says to a size the snapshot can carry', () => {
+    const long = 'x'.repeat(5000)
+    const head = parseGitHead(`abc\u001f${long}\u001f${long}\u001f1793600000`)
+    expect(head?.subject.length).toBeLessThanOrEqual(200)
+    expect(head?.author.length).toBeLessThanOrEqual(200)
+    const status = parseGitStatus(`# branch.head ${long}\n# branch.upstream ${long}\n? ${long}\n`)
+    expect(status.branch?.length).toBeLessThanOrEqual(256)
+    expect(status.upstream?.length).toBeLessThanOrEqual(256)
+    expect(status.files[0]?.path.length).toBeLessThanOrEqual(512)
+  })
+})
+
+describe('repositoryRunsCommands', () => {
+  const local = (entry: string) => `global\tuser.name=Ada\nlocal\t${entry}\n`
+
+  it.each([
+    'filter.lfs.clean=git-lfs clean',
+    'core.fsmonitor=touch /tmp/x',
+    'core.sshCommand=nc evil',
+    'gpg.program=/tmp/x',
+    'diff.x.textconv=/tmp/x',
+    'remote.origin.uploadpack=/tmp/x',
+    'extensions.partialclone=origin',
+    'include.path=../.gitconfig',
+    'includeIf.gitdir:/.path=/tmp/x',
+    'credential.helper=!/tmp/x',
+  ])('refuses a repository that sets %s', (entry) => {
+    expect(repositoryRunsCommands(local(entry))).toBe(true)
+  })
+
+  it('leaves an ordinary repository alone, and the owner alone', () => {
+    expect(repositoryRunsCommands(local('core.bare=false\nlocal\tremote.origin.url=git@x:y.git'))).toBe(false)
+    expect(repositoryRunsCommands('global\tfilter.lfs.clean=git-lfs clean\nsystem\tcore.pager=less\n')).toBe(false)
+  })
+
+  it('looks at the work tree settings too', () => {
+    expect(repositoryRunsCommands('worktree\tcore.fsmonitor=x\n')).toBe(true)
   })
 })
