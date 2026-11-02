@@ -149,15 +149,17 @@ then remove it and run `portta up remote-public` again once it works.
 
 ```bash
 portta up remote-public
-printf %s "$PASSWORD" | portta auth bootstrap \
-  --name 'Ada Lovelace' --email you@example.com --password-stdin
 portta dns check          # does *.example.com resolve to this server?
+printf %s "$PASSWORD" | portta auth bootstrap --url https://example.com \
+  --allow-remote --name 'Ada Lovelace' --email you@example.com --password-stdin
 portta doctor
 ```
 
-Create the owner from the server right after `up` and before you share the
-address: until it exists, whoever reaches the panel first can claim it at
-`/setup`. `doctor` must pass with no failures: it checks DNS, the auth service
+Create the owner as soon as the name resolves and the certificate answers, and
+before you share the address: until it exists, whoever reaches the panel first
+can claim it at `/setup`. In this mode the panel has no loopback port, so the
+command goes through its own `https` address (`--allow-remote` says that is
+deliberate). `doctor` must pass with no failures: it checks DNS, the auth service
 and the certificate. The first certificate can take a minute or two. Then open
 `https://example.com` and sign in. Turn on two-factor authentication under
 Settings, Security.

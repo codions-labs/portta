@@ -85,7 +85,7 @@ describe('public init', () => {
     expect(value('PORTTA_PANEL_ADVERTISED_HOST')).toBe('example.com')
     expect(value('PORTTA_AUTH_MODE')).toBe('required')
     expect(value('PORTTA_PANEL_URL')).toBe('https://example.com')
-    expect(out).toContain('portta auth bootstrap')
+    expect(out).toContain('portta auth bootstrap --url https://example.com --allow-remote')
     expect(out).toContain('claim it at /setup')
     expect(value('CF_DNS_API_TOKEN')).toBe('')
     expect(out).toContain('A\texample.com\t203.0.113.7')

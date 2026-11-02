@@ -152,8 +152,8 @@ export async function publicInit(
     tokenPermission: 'Zone, DNS, Edit on the zone',
     next: [
       'portta up remote-public',
-      'printf %s "$PASSWORD" | portta auth bootstrap --name <name> --email <email> --password-stdin',
       'portta dns check',
+      `printf %s "$PASSWORD" | portta auth bootstrap --url https://${panelHost} --allow-remote --name <name> --email <email> --password-stdin`,
       'portta doctor',
     ],
   }
@@ -177,8 +177,9 @@ export async function publicInit(
   if (!tokenPresent)
     output.line('CF_DNS_API_TOKEN is not set: put the token in .env or rerun with --cloudflare-token-stdin')
   output.line()
-  output.line('Create the owner from this host right after `up`, before sharing the address: until it exists,')
-  output.line('whoever reaches the panel first can claim it at /setup.')
+  output.line('Create the owner as soon as DNS and the certificate answer, before sharing the address: until it')
+  output.line('exists, whoever reaches the panel first can claim it at /setup. In this mode the panel has no')
+  output.line('loopback port, so the command goes through its own https address.')
   output.line()
   output.line('Next:')
   for (const step of result.next) output.line(`  ${step}`)
