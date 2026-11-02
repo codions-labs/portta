@@ -71,7 +71,12 @@ export function exposureRoutes(deps: AppDeps): Hono {
       const snapshot = await deps.cache.get()
       const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
-      const change = await protectService(deps.config, container, body, snapshot.containers)
+      const change = await protectService(
+        deps.config,
+        container,
+        { ...body, unscoped: principalOf(c).scope === 'all' },
+        snapshot.containers,
+      )
       await record(deps, c, {
         action: change.action,
         resourceType: 'service',
@@ -102,7 +107,7 @@ export function exposureRoutes(deps: AppDeps): Hono {
       const snapshot = await deps.cache.get()
       const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
-      const change = openService(deps.config, container, snapshot.containers)
+      const change = openService(deps.config, container, snapshot.containers, principalOf(c).scope === 'all')
       await record(deps, c, {
         action: change.action,
         resourceType: 'service',
@@ -129,7 +134,7 @@ export function exposureRoutes(deps: AppDeps): Hono {
       const snapshot = await deps.cache.get()
       const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
-      const change = closeService(deps.config, container)
+      const change = closeService(deps.config, container, principalOf(c).scope === 'all')
       await record(deps, c, {
         action: change.action,
         resourceType: 'service',

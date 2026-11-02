@@ -65,7 +65,12 @@ export function hostOf(container: ContainerSummary, containers: readonly Contain
   const claimants = containers.filter(
     (other) =>
       other.id !== container.id &&
-      !(other.environment === container.environment && other.service === container.service) &&
+      !(
+        other.environment !== null &&
+        other.service !== null &&
+        other.environment === container.environment &&
+        other.service === container.service
+      ) &&
       other.urls.some(sameHost),
   )
   if (claimants.length > 0)
@@ -74,10 +79,21 @@ export function hostOf(container: ContainerSummary, containers: readonly Contain
 }
 
 /** A record may only be replaced by the service it belongs to, never one of another project or a share. */
-function guard(previous: ProtectionRecord | null, container: ContainerSummary): void {
+/** `unscoped` is whether the caller sees every Project: a record that names none is theirs alone to change. */
+export function guard(previous: ProtectionRecord | null, container: ContainerSummary, unscoped = false): void {
   if (!previous) return
+  if (!previous.project && !unscoped)
+    throw new ExposureRefused(
+      `${previous.host} has a decision that belongs to no Project`,
+      'only an owner or admin can change it',
+    )
   if (previous.scope.startsWith('share:'))
     throw new ExposureRefused(`${previous.host} belongs to a temporary share`, 'revoke the share first')
+  if (previous.service && container.service && previous.service !== container.service)
+    throw new ExposureRefused(
+      `${previous.host} already has a decision that belongs to the ${previous.service} service`,
+      'remove it with `portta protect remove` if it is stale',
+    )
   if (previous.project && container.environment && previous.project !== container.environment)
     throw new ExposureRefused(
       `${previous.host} already has a decision that belongs to ${previous.project}`,
@@ -109,7 +125,7 @@ function entryPointOf(config: PanelConfig): string {
 export async function protectService(
   config: PanelConfig,
   container: ContainerSummary,
-  options: { user?: string } = {},
+  options: { user?: string; unscoped?: boolean } = {},
   containers: readonly ContainerSummary[] = [],
 ): Promise<ExposureChange> {
   // A credential typed over plain HTTP is a credential given away.
@@ -118,7 +134,7 @@ export async function protectService(
   const host = hostOf(container, containers)
   const store = readProtectionStore(config.authStore)
   const previous = protectionForHost(store, host)
-  guard(previous, container)
+  guard(previous, container, options.unscoped)
   const password = generatePassword()
   const next = setProtection(store, {
     scope: previous?.scope ?? `host:${host}`,
@@ -144,11 +160,12 @@ export function openService(
   config: PanelConfig,
   container: ContainerSummary,
   containers: readonly ContainerSummary[] = [],
+  unscoped = false,
 ): ExposureChange {
   const host = hostOf(container, containers)
   const store = readProtectionStore(config.authStore)
   const previous = protectionForHost(store, host)
-  guard(previous, container)
+  guard(previous, container, unscoped)
   const next = setProtection(store, {
     scope: previous?.scope ?? `host:${host}`,
     host,
@@ -162,14 +179,14 @@ export function openService(
   return { entry: viewOf(protectionForHost(next, host)!), action: 'protection.opened' }
 }
 
-export function closeService(config: PanelConfig, container: ContainerSummary): ExposureChange {
+export function closeService(config: PanelConfig, container: ContainerSummary, unscoped = false): ExposureChange {
   // Removing a decision is always allowed for its owner: a duplicate hostname
   // elsewhere must not keep a site open that its owner wants closed.
   const host = hostOf(container)
   const store = readProtectionStore(config.authStore)
   const record = protectionForHost(store, host)
   if (!record) throw new ExposureRefused(`${host} has no decision to remove`, 'it is already closed or never decided')
-  guard(record, container)
+  guard(record, container, unscoped)
   save(config, removeProtection(store, record.scope))
   return { entry: null, action: 'protection.removed' }
 }
