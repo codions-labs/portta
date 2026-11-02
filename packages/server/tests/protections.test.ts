@@ -12,7 +12,7 @@ function panel() {
   const authStore = join(dir, 'protections.json')
   const instance = makeApp(
     { containers: [...GATEWAY, ...PROJECT_A] },
-    { authStore, dynamicDir: dir, profile: 'remote-public' },
+    { authStore, dynamicDir: dir, profile: 'remote-public', tlsEnabled: true },
   )
   return { ...instance, authStore, dir }
 }
@@ -84,5 +84,26 @@ describe('who may open a service, from the panel', () => {
     await put(app, '/api/services/a-web/exposure')
     const entries = (await (await app.request('/api/exposure')).json()).entries as Array<{ host: string }>
     expect(entries.every((entry) => !entry.host.endsWith('-share.localhost'))).toBe(true)
+  })
+
+  it('refuses a password over plain HTTP on a remote profile', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'portta-exposure-'))
+    const { app } = makeApp(
+      { containers: [...GATEWAY, ...PROJECT_A] },
+      { authStore: join(dir, 'p.json'), dynamicDir: dir, profile: 'remote-public', tlsEnabled: false },
+    )
+    expect((await put(app, '/api/services/a-web/exposure')).status).toBe(400)
+  })
+
+  it('does not take over a decision that belongs to another project', async () => {
+    const { app, authStore } = panel()
+    await put(app, '/api/services/a-web/exposure')
+    const store = readProtectionStore(authStore)
+    const foreign = store.protections.map((record) => ({ ...record, project: 'someone-else' }))
+    const { writeProtectionStore } = await import('portta-core')
+    writeProtectionStore(authStore, { ...store, protections: foreign })
+    expect((await put(app, '/api/services/a-web/exposure')).status).toBe(400)
+    expect((await post(app, '/api/services/a-web/exposure/open')).status).toBe(400)
+    expect((await del(app, '/api/services/a-web/exposure')).status).toBe(400)
   })
 })

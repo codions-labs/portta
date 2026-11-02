@@ -128,7 +128,7 @@ function globals(command: Command) {
     yes?: boolean
   }
 }
-function idFor(workspace: string): string {
+export function idFor(workspace: string): string {
   return createHash('sha256').update(workspace).digest('hex').slice(0, 16)
 }
 function digest(path: string): string {
@@ -140,7 +140,7 @@ function digestIfPresent(path: string): string | null {
 function runtimeDirectory(root: string, id: string): string {
   return join(root, 'runtime', 'compose', id)
 }
-function planPath(root: string, id: string): string {
+export function planPath(root: string, id: string): string {
   return join(runtimeDirectory(root, id), 'plan.json')
 }
 function manifestPath(root: string, id: string): string {

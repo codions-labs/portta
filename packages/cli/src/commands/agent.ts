@@ -10,7 +10,7 @@
 // its credential.
 
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve, sep } from 'node:path'
 import type { Command } from 'commander'
@@ -120,11 +120,11 @@ function realOr(path: string): string {
   }
 }
 
-function isExcluded(paths: string[], home: string, directories: string[]): boolean {
+function isExcluded(home: string, directories: string[]): boolean {
   const candidates = directories.flatMap((directory) => [directory, realOr(directory)])
   return excludedPaths(home).some((excluded) =>
     [excluded, realOr(excluded)].some((root) => candidates.some((candidate) => inside(candidate, root))),
-  ) && paths.length >= 0
+  )
 }
 
 interface Discovery {
@@ -173,7 +173,9 @@ export function publishedPortsOf(model: unknown): string[] {
       else if (port && typeof port === 'object') {
         const long = port as { target?: unknown; published?: unknown; host_ip?: unknown; protocol?: unknown }
         const published = long.published === undefined ? '?' : String(long.published)
-        found.push(`${String(long.host_ip ?? '0.0.0.0')}:${published}->${String(long.target ?? '?')}/${String(long.protocol ?? 'tcp')}`)
+        found.push(
+          `${String(long.host_ip ?? '0.0.0.0')}:${published}->${String(long.target ?? '?')}/${String(long.protocol ?? 'tcp')}`,
+        )
       }
     }
   }
@@ -272,7 +274,9 @@ function webService(directory: string): boolean {
   if (goMod !== null) {
     if (/net\/http|gin-gonic|labstack\/echo|gofiber|go-chi|gorilla\/mux/.test(goMod)) return true
     try {
-      for (const name of readdirSync(directory).filter((entry) => entry.endsWith('.go')).slice(0, 20))
+      for (const name of readdirSync(directory)
+        .filter((entry) => entry.endsWith('.go'))
+        .slice(0, 20))
         if (readSmall(join(directory, name))?.includes('"net/http"')) return true
     } catch {}
   }
@@ -388,7 +392,7 @@ export async function agentContext(options: ContextOptions = {}): Promise<AgentC
   }
 
   const found = discoverProject(start, home)
-  if (isExcluded([], home, [start, ...(found.root ? [found.root] : [])]))
+  if (isExcluded(home, [start, ...(found.root ? [found.root] : [])]))
     return finish('excluded', 'This directory is excluded in scope.yaml: nothing to do for Portta here.', {}, 'unknown')
   if (start === home)
     return finish('out-of-scope', 'No action needed here: this is the home directory.', {
@@ -457,11 +461,10 @@ export async function agentContext(options: ContextOptions = {}): Promise<AgentC
       `Ask before writing any file, then follow the portta-dockerize skill.${worktreeHint}`,
       common,
     )
-  return finish(
-    'out-of-scope',
-    'No action needed: nothing here looks like a web service.',
-    { ...common, note: 'no Dockerfile or web service found' },
-  )
+  return finish('out-of-scope', 'No action needed: nothing here looks like a web service.', {
+    ...common,
+    note: 'no Dockerfile or web service found',
+  })
 }
 
 /** Text for the agent's context: at most 15 lines, English, nothing on a host without Portta. */
@@ -471,7 +474,9 @@ export function renderHook(context: AgentContext): string {
   const prefix = `Portta host ${version}.`
   const project = context.project
   const lines: string[] = []
-  const worktree = project.worktree ? ['This is a Git worktree: run `portta envs namespace` so it gets its own URL.'] : []
+  const worktree = project.worktree
+    ? ['This is a Git worktree: run `portta envs namespace` so it gets its own URL.']
+    : []
   switch (project.scope) {
     case 'excluded':
       lines.push(`${prefix} This directory is excluded in scope.yaml (scope: excluded), no action needed.`)
@@ -486,7 +491,9 @@ export function renderHook(context: AgentContext): string {
     case 'compliant':
       lines.push(
         `${prefix} Profile ${context.host.profile ?? 'unknown'}, gateway ${context.host.gateway ?? 'unknown'}. This project is on Portta (scope: compliant).`,
-        ...(project.urls.length ? ['Report these URLs, never localhost:', ...project.urls.slice(0, 5).map((url) => `  ${url}`)] : []),
+        ...(project.urls.length
+          ? ['Report these URLs, never localhost:', ...project.urls.slice(0, 5).map((url) => `  ${url}`)]
+          : []),
         'Start with `portta runtime up`. Publish no ports and follow the portta-host-context skill.',
         ...worktree,
       )
@@ -502,7 +509,9 @@ export function renderHook(context: AgentContext): string {
     case 'needs-adoption':
       lines.push(
         `${prefix} This project has a Compose file (${project.compose}) and no Runtime Plan (scope: needs-adoption).`,
-        ...(project.publishedPorts.length ? [`It publishes host ports: ${project.publishedPorts.slice(0, 4).join(', ')}.`] : []),
+        ...(project.publishedPorts.length
+          ? [`It publishes host ports: ${project.publishedPorts.slice(0, 4).join(', ')}.`]
+          : []),
         'Run `portta adopt --dry-run --json` and follow the portta-adopt-compose skill. Ask before deciding anything pending.',
         'Never publish a port, and never free one by force.',
         ...worktree,

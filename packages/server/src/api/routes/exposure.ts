@@ -1,9 +1,9 @@
 import { type Context, Hono } from 'hono'
-import { authorizeScope } from 'portta-auth-core/hono'
+import { authorizeScope, principalOf } from 'portta-auth-core/hono'
 import { ExposureResult, ExposureView } from 'portta-contracts'
 import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
-import { projectOfEnvironment } from '../../services/access-control.ts'
+import { adoptions, projectOfEnvironment, visible } from '../../services/access-control.ts'
 import { findContainer } from '../../services/actions.ts'
 import { closeService, listExposure, openService, protectService } from '../../services/exposure.ts'
 import { record } from '../audit.ts'
@@ -39,11 +39,17 @@ export function exposureRoutes(deps: AppDeps): Hono {
       response: ExposureView,
       errors: [500],
     }),
-    (c) =>
-      c.json({
+    async (c) => {
+      // Scoped like the shares list: a record names its project, and a record
+      // with none is for somebody who sees everything.
+      const owners = await adoptions(deps.db)
+      return c.json({
         enforced: deps.config.profile === 'remote-public',
-        entries: listExposure(deps.config),
-      }),
+        entries: visible(principalOf(c), listExposure(deps.config), (entry) =>
+          entry.project ? (owners.get(entry.project) ?? null) : null,
+        ),
+      })
+    },
   )
 
   app.put(
@@ -62,9 +68,10 @@ export function exposureRoutes(deps: AppDeps): Hono {
     }),
     async (c) => {
       const body = protectBody.parse(await c.req.json().catch(() => ({})))
-      const container = findContainer(await deps.cache.get(), c.req.param('id'))
+      const snapshot = await deps.cache.get()
+      const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
-      const change = await protectService(deps.config, container, body)
+      const change = await protectService(deps.config, container, body, snapshot.containers)
       await record(deps, c, {
         action: change.action,
         resourceType: 'service',
@@ -92,9 +99,10 @@ export function exposureRoutes(deps: AppDeps): Hono {
       errors: [400, 403, 404, 500],
     }),
     async (c) => {
-      const container = findContainer(await deps.cache.get(), c.req.param('id'))
+      const snapshot = await deps.cache.get()
+      const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
-      const change = openService(deps.config, container)
+      const change = openService(deps.config, container, snapshot.containers)
       await record(deps, c, {
         action: change.action,
         resourceType: 'service',
@@ -118,9 +126,10 @@ export function exposureRoutes(deps: AppDeps): Hono {
       errors: [400, 403, 404, 500],
     }),
     async (c) => {
-      const container = findContainer(await deps.cache.get(), c.req.param('id'))
+      const snapshot = await deps.cache.get()
+      const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
-      const change = closeService(deps.config, container)
+      const change = closeService(deps.config, container, snapshot.containers)
       await record(deps, c, {
         action: change.action,
         resourceType: 'service',
