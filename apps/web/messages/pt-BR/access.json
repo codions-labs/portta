@@ -1,6 +1,6 @@
 {
   "title": "Acesso",
-  "description": "Bancos de dados, caches e outros serviços TCP: por hostname onde o protocolo permite, e por uma ponte aberta sob demanda em todos os demais casos.",
+  "description": "Bancos e outros serviços TCP ficam privados. Conectar abre uma ponte só nesta máquina, em uma porta livre.",
   "bridges": {
     "title": "Pontes abertas",
     "description": "Cada ponte vincula 127.0.0.1 a uma porta escolhida pelo kernel, para que nada precise abrir mão da 5432.",
@@ -69,5 +69,56 @@
     "port": "Porta",
     "status": "Status",
     "networks": "Redes"
+  },
+  "sites": {
+    "tab": "Sites",
+    "title": "Sites",
+    "description": "Quem pode abrir cada endereço deste host. Uma decisão vale na próxima requisição, nada é reiniciado.",
+    "search": "Buscar endereço ou projeto",
+    "moreHosts_one": "mais {{count}} endereço",
+    "moreHosts_other": "mais {{count}} endereços",
+    "noLogin": "Sem login",
+    "decision": {
+      "protected": "Com senha",
+      "public": "Aberto a todos",
+      "closed": "Fechado",
+      "none": "Sem login"
+    },
+    "linkProtected": "Com senha, expira {{time}}",
+    "linkPublic": "Público, expira {{time}}",
+    "noLink": "Nenhum link temporário",
+    "createLink": "Criar link temporário para {{host}}",
+    "details": "Detalhes de {{name}}",
+    "nowAsks": "{{host}} agora pede senha:",
+    "shownOnce": "Ela aparece só agora. Entregue a quem precisa de acesso.",
+    "filters": {
+      "all": "Todos {{count}}",
+      "closed": "Fechados {{count}}",
+      "protected": "Com senha {{count}}",
+      "public": "Abertos a todos {{count}}"
+    },
+    "empty": "Nada roteado ainda",
+    "noMatch": "Nenhum site corresponde a estes filtros",
+    "footPublic": "Domínio, TLS e VPN ficam em Configurações.",
+    "footLocal": "Neste perfil os endereços só respondem onde o gateway alcança, então não há decisão a tomar. Domínio, TLS e VPN ficam em Configurações."
+  },
+  "tcp": {
+    "tab": "Bancos e TCP",
+    "all": "Todos {{count}}",
+    "connected": "Conectados {{count}}",
+    "bridge": "Ponte local",
+    "fixed": "Endereço fixo",
+    "connectionText": "Texto de conexão",
+    "copyBridge": "Copiar host e porta",
+    "noExpiry": "Sem prazo",
+    "expires": "Expira {{time}}",
+    "passwordFromProject": "A senha vem do seu projeto; o Portta não conseguiu lê-la aqui.",
+    "notOptedIn": "Não ativado neste projeto: adicione o overlay TCP para ter um.",
+    "routingOff": "O roteamento por hostname está desligado neste host (PORTTA_TCP=false).",
+    "private": "Privado",
+    "connect": "Conectar",
+    "connectTo": "Conectar a {{name}}",
+    "closeBridge": "Fechar ponte",
+    "orphans": "O serviço delas não existe mais, mas elas ainda ocupam uma porta."
   }
 }

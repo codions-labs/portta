@@ -56,7 +56,7 @@ export function RouteLine({ route }: { route: Pick<RouteUrl, 'url' | 'host'> }) 
         target="_blank"
         rel="noreferrer"
       >
-        <Mono kind="url" value={route.url}>
+        <Mono kind="url" value={route.url} className="text-link">
           {route.host}
         </Mono>
       </a>

@@ -7,6 +7,8 @@ export interface SegmentOption<Value extends string> {
   value: Value
   label: string
   icon?: ComponentType<{ className?: string }>
+  /** What marks this one once chosen, when the choice means something. */
+  selectedClassName?: string
 }
 
 /**
@@ -77,7 +79,9 @@ export function Segmented<Value extends string>({
             className={cn(
               'flex h-full items-center gap-1.5 rounded-sm text-sm font-medium transition-colors duration-100 focus-ring',
               iconOnly || Icon ? 'px-2 sm:px-2.5' : 'px-2.5',
-              selected ? 'bg-surface text-ink shadow-raised' : 'text-muted hover:text-ink',
+              selected
+                ? cn('bg-surface text-ink shadow-raised', option.selectedClassName)
+                : 'text-muted hover:text-ink',
             )}
           >
             {Icon ? <Icon className="size-3.5" /> : null}

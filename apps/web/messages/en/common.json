@@ -210,6 +210,16 @@
       "publicDetail": "No login. Whoever has the address opens it.",
       "closed": "Nobody",
       "closedDetail": "The address answers that it is closed."
+    },
+    "short": {
+      "protected": "Password",
+      "public": "Everybody",
+      "closed": "Closed"
+    },
+    "confirmOpen": {
+      "title": "Open {{host}} to everybody?",
+      "impact": "Whoever has the address opens the site, with no login. It applies on the next request.",
+      "confirm": "Open to everybody"
     }
   }
 }

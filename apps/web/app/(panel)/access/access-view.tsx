@@ -1,72 +1,120 @@
 'use client'
 
+// Databases and everything else that speaks TCP. They stay private; Connect opens
+// a bridge on this machine, and what it takes to use it appears under the row.
+
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plug, PlugZap, X } from 'lucide-react'
+import { Plug } from 'lucide-react'
 import type { Bridge, TcpService } from 'portta-contracts'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ConnectionPanel } from '@/components/connection-panel'
+import { MaskedSecret } from '@/components/connection-panel'
 import { CopyButton, Mono } from '@/components/copy'
 import { ServiceIcon } from '@/components/service-icon'
-import { Empty, ErrorBox, Loading, PageHeader } from '@/components/shell-bits'
+import { Empty, ErrorBox, FilterChip, Loading, ViewToolbar } from '@/components/shell-bits'
 import { StateBadge } from '@/components/status'
-import { Badge, StatusIndicator } from '@/components/ui/badge'
+import { Badge, StatusDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader } from '@/components/ui/card'
 import { Table, Td, Th, Tr } from '@/components/ui/table'
 import { api } from '@/lib/api'
-import { useAccess } from '@/lib/queries'
+import { useAccess, useServiceConnection } from '@/lib/queries'
 import { useFormat } from '@/lib/use-format'
 
-function GatewayAddress({ service, enabled }: { service: TcpService; enabled: boolean }) {
-  const { t } = useTranslation('access')
-  const { gatewayAddress, gatewayConnectionString, routing } = service
-
-  if (gatewayAddress) {
-    return (
-      <div>
-        <div className="flex items-center gap-1">
-          <Mono kind="host" tone="ink" className="text-xs">
-            {gatewayAddress}
-          </Mono>
-          <CopyButton value={gatewayAddress} label={t('services.copyAddress')} />
-          {gatewayConnectionString ? (
-            <CopyButton value={gatewayConnectionString} label={t('services.copyGatewayConnectionString')} />
-          ) : null}
-        </div>
-        <div className="text-2xs text-subtle">
-          {routing === 'tls-sni' ? t('services.tlsRequiredHostname') : t('services.tlsRequiredSslmode')}
-        </div>
-      </div>
-    )
-  }
-
-  if (routing === 'unsupported') {
-    return (
-      <div>
-        <Badge tone="neutral">{t('services.noHostnameSharing')}</Badge>
-        <div className="text-2xs text-subtle">{t('services.serverSpeaksFirst')}</div>
-      </div>
-    )
-  }
-
-  if (routing === 'unevaluated') {
-    return <span className="text-xs text-subtle">{t('services.notEvaluated')}</span>
-  }
-
+function Block({
+  label,
+  value,
+  copyLabel,
+  children,
+}: {
+  label: string
+  value?: string
+  copyLabel?: string
+  children?: React.ReactNode
+}) {
   return (
-    <div>
-      <span className="text-xs text-subtle">{enabled ? t('services.notOptedIn') : t('services.routingOff')}</span>
-      <div className="text-2xs text-subtle">{enabled ? t('services.addTcpOverlay') : t('services.tcpDisabled')}</div>
+    <div className="min-w-0 space-y-1.5">
+      <p className="text-2xs font-semibold tracking-[0.14em] text-muted uppercase">{label}</p>
+      {value ? (
+        <div className="flex items-center gap-1 rounded-md bg-terminal py-1 pr-1 pl-3 text-terminal-fg">
+          <span className="min-w-0 flex-1 truncate font-mono text-xs" title={value}>
+            {value}
+          </span>
+          <CopyButton value={value} label={copyLabel} className="text-terminal-dim hover:text-terminal-fg" />
+        </div>
+      ) : null}
+      {children ? <div className="text-xs text-muted">{children}</div> : null}
+    </div>
+  )
+}
+
+function FixedAddress({ service, enabled }: { service: TcpService; enabled: boolean }) {
+  const { t } = useTranslation('access')
+  if (service.gatewayAddress) {
+    return (
+      <Block label={t('tcp.fixed')} value={service.gatewayAddress} copyLabel={t('services.copyAddress')}>
+        {service.routing === 'tls-sni' ? t('services.tlsRequiredHostname') : t('services.tlsRequiredSslmode')}
+      </Block>
+    )
+  }
+  return (
+    <Block label={t('tcp.fixed')}>
+      {service.routing === 'unsupported'
+        ? t('services.serverSpeaksFirst')
+        : service.routing === 'unevaluated'
+          ? t('services.notEvaluated')
+          : enabled
+            ? t('tcp.notOptedIn')
+            : t('tcp.routingOff')}
+    </Block>
+  )
+}
+
+/** What it takes to use an open bridge: where it listens, the text to paste, and the password if it can be known. */
+function Connected({ service, bridge, routing }: { service: TcpService; bridge: Bridge; routing: boolean }) {
+  const { t } = useTranslation('access')
+  const { expiresIn } = useFormat()
+  const connection = useServiceConnection(service.project, service.service, true)
+  const credentials = connection.data?.credentials
+  return (
+    <div className="grid gap-4 bg-surface-2 px-5 py-4 md:grid-cols-3">
+      <Block
+        label={t('tcp.bridge')}
+        value={`${bridge.bindIp}:${bridge.localPort ?? '?'}`}
+        copyLabel={t('tcp.copyBridge')}
+      >
+        {bridge.expiresAt ? t('tcp.expires', { time: expiresIn(bridge.expiresAt) }) : t('tcp.noExpiry')}
+      </Block>
+      <Block
+        label={t('tcp.connectionText')}
+        value={bridge.connectionString}
+        copyLabel={t('bridges.copyConnectionString')}
+      >
+        {credentials?.discovered && credentials.password ? (
+          <span className="inline-flex items-center gap-1.5">
+            {t('connection.password')}
+            <MaskedSecret
+              value={credentials.password}
+              revealLabel={t('connection.revealPassword')}
+              hideLabel={t('connection.hidePassword')}
+              copyLabel={t('connection.copyPassword')}
+            />
+          </span>
+        ) : (
+          t('tcp.passwordFromProject')
+        )}
+      </Block>
+      <FixedAddress service={service} enabled={routing} />
     </div>
   )
 }
 
 export function AccessView() {
   const { t } = useTranslation('access')
-  const { expiresIn, shortImage } = useFormat()
+  const { shortImage } = useFormat()
   const queryClient = useQueryClient()
   const [error, setError] = useState<unknown>(null)
+  const [filter, setFilter] = useState<string>('all')
   const query = useAccess()
 
   const open = useMutation({
@@ -91,162 +139,140 @@ export function AccessView() {
   if (query.error) return <ErrorBox error={query.error} />
   if (!query.data) return null
 
-  const { services, bridges, forwarders } = query.data
+  const { services, bridges, forwarders, tcpRoutingEnabled } = query.data
+  // A bridge whose service is gone still holds a port, and still has to be closable.
+  const known = new Set(services.flatMap((service) => (service.bridge ? [service.bridge.id] : [])))
+  const orphans = bridges.filter((bridge) => !known.has(bridge.id))
+  const kinds = [...new Set(services.map((service) => service.tech.label))].sort()
+  const connected = services.filter((service) => service.bridge).length
+  const shown = services.filter(
+    (service) => filter === 'all' || (filter === 'connected' ? Boolean(service.bridge) : service.tech.label === filter),
+  )
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
-
       {error ? (
         <div className="mb-4">
           <ErrorBox error={error} />
         </div>
       ) : null}
 
-      <Card>
-        <CardHeader title={t('bridges.title')} description={t('bridges.description')} />
-        {bridges.length === 0 ? (
-          <Empty title={t('bridges.empty')} hint={t('bridges.emptyHint')} />
-        ) : (
-          <Table aria-label={t('bridges.aria')}>
-            <thead>
-              <tr>
-                <Th>{t('bridges.service')}</Th>
-                <Th>{t('bridges.localAddress')}</Th>
-                <Th>{t('bridges.connectionString')}</Th>
-                <Th>{t('bridges.expires')}</Th>
-                <Th className="text-right">{t('bridges.actions')}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {bridges.map((bridge) => (
-                <Tr key={bridge.id}>
-                  <Td>
-                    <div className="font-medium">
-                      {bridge.project}
-                      <span className="text-muted">/{bridge.service}</span>
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      <Badge tone="info">{bridge.kind}</Badge>
-                      <StateBadge state={bridge.state} />
-                    </div>
-                  </Td>
-                  <Td>
-                    <div className="flex items-center gap-1">
-                      <Mono kind="host" tone="ink" className="text-xs">
-                        {bridge.bindIp}:{bridge.localPort ?? '?'}
-                      </Mono>
-                      <CopyButton value={bridge.bindIp} label={t('bridges.copyHost')} />
-                      <CopyButton value={String(bridge.localPort ?? '')} label={t('bridges.copyPort')} />
-                    </div>
-                    <div className="text-2xs text-subtle">
-                      {t('bridges.target', { service: bridge.service, port: bridge.targetPort })}
-                    </div>
-                  </Td>
-                  <Td>
-                    <div className="flex items-center gap-1">
-                      <Mono kind="url" className="max-w-64 text-xs">
-                        {bridge.connectionString}
-                      </Mono>
-                      <CopyButton value={bridge.connectionString} label={t('bridges.copyConnectionString')} />
-                    </div>
-                    <div className="text-2xs text-subtle">{t('bridges.credentialsHint')}</div>
-                  </Td>
-                  <Td className="text-xs text-muted">{expiresIn(bridge.expiresAt)}</Td>
-                  <Td className="text-right">
-                    <Button size="sm" variant="danger" disabled={close.isPending} onClick={() => close.mutate(bridge)}>
-                      <X />
-                      {t('bridges.close')}
-                    </Button>
-                  </Td>
-                </Tr>
-              ))}
-            </tbody>
-          </Table>
-        )}
-      </Card>
+      <ViewToolbar>
+        <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
+          {t('tcp.all', { count: services.length })}
+        </FilterChip>
+        {connected > 0 ? (
+          <FilterChip active={filter === 'connected'} onClick={() => setFilter('connected')}>
+            <StatusDot tone="ok" label={t('tcp.connected', { count: connected })} />
+            {t('tcp.connected', { count: connected })}
+          </FilterChip>
+        ) : null}
+        {kinds.map((kind) => (
+          <FilterChip key={kind} active={filter === kind} onClick={() => setFilter(kind)}>
+            {kind} {services.filter((service) => service.tech.label === kind).length}
+          </FilterChip>
+        ))}
+      </ViewToolbar>
 
-      <Card className="mt-4">
-        <CardHeader
-          title={t('services.title')}
-          description={
-            query.data.tcpRoutingEnabled ? t('services.descriptionEnabled') : t('services.descriptionDisabled')
-          }
-        />
-        {services.length === 0 ? (
+      {orphans.length > 0 ? (
+        <Card className="mb-4">
+          <CardHeader title={t('bridges.title')} description={t('tcp.orphans')} />
+          <ul>
+            {orphans.map((bridge) => (
+              <li
+                key={bridge.id}
+                className="flex flex-wrap items-center gap-3 border-t border-line px-5 py-2.5 first:border-t-0"
+              >
+                <span className="min-w-0 flex-1 truncate font-semibold text-ink">
+                  {bridge.project}
+                  <span className="font-normal text-muted"> / {bridge.service}</span>
+                </span>
+                <Mono kind="host">
+                  {bridge.bindIp}:{bridge.localPort ?? '?'}
+                </Mono>
+                <CopyButton value={bridge.connectionString} label={t('bridges.copyConnectionString')} />
+                <Button size="sm" disabled={close.isPending} onClick={() => close.mutate(bridge)}>
+                  {t('bridges.close')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
+      <Card>
+        {shown.length === 0 ? (
           <Empty title={t('services.empty')} />
         ) : (
-          <Table aria-label={t('services.aria')}>
-            <thead>
-              <tr>
-                <Th>{t('services.project')}</Th>
-                <Th>{t('services.service')}</Th>
-                <Th>{t('services.kind')}</Th>
-                <Th>{t('services.image')}</Th>
-                <Th>{t('services.port')}</Th>
-                <Th>{t('services.status')}</Th>
-                <Th>{t('services.gatewayAddress')}</Th>
-                <Th className="text-right">{t('services.localAccess')}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.map((service) => (
-                <Tr key={service.containerId}>
-                  <Td className="text-xs text-muted">{service.project}</Td>
-                  <Td>
-                    <span className="flex items-center gap-1.5 font-medium">
+          <ul aria-label={t('services.aria')}>
+            {shown.map((service) => (
+              <li key={service.containerId} className="border-t border-line first:border-t-0">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-5 py-2.5">
+                  <div className="min-w-0 flex-[1_1_13rem]">
+                    <span className="flex items-center gap-2 font-semibold text-ink">
                       <ServiceIcon tech={service.tech} />
-                      {service.service}
+                      <span className="truncate">{service.service}</span>
                     </span>
-                  </Td>
-                  <Td>
-                    <Badge tone={service.kind === 'tcp' ? 'neutral' : 'info'}>{service.kind}</Badge>
-                  </Td>
-                  <Td>
-                    <Mono kind="text" title={service.image}>
-                      {shortImage(service.image)}
-                    </Mono>
-                  </Td>
-                  <Td>
-                    <Mono kind="port">{service.defaultPort ?? service.ports[0] ?? '-'}</Mono>
-                  </Td>
-                  <Td>
-                    <StateBadge state={service.state} health={service.health} />
-                  </Td>
-                  <Td>
-                    <GatewayAddress service={service} enabled={query.data.tcpRoutingEnabled} />
-                    <ConnectionPanel project={service.project} service={service.service} />
-                  </Td>
-                  <Td className="text-right">
+                    <span className="block truncate text-xs text-subtle">{service.project}</span>
+                  </div>
+                  <div className="w-24 shrink-0">
+                    <Badge>{service.tech.label}</Badge>
+                  </div>
+                  <Mono
+                    kind="text"
+                    tone="subtle"
+                    className="min-w-0 flex-[1_1_10rem] truncate text-xs"
+                    title={service.image}
+                  >
+                    {shortImage(service.image)}
+                  </Mono>
+                  <div className="flex min-w-0 flex-[1_1_11rem] items-center gap-2 text-sm">
                     {service.bridge ? (
-                      <StatusIndicator tone="ok" emphasis="ink" className="justify-end">
-                        <Mono kind="host" tone="ink">
-                          {service.bridge.bindIp}:{service.bridge.localPort}
+                      <>
+                        <StatusDot tone="ok" label={t('tcp.bridge')} />
+                        <Mono kind="host" tone="ink" className="truncate">
+                          {service.bridge.bindIp}:{service.bridge.localPort ?? '?'}
                         </Mono>
-                      </StatusIndicator>
+                      </>
+                    ) : service.state === 'running' ? (
+                      <span className="text-subtle">{t('tcp.private')}</span>
+                    ) : (
+                      <StateBadge state={service.state} health={service.health} />
+                    )}
+                  </div>
+                  <div className="w-28 shrink-0 text-right">
+                    {service.bridge ? (
+                      <Button
+                        size="sm"
+                        disabled={close.isPending}
+                        onClick={() => service.bridge && close.mutate(service.bridge)}
+                      >
+                        {t('tcp.closeBridge')}
+                      </Button>
                     ) : (
                       <Button
                         size="sm"
                         disabled={service.state !== 'running' || open.isPending}
+                        aria-label={t('tcp.connectTo', { name: `${service.project}/${service.service}` })}
                         onClick={() => open.mutate(service)}
                       >
-                        <PlugZap />
-                        {t('services.openLocalAccess')}
+                        {t('tcp.connect')}
                       </Button>
                     )}
-                  </Td>
-                </Tr>
-              ))}
-            </tbody>
-          </Table>
+                  </div>
+                </div>
+                {service.bridge ? (
+                  <Connected service={service} bridge={service.bridge} routing={tcpRoutingEnabled} />
+                ) : null}
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
 
-      <Card className="mt-4">
-        <CardHeader title={t('forwarders.title')} description={t('forwarders.description')} />
-        {forwarders.length === 0 ? (
-          <Empty title={t('forwarders.empty')} hint={t('forwarders.emptyHint')} />
-        ) : (
+      {forwarders.length > 0 ? (
+        <Card className="mt-4">
+          <CardHeader title={t('forwarders.title')} description={t('forwarders.description')} />
           <Table aria-label={t('forwarders.aria')}>
             <thead>
               <tr>
@@ -288,8 +314,8 @@ export function AccessView() {
               ))}
             </tbody>
           </Table>
-        )}
-      </Card>
+        </Card>
+      ) : null}
     </>
   )
 }

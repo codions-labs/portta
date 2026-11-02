@@ -45,6 +45,7 @@ const TARGETS = [
   { name: 'projects', route: '/projects', ready: 'Demo Shop' },
   { name: 'services', route: '/projects?view=services' },
   { name: 'access', route: '/access' },
+  { name: 'access-tcp', route: '/access/tcp' },
   { name: 'host', route: '/host' },
   { name: 'containers', route: '/host/containers' },
   { name: 'network', route: '/host/network' },

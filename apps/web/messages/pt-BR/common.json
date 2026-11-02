@@ -210,6 +210,16 @@
       "publicDetail": "Sem login. Quem tiver o endereço abre.",
       "closed": "Ninguém",
       "closedDetail": "O endereço responde que está fechado."
+    },
+    "short": {
+      "protected": "Senha",
+      "public": "Todos",
+      "closed": "Fechado"
+    },
+    "confirmOpen": {
+      "title": "Abrir {{host}} para todos?",
+      "impact": "Quem tiver o endereço abre o site, sem login. Vale na próxima requisição.",
+      "confirm": "Abrir para todos"
     }
   }
 }

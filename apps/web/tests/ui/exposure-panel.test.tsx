@@ -95,6 +95,9 @@ describe('who may open a service', () => {
     await waitFor(() => expect(screen.getByRole('radio', { name: /Whoever has the password/ })).toBeChecked())
     expect(screen.getByRole('button', { name: 'New password' })).toBeEnabled()
     await userEvent.click(screen.getByRole('radio', { name: /Anybody/ }))
+    // Opening to everybody asks first.
+    expect(openService).not.toHaveBeenCalled()
+    await userEvent.click(await screen.findByRole('button', { name: 'Open to everybody' }))
     await waitFor(() => expect(openService).toHaveBeenCalledWith('c1'))
     await userEvent.click(screen.getByRole('radio', { name: /Nobody/ }))
     await waitFor(() => expect(closeService).toHaveBeenCalledWith('c1'))

@@ -266,26 +266,27 @@ with their role: shared, control, access, or a project's own.
 
 ### Access
 
-The bridges of databases and other TCP services.
+Who may open what. **Sites** lists every address this host answers on, with who
+may open it on the row: **Password** generates a login and shows the password once,
+**Everybody** asks first and removes the login, **Closed** answers nobody. The
+decision applies on the next request. A temporary link is one click from the row.
 
 ![Authentication disabled: the Access page with no open bridge and the TCP services of each project, each with its gateway address and an Open local access button](../../images/auth-disabled-access.png)
 
 **Authentication disabled**: the Access page.
 
-Databases, caches and anything else that speaks TCP rather than HTTP. **Open
-local access** creates the same bridge [`portta access open`](tcp-access.md)
-does, with the same labels, so `portta access list`, `close` and `gc` manage it
-too. It binds `127.0.0.1` on a port the kernel picks, so any number of databases
-can be reachable at once without one of them giving up its standard port. An
-open bridge offers its host, port and a connection string with no password in
-it.
+**Databases and TCP** is everything that speaks TCP rather than HTTP. **Connect**
+creates the same bridge [`portta access open`](tcp-access.md) does, with the same
+labels, so `portta access list`, `close` and `gc` manage it too. It binds `127.0.0.1`
+on a port the kernel picks, so any number of databases can be reachable at once
+without one of them giving up its standard port. An open bridge shows its address,
+a connection text with no password in it, and the password when the panel can read
+it from the container.
 
-The **Gateway address** column is the other way in, when
-[hostname routing](tcp-routing.md) is enabled: a stable
-`<project>-<service>.<domain>:<port>` that needs no bridge. Where a protocol
-cannot do it, or hostname routing is off, the column says so. **Connect** reads
-the container environment on demand to fill a connection string. The page also
-lists persistent forwarders created with
+**Fixed address** is the other way in, when [hostname routing](tcp-routing.md) is
+enabled: a stable `<project>-<service>.<domain>:<port>` that needs no bridge. Where a
+protocol cannot do it, or hostname routing is off, it says so. The page also lists
+persistent forwarders created with
 [`portta service publish --private`](tailscale-services.md).
 
 ### Gateway
@@ -524,7 +525,7 @@ portta web restart
 The proxy is up but denying calls. Confirm the panel is talking to its own
 proxy (`PORTTA_RUNTIME_DOCKER_API`), not Traefik's read-only one.
 
-**"Open local access" says the bridge image is not on this host.** The panel
+**"Connect" says the bridge image is not on this host.** The panel
 cannot pull images. `portta web up` pulls it; when the panel was started some
 other way, pull it once on the host:
 

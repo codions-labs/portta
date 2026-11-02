@@ -13,6 +13,9 @@ All notable changes to Portta are documented here. The format follows
 - Home opens with what needs a person, with the action on the row, then every
   running environment and what is still open. Projects lists each product with its
   environments and next action, and a Project's page shows what it uses by service.
+- Access answers one question per row: who may open each site, decided in place,
+  with opening to everybody asking first. Databases have one button, Connect, and
+  what it takes to use the bridge appears under the row.
 - An environment keeps its logs under its services, live, and its destructive
   operations in a menu. A service opens beside the list, in the order it is used:
   addresses, who may open it, sharing it.

@@ -181,7 +181,7 @@ export function EnvironmentOverview({ name }: { name: string }) {
   const served = useEnvironmentServices(name)
   const room = useRoomForPanel()
   const mayReadLogs = useCan('logs:read')
-  const [section, setSection] = useState<ServiceSection>('overview')
+  const [section, setSection] = useState<ServiceSection>(params.get('section') === 'share' ? 'share' : 'overview')
   const environment = environmentQuery.data
   if (!environment) return <Loading />
 

@@ -36,7 +36,7 @@ export function LinkTabs({
   label,
   className,
 }: {
-  tabs: { id: string; label: string; href: string }[]
+  tabs: { id: string; label: string; href: string; count?: number }[]
   active: string
   label: string
   className?: string
@@ -60,6 +60,11 @@ export function LinkTabs({
             )}
           >
             {tab.label}
+            {tab.count !== undefined ? (
+              <span className="ml-1.5 min-w-5 rounded-full bg-surface-2 px-1.5 text-center text-xs font-semibold text-muted tabular-nums">
+                {tab.count}
+              </span>
+            ) : null}
           </Link>
         )
       })}
