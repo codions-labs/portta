@@ -52,6 +52,7 @@ export const DOC_PATHS: Record<string, string> = {
   "docs/development/database-development.md": "database-development",
   "docs/development/scripts.md": "scripts",
   "docs/development/testing.md": "testing",
+  "docs/development/agents-smoke.md": "agents-smoke",
   "docs/development/publish-cli.md": "publish-cli",
   "docs/development/design-system.md": "design-system",
   "docs/development/documentation.md": "documentation",

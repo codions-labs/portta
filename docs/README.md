@@ -94,6 +94,7 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 - [Develop the database schema](development/database-development.md) — Change schemas and validate generated migrations.
 - [Shell scripts](development/scripts.md) — Understand the remaining shell contract and how to add commands.
 - [Testing](development/testing.md) — Choose targeted tests and integration or release validation.
+- [Smoke test the agent layer](development/agents-smoke.md) — Check by hand that Claude Code, Codex, OpenCode and Pi start with the Portta layer.
 - [Publish the Portta CLI to npm](development/publish-cli.md) — Publish the Portta CLI to npm with release validation and verification.
 - [Design system](development/design-system.md) — Use the panel tokens, components and accessibility conventions.
 - [Contribute documentation](development/documentation.md) — Add canonical content and validate every documentation interface.

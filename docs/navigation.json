@@ -353,6 +353,11 @@
           "description": "Choose targeted tests and integration or release validation."
         },
         {
+          "source": "docs/development/agents-smoke.md",
+          "slug": "agents-smoke",
+          "description": "Check by hand that Claude Code, Codex, OpenCode and Pi start with the Portta layer."
+        },
+        {
           "source": "docs/development/publish-cli.md",
           "slug": "publish-cli",
           "description": "Publish the Portta CLI to npm with release validation and verification."

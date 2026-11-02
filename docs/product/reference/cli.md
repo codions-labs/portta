@@ -129,6 +129,22 @@ Every verb that calls the panel accepts `--url`, `--allow-remote` and
 
 `PORTTA_URL` is the API base variable. `PORTTA_TOKEN` sends a Bearer token.
 
+### Agents
+
+| Command | Command-specific flags |
+|---|---|
+| `agent context` | Read-only and offline; always exits 0, prints no secret and finishes in under a second. Says where a directory stands on this host: `--path <dir>` (default: the current directory), `--home <dir>` (where `scope.yaml` is read from), `--format text\|hook`. `--format hook` prints at most 15 lines for an agent's context, and nothing on a machine without a Portta installation. The `scope` is the first row that matches: `no-portta`, `excluded` (a path in `~/.config/portta/agents/scope.yaml`), `out-of-scope`, `non-compliant`, `compliant`, `needs-adoption`, `needs-dockerizing`. The installation is found from `PORTTA_ROOT`, `PORTTA_HOME` or a well-known location, never by walking up from the directory. |
+| `agents install [agents...]` | Writes the Portta layer for the agents found here (`claude`, `codex`, `opencode`, `pi`); name agents to install for those even when not found. `--dry-run`, `--home <dir>` (wins over `CLAUDE_CONFIG_DIR` and `CODEX_HOME`). Idempotent. |
+| `agents status [agents...]` | Compares what is installed with what should be. `--home <dir>`. |
+| `agents uninstall [agents...]` | Removes only the marker blocks, the hook entries that name `portta/agents/hook.sh` and the files the installer created. `--dry-run`, `--home <dir>`. Shared skills and the hook script go only when no agent is named. |
+
+The layer is an instruction in a `<!-- BEGIN PORTTA -->` block of the agent's
+global file, a `SessionStart` hook (Claude Code and Codex) or an extension (Pi)
+that runs `agent context --format hook`, and the skills in `~/.agents/skills`.
+`portta doctor` warns about an agent installed without it. Codex runs a new hook
+only after you review it in `/hooks`. To check it by hand, follow
+[Smoke test the agent layer](../../development/agents-smoke.md).
+
 ### Configuration
 
 | Command | Command-specific flags |
@@ -274,6 +290,8 @@ The table lists the stable top-level fields of `data`:
 | `tunnel test` | `host`, `code`, `ok`, `detail`, `hint` |
 | `backup` | `file`, `size`, `paths[]`, `database` |
 | `repair --dry-run` | `dryRun`, `changes[]` |
+| `agent context` | `host` (`portta`, `version`, `profile`, `gateway`, `domain`), `project` (`root`, `worktree`, `scope`, `compose`, `publishedPorts`, `exposure[]`, `urls`, `violations`, `note`), `skills`, `next` |
+| `agents install\|status\|uninstall` | `home`, `dryRun`, `agents[]`, `items[]` (`agent`, `kind`, `path`, `state`, `action`), `notes[]` |
 
 Fields are additive within `0.x`; incompatible changes are called out in the
 changelog. Secret values never appear in JSON.
