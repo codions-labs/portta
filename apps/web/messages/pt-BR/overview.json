@@ -173,5 +173,59 @@
     "publicLink": "Link temporário público",
     "expiresIn": "Expira em {{time}}",
     "revoke": "Revogar"
+  },
+  "firstUse": {
+    "title": "Seu host está pronto",
+    "titleDown": "O gateway não está no ar",
+    "description": "O gateway está no ar e nenhuma porta dos seus projetos será publicada. Falta trazer o primeiro projeto.",
+    "descriptionDown": "Sem ele nenhum site responde. Rode portta up neste host e volte aqui.",
+    "start": "Por onde começar",
+    "options": {
+      "compose": {
+        "title": "Tenho um projeto com Compose",
+        "help": "Dê um nome ao projeto e adote a pasta dele. Você revisa o plano antes de subir."
+      },
+      "running": {
+        "title": "Já tenho contêineres rodando",
+        "help_one": "{{count}} ambiente do Docker ainda não pertence a nenhum projeto.",
+        "help_other": "{{count}} ambientes do Docker ainda não pertencem a nenhum projeto."
+      },
+      "agent": {
+        "title": "Quero que um agente prepare tudo",
+        "help": "Instale com o comando em Preparar este host. O agente coloca o projeto em Docker e o adota aqui."
+      }
+    },
+    "dismiss": "Ver o painel mesmo assim",
+    "steps": {
+      "title": "Preparar este host",
+      "progress": "{{done}} de {{total}}",
+      "done": "Concluído",
+      "pending": "Pendente",
+      "gateway": {
+        "title": "Gateway no ar",
+        "up": "Respondendo neste host.",
+        "down": "Não está respondendo."
+      },
+      "domain": {
+        "title": "Domínio e certificado",
+        "local": "localhost, só nesta máquina. Não precisa de certificado.",
+        "secured": "{{domain}} com certificado.",
+        "plain": "{{domain}} ainda sem certificado. Ative em Configurações."
+      },
+      "project": {
+        "title": "Adicionar o primeiro projeto",
+        "detail": "Escolha por onde começar."
+      },
+      "account": {
+        "title": "Proteger sua conta",
+        "detail": "Ative a verificação em duas etapas em Configurações.",
+        "done": "Verificação em duas etapas ativa."
+      },
+      "agents": {
+        "title": "Ensinar seus agentes",
+        "detail": "Claude Code, Codex, OpenCode e Pi passam a conhecer este host.",
+        "copy": "Copiar comando"
+      }
+    }
   }
 }

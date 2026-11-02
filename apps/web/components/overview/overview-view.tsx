@@ -9,6 +9,7 @@ import { Mono } from '@/components/copy'
 import { DiagnosticText } from '@/components/diagnostic-text'
 import { HostAccess, primaryRoute, RouteLine } from '@/components/entities/environment-row'
 import { HostHeader, HostReadings, HostSummarySkeleton, pressureReasons } from '@/components/host-summary'
+import { FirstUse, useFirstUseDismissal } from '@/components/overview/first-use'
 import { Empty, ErrorBox, Loading, MetricCard, PageHeader } from '@/components/shell-bits'
 import { Badge, StatusDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -95,8 +96,19 @@ function Dashboard({ data }: { data: DevelopmentOverview }) {
   const mayCreate = useCan('project:create')
   const closed = useClosedHosts()
   const unprotected = useUnprotectedHosts()
+  const [dismissed, dismiss] = useFirstUseDismissal()
   const { runtime } = data
   const needsYou = data.attention.length + (closed.length > 0 ? 1 : 0) + (unprotected.length > 0 ? 1 : 0)
+
+  if (data.projects.length === 0 && mayCreate && !dismissed) {
+    return (
+      <FirstUse
+        onDismiss={dismiss}
+        // A fresh host has none of this, and one with problems must not hide them behind a welcome.
+        attention={needsYou > 0 ? <NeedsYou data={data} closed={closed} unprotected={unprotected} /> : null}
+      />
+    )
+  }
 
   return (
     <>

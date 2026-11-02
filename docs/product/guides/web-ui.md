@@ -189,6 +189,12 @@ so a link, a bookmark and the back button all work.
 
 **Authentication disabled**: the Overview on the demo host.
 
+Until there is a first project, whoever may create one sees where to start instead:
+a project with Compose, containers already running, or an agent, beside what this
+host still needs. It says only what the panel can read, so teaching your agents never
+reads as done: `portta agents status` says that on the host. **See the panel anyway**
+leaves it for that browser, and anything needing attention still shows below it.
+
 The Overview, in the order the questions come. The top line names
 the machine (its commercial name or hostname, its kind, OS, architecture and
 uptime) beside the gateway's state and the host's verdict: **Normal**,

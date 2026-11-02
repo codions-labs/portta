@@ -16,6 +16,7 @@ All notable changes to Portta are documented here. The format follows
 
 - The panel has a new look: a slate canvas, white cards, navy for the main action
   and blue for links, in Manrope, Inter and IBM Plex Mono, with larger controls.
+- A host with no project yet opens on where to start and what is left to prepare.
 - Home opens with what needs a person, with the action on the row, then every
   running environment and what is still open. Projects lists each product with its
   environments and next action, and a Project's page shows what it uses by service.

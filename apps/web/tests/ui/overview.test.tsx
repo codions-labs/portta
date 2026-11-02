@@ -1,7 +1,8 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
+import { userEvent } from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeContainer, makeEnvironment, makeOverview } from './fixtures.ts'
-import { renderWithQuery } from './render.tsx'
+import { principal, renderWithQuery } from './render.tsx'
 
 class ApiError extends Error {
   status: number
@@ -138,5 +139,85 @@ describe('who may open an environment on a public host', () => {
     expect(screen.queryByText('Protected')).not.toBeInTheDocument()
     expect(screen.queryByText('Open')).not.toBeInTheDocument()
     expect(screen.queryByText('Closed')).not.toBeInTheDocument()
+  })
+})
+
+describe('the first use of a host', () => {
+  const route = {
+    url: 'https://app.example.com',
+    host: 'app.example.com',
+    scope: 'public' as const,
+    scheme: 'https' as const,
+  }
+
+  function empty() {
+    developmentOverview.mockResolvedValue({ ...makeOverview(), projects: [] })
+  }
+
+  beforeEach(() => {
+    window.localStorage.clear()
+    empty()
+  })
+
+  it('says where to start until there is a project', async () => {
+    renderWithQuery(<Overview />)
+    expect(await screen.findByRole('heading', { name: 'Your host is ready' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /I have a project with Compose/ })).toHaveAttribute(
+      'href',
+      '/projects?new=1',
+    )
+  })
+
+  it('offers what is already running only when something is', async () => {
+    renderWithQuery(<Overview />)
+    await screen.findByRole('heading', { name: 'Your host is ready' })
+    expect(screen.queryByRole('link', { name: /already have containers/ })).toBeNull()
+  })
+
+  it('counts environments no project owns', async () => {
+    environments.mockResolvedValue([makeEnvironment({ name: 'loose' })])
+    renderWithQuery(<Overview />)
+    expect(await screen.findByRole('link', { name: /1 Docker environment does not belong/ })).toHaveAttribute(
+      'href',
+      '/projects',
+    )
+  })
+
+  it('has no account step on a panel that signs nobody in, and never claims the agents are taught', async () => {
+    renderWithQuery(<Overview />)
+    await screen.findByText('Prepare this host')
+    expect(screen.queryByText('Protect your account')).toBeNull()
+    const item = screen.getByText('Teach your agents').closest('li')
+    expect(within(item as HTMLElement).getByText('Pending')).toBeInTheDocument()
+  })
+
+  it('does not hide a problem behind the welcome', async () => {
+    environments.mockResolvedValue([
+      makeEnvironment({
+        name: 'open',
+        urls: [route],
+        services: [makeContainer({ id: 'o', urls: [route], labels: { 'traefik.enable': 'true' } })],
+      }),
+    ])
+    exposure.mockResolvedValue({ enforced: true, entries: [], openRouters: { count: 0, names: [] } })
+    renderWithQuery(<Overview />)
+    await screen.findByRole('heading', { name: 'Your host is ready' })
+    expect((await screen.findAllByText('1 site answers everybody, with no login')).length).toBeGreaterThan(0)
+  })
+
+  it('gets out of the way when asked, and remembers', async () => {
+    const first = renderWithQuery(<Overview />)
+    await userEvent.click(await screen.findByRole('button', { name: 'See the panel anyway' }))
+    expect(screen.queryByRole('heading', { name: 'Your host is ready' })).toBeNull()
+    first.unmount()
+    renderWithQuery(<Overview />)
+    await screen.findByRole('heading', { name: 'Home' })
+    expect(screen.queryByRole('heading', { name: 'Your host is ready' })).toBeNull()
+  })
+
+  it('is not offered to somebody who cannot create a project', async () => {
+    renderWithQuery(<Overview />, undefined, principal({ permissions: ['environment:read'] }))
+    await screen.findByRole('heading', { name: 'Home' })
+    expect(screen.queryByRole('heading', { name: 'Your host is ready' })).toBeNull()
   })
 })

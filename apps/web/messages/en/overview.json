@@ -173,5 +173,59 @@
     "publicLink": "Public temporary link",
     "expiresIn": "Expires in {{time}}",
     "revoke": "Revoke"
+  },
+  "firstUse": {
+    "title": "Your host is ready",
+    "titleDown": "The gateway is not up",
+    "description": "The gateway is up and no port of your projects will be published. All that is left is the first project.",
+    "descriptionDown": "Without it no site answers. Run portta up on this host and come back.",
+    "start": "Where to start",
+    "options": {
+      "compose": {
+        "title": "I have a project with Compose",
+        "help": "Name the project and adopt its folder. You review the plan before it comes up."
+      },
+      "running": {
+        "title": "I already have containers running",
+        "help_one": "{{count}} Docker environment does not belong to a project yet.",
+        "help_other": "{{count}} Docker environments do not belong to a project yet."
+      },
+      "agent": {
+        "title": "I want an agent to prepare everything",
+        "help": "Install it with the command under Prepare this host. The agent puts the project in Docker and adopts it here."
+      }
+    },
+    "dismiss": "See the panel anyway",
+    "steps": {
+      "title": "Prepare this host",
+      "progress": "{{done}} of {{total}}",
+      "done": "Done",
+      "pending": "Pending",
+      "gateway": {
+        "title": "Gateway up",
+        "up": "Answering on this host.",
+        "down": "Not answering."
+      },
+      "domain": {
+        "title": "Domain and certificate",
+        "local": "localhost, only on this machine. No certificate needed.",
+        "secured": "{{domain}} with a certificate.",
+        "plain": "{{domain}} with no certificate yet. Turn it on in Settings."
+      },
+      "project": {
+        "title": "Add the first project",
+        "detail": "Pick where to start."
+      },
+      "account": {
+        "title": "Protect your account",
+        "detail": "Turn on two-step verification in Settings.",
+        "done": "Two-step verification is on."
+      },
+      "agents": {
+        "title": "Teach your agents",
+        "detail": "Claude Code, Codex, OpenCode and Pi come to know this host.",
+        "copy": "Copy command"
+      }
+    }
   }
 }
