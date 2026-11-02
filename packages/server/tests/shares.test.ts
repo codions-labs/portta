@@ -6,7 +6,7 @@ import { readProtectionStore } from 'portta-core'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { PanelConfig } from '../src/config.ts'
 import { buildSnapshot } from '../src/services/inventory.ts'
-import { createShare, listShares, loadShares, revokeShare, ShareRefused } from '../src/services/shares.ts'
+import { createShare, listShares, loadShares, revokeShare, ShareRefused, shareHost } from '../src/services/shares.ts'
 import { EXTERNAL, FULL_HOST, GATEWAY, PROJECT_A } from './fixtures.ts'
 import { del, fakeDocker, makeApp, post, testConfig } from './helpers.ts'
 
@@ -31,6 +31,28 @@ async function world(overrides: Partial<PanelConfig> = {}) {
   return { config, snapshot, container }
 }
 
+describe('the share hostname', () => {
+  const config = { publicDomain: 'apps.example.test', domain: 'localhost' } as never
+
+  it('is one DNS label under the domain, so the wildcard certificate covers it', () => {
+    const host = shareHost(config, 'storefront', 'web', 'a7f3')
+    expect(host).toBe('storefront-web-a7f3-share.apps.example.test')
+    expect(host.slice(0, host.indexOf('.apps.'))).not.toContain('.')
+  })
+
+  it('keeps the id and the suffix when the names are long, within 63 octets', () => {
+    const host = shareHost(
+      config,
+      'a-very-long-project-name-that-keeps-going',
+      'an-equally-long-service-name-here',
+      'a7f3',
+    )
+    const label = host.slice(0, host.indexOf('.apps.'))
+    expect(label.length).toBeLessThanOrEqual(63)
+    expect(label.endsWith('-a7f3-share')).toBe(true)
+  })
+})
+
 describe('a share is an additional hostname, and nothing about the project changes', () => {
   it('writes a router, a service and an auth middleware, pointing at the container name', async () => {
     const { config, snapshot, container } = await world(PUBLIC)
@@ -42,7 +64,7 @@ describe('a share is an additional hostname, and nothing about the project chang
     // alias `web` on the shared network.
     expect(yaml).toContain('url: "http://alpha-web-1:80"')
     expect(yaml).toContain('middlewares: [portta-forward-auth]')
-    expect(created.share.host).toMatch(/^alpha-web-[0-9a-f]{4}\.share\.dev\.example\.com$/)
+    expect(created.share.host).toMatch(/^alpha-web-[0-9a-f]{4}-share\.dev\.example\.com$/)
   })
 
   it('shows the password exactly once, and stores only its hash', async () => {
@@ -180,7 +202,7 @@ describe('the API', () => {
 
     const view = (await (await app.request('/api/shares')).json()) as ShareView
     expect(view.shares).toHaveLength(1)
-    expect(view.domain).toBe('share.dev.example.com')
+    expect(view.domain).toBe('dev.example.com')
     // The listing never carries the password, only the user.
     expect(JSON.stringify(view)).not.toContain(created.password)
 

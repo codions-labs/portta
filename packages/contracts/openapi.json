@@ -3830,7 +3830,7 @@
           },
           "domain": {
             "type": "string",
-            "description": "Domain reserved for temporary share hostnames"
+            "description": "The domain share hostnames sit under, one label deep: <project>-<service>-<id>-share.<domain>"
           },
           "publicAllowed": {
             "type": "boolean",

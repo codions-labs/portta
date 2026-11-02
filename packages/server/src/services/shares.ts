@@ -13,9 +13,11 @@
 import { randomBytes } from 'node:crypto'
 import type { ContainerSummary, Share, ShareMode, ShareState } from 'portta-contracts'
 import {
+  fitLabel,
   generatePassword,
   hashPassword,
   SHARES_MARKER as MARKER,
+  MAX_LABEL,
   readProtectionStore,
   removeProtection,
   renderAuthDynamic,
@@ -59,10 +61,19 @@ export interface StoredShare {
 
 export { shareRouterName }
 
-/** `<project>-<service>-<id>.share.<domain>`: visibly not a project hostname. */
+/**
+ * `<project>-<service>-<id>-share.<domain>`: one DNS label, visibly a share.
+ *
+ * One label, because the wildcard certificate a public host asks for covers
+ * `<domain>` and `*.<domain>` and nothing deeper (ADR 0023). The project and
+ * service are fitted to leave room for the id and the `-share` suffix, so a long
+ * name never pushes the suffix out of the 63 octets a label may have.
+ */
 export function shareHost(config: PanelConfig, project: string, service: string, id: string): string {
   const domain = config.publicDomain ?? config.domain
-  return `${slug(project)}-${slug(service)}-${id}.share.${domain}`
+  const suffix = `-${id}-share`
+  const name = fitLabel(`${slug(project)}-${slug(service)}`, MAX_LABEL - suffix.length)
+  return `${name}${suffix}.${domain}`
 }
 
 // ---------------------------------------------------------------------------

@@ -8,7 +8,7 @@ const shares = [
     service: 'web',
     container: 'storefront-web-1',
     port: 3000,
-    host: 'storefront-web-a7f3.share.dev.example.com',
+    host: 'storefront-web-a7f3-share.dev.example.com',
     mode: 'protected' as const,
     user: 'reviewer',
     entryPoint: 'websecure',

@@ -510,7 +510,9 @@ export const ShareView = named(
   z
     .object({
       shares: z.array(Share),
-      domain: z.string().describe('Domain reserved for temporary share hostnames'),
+      domain: z
+        .string()
+        .describe('The domain share hostnames sit under, one label deep: <project>-<service>-<id>-share.<domain>'),
       publicAllowed: z.boolean().describe('Whether a public share would be accepted'),
       maxTtlSeconds: z.number().int(),
     })
