@@ -19,7 +19,7 @@ const VIEWER = { name: 'Rita Levi', email: 'rita@example.test', password: 'anoth
 async function signIn(page: import('@playwright/test').Page, who: { email: string; password: string }) {
   await page.goto('/sign-in')
   await page.getByLabel('Email').fill(who.email)
-  await page.getByLabel('Password').fill(who.password)
+  await page.getByLabel(/^Password/).fill(who.password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/overview$/, { timeout: 20_000 })
 }
@@ -35,7 +35,7 @@ test.describe('administering a panel that asks who you are', () => {
 
     // 2. The owner creates a viewer.
     await page.getByRole('link', { name: 'Users', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Users', level: 1 })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Users', level: 2 })).toBeVisible()
     await page.getByRole('button', { name: 'New user' }).click()
     const form = page.getByRole('dialog')
     await form.getByLabel(/^Name/).fill(VIEWER.name)

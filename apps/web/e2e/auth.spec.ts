@@ -34,11 +34,11 @@ test.describe('a panel that asks who you are', () => {
     // 3. The owner is created, and the panel opens.
     await page.getByLabel('Name').fill(OWNER.name)
     await page.getByLabel('Email').fill(OWNER.email)
-    await page.getByLabel('Password').fill(OWNER.password)
-    await page.getByRole('button', { name: 'Create owner' }).click()
+    await page.getByLabel(/^Password/).fill(OWNER.password)
+    await page.getByRole('button', { name: 'Create account and sign in' }).click()
 
     await expect(page).toHaveURL(/\/overview$/, { timeout: 20_000 })
-    await expect(page.getByRole('heading', { name: 'Home', level: 1 })).toBeAttached()
+    await expect(page.getByRole('heading', { name: 'Your server is ready', level: 1 })).toBeVisible()
 
     // 4. A second setup is refused, whoever asks.
     const again = await request.post('/api/auth/setup', { data: OWNER })
@@ -64,7 +64,7 @@ test.describe('a panel that asks who you are', () => {
 
     // 8. And signing back in returns to the panel.
     await page.getByLabel('Email').fill(OWNER.email)
-    await page.getByLabel('Password').fill(OWNER.password)
+    await page.getByLabel(/^Password/).fill(OWNER.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL(/\/overview$/, { timeout: 20_000 })
   })
@@ -72,7 +72,7 @@ test.describe('a panel that asks who you are', () => {
   test('says nothing useful about a password that is wrong', async ({ page }) => {
     await page.goto('/sign-in')
     await page.getByLabel('Email').fill(OWNER.email)
-    await page.getByLabel('Password').fill('not-the-password')
+    await page.getByLabel(/^Password/).fill('not-the-password')
     await page.getByRole('button', { name: 'Sign in' }).click()
 
     // Scoped to the form: Next's own route announcer is also a live region.
