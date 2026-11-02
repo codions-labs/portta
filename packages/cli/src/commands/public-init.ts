@@ -79,6 +79,8 @@ export function planPublicInit(options: PublicInitOptions): PublicInitPlan {
       PORTTA_WEB: 'true',
       PORTTA_WEB_EXPOSE: 'domain',
       PORTTA_PANEL_ADVERTISED_HOST: panelHost,
+      // The address a browser types, so session cookies are Secure and the panel's origin checks match.
+      PORTTA_PANEL_URL: `https://${panelHost}`,
       PORTTA_AUTH_MODE: 'required',
     },
     records: [
@@ -148,7 +150,12 @@ export async function publicInit(
     tokenSet: tokenPresent,
     records: plan.records,
     tokenPermission: 'Zone, DNS, Edit on the zone',
-    next: ['portta up remote-public', 'portta dns check', 'portta doctor'],
+    next: [
+      'portta up remote-public',
+      'printf %s "$PASSWORD" | portta auth bootstrap --name <name> --email <email> --password-stdin',
+      'portta dns check',
+      'portta doctor',
+    ],
   }
   if (output.json) {
     output.data(result)
@@ -169,6 +176,9 @@ export async function publicInit(
   output.line('Cloudflare token permission: Zone, DNS, Edit on the zone')
   if (!tokenPresent)
     output.line('CF_DNS_API_TOKEN is not set: put the token in .env or rerun with --cloudflare-token-stdin')
+  output.line()
+  output.line('Create the owner from this host right after `up`, before sharing the address: until it exists,')
+  output.line('whoever reaches the panel first can claim it at /setup.')
   output.line()
   output.line('Next:')
   for (const step of result.next) output.line(`  ${step}`)
