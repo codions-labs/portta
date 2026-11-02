@@ -295,17 +295,22 @@ export function filesystemForPath(path: string, mounts: RawMount[]): HostStorage
   const totalBytes = asFiniteNumber(chosen.mount.size)
   if (totalBytes === null || totalBytes <= 0) return null
   const availableBytes = asFiniteNumber(chosen.mount.available)
-  const usedBytes =
-    asFiniteNumber(chosen.mount.used) ?? (availableBytes !== null ? Math.max(0, totalBytes - availableBytes) : null)
+  const filesystem = asNonEmptyString(chosen.mount.fs) ?? asNonEmptyString(chosen.mount.type)
+  // APFS volumes share one container: the system volume reports a few GB used of a disk whose
+  // free space is the whole container's, so what is in use is what is not free.
+  const shared = /apfs/i.test(`${chosen.mount.fs ?? ''} ${chosen.mount.type ?? ''}`) && availableBytes !== null
+  const usedBytes = shared
+    ? Math.max(0, totalBytes - availableBytes)
+    : (asFiniteNumber(chosen.mount.used) ?? (availableBytes !== null ? Math.max(0, totalBytes - availableBytes) : null))
   const usedPercent =
-    asFiniteNumber(chosen.mount.use) !== null
+    !shared && asFiniteNumber(chosen.mount.use) !== null
       ? percentToUnit(asFiniteNumber(chosen.mount.use))
       : ratio(usedBytes, totalBytes)
   if (usedBytes === null || availableBytes === null || usedPercent === null) return null
   return {
     path,
     mount: chosen.mountPath,
-    filesystem: asNonEmptyString(chosen.mount.fs) ?? asNonEmptyString(chosen.mount.type),
+    filesystem,
     totalBytes,
     usedBytes,
     availableBytes,

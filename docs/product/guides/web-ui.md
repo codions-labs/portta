@@ -327,7 +327,7 @@ persistent forwarders created with
 
 The first section, Health, reads the **whole server**, not only the projects. Memory,
 CPU and disk are each a percentage of what the machine has, with the amount beside it
-(12 GB of 32 GB), and a bar that splits what is in use between the projects, Portta's
+(12 GB of 32 GB; the disk in powers of ten, as macOS and disk makers count, so a 512 GB disk reads 512 GB), and a bar that splits what is in use between the projects, Portta's
 own containers, and the system and everything else running there. Below, **What is
 using the server** names the share the projects take of what is in use and lists them
 from the largest, as a share of the server. The disk is split the same way, by what each

@@ -170,6 +170,15 @@ describe('which folder a project was started from', () => {
     expect(both.has('j') || both.has('k')).toBe(false)
   })
 
+  it('counts a folder by where its name leads, through a link or a trailing slash', () => {
+    const alias = join(root, 'alias-of-mine')
+    symlinkSync(mine, alias)
+    expect(workingDirectories([labels('l', mine), labels('m', alias, [join(mine, 'compose.yaml')])], root).size).toBe(0)
+    expect(
+      workingDirectories([labels('n', mine), labels('o', `${mine}/`, [join(mine, 'compose.yaml')])], root).size,
+    ).toBe(0)
+  })
+
   it('takes none when Compose did not read a file in that folder', () => {
     const elsewhere = mkdtempSync(join(tmpdir(), 'portta-elsewhere-'))
     writeFileSync(join(elsewhere, 'compose.yaml'), 'services: {}\n')

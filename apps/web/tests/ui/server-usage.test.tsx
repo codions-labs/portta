@@ -44,8 +44,8 @@ beforeEach(() =>
     dockerStorage: {
       collectedAt: 1,
       projects: [
-        { composeProject: 'shop', volumeBytes: 30 * GB, layerBytes: 2 * GB },
-        { composeProject: 'portta', volumeBytes: 4 * GB, layerBytes: 0 },
+        { composeProject: 'shop', volumeBytes: 30e9, layerBytes: 2e9 },
+        { composeProject: 'portta', volumeBytes: 4e9, layerBytes: 0 },
       ],
     },
     projects: [
@@ -90,9 +90,9 @@ beforeEach(() =>
         path: '/opt/portta',
         mount: '/',
         filesystem: 'ext4',
-        totalBytes: 512 * GB,
-        usedBytes: 208 * GB,
-        availableBytes: 304 * GB,
+        totalBytes: 512e9,
+        usedBytes: 208e9,
+        availableBytes: 304e9,
         usedPercent: 0.41,
       },
       gpu: [],

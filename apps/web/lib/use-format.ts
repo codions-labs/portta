@@ -14,6 +14,7 @@ export function useFormat() {
       relativeTime: (epochSeconds: number | null | undefined) => format.relativeTime(epochSeconds, t),
       expiresIn: (epochSeconds: number | null | undefined) => format.expiresIn(epochSeconds, t),
       bytes: (value: number | null | undefined) => format.bytes(value, locale, t),
+      storage: (value: number | null | undefined) => format.bytes(value, locale, t, 1000),
       shortId: format.shortId,
       shortImage: format.shortImage,
       locale,

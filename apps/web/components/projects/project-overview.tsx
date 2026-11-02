@@ -25,7 +25,7 @@ type HistoryWindow = (typeof WINDOWS)[number]
 
 export function ProjectOverview({ project }: { project: Project; readOnly?: boolean }) {
   const { t } = useTranslation('projects')
-  const { bytes, uptime } = useFormat()
+  const { bytes, storage, uptime } = useFormat()
   const mayRead = useCan('access:read')
   const environments = useEnvironments(true)
   const exposure = useExposure(mayRead)
@@ -112,7 +112,7 @@ export function ProjectOverview({ project }: { project: Project; readOnly?: bool
           />
         ) : null}
         {stored ? (
-          <ReadingCard label={t('overview.disk')} value={bytes(stored)} unit={t('overview.diskHint')} points={[]} />
+          <ReadingCard label={t('overview.disk')} value={storage(stored)} unit={t('overview.diskHint')} points={[]} />
         ) : null}
         <ReadingCard
           label={t('overview.services')}

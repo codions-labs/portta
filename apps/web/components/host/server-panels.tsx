@@ -34,7 +34,9 @@ function useAmount(kind: UsageKind) {
       ? value.toLocaleString(format.locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
       : value === 0
         ? '0 B'
-        : format.bytes(value)
+        : kind === 'disk'
+          ? format.storage(value)
+          : format.bytes(value)
 }
 
 function parts(split: UsageSplit): Array<{ id: Part; value: number }> {
@@ -402,7 +404,7 @@ export function ServerDetails({ data, now }: { data: MetricsCurrent; now: number
           </Fact>
           {host.storage ? (
             <Fact label={t('disk')}>
-              {format.bytes(host.storage.totalBytes)}
+              {format.storage(host.storage.totalBytes)}
               {host.storage.filesystem ? ` · ${host.storage.filesystem}` : ''}
               {host.storage.mount ? ` · ${host.storage.mount}` : ''}
             </Fact>

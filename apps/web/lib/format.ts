@@ -36,13 +36,17 @@ export function expiresIn(epochSeconds: number | null | undefined, t?: FormatT):
   return t ? t('format.in', { time: uptime(remaining, t) }) : `in ${uptime(remaining)}`
 }
 
-export function bytes(value: number | null | undefined, locale = 'en', t?: FormatT): string {
+/**
+ * `base` is 1024 for memory and 1000 for storage: a disk is sold, and shown by macOS and by `df -H`,
+ * in powers of ten, so a 512 GB disk reads as 512 GB and not as 477.
+ */
+export function bytes(value: number | null | undefined, locale = 'en', t?: FormatT, base = 1024): string {
   if (value === null || value === undefined || value <= 0) return '-'
   const unitKeys = ['B', 'KB', 'MB', 'GB', 'TB'] as const
   let size = value
   let unit = 0
-  while (size >= 1024 && unit < unitKeys.length - 1) {
-    size /= 1024
+  while (size >= base && unit < unitKeys.length - 1) {
+    size /= base
     unit += 1
   }
   const unitLabel = t ? t(`format.bytes.${unitKeys[unit]}` as 'format.bytes.B') : unitKeys[unit]
