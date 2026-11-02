@@ -1,6 +1,6 @@
 'use client'
 
-// The top of every Host page: which machine this is, how it is doing, what can
+// The top of every Server page: which machine this is, how it is doing, what can
 // be done to it, and its sections.
 
 import { usePathname } from 'next/navigation'
@@ -94,6 +94,7 @@ export function HostSections() {
           <>
             {system ? <span>{system}</span> : null}
             {host?.uptimeSeconds != null ? <Fact label={th('facts.up')}>{uptime(host.uptimeSeconds)}</Fact> : null}
+            {host?.timezone ? <Fact label={th('facts.timezone')}>{host.timezone}</Fact> : null}
             {gateway.data ? <Fact label={th('facts.portta')}>{gateway.data.panelVersion}</Fact> : null}
             {profile ? (
               <Fact label={th('facts.profile')}>{th(`facts.profiles.${profile}`, { defaultValue: profile })}</Fact>

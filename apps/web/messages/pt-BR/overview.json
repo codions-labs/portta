@@ -9,7 +9,7 @@
     "count": "{{count}} para agir",
     "count_one": "{{count}} para agir",
     "count_other": "{{count}} para agir",
-    "hostPressure": "Host sob pressão: {{reasons}}",
+    "hostPressure": "Servidor sob pressão: {{reasons}}",
     "serviceUnhealthy": "{{environment}}/{{service}} não está saudável",
     "unhealthyDetail": "A verificação de saúde está falhando",
     "logs": "Ver logs",
@@ -26,11 +26,11 @@
     "title": "Projetos",
     "all": "Todos os projetos",
     "empty": "Nenhum projeto ainda",
-    "emptyHint": "Crie um em Projetos; os environments deste host continuam listados de qualquer forma."
+    "emptyHint": "Crie um em Projetos; os environments deste servidor continuam listados de qualquer forma."
   },
   "resources": {
-    "top": "Usando este host",
-    "topDescription": "Environments por memória. Pare um daqui quando o host estiver sob pressão.",
+    "top": "Usando este servidor",
+    "topDescription": "Environments por memória. Pare um daqui quando o servidor estiver sob pressão.",
     "none": "Nada medido",
     "environments": "Ambientes"
   },
@@ -46,7 +46,7 @@
     "hint": "O status do próprio gateway e seus problemas continuam aqui."
   },
   "host": {
-    "title": "Este host",
+    "title": "Este servidor",
     "kind": {
       "notebook": "Notebook",
       "desktop": "Desktop",
@@ -72,7 +72,7 @@
     "stale": "coletado há {{age}}s",
     "collectorInactive": "Collector inativo",
     "unavailable": "Não disponível",
-    "unavailableHint": "O collector do host não está gravando snapshots. Suba o gateway com portta up.",
+    "unavailableHint": "O collector do servidor não está gravando snapshots. Suba o gateway com portta up.",
     "runtime": {
       "label": "Ambiente",
       "orbstack": "OrbStack",
@@ -80,9 +80,9 @@
       "docker-engine": "Docker Engine",
       "unknown": "Desconhecido"
     },
-    "summary": "Host",
-    "showDetails": "Mostrar detalhes do host",
-    "hideDetails": "Ocultar detalhes do host",
+    "summary": "Servidor",
+    "showDetails": "Mostrar detalhes do servidor",
+    "hideDetails": "Ocultar detalhes do servidor",
     "temperature": "Temp",
     "battery": "Bateria",
     "loadLabel": "Carga",
@@ -106,15 +106,15 @@
     "open": "Abrir"
   },
   "pressure": {
-    "label": "Host",
+    "label": "Servidor",
     "normal": "Normal",
     "watch": "Atenção",
     "pressured": "Sob pressão",
     "critical": "Crítico",
     "unmeasured": "Não medido",
     "because": "Porque: {{reasons}}",
-    "normalHint": "Todos os recursos que este host reporta estão em faixa confortável.",
-    "unmeasuredHint": "Sem snapshot recente, então o estado do host é desconhecido.",
+    "normalHint": "Todos os recursos que este servidor reporta estão em faixa confortável.",
+    "unmeasuredHint": "Sem snapshot recente, então o estado do servidor é desconhecido.",
     "reason": {
       "cpu": "CPU em {{value}}",
       "memory": "RAM em {{value}}",
@@ -131,14 +131,14 @@
   },
   "addProject": "Adicionar projeto",
   "summary": {
-    "running_one": "{{count}} ambiente no ar neste host.",
-    "running_other": "{{count}} ambientes no ar neste host.",
+    "running_one": "{{count}} ambiente no ar neste servidor.",
+    "running_other": "{{count}} ambientes no ar neste servidor.",
     "needsYou_one": "{{count}} coisa precisa de você.",
     "needsYou_other": "{{count}} coisas precisam de você.",
     "allGood": "Nada precisa de você."
   },
   "metric": {
-    "label": "Resumo deste host",
+    "label": "Resumo deste servidor",
     "environments": "Ambientes",
     "ofRunning": "de {{total}} no ar",
     "services": "Serviços",
@@ -147,7 +147,7 @@
     "live": "no ar",
     "undecided_one": "{{count}} sem decisão",
     "undecided_other": "{{count}} sem decisão",
-    "hostUse": "Uso do host",
+    "hostUse": "Uso do servidor",
     "cpu": "CPU",
     "memory": "Memória",
     "disk": "Disco"
@@ -175,10 +175,10 @@
     "revoke": "Revogar"
   },
   "firstUse": {
-    "title": "Seu host está pronto",
+    "title": "Seu servidor está pronto",
     "titleDown": "O gateway não está no ar",
     "description": "O gateway está no ar e nenhuma porta dos seus projetos será publicada. Falta trazer o primeiro projeto.",
-    "descriptionDown": "Sem ele nenhum site responde. Rode portta up neste host e volte aqui.",
+    "descriptionDown": "Sem ele nenhum site responde. Rode portta up neste servidor e volte aqui.",
     "start": "Por onde começar",
     "options": {
       "compose": {
@@ -192,18 +192,18 @@
       },
       "agent": {
         "title": "Quero que um agente prepare tudo",
-        "help": "Instale com o comando em Preparar este host. O agente coloca o projeto em Docker e o adota aqui."
+        "help": "Instale com o comando em Preparar este servidor. O agente coloca o projeto em Docker e o adota aqui."
       }
     },
     "dismiss": "Ver o painel mesmo assim",
     "steps": {
-      "title": "Preparar este host",
+      "title": "Preparar este servidor",
       "progress": "{{done}} de {{total}}",
       "done": "Concluído",
       "pending": "Pendente",
       "gateway": {
         "title": "Gateway no ar",
-        "up": "Respondendo neste host.",
+        "up": "Respondendo neste servidor.",
         "down": "Não está respondendo."
       },
       "domain": {
@@ -223,7 +223,7 @@
       },
       "agents": {
         "title": "Ensinar seus agentes",
-        "detail": "Claude Code, Codex, OpenCode e Pi passam a conhecer este host.",
+        "detail": "Claude Code, Codex, OpenCode e Pi passam a conhecer este servidor.",
         "copy": "Copiar comando"
       }
     }

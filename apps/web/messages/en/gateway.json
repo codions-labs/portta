@@ -9,8 +9,8 @@
     "summary": "{{failures}} failure(s), {{warnings}} warning(s) · {{time}}",
     "description": "Checks the panel can make from inside its container.",
     "notRun": "Not run yet",
-    "notRunHint": "For host-level checks (PATH, listening sockets, DNS, certificate files) run portta doctor.",
-    "deeperChecks": "deeper, host-level checks:"
+    "notRunHint": "For server-level checks (PATH, listening sockets, DNS, certificate files) run portta doctor.",
+    "deeperChecks": "deeper, server-level checks:"
   },
   "logs": {
     "title": "Logs",
@@ -30,11 +30,11 @@
     "barApplying": "Applying saved settings…",
     "barAction": "Apply",
     "barReview": "Review",
-    "barManual": "Apply them on the host with:",
+    "barManual": "Apply them on the server with:",
     "unavailable": {
-      "disabled": "Set PORTTA_APPLY=true in the host's .env, then run the command once.",
-      "refused": "This host refuses to apply from the panel: {{reason}}.",
-      "notPrepared": "PORTTA_APPLY is already on; the applier is not prepared yet. Run the command once on the host."
+      "disabled": "Set PORTTA_APPLY=true in the server's .env, then run the command once.",
+      "refused": "This server refuses to apply from the panel: {{reason}}.",
+      "notPrepared": "PORTTA_APPLY is already on; the applier is not prepared yet. Run the command once on the server."
     },
     "confirmTitle": "Apply saved settings?",
     "confirmDescription": "Portta recreates its own containers so these saved values take effect.",
@@ -42,7 +42,7 @@
     "confirmProjects": "Your projects are not touched. Only Portta's own containers are recreated, and the shared network stays as it is.",
     "confirmMoves": "A pending setting changes where this panel answers, so this tab will not reconnect on its own.",
     "confirmKeepTab": "Keep this tab open while it runs.",
-    "confirmBuild": "This host builds its own images, so the apply includes a Docker build. The first one can take several minutes.",
+    "confirmBuild": "This server builds its own images, so the apply includes a Docker build. The first one can take several minutes.",
     "confirmReference": "These saved values are a new reference. Recreating the gateway is not needed.",
     "confirm": "Apply",
     "discard": "Discard",
@@ -71,14 +71,14 @@
     "reload": "Reload the panel",
     "reloadWhy": "This page still shows what the previous process answered with.",
     "failedExit": "The applier exited with code {{code}}. Nothing was rolled back.",
-    "failedHint": "Run it on the host to see the whole output:",
+    "failedHint": "Run it on the server to see the whole output:",
     "showOutput": "Show output",
-    "timeoutBody": "The panel has not answered for {{time}}. It may still be starting. Reload the page, or finish it on the host:"
+    "timeoutBody": "The panel has not answered for {{time}}. It may still be starting. Reload the page, or finish it on the server:"
   },
   "actionFailed": "That did not work",
   "restartConfirm": {
     "title": "Restart Traefik?",
-    "impact": "Every site on this host goes down for a few seconds while it comes back.",
+    "impact": "Every site on this server goes down for a few seconds while it comes back.",
     "confirm": "Restart"
   },
   "parts": {

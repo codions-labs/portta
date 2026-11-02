@@ -193,7 +193,7 @@
     "user": "login: {{user}}",
     "hintDecided": "Changes apply on the next request. Nothing is recreated.",
     "hintClosed": "Nobody decided about this hostname, so it is closed.",
-    "hintUnprotected": "This service does not enforce a login. Re-adopt it on a public host before protecting it.",
+    "hintUnprotected": "This service does not enforce a login. Re-adopt it on a public server before protecting it.",
     "protect": "Protect with a password",
     "newPassword": "New password",
     "makeOpen": "Open to everybody",

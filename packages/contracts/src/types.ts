@@ -831,6 +831,10 @@ export const HostMetrics = named(
       release: nullableString,
       kernel: nullableString,
       uptimeSeconds: nullableNumber,
+      timezone: nullableString
+        .optional()
+        .describe('The IANA zone the server clock is set to; absent in readings from an older collector'),
+      utcOffsetMinutes: nullableNumber.optional().describe('Minutes east of UTC when the reading was taken'),
       cpu: HostCpuInfo,
       memoryTotalBytes: nullableNumber,
       memoryUsedBytes: nullableNumber,
@@ -922,6 +926,7 @@ export const ProjectResourceMetrics = named(
       id: z.string(),
       name: z.string(),
       composeProject: z.string(),
+      own: z.literal(true).optional().describe("Set on Portta's own containers (gateway, panel, proxies)"),
       cpuUtilisation: nullableNumber,
       memoryUsedBytes: nullableNumber,
       containerCount: z.number().int(),

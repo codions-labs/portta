@@ -36,8 +36,8 @@
     "removeData": "Remover e dados locais",
     "removeKeepTitle": "Remover este projeto, manter os dados?",
     "removeDataTitle": "Remover este projeto e os dados locais?",
-    "removeFromHost": "Remover {{name}} deste host.",
-    "githubUntouched": "Nada fora deste host muda.",
+    "removeFromHost": "Remover {{name}} deste servidor.",
+    "githubUntouched": "Nada fora deste servidor muda.",
     "previewContainers": "{{count}} container(s) serão removidos.",
     "previewVolumes": "Volumes nomeados: {{names}}. O tamanho é desconhecido: o painel não inspeciona volumes.",
     "typeName": "Digite {{name}} para confirmar.",
@@ -107,7 +107,7 @@
   },
   "list": {
     "title": "Ambientes",
-    "description": "Todo projeto Compose neste host, adotado ou não. Um Project é o produto; isto é o que está rodando para ele.",
+    "description": "Todo projeto Compose neste servidor, adotado ou não. Um Project é o produto; isto é o que está rodando para ele.",
     "filterAria": "Filtrar ambientes",
     "searchPlaceholder": "Buscar ambiente, projeto ou serviço",
     "searchAria": "Buscar ambientes",
@@ -115,7 +115,7 @@
     "unattributed": "Sem projeto",
     "running": "Em execução",
     "empty": "Nenhum ambiente em execução",
-    "emptyHint": "Um ambiente aparece quando o Compose está no ar neste host. Adote-o num Project com a label portta.project ou à mão.",
+    "emptyHint": "Um ambiente aparece quando o Compose está no ar neste servidor. Adote-o num Project com a label portta.project ou à mão.",
     "noMatch": "Nenhum ambiente corresponde aos filtros",
     "remembered": "Não em execução"
   },
@@ -183,6 +183,6 @@
     },
     "moreFiles_one": "e mais {{count}} arquivo",
     "moreFiles_other": "e mais {{count}} arquivos",
-    "readOn": "Lido neste host, sem consultar o GitHub · {{time}}"
+    "readOn": "Lido neste servidor, sem consultar o GitHub · {{time}}"
   }
 }

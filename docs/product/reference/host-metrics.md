@@ -14,9 +14,9 @@ Grafana, no privileged panel, and no extra `/proc` bind.
 
 | Layer | Source | What it is |
 |---|---|---|
-| **Host** | `systeminformation` on the CLI process | The real machine: model, the chassis folded into a `kind` (notebook, desktop, server, vm), the commercial name on macOS (`productName`), OS, cores, RAM, load, the filesystem that holds `$PORTTA_ROOT`, GPU, temperature and battery when the machine has them |
+| **Host** | `systeminformation` on the CLI process | The real machine: model, the chassis folded into a `kind` (notebook, desktop, server, vm), the commercial name on macOS (`productName`), OS, the time zone the clock is set to (`timezone`, `utcOffsetMinutes`), cores, RAM, load, the filesystem that holds `$PORTTA_ROOT`, GPU, temperature and battery when the machine has them |
 | **Runtime** | `docker info` `OperatingSystem` | A hint only: OrbStack, Docker Desktop, or the Engine. Never treated as the host |
-| **Projects** | `docker stats` + Compose / `portta.project` labels | CPU and memory rolled up per project |
+| **Projects** | `docker stats` + Compose / `portta.project` labels | CPU and memory rolled up per project; Portta's own containers carry `own: true`, so a reading can tell them from the projects |
 | **Containers** | The same `docker stats` | Per-container CPU, memory, network and block I/O |
 
 `systeminformation`'s own Docker helpers talk to the engine socket in a way

@@ -36,8 +36,8 @@
     "removeData": "Remove and local data",
     "removeKeepTitle": "Remove this project, keep data?",
     "removeDataTitle": "Remove this project and local data?",
-    "removeFromHost": "Remove {{name}} from this host.",
-    "githubUntouched": "Nothing outside this host changes.",
+    "removeFromHost": "Remove {{name}} from this server.",
+    "githubUntouched": "Nothing outside this server changes.",
     "previewContainers": "{{count}} container(s) will be removed.",
     "previewVolumes": "Named volumes: {{names}}. Size is unknown: the panel cannot inspect volumes.",
     "typeName": "Type {{name}} to confirm.",
@@ -107,7 +107,7 @@
   },
   "list": {
     "title": "Environments",
-    "description": "Every Compose project on this host, adopted or not. A Project is the product; this is what is running for it.",
+    "description": "Every Compose project on this server, adopted or not. A Project is the product; this is what is running for it.",
     "filterAria": "Filter environments",
     "searchPlaceholder": "Search environment, project or service",
     "searchAria": "Search environments",
@@ -115,7 +115,7 @@
     "unattributed": "Without a project",
     "running": "Running",
     "empty": "No environment is running",
-    "emptyHint": "An environment appears when Compose is up on this host. Adopt it onto a Project with the portta.project label or by hand.",
+    "emptyHint": "An environment appears when Compose is up on this server. Adopt it onto a Project with the portta.project label or by hand.",
     "noMatch": "No environment matches the filters",
     "remembered": "Not running"
   },
@@ -183,6 +183,6 @@
     },
     "moreFiles_one": "and {{count}} more file",
     "moreFiles_other": "and {{count}} more files",
-    "readOn": "Read on this host, without asking GitHub · {{time}}"
+    "readOn": "Read on this server, without asking GitHub · {{time}}"
   }
 }

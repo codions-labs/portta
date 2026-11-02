@@ -48,7 +48,7 @@
   "shortcuts": {
     "sidebar": "Mostrar ou ocultar a barra lateral"
   },
-  "host": "Host",
+  "host": "Servidor",
   "settingsShort": "Ajustes",
   "hostSections": {
     "health": "Saúde",

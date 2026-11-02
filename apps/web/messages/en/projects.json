@@ -69,7 +69,7 @@
     "relativePathHint": "A directory of PORTTA_PROJECTS_HOME, at any depth. Files are never moved.",
     "archived": "Archived",
     "deleteTitle": "Delete this project",
-    "deleteDescription": "Removes the registration and what Portta keeps about it. Nothing on the host changes.",
+    "deleteDescription": "Removes the registration and what Portta keeps about it. Nothing on the server changes.",
     "deleteRemoves": "Removed: the project and its adoptions.",
     "deleteKeeps": "Kept: every container, volume, network and working directory. Environments go back to unassigned.",
     "typeSlug": "Type {{slug}} to confirm",
@@ -135,7 +135,7 @@
       "restartTitle_other": "Restart {{count}} projects?",
       "restartImpact": "This restarts {{count}} containers; each one is briefly unreachable.",
       "archiveTitle": "Archive {{count}} projects?",
-      "archiveImpact": "They leave the default list. Nothing on the host changes, and they can be unarchived at any time."
+      "archiveImpact": "They leave the default list. Nothing on the server changes, and they can be unarchived at any time."
     }
   },
   "views": {
@@ -180,7 +180,7 @@
     "more": "More",
     "openSite": "Open site",
     "unowned": "No project",
-    "unownedHint": "Runs on this host and no project adopted it",
+    "unownedHint": "Runs on this server and no project adopted it",
     "adoptInto": "Adopt into"
   },
   "row": {
@@ -205,7 +205,7 @@
     "description": "Portta reads your Compose and creates the rest beside it. Nothing in your repository is changed.",
     "copy": "Copy command",
     "folder": {
-      "title": "From a folder on this host",
+      "title": "From a folder on this server",
       "description": "The panel does not open your projects' folders: the terminal reads the Compose, with the same plan you review here afterwards.",
       "label": "Folder path",
       "analyze": "See what would be done, changing nothing:",
@@ -213,7 +213,7 @@
     },
     "running": {
       "title": "Already running",
-      "description": "Adopt an environment Docker already runs on this host.",
+      "description": "Adopt an environment Docker already runs on this server.",
       "none": "No environment without a project.",
       "services_one": "{{count}} service, no project",
       "services_other": "{{count}} services, no project",

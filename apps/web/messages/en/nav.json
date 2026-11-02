@@ -48,7 +48,7 @@
   "shortcuts": {
     "sidebar": "Toggle the sidebar"
   },
-  "host": "Host",
+  "host": "Server",
   "settingsShort": "Settings",
   "hostSections": {
     "health": "Health",

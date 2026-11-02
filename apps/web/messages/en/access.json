@@ -73,7 +73,7 @@
   "sites": {
     "tab": "Sites",
     "title": "Sites",
-    "description": "Who may open each address on this host. A decision applies on the next request; nothing restarts.",
+    "description": "Who may open each address on this server. A decision applies on the next request; nothing restarts.",
     "search": "Search address or project",
     "moreHosts_one": "{{count}} more address",
     "moreHosts_other": "{{count}} more addresses",
@@ -94,7 +94,7 @@
     "shownOnce": "It appears only now. Give it to whoever needs access.",
     "unknownRouters_one": "{{count}} service answers with no login on addresses the panel cannot list",
     "unknownRouters_other": "{{count}} services answer with no login on addresses the panel cannot list",
-    "unknownRoutersHint": "Their routing rule does not name one address: a regexp, a wildcard or no Host at all. Every address on this host reads as open because this router may answer it. Give it the login gate or a Host rule.",
+    "unknownRoutersHint": "Their routing rule does not name one address: a regexp, a wildcard or no Host at all. Every address on this server reads as open because this router may answer it. Give it the login gate or a Host rule.",
     "filters": {
       "all": "All {{count}}",
       "unprotected": "No login, open {{count}}",
@@ -119,7 +119,7 @@
     "expires": "Expires {{time}}",
     "passwordFromProject": "The password comes from your project; Portta could not read it here.",
     "notOptedIn": "Not enabled for this project: add the TCP overlay to get one.",
-    "routingOff": "Hostname routing is off on this host (PORTTA_TCP=false).",
+    "routingOff": "Hostname routing is off on this server (PORTTA_TCP=false).",
     "private": "Private",
     "connect": "Connect",
     "connectTo": "Connect to {{name}}",

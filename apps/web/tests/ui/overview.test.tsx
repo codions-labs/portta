@@ -161,13 +161,13 @@ describe('the first use of a host', () => {
 
   it('says where to start until there is a project', async () => {
     renderWithQuery(<Overview />)
-    expect(await screen.findByRole('heading', { name: 'Your host is ready' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Your server is ready' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /I have a project with Compose/ })).toHaveAttribute('href', '/projects/new')
   })
 
   it('offers what is already running only when something is', async () => {
     renderWithQuery(<Overview />)
-    await screen.findByRole('heading', { name: 'Your host is ready' })
+    await screen.findByRole('heading', { name: 'Your server is ready' })
     expect(screen.queryByRole('link', { name: /already have containers/ })).toBeNull()
   })
 
@@ -182,7 +182,7 @@ describe('the first use of a host', () => {
 
   it('has no account step on a panel that signs nobody in, and never claims the agents are taught', async () => {
     renderWithQuery(<Overview />)
-    await screen.findByText('Prepare this host')
+    await screen.findByText('Prepare this server')
     expect(screen.queryByText('Protect your account')).toBeNull()
     const item = screen.getByText('Teach your agents').closest('li')
     expect(within(item as HTMLElement).getByText('Pending')).toBeInTheDocument()
@@ -198,23 +198,23 @@ describe('the first use of a host', () => {
     ])
     exposure.mockResolvedValue({ enforced: true, entries: [], openRouters: { count: 0, names: [] } })
     renderWithQuery(<Overview />)
-    await screen.findByRole('heading', { name: 'Your host is ready' })
+    await screen.findByRole('heading', { name: 'Your server is ready' })
     expect((await screen.findAllByText('1 site answers everybody, with no login')).length).toBeGreaterThan(0)
   })
 
   it('gets out of the way when asked, and remembers', async () => {
     const first = renderWithQuery(<Overview />)
     await userEvent.click(await screen.findByRole('button', { name: 'See the panel anyway' }))
-    expect(screen.queryByRole('heading', { name: 'Your host is ready' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Your server is ready' })).toBeNull()
     first.unmount()
     renderWithQuery(<Overview />)
     await screen.findByRole('heading', { name: 'Home' })
-    expect(screen.queryByRole('heading', { name: 'Your host is ready' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Your server is ready' })).toBeNull()
   })
 
   it('is not offered to somebody who cannot create a project', async () => {
     renderWithQuery(<Overview />, undefined, principal({ permissions: ['environment:read'] }))
     await screen.findByRole('heading', { name: 'Home' })
-    expect(screen.queryByRole('heading', { name: 'Your host is ready' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Your server is ready' })).toBeNull()
   })
 })

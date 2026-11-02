@@ -72,7 +72,7 @@ describe('project operations', () => {
     renderWithQuery(<EnvironmentOperations project={project()} />)
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(await screen.findByRole('menuitem', { name: 'Remove, keep data' }))
-    expect(await screen.findByText(/Nothing outside this host changes/)).toBeInTheDocument()
+    expect(await screen.findByText(/Nothing outside this server changes/)).toBeInTheDocument()
     const submit = screen.getAllByRole('button', { name: 'Remove, keep data' }).at(-1)!
     expect(submit).toBeDisabled()
     await user.type(screen.getByRole('textbox'), 'alpha')

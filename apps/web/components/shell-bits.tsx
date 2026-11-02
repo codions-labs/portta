@@ -418,6 +418,9 @@ export function ReadingCard({
   points = [],
   max,
   footnote,
+  detail,
+  tone,
+  children,
 }: {
   label: string
   value: string
@@ -425,14 +428,21 @@ export function ReadingCard({
   points?: ReadonlyArray<number | null>
   max?: number
   footnote?: string
+  /** What the number is a share of, under it. */
+  detail?: string
+  tone?: string
+  /** Drawn between the number and its history, such as a bar that splits it. */
+  children?: ReactNode
 }) {
   return (
     <div role="group" aria-label={label} className="rounded-xl border border-line bg-surface px-5 py-4 shadow-raised">
       <div className="text-xs font-medium tracking-[0.12em] text-subtle uppercase">{label}</div>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 font-heading text-3xl font-semibold tabular-nums">
-        {value}
+        <span className={tone}>{value}</span>
         {unit ? <span className="font-sans text-sm font-medium tracking-normal text-subtle">{unit}</span> : null}
       </div>
+      {detail ? <div className="mt-0.5 text-sm text-muted">{detail}</div> : null}
+      {children}
       {points.length > 1 ? <Sparkline values={points} max={max} label={label} className="mt-2 h-8 w-full" /> : null}
       {footnote ? <div className="mt-1.5 text-xs text-subtle">{footnote}</div> : null}
     </div>

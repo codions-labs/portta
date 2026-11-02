@@ -86,6 +86,10 @@ export interface HostMetrics {
   release: string | null
   kernel: string | null
   uptimeSeconds: number | null
+  /** The IANA zone the server's clock is set to (America/Sao_Paulo), as the collector's own process resolves it. */
+  timezone?: string | null
+  /** Minutes east of UTC at collection time, so the zone's offset on that day, daylight saving included. */
+  utcOffsetMinutes?: number | null
   cpu: HostCpuInfo
   memoryTotalBytes: number | null
   memoryUsedBytes: number | null
@@ -122,6 +126,8 @@ export interface ProjectResourceMetrics {
   id: string
   name: string
   composeProject: string
+  /** Portta's own containers, so a reading can tell the gateway and panel from the projects it serves. */
+  own?: true
   cpuUtilisation: number | null
   memoryUsedBytes: number | null
   containerCount: number
@@ -204,6 +210,8 @@ export function emptyHost(): HostMetrics {
     release: null,
     kernel: null,
     uptimeSeconds: null,
+    timezone: null,
+    utcOffsetMinutes: null,
     cpu: {
       manufacturer: null,
       brand: null,
@@ -436,6 +444,7 @@ export function normalizeHost(input: {
   loadavg?: unknown
   graphics?: unknown
   time?: unknown
+  timezone?: { name: string | null; offsetMinutes: number | null }
   cpuTemperature?: unknown
   battery?: unknown
   chassis?: unknown
@@ -487,6 +496,8 @@ export function normalizeHost(input: {
     release: asNonEmptyString(os?.codename) ?? asNonEmptyString(os?.release),
     kernel: asNonEmptyString(os?.kernel),
     uptimeSeconds: asFiniteNumber(time?.uptime),
+    timezone: asNonEmptyString(input.timezone?.name),
+    utcOffsetMinutes: asFiniteNumber(input.timezone?.offsetMinutes),
     cpu: {
       manufacturer: asNonEmptyString(cpu?.manufacturer),
       brand: asNonEmptyString(cpu?.brand),

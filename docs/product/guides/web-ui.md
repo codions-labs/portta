@@ -190,9 +190,9 @@ See [Authentication](authentication.md) and
 ## The pages
 
 The sidebar follows the tasks of a day: Home, Projects and Access, then an
-**Infrastructure** group with Host and Settings. Services are a view of Projects,
+**Infrastructure** group with Server and Settings. Services are a view of Projects,
 and an environment no Project adopted is listed there under **No project**; containers, network and gateway are sections
-of Host. On a phone the same entries are a bar under the content. An entry the current
+of Server. On a phone the same entries are a bar under the content. An entry the current
 person may not open is not listed. Every page is a route,
 so a link, a bookmark and the back button all work.
 
@@ -257,7 +257,7 @@ See [Manage environments](environments.md) and the
 ### Services and Docker
 
 **By service**, in Projects, is every service of every integrated project as one
-filterable list, with its addresses. **Containers**, in Host, is every container on the host, filtered by
+filterable list, with its addresses. **Containers**, in Server, is every container on the host, filtered by
 origin (projects, external, Portta's own) or by port conflict, with its image and
 published ports. See
 [Manage services](services.md).
@@ -279,7 +279,7 @@ the next request and recreates nothing. See
 
 ### Network
 
-A section of Host, at `/host/network`.
+A section of Server, at `/host/network`.
 
 ![Authentication disabled: the Network page with addresses, certificates, VPN and the Docker networks with their roles](../../images/auth-disabled-network.png)
 
@@ -323,11 +323,24 @@ protocol cannot do it, or hostname routing is off, it says so. The page also lis
 persistent forwarders created with
 [`portta service publish --private`](tailscale-services.md).
 
+### Server
+
+The first section, Health, reads the **whole server**, not only the projects. Memory,
+CPU and disk are each a percentage of what the machine has, with the amount beside it
+(12 GB of 32 GB), and a bar that splits what is in use between the projects, Portta's
+own containers, and the system and everything else running there. Below, **What is
+using the server** names the share the projects take of what is in use and lists them
+from the largest, as a share of the server. The disk is shown whole for now: splitting
+it by project needs a storage measurement per project. The page also shows the time zone
+the server's clock is set to, with its local time, next to the system, hardware and
+runtime details. The time zone is read by the collector on the machine, so it needs a
+collector that has been updated with `portta up` to show.
+
 ### Gateway
 
-A section of Host, at `/host/gateway`. Traefik, the socket proxy, authentication and
+A section of Server, at `/host/gateway`. Traefik, the socket proxy, authentication and
 Tailscale with their state and version, and logs for each source, with the rest one
-click away. **Restart Traefik** and **Run diagnostics** sit in the Host header on
+click away. **Restart Traefik** and **Run diagnostics** sit in the Server header on
 every tab: restarting asks first and restarts the container in place, and diagnostics
 are the checks the panel can make from inside its container. See
 [Configure the panel](panel-settings.md#gateway).
@@ -338,8 +351,8 @@ One page with the sections beside it, in two groups, and a search that finds a
 setting by name, by what it does or by its variable, and opens it. **This host**
 (Projects, Addresses, Site access, Certificates and DNS, Panel and Traefik) is listed
 to whoever holds `settings:read`. Saving is at the foot of the section, and a change
-that is saved but not in effect says what to run. Host readiness and security
-findings are the **Health** section of Host, for whoever holds `metrics:read`.
+that is saved but not in effect says what to run. Server readiness and security
+findings are the **Health** section of Server, for whoever holds `metrics:read`.
 **People** (Users, API tokens, Security and Audit) appears with authentication
 enabled; with it disabled a bookmark into one of them says the
 panel does not sign people in. Every section is described in
@@ -418,7 +431,7 @@ container, never a host shell and never a gateway container.
 
 ### Acting on several containers
 
-Host > Containers has a checkbox on every row. With some selected, the bar above
+Server > Containers has a checkbox on every row. With some selected, the bar above
 the list starts, stops, restarts, shows their logs together or removes them.
 "Select all" covers what the current filter shows and never a container of
 Portta's own: without those the panel and every site go down, so their

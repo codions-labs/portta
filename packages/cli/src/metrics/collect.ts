@@ -94,13 +94,24 @@ async function collectProjects(root: string): Promise<MetricsSnapshot['projects'
   const projects = aggregateProjects(metrics, identities)
 
   const directories = workingDirectories(identities, root)
+  const ownProject = process.env.PORTTA_PROJECT_NAME?.trim() || 'portta'
   return Promise.all(
     projects.map(async (project) => {
       const directory = directories.get(project.composeProject)
       const git = directory ? await readGit(directory) : null
-      return git ? { ...project, git } : project
+      const measured = project.composeProject === ownProject ? { ...project, own: true as const } : project
+      return git ? { ...measured, git } : measured
     }),
   )
+}
+
+/** The zone this process runs in: the collector is a host process, so this is the server's own clock setting. */
+function serverTimezone(now: number): { name: string | null; offsetMinutes: number | null } {
+  let name: string | null = null
+  try {
+    name = Intl.DateTimeFormat().resolvedOptions().timeZone || null
+  } catch {}
+  return { name, offsetMinutes: -new Date(now).getTimezoneOffset() }
 }
 
 export async function collectSnapshot(root: string, now = Date.now()): Promise<MetricsSnapshot> {
@@ -133,6 +144,7 @@ export async function collectSnapshot(root: string, now = Date.now()): Promise<M
     loadavg: loadavg(),
     graphics: facts?.graphics,
     time: value(time),
+    timezone: serverTimezone(now),
     cpuTemperature: value(cpuTemperature),
     battery: value(battery),
     chassis: facts?.chassis,

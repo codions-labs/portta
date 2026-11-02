@@ -9,7 +9,7 @@
     "count": "{{count}} to act on",
     "count_one": "{{count}} to act on",
     "count_other": "{{count}} to act on",
-    "hostPressure": "Host under pressure: {{reasons}}",
+    "hostPressure": "Server under pressure: {{reasons}}",
     "serviceUnhealthy": "{{environment}}/{{service}} is unhealthy",
     "unhealthyDetail": "Its health check is failing",
     "logs": "View logs",
@@ -26,11 +26,11 @@
     "title": "Projects",
     "all": "All projects",
     "empty": "No project yet",
-    "emptyHint": "Create one under Projects; environments on this host stay listed regardless."
+    "emptyHint": "Create one under Projects; environments on this server stay listed regardless."
   },
   "resources": {
-    "top": "Using this host",
-    "topDescription": "Environments by memory. Stop one from here when the host is under pressure.",
+    "top": "Using this server",
+    "topDescription": "Environments by memory. Stop one from here when the server is under pressure.",
     "none": "Nothing measured",
     "environments": "Environments"
   },
@@ -46,7 +46,7 @@
     "hint": "The gateway's own status and its problems are still here."
   },
   "host": {
-    "title": "This host",
+    "title": "This server",
     "kind": {
       "notebook": "Notebook",
       "desktop": "Desktop",
@@ -72,7 +72,7 @@
     "stale": "collected {{age}}s ago",
     "collectorInactive": "Collector inactive",
     "unavailable": "Unavailable",
-    "unavailableHint": "The host collector is not writing snapshots. Start the gateway with portta up.",
+    "unavailableHint": "The server collector is not writing snapshots. Start the gateway with portta up.",
     "runtime": {
       "label": "Runtime",
       "orbstack": "OrbStack",
@@ -80,9 +80,9 @@
       "docker-engine": "Docker Engine",
       "unknown": "Unknown"
     },
-    "summary": "Host",
-    "showDetails": "Show host details",
-    "hideDetails": "Hide host details",
+    "summary": "Server",
+    "showDetails": "Show server details",
+    "hideDetails": "Hide server details",
     "temperature": "Temp",
     "battery": "Battery",
     "loadLabel": "Load",
@@ -106,15 +106,15 @@
     "open": "Open"
   },
   "pressure": {
-    "label": "Host",
+    "label": "Server",
     "normal": "Normal",
     "watch": "Watch",
     "pressured": "Under pressure",
     "critical": "Critical",
     "unmeasured": "Not measured",
     "because": "Because: {{reasons}}",
-    "normalHint": "Every resource this host reports is within its comfortable range.",
-    "unmeasuredHint": "No recent snapshot, so the host's state is unknown.",
+    "normalHint": "Every resource this server reports is within its comfortable range.",
+    "unmeasuredHint": "No recent snapshot, so the server's state is unknown.",
     "reason": {
       "cpu": "CPU at {{value}}",
       "memory": "RAM at {{value}}",
@@ -131,14 +131,14 @@
   },
   "addProject": "Add project",
   "summary": {
-    "running_one": "{{count}} environment running on this host.",
-    "running_other": "{{count}} environments running on this host.",
+    "running_one": "{{count}} environment running on this server.",
+    "running_other": "{{count}} environments running on this server.",
     "needsYou_one": "{{count}} thing needs you.",
     "needsYou_other": "{{count}} things need you.",
     "allGood": "Nothing needs you."
   },
   "metric": {
-    "label": "Summary of this host",
+    "label": "Summary of this server",
     "environments": "Environments",
     "ofRunning": "of {{total}} running",
     "services": "Services",
@@ -147,7 +147,7 @@
     "live": "live",
     "undecided_one": "{{count}} undecided",
     "undecided_other": "{{count}} undecided",
-    "hostUse": "Host usage",
+    "hostUse": "Server usage",
     "cpu": "CPU",
     "memory": "Memory",
     "disk": "Disk"
@@ -175,10 +175,10 @@
     "revoke": "Revoke"
   },
   "firstUse": {
-    "title": "Your host is ready",
+    "title": "Your server is ready",
     "titleDown": "The gateway is not up",
     "description": "The gateway is up and no port of your projects will be published. All that is left is the first project.",
-    "descriptionDown": "Without it no site answers. Run portta up on this host and come back.",
+    "descriptionDown": "Without it no site answers. Run portta up on this server and come back.",
     "start": "Where to start",
     "options": {
       "compose": {
@@ -192,18 +192,18 @@
       },
       "agent": {
         "title": "I want an agent to prepare everything",
-        "help": "Install it with the command under Prepare this host. The agent puts the project in Docker and adopts it here."
+        "help": "Install it with the command under Prepare this server. The agent puts the project in Docker and adopts it here."
       }
     },
     "dismiss": "See the panel anyway",
     "steps": {
-      "title": "Prepare this host",
+      "title": "Prepare this server",
       "progress": "{{done}} of {{total}}",
       "done": "Done",
       "pending": "Pending",
       "gateway": {
         "title": "Gateway up",
-        "up": "Answering on this host.",
+        "up": "Answering on this server.",
         "down": "Not answering."
       },
       "domain": {
@@ -223,7 +223,7 @@
       },
       "agents": {
         "title": "Teach your agents",
-        "detail": "Claude Code, Codex, OpenCode and Pi come to know this host.",
+        "detail": "Claude Code, Codex, OpenCode and Pi come to know this server.",
         "copy": "Copy command"
       }
     }

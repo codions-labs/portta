@@ -7,25 +7,89 @@
       "local": "local",
       "remote-private": "private",
       "remote-public": "public"
-    }
+    },
+    "timezone": "Time zone"
   },
   "health": {
     "resources": "Resources",
     "window": "Last 30 min",
     "of": "of {{total}}",
     "disk": "Disk",
-    "machine": "Machine details",
     "docker": "Docker",
     "dockerResources": "Available to Docker",
-    "top": {
-      "title": "Using the most",
-      "empty": "Nothing measured yet",
-      "cpu": "CPU {{value}}"
-    },
     "checks": {
       "title": "Checks",
       "showAll": "Show all {{count}}",
       "showFewer": "Show fewer"
+    },
+    "usage": {
+      "note": "These numbers are for the whole server, not only the projects. Each bar splits what is in use between the projects, Portta, and the system and everything else running there.",
+      "memory": "Server memory",
+      "cpu": "Server CPU",
+      "disk": "Server disk",
+      "inUse": "in use",
+      "ofTotal": "{{used}} of {{total}}",
+      "ofCores": "{{used}} of {{total}} cores",
+      "freeOf": "{{free}} free",
+      "ofWhole": "of {{total}}",
+      "diskWhole": "The whole disk the server runs on. Splitting it by project is not measured yet.",
+      "part": {
+        "projects": "Projects",
+        "portta": "Portta",
+        "system": "System and others",
+        "free": "Free"
+      },
+      "kind": {
+        "memory": "Memory",
+        "cpu": "CPU",
+        "disk": "Disk"
+      },
+      "who": {
+        "title": "What is using the server",
+        "description": "Tells the projects apart from the operating system and everything else on the server.",
+        "resource": "Resource",
+        "verdict": {
+          "memory": "Projects use {{percent}} of the memory in use.",
+          "cpu": "Projects use {{percent}} of the CPU in use.",
+          "disk": "Projects use {{percent}} of the disk in use."
+        },
+        "rest": "The other {{percent}} is the system, Portta and other programs.",
+        "diskNote": "The disk is shown as a whole for now. Splitting it by project needs a storage measurement per project, which is not collected yet.",
+        "list": "Projects, largest first · share of the server",
+        "more": "{{count}} more projects",
+        "empty": "No project is using this resource right now.",
+        "unmeasured": "The server does not report this resource."
+      }
+    },
+    "clock": {
+      "title": "Time and time zone",
+      "unknown": "The server has not reported its time zone yet. Update the collector with portta up.",
+      "sameAsYou": "Same time zone as your browser.",
+      "differsFromYou": "A different time zone from your browser."
+    },
+    "server": {
+      "title": "Server",
+      "system": "System",
+      "hardware": "Hardware",
+      "environment": "Time zone and runtime",
+      "name": "Name",
+      "os": "System",
+      "kernel": "Kernel",
+      "architecture": "Architecture",
+      "type": "Type",
+      "up": "Up since",
+      "cpu": "CPU",
+      "memory": "Memory",
+      "swap": "swap {{used}} of {{total}}",
+      "disk": "Disk",
+      "gpu": "GPU",
+      "none": "None",
+      "temperature": "Temperature",
+      "timezone": "Time zone",
+      "unreported": "Not reported yet",
+      "docker": "Docker",
+      "dockerResources": "Available to Docker",
+      "portta": "Portta folder"
     }
   }
 }

@@ -69,7 +69,7 @@
     "relativePathHint": "Um diretório de PORTTA_PROJECTS_HOME, em qualquer profundidade. Arquivos nunca são movidos.",
     "archived": "Arquivado",
     "deleteTitle": "Excluir este projeto",
-    "deleteDescription": "Remove o registro e o que o Portta guarda sobre ele. Nada muda no host.",
+    "deleteDescription": "Remove o registro e o que o Portta guarda sobre ele. Nada muda no servidor.",
     "deleteRemoves": "Removido: o projeto e suas adoções.",
     "deleteKeeps": "Mantido: todo container, volume, rede e diretório de trabalho. Os ambientes voltam a não atribuídos.",
     "typeSlug": "Digite {{slug}} para confirmar",
@@ -135,7 +135,7 @@
       "restartTitle_other": "Reiniciar {{count}} projetos?",
       "restartImpact": "Isso reinicia {{count}} contêineres; cada um fica brevemente inacessível.",
       "archiveTitle": "Arquivar {{count}} projetos?",
-      "archiveImpact": "Eles saem da lista padrão. Nada no host muda, e podem ser desarquivados a qualquer momento."
+      "archiveImpact": "Eles saem da lista padrão. Nada no servidor muda, e podem ser desarquivados a qualquer momento."
     }
   },
   "views": {
@@ -180,7 +180,7 @@
     "more": "Mais",
     "openSite": "Abrir site",
     "unowned": "Sem projeto",
-    "unownedHint": "Roda neste host e nenhum projeto adotou",
+    "unownedHint": "Roda neste servidor e nenhum projeto adotou",
     "adoptInto": "Adotar em"
   },
   "row": {
@@ -205,7 +205,7 @@
     "description": "O Portta lê o seu Compose e cria o resto ao lado dele. Nada no seu repositório é alterado.",
     "copy": "Copiar comando",
     "folder": {
-      "title": "De uma pasta deste host",
+      "title": "De uma pasta deste servidor",
       "description": "O painel não abre as pastas dos seus projetos: o Compose é lido pelo terminal, com o mesmo plano que você revisa aqui depois.",
       "label": "Caminho da pasta",
       "analyze": "Veja o que será feito, sem alterar nada:",
@@ -213,7 +213,7 @@
     },
     "running": {
       "title": "Já está rodando",
-      "description": "Adote um ambiente que o Docker já roda neste host.",
+      "description": "Adote um ambiente que o Docker já roda neste servidor.",
       "none": "Nenhum ambiente sem projeto.",
       "services_one": "{{count}} serviço, sem projeto",
       "services_other": "{{count}} serviços, sem projeto",

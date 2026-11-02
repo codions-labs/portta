@@ -15,7 +15,12 @@ const GIT = {
     upstream: 'origin/develop',
     ahead: 2,
     behind: 0,
-    head: { sha: 'a41f2c9', subject: 'fix(cart): valida o SKU antes de adicionar', author: 'Ada Lovelace', at: now - 7200 },
+    head: {
+      sha: 'a41f2c9',
+      subject: 'fix(cart): valida o SKU antes de adicionar',
+      author: 'Ada Lovelace',
+      at: now - 7200,
+    },
     changed: 2,
     untracked: 1,
     files: [
@@ -76,6 +81,8 @@ export function documentationState({ mode = 'disabled', profile = 'local' } = {}
     distro: 'macOS',
     version: '15.7',
     uptimeSeconds: 6 * 86400,
+    timezone: 'America/Sao_Paulo',
+    utcOffsetMinutes: -180,
     cpu: {
       manufacturer: 'Apple',
       brand: 'Apple M3 Pro',

@@ -4957,6 +4957,20 @@
               "null"
             ]
           },
+          "timezone": {
+            "description": "The IANA zone the server clock is set to; absent in readings from an older collector",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "utcOffsetMinutes": {
+            "description": "Minutes east of UTC when the reading was taken",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
           "cpu": {
             "$ref": "#/components/schemas/HostCpuInfo"
           },
@@ -5374,6 +5388,11 @@
           },
           "composeProject": {
             "type": "string"
+          },
+          "own": {
+            "description": "Set on Portta's own containers (gateway, panel, proxies)",
+            "type": "boolean",
+            "const": true
           },
           "cpuUtilisation": {
             "type": [

@@ -1,0 +1,78 @@
+import type { HostMetrics, ProjectResourceMetrics } from 'portta-contracts'
+import { describe, expect, it } from 'vitest'
+import { projectsOfUsed, usageSplit } from '@/lib/server-usage'
+
+const GB = 1024 ** 3
+
+const host = {
+  memoryTotalBytes: 32 * GB,
+  memoryUsedBytes: 12 * GB,
+  cpuUtilisation: 0.2,
+  cpu: { logicalCores: 4 },
+  storage: { totalBytes: 512 * GB, usedBytes: 208 * GB },
+} as unknown as HostMetrics
+
+const project = (
+  composeProject: string,
+  memory: number | null,
+  cpu: number | null,
+  own = false,
+): ProjectResourceMetrics =>
+  ({
+    id: composeProject,
+    name: composeProject,
+    composeProject,
+    own: own || undefined,
+    memoryUsedBytes: memory,
+    cpuUtilisation: cpu,
+    containerCount: 1,
+    containers: [],
+  }) as unknown as ProjectResourceMetrics
+
+describe('what the server is used for', () => {
+  it('splits memory into projects, Portta and the rest', () => {
+    const split = usageSplit('memory', host, [
+      project('shop', 3 * GB, 0.1),
+      project('blog', 1 * GB, 0.05),
+      project('portta', 0.5 * GB, 0.01, true),
+    ])!
+    expect(split.total).toBe(32 * GB)
+    expect(split.used).toBe(12 * GB)
+    expect(split.free).toBe(20 * GB)
+    expect(split.projects).toBe(4 * GB)
+    expect(split.portta).toBe(0.5 * GB)
+    expect(split.system).toBe(7.5 * GB)
+    expect(split.shares.map((share) => share.environment)).toEqual(['shop', 'blog'])
+    expect(split.shares[0]!.share).toBeCloseTo(3 / 32)
+    expect(projectsOfUsed(split)).toBeCloseTo(4 / 12)
+  })
+
+  it('counts the processor in cores of the whole server', () => {
+    const split = usageSplit('cpu', host, [project('shop', 1, 0.5), project('portta', 1, 0.1, true)])!
+    expect(split.total).toBe(4)
+    expect(split.used).toBeCloseTo(0.8)
+    expect(split.projects).toBeCloseTo(0.5)
+    expect(split.portta).toBeCloseTo(0.1)
+    expect(split.system).toBeCloseTo(0.2)
+  })
+
+  it('never lets the projects add up to more than the server says is in use', () => {
+    const split = usageSplit('memory', host, [project('shop', 20 * GB, null)])!
+    expect(split.projects).toBe(12 * GB)
+    expect(split.system).toBe(0)
+    expect(split.free).toBe(20 * GB)
+  })
+
+  it('does not split the disk, which is not measured per project yet', () => {
+    const split = usageSplit('disk', host, [project('shop', 1, 1)])!
+    expect(split.used).toBe(208 * GB)
+    expect(split.free).toBe(304 * GB)
+    expect(split.projects).toBeNull()
+    expect(projectsOfUsed(split)).toBeNull()
+  })
+
+  it('says nothing when the server does not report a total', () => {
+    expect(usageSplit('memory', { ...host, memoryTotalBytes: null } as HostMetrics, [])).toBeNull()
+    expect(usageSplit('disk', { ...host, storage: null } as HostMetrics, [])).toBeNull()
+  })
+})

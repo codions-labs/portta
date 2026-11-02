@@ -73,7 +73,7 @@
   "sites": {
     "tab": "Sites",
     "title": "Sites",
-    "description": "Quem pode abrir cada endereço deste host. Uma decisão vale na próxima requisição, nada é reiniciado.",
+    "description": "Quem pode abrir cada endereço deste servidor. Uma decisão vale na próxima requisição, nada é reiniciado.",
     "search": "Buscar endereço ou projeto",
     "moreHosts_one": "mais {{count}} endereço",
     "moreHosts_other": "mais {{count}} endereços",
@@ -94,7 +94,7 @@
     "shownOnce": "Ela aparece só agora. Entregue a quem precisa de acesso.",
     "unknownRouters_one": "{{count}} serviço responde sem login em endereços que o painel não consegue listar",
     "unknownRouters_other": "{{count}} serviços respondem sem login em endereços que o painel não consegue listar",
-    "unknownRoutersHint": "A regra de roteamento não nomeia um endereço: é uma regexp, um curinga ou não tem Host. Todos os endereços deste host aparecem como abertos porque esse roteador pode responder por eles. Coloque o gate de login ou uma regra Host.",
+    "unknownRoutersHint": "A regra de roteamento não nomeia um endereço: é uma regexp, um curinga ou não tem Host. Todos os endereços deste servidor aparecem como abertos porque esse roteador pode responder por eles. Coloque o gate de login ou uma regra Host.",
     "filters": {
       "all": "Todos {{count}}",
       "unprotected": "Sem login {{count}}",
@@ -119,7 +119,7 @@
     "expires": "Expira {{time}}",
     "passwordFromProject": "A senha vem do seu projeto; o Portta não conseguiu lê-la aqui.",
     "notOptedIn": "Não ativado neste projeto: adicione o overlay TCP para ter um.",
-    "routingOff": "O roteamento por hostname está desligado neste host (PORTTA_TCP=false).",
+    "routingOff": "O roteamento por hostname está desligado neste servidor (PORTTA_TCP=false).",
     "private": "Privado",
     "connect": "Conectar",
     "connectTo": "Conectar a {{name}}",

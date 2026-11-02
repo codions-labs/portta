@@ -52,7 +52,7 @@ describe('the Settings rail', () => {
       undefined,
       principal({ permissions: ['settings:read', 'user:list'] }),
     )
-    expect(screen.getByText('This host')).toBeInTheDocument()
+    expect(screen.getByText('This server')).toBeInTheDocument()
     expect(screen.getByText('People')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Certificates and DNS' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Users' })).toHaveAttribute('href', '/settings/users')
