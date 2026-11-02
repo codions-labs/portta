@@ -19,6 +19,13 @@ otherwise the already-configured project domain, as long as it isn't
 `portta config set domain.mode auto`. It also refuses while a TCP entrypoint is
 active.
 
+It also refuses while a running service routes with no login gate, which is
+what a project started before the host went public does: it would be open to the
+internet the moment the profile changes. Stop it with
+`portta runtime down <path>`, enable public access, then `portta adopt` and
+`portta runtime up` it again so it is planned behind the gate. `portta doctor`
+reports the same state as a failure, and `portta up` warns about it.
+
 Then it asks a single confirmation naming that domain:
 
 ```

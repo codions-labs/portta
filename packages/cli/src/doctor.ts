@@ -39,6 +39,7 @@ import {
   readProtectionStore,
   routesFor,
   traefikServiceNames,
+  ungatedContainers,
 } from 'portta-core'
 import { agentsNeedingLayer } from './commands/agents.js'
 import { composeArguments, type GatewayContext } from './context.js'
@@ -491,6 +492,17 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
           'public host',
           'portta-auth is not running, so every routed hostname is closed',
           'portta up   then portta logs portta-auth',
+        ),
+      )
+    const ungated = ungatedContainers(containers)
+    if (ungated.length > 0)
+      add(
+        check(
+          'public.gate',
+          'fail',
+          'public host',
+          `routed with no login gate, so open to the internet: ${ungated.join(', ')}`,
+          'portta runtime down <path>, then portta adopt <path> and portta runtime up <path> to plan it behind the gate',
         ),
       )
     if (isTrue(env.PORTTA_RUNNER_PUBLIC))

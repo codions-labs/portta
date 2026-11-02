@@ -13,6 +13,7 @@ import {
   projectsFor,
   routesFor,
   type StoredAlias,
+  ungatedContainers,
 } from 'portta-core'
 import { ensureCheckoutCli, reexecBuiltCli } from '../checkout-cli.js'
 import { confirm } from '../confirm.js'
@@ -223,6 +224,13 @@ export async function upCommand(
   await ensureNetwork(context.config.network)
   if (context.config.tcpEnabled) await ensureNetwork(context.config.accessNetwork)
   ensureAuthState(context.root, context.config.profile)
+  if (context.config.profile === 'remote-public') {
+    const ungated = ungatedContainers(await inspectContainers(false))
+    if (ungated.length > 0)
+      output.warning(
+        `routed with no login gate, so open to the internet: ${ungated.join(', ')}. Run portta runtime down <path>, then adopt and up it again.`,
+      )
+  }
   output.progress(builds ? 'starting components, building local images' : 'starting components')
   const wait = !options.attach
   const started = await compose(

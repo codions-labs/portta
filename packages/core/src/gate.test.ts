@@ -1,0 +1,43 @@
+import { describe, expect, it } from 'vitest'
+import { ungatedContainers } from './gate.ts'
+import type { ContainerRecord } from './inventory.ts'
+
+function container(name: string, labels: Record<string, string>, state = 'running'): ContainerRecord {
+  return { id: name, name, image: 'x', state, labels, ports: [], networks: [] }
+}
+
+const GATED = {
+  'traefik.enable': 'true',
+  'traefik.http.routers.shop-web.rule': 'Host(`shop-web.example.com`)',
+  'traefik.http.routers.shop-web.middlewares': 'portta-forward-auth@file',
+}
+
+describe('containers that would route with no login gate', () => {
+  it('accepts a router that names the gate, and a project not routed at all', () => {
+    expect(ungatedContainers([container('shop-web-1', GATED), container('shop-db-1', {})])).toEqual([])
+  })
+
+  it('names one with no router labels, because Traefik derives an open router for it', () => {
+    expect(ungatedContainers([container('old-web-1', { 'traefik.enable': 'true' })])).toEqual(['old-web-1'])
+  })
+
+  it('names a router whose middlewares leave the gate out', () => {
+    const labels = { ...GATED, 'traefik.http.routers.shop-web.middlewares': 'strip@docker' }
+    expect(ungatedContainers([container('shop-web-1', labels)])).toEqual(['shop-web-1'])
+  })
+
+  it('names the container when only one of its routers is gated', () => {
+    const labels = { ...GATED, 'traefik.http.routers.api.rule': 'Host(`api.example.com`)' }
+    expect(ungatedContainers([container('shop-web-1', labels)])).toEqual(['shop-web-1'])
+  })
+
+  it('leaves out gateway components, stopped containers and datastores reached by TLS name', () => {
+    expect(
+      ungatedContainers([
+        container('portta-web-1', { 'traefik.enable': 'true', 'portta.managed': 'true' }),
+        container('stopped-1', { 'traefik.enable': 'true' }, 'exited'),
+        container('db-1', { 'traefik.enable': 'true', 'traefik.tcp.routers.db.rule': 'HostSNI(`db.example.com`)' }),
+      ]),
+    ).toEqual([])
+  })
+})
