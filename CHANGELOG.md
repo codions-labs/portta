@@ -33,7 +33,23 @@ baseline was regenerated.
   skills `portta-host-context`, `portta-dockerize` and `portta-adopt-compose`,
   so Claude Code, Codex, OpenCode and Pi learn where they run at session start.
 - A project directory may sit at any depth under Projects Home.
-- Guides: `public-host` and `deploy`.
+- `portta public init` configures a public server from a domain, an email and a
+  DNS token on standard input, prints the DNS records to create and starts
+  nothing.
+- The Overview shows each environment's address and, on a public host, whether
+  it is protected, open or closed.
+- Guides: `public-host` and `deploy`, with the DNS records, the token and
+  `npx` or `npm install -g`.
+
+### Security
+
+- Hostname aliases created in the panel pass through ForwardAuth on a public
+  host, and an alias never inherits another service's access decision.
+- `portta public enable`, `portta up` and `portta doctor` treat a running
+  service that routes with no login gate as a failure on a public host:
+  enabling and starting refuse until it is planned again behind the gate.
+- Dependencies updated for published advisories: Better Auth, Next.js, Hono,
+  ws, zod, markdown-it, systeminformation and the development tools.
 
 ### Changed
 
