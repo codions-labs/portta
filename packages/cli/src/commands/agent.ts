@@ -219,7 +219,15 @@ function readPlan(gatewayRoot: string, workspace: string): PlanFacts | null {
   const text = readSmall(planPath(gatewayRoot, idFor(workspace)))
   if (text === null) return null
   try {
-    const plan = JSON.parse(text) as Record<string, any>
+    const plan = JSON.parse(text) as {
+      workspace?: string
+      profile?: string
+      compose?: { projectName?: string; generatedOverlay?: string }
+      inputs?: PlanFacts['inputs']
+      manifest?: PlanFacts['manifest']
+      capabilities?: unknown
+      services?: PlanFacts['services']
+    }
     return {
       workspace: String(plan.workspace ?? workspace),
       profile: String(plan.profile ?? ''),
@@ -227,7 +235,7 @@ function readPlan(gatewayRoot: string, workspace: string): PlanFacts | null {
       generatedOverlay: String(plan.compose?.generatedOverlay ?? ''),
       inputs: Array.isArray(plan.inputs) ? plan.inputs : [],
       manifest: plan.manifest ?? null,
-      hasCapabilities: 'capabilities' in plan,
+      hasCapabilities: plan.capabilities !== undefined,
       services: Array.isArray(plan.services) ? plan.services : [],
     }
   } catch {
@@ -436,7 +444,15 @@ export async function agentContext(options: ContextOptions = {}): Promise<AgentC
     }
     const exposure: AgentExposure[] = []
     for (const service of routed) {
-      const record = registry && service.host ? protectionForHost(registry, service.host) : null
+      const found = registry && service.host ? protectionForHost(registry, service.host) : null
+      // A record that names another project or service is somebody else's
+      // decision about a reused hostname, and does not answer for this one.
+      const record =
+        found &&
+        (!found.project || found.project === plan.projectName) &&
+        (!found.service || found.service === service.name)
+          ? found
+          : null
       if (record) exposure.push({ service: service.name, host: service.host!, mode: record.mode })
       else if (publicHost && registry) {
         exposure.push({ service: service.name, host: service.host!, mode: 'undecided' })
@@ -561,7 +577,10 @@ export async function agentContextCommand(
     }
   }
   const output = new Output(globals(command))
-  if (output.json) return output.data(context)
+  if (output.json) {
+    output.data(context)
+    return
+  }
   const text = options.format === 'hook' ? renderHook(context) : renderText(context)
   if (text !== '') process.stdout.write(`${text}\n`)
 }

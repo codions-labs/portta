@@ -95,5 +95,6 @@ export const DOC_PATHS: Record<string, string> = {
   "docs/development/adr/0044-example-projects-live-in-projects-home.md": "adr/0044-example-projects-live-in-projects-home",
   "docs/development/adr/0051-authentication-is-optional-inside-a-trusted-network.md": "adr/0051-authentication-is-optional-inside-a-trusted-network",
   "docs/development/adr/0052-the-portta-directory-is-the-project-contract.md": "adr/0052-the-portta-directory-is-the-project-contract",
+  "docs/development/adr/0055-portta-routes-and-protects-agents-do-the-work.md": "adr/0055-portta-routes-and-protects-agents-do-the-work",
   "docs/development/adr/README.md": "adr"
 }

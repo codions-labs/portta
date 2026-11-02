@@ -15,18 +15,18 @@
 
 import {
   accessSync,
-  constants,
   chmodSync,
+  constants,
   cpSync,
   existsSync,
   lstatSync,
   mkdirSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   readlinkSync,
   realpathSync,
-  rmSync,
   rmdirSync,
+  rmSync,
   statSync,
   symlinkSync,
   unlinkSync,
@@ -199,7 +199,14 @@ function instructionItem(owner: AgentId, path: string, assets: Assets): Item {
   const wanted = blockOf(assets)
   const text = readIfExists(path)
   const found = text === null ? null : findBlock(text)
-  const state: State = found === null ? 'missing' : found === 'unbalanced' ? 'conflict' : text!.slice(found.start, found.end) === wanted ? 'ok' : 'outdated'
+  const state: State =
+    found === null
+      ? 'missing'
+      : found === 'unbalanced'
+        ? 'conflict'
+        : text!.slice(found.start, found.end) === wanted
+          ? 'ok'
+          : 'outdated'
   return {
     owner,
     kind: 'instruction',
@@ -209,7 +216,8 @@ function instructionItem(owner: AgentId, path: string, assets: Assets): Item {
     ...(found === 'unbalanced' ? { detail: 'the PORTTA markers are unbalanced; fix the file by hand' } : {}),
     write() {
       if (text === null || text.trim() === '') return writeText(path, `${wanted}\n`)
-      if (found && found !== 'unbalanced') return writeText(path, text.slice(0, found.start) + wanted + text.slice(found.end))
+      if (found && found !== 'unbalanced')
+        return writeText(path, text.slice(0, found.start) + wanted + text.slice(found.end))
       writeText(path, `${text.replace(/\s+$/, '')}\n\n${wanted}\n`)
     },
     remove() {
@@ -270,7 +278,10 @@ function skillItem(layout: Layout, assets: Assets, name: string): Item {
       rmSync(target, { recursive: true, force: true })
       mkdirSync(dirname(target), { recursive: true })
       cpSync(source, target, { recursive: true })
-      writeFileSync(join(target, MANAGED_MARKER), 'Installed by `portta agents install`; `portta agents uninstall` removes it.\n')
+      writeFileSync(
+        join(target, MANAGED_MARKER),
+        'Installed by `portta agents install`; `portta agents uninstall` removes it.\n',
+      )
     },
     remove() {
       rmSync(target, { recursive: true, force: true })
@@ -441,7 +452,10 @@ function jsonHookItem(owner: 'claude' | 'codex', path: string, layout: Layout): 
         detail = 'hooks.SessionStart is not an array; fix the file by hand'
       } else {
         const ours = (groups ?? []).flatMap(handlersOf).filter(isOurs) as Handler[]
-        if (ours.length === 1 && JSON.stringify(ours[0], Object.keys(wanted).sort()) === JSON.stringify(wanted, Object.keys(wanted).sort()))
+        if (
+          ours.length === 1 &&
+          JSON.stringify(ours[0], Object.keys(wanted).sort()) === JSON.stringify(wanted, Object.keys(wanted).sort())
+        )
           state = 'ok'
         else if (ours.length > 0) state = 'outdated'
       }
@@ -469,18 +483,16 @@ function jsonHookItem(owner: 'claude' | 'codex', path: string, layout: Layout): 
       let placed = false
       // Our handler is updated where it already is, and a duplicate dropped, so a
       // group a person arranged with other hooks keeps its shape.
-      const merged = groups
-        .map((group) => {
-          if (!handlersOf(group).some(isOurs)) return group
-          const handlers = handlersOf(group).flatMap((handler) => {
-            if (!isOurs(handler)) return [handler]
-            if (placed) return []
-            placed = true
-            return [{ ...(handler as Handler), ...wanted }]
-          })
-          return { ...group, hooks: handlers }
+      const merged = groups.flatMap((group) => {
+        if (!handlersOf(group).some(isOurs)) return [group]
+        const handlers = handlersOf(group).flatMap((handler) => {
+          if (!isOurs(handler)) return [handler]
+          if (placed) return []
+          placed = true
+          return [{ ...(handler as Handler), ...wanted }]
         })
-        .filter((group) => handlersOf(group).length > 0)
+        return handlers.length > 0 ? [{ ...group, hooks: handlers }] : []
+      })
       if (!placed) merged.push({ hooks: [wanted] })
       hooks.SessionStart = merged
       next.hooks = hooks
@@ -489,9 +501,11 @@ function jsonHookItem(owner: 'claude' | 'codex', path: string, layout: Layout): 
     remove() {
       const next: Json = { ...document }
       const hooks: Json = { ...((next.hooks as Json | undefined) ?? {}) }
-      const groups = ((hooks.SessionStart as Group[] | undefined) ?? [])
-        .map((group) => (handlersOf(group).some(isOurs) ? { ...group, hooks: handlersOf(group).filter((handler) => !isOurs(handler)) } : group))
-        .filter((group) => handlersOf(group).length > 0 || !('hooks' in group))
+      const groups = ((hooks.SessionStart as Group[] | undefined) ?? []).flatMap((group) => {
+        if (!handlersOf(group).some(isOurs)) return [group]
+        const rest = handlersOf(group).filter((handler) => !isOurs(handler))
+        return rest.length > 0 ? [{ ...group, hooks: rest }] : []
+      })
       if (groups.length > 0) hooks.SessionStart = groups
       else delete hooks.SessionStart
       if (Object.keys(hooks).length > 0) next.hooks = hooks
@@ -514,7 +528,8 @@ function inspect(layout: Layout, agents: readonly AgentId[], options: InspectOpt
   const cli = options.cli ?? currentCli()
   const items: Item[] = []
   if (agents.length > 0) for (const name of SKILL_NAMES) items.push(skillItem(layout, assets, name))
-  if (agents.some((id) => id === 'claude' || id === 'codex' || id === 'pi')) items.push(hookScriptItem(layout, assets, cli))
+  if (agents.some((id) => id === 'claude' || id === 'codex' || id === 'pi'))
+    items.push(hookScriptItem(layout, assets, cli))
   for (const id of agents) {
     items.push(instructionItem(id, layout.instruction[id], assets))
     if (id === 'claude') {
@@ -554,7 +569,12 @@ export interface AgentsResult {
   notes: string[]
 }
 
-const HOOKS: Record<AgentId, AgentReport['hook']> = { claude: 'SessionStart', codex: 'SessionStart', opencode: 'none', pi: 'extension' }
+const HOOKS: Record<AgentId, AgentReport['hook']> = {
+  claude: 'SessionStart',
+  codex: 'SessionStart',
+  opencode: 'none',
+  pi: 'extension',
+}
 
 function reportOf(item: Item, action: ItemReport['action'], detail?: string): ItemReport {
   const shown = detail ?? item.detail
@@ -572,8 +592,14 @@ function reportOf(item: Item, action: ItemReport['action'], detail?: string): It
 function agentReports(layout: Layout, items: Item[], env: NodeJS.ProcessEnv): AgentReport[] {
   const detected = new Set(detectAgents(layout, env))
   return AGENT_IDS.map((id) => {
-    const own = items.filter((item) => item.owner === id || (item.owner === 'shared' && item.kind === 'skill') || (item.owner === 'shared' && item.kind === 'hook-script' && HOOKS[id] !== 'none'))
-    const considered = own.length > 0 && (detected.has(id) || own.some((item) => item.owner === id && item.state !== 'missing'))
+    const own = items.filter(
+      (item) =>
+        item.owner === id ||
+        (item.owner === 'shared' && item.kind === 'skill') ||
+        (item.owner === 'shared' && item.kind === 'hook-script' && HOOKS[id] !== 'none'),
+    )
+    const considered =
+      own.length > 0 && (detected.has(id) || own.some((item) => item.owner === id && item.state !== 'missing'))
     return {
       id,
       name: TITLES[id],
@@ -584,16 +610,21 @@ function agentReports(layout: Layout, items: Item[], env: NodeJS.ProcessEnv): Ag
   })
 }
 
-function notesFor(layout: Layout, agents: readonly AgentId[], items: Item[], cli: CliLocation): string[] {
+function notesFor(agents: readonly AgentId[], items: Item[], cli: CliLocation): string[] {
   const notes: string[] = []
   if (agents.includes('codex') && items.some((item) => item.owner === 'codex' && item.kind === 'hook'))
-    notes.push('Codex runs a new or changed hook only after you review it: open /hooks in Codex and trust the Portta hook.')
+    notes.push(
+      'Codex runs a new or changed hook only after you review it: open /hooks in Codex and trust the Portta hook.',
+    )
   if (agents.includes('opencode'))
-    notes.push('OpenCode gets the instruction and the skills only: its context plugin is not in the official documentation.')
+    notes.push(
+      'OpenCode gets the instruction and the skills only: its context plugin is not in the official documentation.',
+    )
   if (/[\\/]_npx[\\/]/.test(cli.script))
-    notes.push('The CLI path points into an npx cache. Install @codions/portta globally and run `portta agents install` again.')
-  for (const item of items)
-    if (item.state === 'conflict') notes.push(`${item.path}: ${item.detail ?? 'left alone'}`)
+    notes.push(
+      'The CLI path points into an npx cache. Install @codions/portta globally and run `portta agents install` again.',
+    )
+  for (const item of items) if (item.state === 'conflict') notes.push(`${item.path}: ${item.detail ?? 'left alone'}`)
   return notes
 }
 
@@ -608,7 +639,8 @@ export interface AgentsOptions extends InspectOptions {
 function named(only: string[] | undefined): AgentId[] | null {
   if (!only || only.length === 0) return null
   const unknown = only.filter((name) => !(AGENT_IDS as readonly string[]).includes(name))
-  if (unknown.length > 0) throw new UsageError(`unknown agent: ${unknown.join(', ')}`, `use one of: ${AGENT_IDS.join(', ')}`)
+  if (unknown.length > 0)
+    throw new UsageError(`unknown agent: ${unknown.join(', ')}`, `use one of: ${AGENT_IDS.join(', ')}`)
   return AGENT_IDS.filter((id) => only.includes(id))
 }
 
@@ -634,9 +666,18 @@ export function installAgents(options: AgentsOptions = {}): AgentsResult {
         }
     }
   }
-  const notes = notesFor(layout, selected, items, cli)
-  if (selected.length === 0) notes.push('No supported agent was found: nothing was written. Name one to install anyway, such as `portta agents install claude`.')
-  return { home: layout.home, dryRun: options.dryRun === true, agents: agentReports(layout, options.dryRun ? items : inspect(layout, selected, { ...options, cli }), env), items: reports, notes }
+  const notes = notesFor(selected, items, cli)
+  if (selected.length === 0)
+    notes.push(
+      'No supported agent was found: nothing was written. Name one to install anyway, such as `portta agents install claude`.',
+    )
+  return {
+    home: layout.home,
+    dryRun: options.dryRun === true,
+    agents: agentReports(layout, options.dryRun ? items : inspect(layout, selected, { ...options, cli }), env),
+    items: reports,
+    notes,
+  }
 }
 
 export function agentsStatus(options: AgentsOptions = {}): AgentsResult & { ok: boolean } {
@@ -652,7 +693,14 @@ export function agentsStatus(options: AgentsOptions = {}): AgentsResult & { ok: 
   const shown = items.filter((item) => item.owner === 'shared' || listed.has(item.owner as AgentId))
   const reports = shown.map((item) => reportOf(item, 'none'))
   const ok = agents.every((agent) => agent.complete !== false)
-  return { home: layout.home, dryRun: false, agents, items: reports, notes: notesFor(layout, [...listed], items, cli), ok }
+  return {
+    home: layout.home,
+    dryRun: false,
+    agents,
+    items: reports,
+    notes: notesFor([...listed], items, cli),
+    ok,
+  }
 }
 
 export function uninstallAgents(options: AgentsOptions = {}): AgentsResult {
@@ -663,9 +711,7 @@ export function uninstallAgents(options: AgentsOptions = {}): AgentsResult {
   const selected = named(options.only) ?? [...AGENT_IDS]
   // The skills and the hook script serve every agent. They go only when the
   // whole layer goes, so removing one agent never breaks another.
-  const items = inspect(layout, selected, { ...options, cli }).filter(
-    (item) => everything || item.owner !== 'shared',
-  )
+  const items = inspect(layout, selected, { ...options, cli }).filter((item) => everything || item.owner !== 'shared')
   const reports: ItemReport[] = []
   for (const item of items) {
     if (item.state === 'missing') continue
@@ -712,13 +758,28 @@ function globals(command: Command) {
   return command.optsWithGlobals() as { json?: boolean; quiet?: boolean; verbose?: boolean }
 }
 
-function printResult(result: AgentsResult & { ok?: boolean }, output: Output, mode: 'install' | 'status' | 'uninstall'): void {
-  if (output.json) return output.data(result)
+function printResult(
+  result: AgentsResult & { ok?: boolean },
+  output: Output,
+  mode: 'install' | 'status' | 'uninstall',
+): void {
+  if (output.json) {
+    output.data(result)
+    return
+  }
   output.line(`Home: ${result.home}${result.dryRun ? '   (dry run: nothing was written)' : ''}`)
   for (const agent of result.agents) {
     const state =
-      agent.complete === null ? (agent.detected ? 'nothing to do' : 'not found') : agent.complete ? 'installed' : 'incomplete'
-    output.line(`${agent.name.padEnd(12)} ${agent.detected ? 'found    ' : 'not found'}  ${state}  (hook: ${agent.hook})`)
+      agent.complete === null
+        ? agent.detected
+          ? 'nothing to do'
+          : 'not found'
+        : agent.complete
+          ? 'installed'
+          : 'incomplete'
+    output.line(
+      `${agent.name.padEnd(12)} ${agent.detected ? 'found    ' : 'not found'}  ${state}  (hook: ${agent.hook})`,
+    )
   }
   for (const item of result.items) {
     const verb = mode === 'status' ? item.state : item.action
@@ -729,7 +790,8 @@ function printResult(result: AgentsResult & { ok?: boolean }, output: Output, mo
 
 function failOnErrors(result: AgentsResult): void {
   const failed = result.items.filter((item) => item.action === 'error')
-  if (failed.length > 0) throw new CliError(`${failed.length} item(s) could not be written: ${failed.map((item) => item.path).join(', ')}`)
+  if (failed.length > 0)
+    throw new CliError(`${failed.length} item(s) could not be written: ${failed.map((item) => item.path).join(', ')}`)
 }
 
 export interface AgentsCommandOptions {

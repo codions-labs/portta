@@ -40,6 +40,7 @@ import {
   routesFor,
   traefikServiceNames,
 } from 'portta-core'
+import { agentsNeedingLayer } from './commands/agents.js'
 import { composeArguments, type GatewayContext } from './context.js'
 import { inspectContainers } from './docker.js'
 import { collectEnvironmentChecks } from './environment/index.js'
@@ -134,6 +135,20 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
   } else {
     add(check('config.env', 'warn', '.env', 'absent; running on built-in defaults', 'cp .env.example .env'))
   }
+
+  // --- agents ------------------------------------------------------------------
+  // An agent on this machine that starts sessions without knowing where it is.
+  const bare = agentsNeedingLayer()
+  if (bare.length > 0)
+    add(
+      check(
+        'agents.layer',
+        'warn',
+        'AI agents',
+        `installed without the Portta layer: ${bare.join(', ')}`,
+        'portta agents install   (dry run first: portta agents install --dry-run)',
+      ),
+    )
 
   // --- runtime -------------------------------------------------------------
   // The host report and `doctor` intentionally share the same Docker row.

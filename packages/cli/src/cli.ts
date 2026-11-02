@@ -9,6 +9,8 @@ import {
   servicePublish,
   serviceUnpublish,
 } from './commands/access.js'
+import { agentContextCommand } from './commands/agent.js'
+import { agentsInstallCommand, agentsStatusCommand, agentsUninstallCommand } from './commands/agents.js'
 import {
   authBootstrap,
   authLogin,
@@ -474,6 +476,34 @@ describe(panelOptions(authToken.command('create'), false), 'Create a token; its 
   .option('--expires-in-days <days>', '1 to 365; omitted, it is valid until revoked')
   .action(authTokenCreate)
 describe(panelOptions(authToken.command('revoke <id>')), 'Revoke a token').action(authTokenRevoke)
+
+const agent = describe(program.command('agent'), 'What an AI agent needs to know about this host and directory')
+describe(
+  agent.command('context'),
+  'Where a directory stands on a Portta host, for the start of an agent session; always exits 0',
+)
+  .option('--path <dir>', 'the directory to describe; defaults to the current one')
+  .option('--home <dir>', 'the home directory, where scope.yaml is read from; defaults to $HOME')
+  .option('--format <format>', 'text, or hook for the short text an agent hook injects', 'text')
+  .action(agentContextCommand)
+const agents = describe(program.command('agents'), 'Install the Portta layer into AI coding agents on this machine')
+describe(
+  agents.command('install [agents...]'),
+  'Write the instruction, hook and skills for the agents found here (claude, codex, opencode, pi)',
+)
+  .option('--home <dir>', 'use this directory as the home; wins over CLAUDE_CONFIG_DIR and CODEX_HOME')
+  .option('--dry-run', 'print what would change without writing anything')
+  .action(agentsInstallCommand)
+describe(agents.command('status [agents...]'), 'Compare what is installed with what should be')
+  .option('--home <dir>', 'use this directory as the home; wins over CLAUDE_CONFIG_DIR and CODEX_HOME')
+  .action(agentsStatusCommand)
+describe(
+  agents.command('uninstall [agents...]'),
+  'Remove only what the installer wrote: marker blocks, its hook entries and its files',
+)
+  .option('--home <dir>', 'use this directory as the home; wins over CLAUDE_CONFIG_DIR and CODEX_HOME')
+  .option('--dry-run', 'print what would be removed without removing anything')
+  .action(agentsUninstallCommand)
 
 const protect = describe(
   program.command('protect'),

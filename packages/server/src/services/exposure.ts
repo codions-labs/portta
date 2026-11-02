@@ -53,8 +53,20 @@ export function hostOf(container: ContainerSummary, containers: readonly Contain
       'use `portta protect host <host>` for each one',
     )
   const host = hosts[0]!
+  // Another project's malformed label never vetoes this decision, and replicas
+  // of the same service count as one claimant.
+  const sameHost = (url: { host: string }): boolean => {
+    try {
+      return normalizeProtectionHost(url.host) === host
+    } catch {
+      return false
+    }
+  }
   const claimants = containers.filter(
-    (other) => other.id !== container.id && other.urls.some((url) => normalizeProtectionHost(url.host) === host),
+    (other) =>
+      other.id !== container.id &&
+      !(other.environment === container.environment && other.service === container.service) &&
+      other.urls.some(sameHost),
   )
   if (claimants.length > 0)
     throw new ExposureRefused(`${host} is claimed by more than one container`, 'resolve the duplicate hostname first')
@@ -155,7 +167,9 @@ export function closeService(
   container: ContainerSummary,
   containers: readonly ContainerSummary[] = [],
 ): ExposureChange {
-  const host = hostOf(container, containers)
+  // Removing a decision is always allowed for its owner: a duplicate hostname
+  // elsewhere must not keep a site open that its owner wants closed.
+  const host = hostOf(container)
   const store = readProtectionStore(config.authStore)
   const record = protectionForHost(store, host)
   if (!record) throw new ExposureRefused(`${host} has no decision to remove`, 'it is already closed or never decided')

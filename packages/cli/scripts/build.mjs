@@ -115,6 +115,13 @@ for (const file of ['middlewares.yaml', 'tcp.yaml']) {
   cpSync(resolve(repository, 'config/traefik/dynamic', file), resolve(runtime, 'config/traefik/dynamic', file))
 }
 
+// What `portta agents install` writes into an agent's configuration: the
+// instruction, the hook and extension templates, and the skills. They ship in
+// the package so installing needs no network and no checkout.
+const assets = resolve(output, 'assets')
+cpSync(resolve(root, 'assets/agents'), resolve(assets, 'agents'), { recursive: true })
+cpSync(resolve(repository, 'skills'), resolve(assets, 'skills'), { recursive: true })
+
 // The npm page of a package shows the README and the licence that sit at the
 // root of its tarball, and this package has neither in source: both live at the
 // repository root. They are generated here, beside the manifest, so publishing
