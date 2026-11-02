@@ -54,6 +54,10 @@ export function useServiceConnection(project: string, service: string, enabled: 
   })
 }
 
+export function useExposure() {
+  return useQuery({ queryKey: keys.exposure(), queryFn: api.exposure })
+}
+
 export function useShares() {
   return useQuery({ queryKey: keys.shares(), queryFn: api.shares })
 }

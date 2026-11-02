@@ -128,7 +128,7 @@
     "networks": "Redes",
     "containerPorts": "Portas do contêiner",
     "publishedPorts": "Portas publicadas",
-    "exposure": "Exposição",
+    "exposure": "Compartilhar com um cliente",
     "traefik": "Traefik",
     "mounts": "Montagens",
     "labels": "Labels",
@@ -141,8 +141,8 @@
     "ttl1h": "1 hora",
     "ttl4h": "4 horas",
     "ttl24h": "24 horas",
-    "private": "privado",
-    "privateHint": "Acessível apenas onde já está.",
+    "private": "sem link",
+    "privateHint": "Ou envie um link temporário que deixa de funcionar sozinho.",
     "expiresAfter": "O compartilhamento expira após",
     "shareWithPassword": "Compartilhar com senha",
     "sharePublicly": "Compartilhar publicamente",
@@ -187,5 +187,22 @@
     "selectionActions": "Ações para a seleção",
     "clearSelection": "Limpar"
   },
-  "continue": "Continuar"
+  "continue": "Continuar",
+  "exposure": {
+    "protected": "protegido",
+    "open": "aberto para todos",
+    "closed": "fechado",
+    "unprotected": "sem login",
+    "user": "login: {{user}}",
+    "hintDecided": "A mudança vale na próxima requisição. Nada é recriado.",
+    "hintClosed": "Ninguém decidiu sobre este endereço, então ele está fechado.",
+    "hintUnprotected": "Este host não exige uma decisão. Proteja para pedir login.",
+    "protect": "Proteger com senha",
+    "newPassword": "Nova senha",
+    "makeOpen": "Abrir para todos",
+    "close": "Fechar",
+    "remove": "Remover o login",
+    "passwordLabel": "Senha:",
+    "passwordHint": "Esta é a única vez que ela aparece. Entregue a quem precisa de acesso; só o hash é guardado."
+  }
 }

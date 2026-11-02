@@ -215,7 +215,7 @@ export function Shell({ children }: { children: ReactNode }) {
               if (items.length === 0) return null
               return (
                 <div
-                  key={group.labelKey ?? 'tail'}
+                  key={`${group.labelKey ?? 'plain'}-${index}`}
                   className={cn('flex gap-0.5 md:flex-col', index > 0 && 'md:mt-3')}
                   role="group"
                   aria-label={group.labelKey ? t(group.labelKey) : undefined}

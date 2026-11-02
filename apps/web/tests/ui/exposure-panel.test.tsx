@@ -1,0 +1,72 @@
+import { screen, waitFor } from '@testing-library/react'
+import { userEvent } from '@testing-library/user-event'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeContainer } from './fixtures.ts'
+import { principal, renderWithQuery } from './render.tsx'
+
+const exposure = vi.fn()
+const protectService = vi.fn()
+const openService = vi.fn()
+const closeService = vi.fn()
+
+vi.mock('@/lib/api/index', () => ({
+  ApiError: class extends Error {},
+  api: {
+    exposure: () => exposure(),
+    protectService: (...args: unknown[]) => protectService(...args),
+    openService: (...args: unknown[]) => openService(...args),
+    closeService: (...args: unknown[]) => closeService(...args),
+  },
+}))
+
+const { ExposurePanel } = await import('@/components/exposure-panel')
+
+const container = makeContainer({
+  id: 'c1',
+  urls: [{ url: 'https://shop-web.example.test', host: 'shop-web.example.test', scope: 'public', scheme: 'https' }],
+})
+
+beforeEach(() => {
+  exposure.mockReset().mockResolvedValue({ enforced: true, entries: [] })
+  protectService.mockReset().mockResolvedValue({ ok: true, entry: null, password: 'abcde-fghij', note: '' })
+  openService.mockReset().mockResolvedValue({ ok: true, entry: null, note: '' })
+  closeService.mockReset().mockResolvedValue({ ok: true, entry: null, note: '' })
+})
+
+describe('who may open a service', () => {
+  it('says a hostname nobody decided about is closed, and protects it with a password shown once', async () => {
+    renderWithQuery(<ExposurePanel container={container} />)
+    expect(await screen.findByText('closed')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Protect with a password' }))
+    expect(await screen.findByText('abcde-fghij')).toBeInTheDocument()
+    expect(protectService).toHaveBeenCalledWith('c1')
+  })
+
+  it('shows a protected host and offers a new password, opening and closing', async () => {
+    exposure.mockResolvedValue({
+      enforced: true,
+      entries: [
+        {
+          host: 'shop-web.example.test',
+          mode: 'protected',
+          user: 'reviewer',
+          project: null,
+          service: null,
+          label: 'web',
+        },
+      ],
+    })
+    renderWithQuery(<ExposurePanel container={container} />)
+    expect(await screen.findByText('protected')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Open to everybody' }))
+    await waitFor(() => expect(openService).toHaveBeenCalledWith('c1'))
+    await userEvent.click(screen.getByRole('button', { name: 'Close it' }))
+    await waitFor(() => expect(closeService).toHaveBeenCalledWith('c1'))
+  })
+
+  it('offers no control to somebody who may not decide', async () => {
+    renderWithQuery(<ExposurePanel container={container} />, undefined, principal({ permissions: ['service:read'] }))
+    expect(await screen.findByText('closed')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Protect with a password' })).toBeNull()
+  })
+})

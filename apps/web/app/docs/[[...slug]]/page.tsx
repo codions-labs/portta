@@ -42,14 +42,7 @@ function DocsHome() {
     {
       title: 'Common tasks',
       description: 'Choose the guide for what you need to do.',
-      slugs: [
-        'projects',
-        'dns-and-tls',
-        'remote-development',
-        'authentication',
-        'database-access',
-        'troubleshooting',
-      ],
+      slugs: ['projects', 'dns-and-tls', 'remote-development', 'authentication', 'database-access', 'troubleshooting'],
     },
     {
       title: 'Reference',

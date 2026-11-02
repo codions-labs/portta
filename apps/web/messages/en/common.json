@@ -128,7 +128,7 @@
     "networks": "Networks",
     "containerPorts": "Container ports",
     "publishedPorts": "Published ports",
-    "exposure": "Exposure",
+    "exposure": "Share with a client",
     "traefik": "Traefik",
     "mounts": "Mounts",
     "labels": "Labels",
@@ -141,8 +141,8 @@
     "ttl1h": "1 hour",
     "ttl4h": "4 hours",
     "ttl24h": "24 hours",
-    "private": "private",
-    "privateHint": "Reachable only where it already is.",
+    "private": "no link",
+    "privateHint": "Or send a temporary link that stops working by itself.",
     "expiresAfter": "Share expires after",
     "shareWithPassword": "Share with a password",
     "sharePublicly": "Share publicly",
@@ -187,5 +187,22 @@
     "selectionActions": "Actions for the selection",
     "clearSelection": "Clear"
   },
-  "continue": "Continue"
+  "continue": "Continue",
+  "exposure": {
+    "protected": "protected",
+    "open": "open to everybody",
+    "closed": "closed",
+    "unprotected": "no login",
+    "user": "login: {{user}}",
+    "hintDecided": "Changes apply on the next request. Nothing is recreated.",
+    "hintClosed": "Nobody decided about this hostname, so it is closed.",
+    "hintUnprotected": "This host does not require a decision. Protect it to ask for a login.",
+    "protect": "Protect with a password",
+    "newPassword": "New password",
+    "makeOpen": "Open to everybody",
+    "close": "Close it",
+    "remove": "Remove the login",
+    "passwordLabel": "Password:",
+    "passwordHint": "This is the only time it is shown. Give it to whoever needs access; only its hash is stored."
+  }
 }

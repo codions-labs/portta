@@ -36,6 +36,7 @@ const VIEWPORTS = [
   { name: 'laptop-small', width: 1280, height: 800 },
   { name: 'tablet-landscape', width: 1024, height: 768 },
   { name: 'tablet-portrait', width: 820, height: 1180 },
+  { name: 'phone', width: 375, height: 812 },
 ]
 
 // The pages the panel serves without an account, in rail order.

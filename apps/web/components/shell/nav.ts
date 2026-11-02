@@ -20,7 +20,7 @@ export type BaseNavLabelKey =
   | 'gateway'
   | 'settings'
 
-export type NavGroupKey = 'groups.development' | 'groups.infrastructure'
+export type NavGroupKey = 'groups.infrastructure'
 
 export interface NavItem {
   href: string
@@ -43,13 +43,12 @@ export interface NavGroup {
 }
 
 /**
- * Two groups and a tail. Development is where a day starts; infrastructure
- * is the set of technical perspectives over the same host. Settings sits
- * alone at the end because it is neither.
+ * Where a day starts, then the technical perspectives over the same host,
+ * then Settings alone at the end.
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
-    labelKey: 'groups.development',
+    labelKey: null,
     items: [
       { href: '/overview', labelKey: 'overview', icon: LayoutDashboard },
       { href: '/projects', labelKey: 'projects', icon: Boxes, permission: 'project:read' },

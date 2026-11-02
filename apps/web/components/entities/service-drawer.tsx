@@ -12,6 +12,7 @@ import { ConnectionPanel } from '../connection-panel.tsx'
 import { ContainerActions } from '../container-actions.tsx'
 import { ContainerConsole } from '../container-console.tsx'
 import { Mono } from '../copy.tsx'
+import { ExposurePanel } from '../exposure-panel.tsx'
 import { LogViewer } from '../logs.tsx'
 import { ServiceAlias } from '../service-alias.tsx'
 import { ServiceIcon } from '../service-icon.tsx'
@@ -227,7 +228,10 @@ export function ServiceDrawer({
         {container.urls.length > 0 ? (
           <section ref={share} aria-label={tc('container.exposure')} className="scroll-mt-4">
             <SectionHeader as="h3" title={tc('container.exposure')} className="mb-1" />
-            <SharePanel container={container} />
+            <ExposurePanel container={container} />
+            <div className="mt-3 border-t border-line pt-3">
+              <SharePanel container={container} />
+            </div>
           </section>
         ) : null}
 
