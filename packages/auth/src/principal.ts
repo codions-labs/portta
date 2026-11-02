@@ -82,6 +82,12 @@ async function scopeOf(db: Db, userId: string, role: Role): Promise<'all' | Read
   return new Set(rows.map((row) => row.projectId))
 }
 
+/** Read from the table, not from the session, so a cached session cannot say yes after a factor was removed. */
+async function hasSecondFactor(db: Db, userId: string): Promise<boolean> {
+  const [row] = await db.select({ on: users.twoFactorEnabled }).from(users).where(eq(users.id, userId))
+  return row?.on === true
+}
+
 export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
   const { security, db } = deps
 
@@ -159,7 +165,8 @@ export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
       source: readSource(headers.get('x-portta-source') ?? metadata.source ?? null, 'api'),
       sessionId: null,
       tokenId: record.id,
-      twoFactor: user.twoFactorEnabled === true,
+      // A token proves nothing about a second factor: it is a bearer secret.
+      twoFactor: false,
       ip: readAddress(headers),
     }
   }
@@ -187,7 +194,7 @@ export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
       source: readSource(headers.get('x-portta-source'), 'web'),
       sessionId: session.session.id,
       tokenId: null,
-      twoFactor: (user as { twoFactorEnabled?: boolean | null }).twoFactorEnabled === true,
+      twoFactor: await hasSecondFactor(db, user.id),
       ip: readAddress(headers),
     }
   }
