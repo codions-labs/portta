@@ -52,6 +52,14 @@ It follows ADR 0026 exactly:
 - reports outcome by having the panel read the container back (state, exit
   code, log tail since `StartedAt`).
 
+On a public host (`PORTTA_PROFILE=remote-public`) the runner is refused unless
+`PORTTA_RUNNER_PUBLIC=true` **and** the panel is on its own domain
+(`PORTTA_WEB_EXPOSE=domain`) with sign-in required (`PORTTA_AUTH_MODE=required`)
+over TLS (`TLS_ENABLED=true`). `PORTTA_WEB_EXPOSE=public` stays refused because it
+has no TLS. The switch is not a panel setting, so a panel cannot release itself,
+and the refusal is checked on every read, including for a runner that already
+exists.
+
 The runner adds nothing to the panel's Docker permissions: it is started with
 the `start` the panel already holds. Adding a verb to the set is an ADR-level
 change, not a patch.

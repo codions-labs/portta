@@ -47,3 +47,4 @@ release.
 | [0044](0044-example-projects-live-in-projects-home.md) | Example projects live in Projects Home | Accepted; see 0019, 0028 |
 | [0051](0051-authentication-is-optional-inside-a-trusted-network.md) | Authentication is optional inside a network that already authenticates | Accepted; see 0012, 0021, 0035 |
 | [0052](0052-the-portta-directory-is-the-project-contract.md) | The `.portta` directory is the project's contract, and it never describes a host | Accepted; see 0031, 0040 |
+| [0055](0055-portta-routes-and-protects-agents-do-the-work.md) | Portta routes and protects; agents do the work | Accepted |

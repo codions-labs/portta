@@ -24,9 +24,10 @@ export function ExposurePanel({ container }: { container: ContainerSummary }) {
   const queryClient = useQueryClient()
   const mayDecide = useCan('service:protect')
   const [password, setPassword] = useState<string | null>(null)
-  const host = container.urls[0]?.host ?? null
+  const hosts = [...new Set(container.urls.map((url) => url.host.toLowerCase()))]
+  const host = hosts.length === 1 ? (hosts[0] ?? null) : null
   const query = useExposure()
-  const entry = query.data?.entries.find((candidate) => candidate.host === host) ?? null
+  const entry = query.data?.entries.find((candidate) => candidate.host.toLowerCase() === host) ?? null
   const enforced = query.data?.enforced === true
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: keys.exposure() })
@@ -54,6 +55,7 @@ export function ExposurePanel({ container }: { container: ContainerSummary }) {
   const busy = protect.isPending || open.isPending || close.isPending
   const error = protect.error ?? open.error ?? close.error
 
+  if (hosts.length > 1) return <p className="text-xs text-subtle">{t('severalHosts')}</p>
   if (!host) return null
   return (
     <div className="space-y-2 text-xs">

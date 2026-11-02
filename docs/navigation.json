@@ -576,6 +576,11 @@
           "description": "0052. The `.portta` directory is the project's contract, and it never describes a host."
         },
         {
+          "source": "docs/development/adr/0055-portta-routes-and-protects-agents-do-the-work.md",
+          "slug": "adr/0055-portta-routes-and-protects-agents-do-the-work",
+          "description": "Why Portta routes and protects projects and leaves the AI work to agents."
+        },
+        {
           "source": "docs/development/adr/README.md",
           "slug": "adr",
           "description": "Architecture decision records."

@@ -86,3 +86,8 @@ sharing a hostname, which is worse in a way that is much harder to notice.
 **One style to keep in step.** The Traefik rule and `hostLabel` must produce
 the same label for the same Compose project and service, and a test covers
 both; a second style would double that surface, and there should not be one.
+
+**Temporary links follow the same rule.** A share is
+`<project>-<service>-<id>-share.<domain>`: still one label, so the wildcard a
+public host already has covers it. The project and service are fitted to leave
+room for the id and the suffix inside the 63 octets a label may have.

@@ -10,6 +10,19 @@ repository-wide operating rules, not a second copy of the documentation.
 * [Architecture decisions](docs/development/adr/README.md) — decisions that are expensive to reverse
 * [Documentation index](docs/README.md)
 
+## Contributing
+
+* Branch from `develop`: `feat/…`, `fix/…`, `refactor/…`, `docs/…`.
+* Commits are Conventional Commits, `type(scope): subject`, in English, saying
+  the observable effect in the present tense ("the CLI no longer ships the flow
+  commands"). One coherent unit per commit.
+* Stage by path (`git add <paths>`), never `git add -A`, `git add .` or
+  `git commit -a`.
+* Never credit a tool, agent or model in a commit message or a pull request.
+* Run the smallest test that proves the change (see Testing policy below), and
+  report honestly what was and was not run.
+* Do not use `--no-verify`. Do not push, tag or publish unless asked.
+
 Per-directory `AGENTS.md` files are added only when a workspace has rules that
 are not true of the rest of the repository.
 

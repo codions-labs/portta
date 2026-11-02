@@ -203,6 +203,7 @@
     "close": "Close it",
     "remove": "Remove the login",
     "passwordLabel": "Password:",
-    "passwordHint": "This is the only time it is shown. Give it to whoever needs access; only its hash is stored."
+    "passwordHint": "This is the only time it is shown. Give it to whoever needs access; only its hash is stored.",
+    "severalHosts": "This service answers on several hostnames. Decide each one with `portta protect host <host>`."
   }
 }
