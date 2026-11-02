@@ -190,8 +190,8 @@ npm run test:e2e --workspace=portta-web -- auth.spec.ts -g 'password that is wro
 The viewport check (`npm run viewports --workspace=portta-web`) uses the same
 owned resources and walks the ten pages the panel serves without an account
 (`apps/web/e2e/viewports.mjs`), asserting that none scrolls sideways and no
-control ends up off-screen. The documentation screenshots are captured from a running
-`just dev --demo` instead; see
+control ends up off-screen. The documentation screenshots use an isolated demo
+host and temporary panel state; see
 [Regenerating the screenshots](development-setup.md#regenerating-the-screenshots).
 Neither is an automated test to create or keep for simple visual changes. Use
 `playwright-cli` for that kind of verification.

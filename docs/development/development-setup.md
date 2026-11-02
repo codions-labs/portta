@@ -315,31 +315,30 @@ each resolves to its `dist/`. The image builds them in that order.
 
 ## Regenerating the screenshots
 
-The images in `docs/images/` are captured from the real panel running the demo,
-not from fixtures. Every frame is 1440×900 in English, and each file is named
-after the authentication mode it shows (`auth-disabled-*.png`,
-`auth-enabled-*.png`). The script is `apps/web/e2e/screenshots.mjs`; it targets
-<http://127.0.0.1:8081>, or `PORTTA_PANEL_URL` when set, and refuses a panel in
-the wrong mode.
+The images in `docs/images/` show the real panel against an isolated demo host.
+The capture harness supplies a synthetic Docker Engine API, resource metrics,
+readiness reports and a fresh SQLite database. It never reads the shared host's
+Docker socket, accounts, credentials or `.env`, and removes its own temporary
+state when finished. Public-host examples include ForwardAuth on every HTTP
+router before a password is configured.
 
-**Authentication disabled:**
+Every frame is 1440×900 in English. File names identify the panel's
+authentication mode (`auth-disabled-*.png`, `auth-enabled-*.png`); the public
+service's password is independent of panel sign-in.
+
+Build the panel and its dependencies once, then capture both modes:
 
 ```bash
-just dev --demo
+node --input-type=module -e "import build from './apps/web/e2e/build.mjs'; build()"
 npm run screenshots --workspace=portta-web -- auth-disabled
+npm run screenshots --workspace=portta-web -- auth-enabled
 ```
 
-**Authentication enabled.** The setup page is captured while the panel has no
-owner yet, and the account pages after `just dev --demo` creates it:
-
-```bash
-./bin/portta config set panel.auth required
-./bin/portta web dev                                         # the panel now asks for an owner
-npm run screenshots --workspace=portta-web -- auth-enabled   # captures /setup
-just dev --demo                                              # creates admin@admin.com
-npm run screenshots --workspace=portta-web -- auth-enabled   # sign-in and account pages
-```
-
-Set `panel.auth` back to `disabled` and run `just dev` afterwards if you
-normally work without sign-in. Change what is captured, and in which order, in
-`e2e/screenshots.mjs`.
+The browser uses the installed Playwright Chromium; set
+`PORTTA_SCREENSHOT_BROWSER_CHANNEL=chrome` to use an installed Google Chrome.
+The harness chooses free
+loopback ports and creates a documentation-only owner for the authenticated
+captures, including the setup and sign-in pages. No running gateway or demo
+containers are required. Change the capture sequence in
+`apps/web/e2e/screenshots.mjs`, its host in `documentation-host.mjs`, or its
+collector data in `documentation-state.mjs`.

@@ -183,8 +183,8 @@ docker.listen(DOCKER_PORT, '127.0.0.1', () => {
       PORTTA_RUNTIME_DATABASE_FILE: DATABASE_FILE,
       PORTTA_RUNTIME_HOST: '127.0.0.1',
       PORTTA_RUNTIME_PORT: String(PANEL_PORT),
-      PORTTA_RUNTIME_ENV_FILE: join(root, 'e2e/env.fixture'),
-      PORTTA_RUNTIME_VERSION: 'e2e',
+      PORTTA_RUNTIME_ENV_FILE: process.env.PORTTA_E2E_ENV_FILE ?? join(root, 'e2e/env.fixture'),
+      PORTTA_RUNTIME_VERSION: process.env.PORTTA_E2E_VERSION ?? 'e2e',
       PORTTA_RUNTIME_BRIDGE_SETTLE_MS: '0',
       PORTTA_PROFILE: process.env.PORTTA_E2E_PROFILE ?? 'local',
       ...(process.env.PORTTA_E2E_PROFILE === 'remote-public'

@@ -203,7 +203,7 @@ person, not a machine token.
 
 ### Managing accounts
 
-![Authentication enabled: Settings Users listing Admin Demo as the active owner with access to every Project](../../images/auth-enabled-settings-users.png)
+![Authentication enabled: Settings Users listing Ada Lovelace as the active owner with access to every Project](../../images/auth-enabled-settings-users.png)
 
 **Authentication enabled** — Settings, Users.
 

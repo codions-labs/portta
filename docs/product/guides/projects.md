@@ -8,7 +8,7 @@ somebody can paste, a bookmark that survives a reload, and a step the browser's
 back button walks. What a role may not do is not shown rather than shown
 disabled.
 
-![Authentication disabled: Projects as cards for Demo Shop, Demo Site and the Docker Compose fixture, each with its state, resources and environments](../../images/auth-disabled-projects.png)
+![Authentication disabled: Projects as cards for Demo Shop, Demo A and Demo Monorepo, each with its state, resources and environments](../../images/auth-disabled-projects.png)
 
 **Authentication disabled**: Projects as cards.
 
