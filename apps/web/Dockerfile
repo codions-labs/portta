@@ -14,7 +14,7 @@
 # applies.
 # =============================================================================
 
-FROM node:24.20.0-alpine AS deps
+FROM node:26.13.0-alpine AS deps
 WORKDIR /app
 # python3, make and g++ compile better-sqlite3, which the panel's own database
 # is (ADR 0037) as well as the host daemon's; the runtime stage installs only
@@ -124,7 +124,7 @@ EXPOSE 8081
 CMD ["npm", "run", "dev"]
 
 # --- runtime -----------------------------------------------------------------
-FROM node:24.20.0-alpine AS runtime
+FROM node:26.13.0-alpine AS runtime
 WORKDIR /app
 ARG PORTTA_VERSION
 ENV NODE_ENV=production \
