@@ -209,7 +209,12 @@ function overlay(plan: RuntimePlan, network: string): string {
     .map((service) => {
       const reset = `    ports: !reset []\n`
       const containerName = service.removeContainerName ? '    container_name: !reset null\n' : ''
-      if (service.route === 'none') return `  ${service.name}:\n${reset}${containerName}`
+      // A service Portta keeps private must stay unrouted whatever its labels or
+      // its image say, so a public host forces the label off.
+      if (service.route === 'none') {
+        const off = plan.profile === 'remote-public' ? `    labels:\n      - ${yaml('traefik.enable=false')}\n` : ''
+        return `  ${service.name}:\n${reset}${containerName}${off}`
+      }
       const privateNetworks = service.networks.filter((name) => name !== 'portta')
       const finalNetworks = [...(privateNetworks.length ? privateNetworks : ['default']), 'portta']
       // On a public host every routed service passes through ForwardAuth. Which
@@ -762,4 +767,39 @@ export async function runtimeAction(
                 ]
               : [...args, 'config']
   await runProcess('docker', commandArgs, { cwd: workspace, stdio: action === 'logs' ? 'inherit' : 'stream' })
+  if (action === 'up' && plan.profile === 'remote-public') await verifyGatedLabels(plan, workspace)
+}
+
+/**
+ * What the created containers carry, image labels included.
+ *
+ * The model Compose resolves cannot see the labels an image bakes in, and
+ * Traefik reads both. On a public host the containers are checked once they
+ * exist, and a project that would be routed outside ForwardAuth is taken down
+ * instead of left running.
+ */
+async function verifyGatedLabels(plan: RuntimePlan, workspace: string): Promise<void> {
+  const listed = await runProcess('docker', [...composeArgs(plan), 'ps', '-aq'], { cwd: workspace, reject: false })
+  const ids = listed.stdout.split('\n').filter(Boolean)
+  if (ids.length === 0) return
+  const inspected = await runProcess('docker', ['inspect', '--format', '{{json .Config.Labels}}', ...ids], {
+    cwd: workspace,
+    reject: false,
+  })
+  const model: { services: Record<string, { labels?: Record<string, unknown> }> } = { services: {} }
+  for (const line of inspected.stdout.split('\n').filter(Boolean)) {
+    try {
+      const labels = JSON.parse(line) as Record<string, string> | null
+      const name = labels?.['com.docker.compose.service']
+      if (name && labels) model.services[name] = { labels: { ...(model.services[name]?.labels ?? {}), ...labels } }
+    } catch {}
+  }
+  const routed = new Set(plan.services.filter((service) => service.route === 'http').map((service) => service.name))
+  const violations = routingViolations(model, routed, plan.compose.projectName)
+  if (violations.length === 0) return
+  await runProcess('docker', [...composeArgs(plan), 'down'], { cwd: workspace, reject: false })
+  throw new RefusedError(
+    'a container carries Traefik routing that a public host cannot gate, so the project was taken down',
+    `labels: ${violations.join('; ')}`,
+  )
 }

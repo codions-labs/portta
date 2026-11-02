@@ -837,4 +837,22 @@ describe('who may open a routed hostname on a public host', () => {
     const again = await prepareComposeRuntime({ path: workspace, dryRun: true }, command)
     expect(again.pending.map((entry) => entry.service)).toEqual([first.services[0]?.name])
   })
+
+  it('takes a project down when a created container carries routing the model did not show', async () => {
+    const workspace = arrange()
+    await prepareComposeRuntime({ path: workspace, protect: ['web'], public: ['api'] }, command)
+    const calls: string[][] = []
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => {
+      calls.push(args)
+      if (args.includes('version')) return result('2.24.4')
+      if (args.includes('ps')) return result('c1\n')
+      if (args[0] === 'inspect')
+        return result(
+          JSON.stringify({ 'com.docker.compose.service': 'api', 'traefik.http.routers.baked.rule': 'Host(`x`)' }),
+        )
+      return result('')
+    })
+    await expect(runtimeAction('up', { path: workspace }, command)).rejects.toThrow(/taken down/)
+    expect(calls.some((args) => args.includes('down'))).toBe(true)
+  })
 })

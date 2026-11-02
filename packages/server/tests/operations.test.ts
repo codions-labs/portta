@@ -34,7 +34,15 @@ const withVolume: FakeContainer[] = PROJECT_A.map((entry) =>
 
 function isolated() {
   const root = mkdtempSync(join(tmpdir(), 'portta-op-'))
-  return { runnerDir: join(root, 'runner'), accessDir: join(root, 'access'), dynamicDir: join(root, 'dynamic') }
+  // The runner switch is part of the gate, so a runner that exists is only usable with it on.
+  const envFile = join(root, '.env')
+  writeFileSync(envFile, 'PORTTA_RUNNER=true\n')
+  return {
+    envFile,
+    runnerDir: join(root, 'runner'),
+    accessDir: join(root, 'access'),
+    dynamicDir: join(root, 'dynamic'),
+  }
 }
 
 function requestFile(runnerDir: string): { verb: string; project: string; flags: string[] } {

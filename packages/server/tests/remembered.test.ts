@@ -2,7 +2,7 @@
 // listed, it can be started through the runner with the paths the panel
 // remembered, and it can be forgotten. A live one is never forgotten.
 
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { inArray } from 'drizzle-orm'
@@ -47,7 +47,15 @@ const LOST: EnvironmentRecord = { ...GAMMA, id: 'e-lost', composeProject: 'lost'
 
 function isolated() {
   const root = mkdtempSync(join(tmpdir(), 'portta-remembered-'))
-  return { runnerDir: join(root, 'runner'), accessDir: join(root, 'access'), dynamicDir: join(root, 'dynamic') }
+  // The runner switch is part of the gate, so a runner that exists is only usable with it on.
+  const envFile = join(root, '.env')
+  writeFileSync(envFile, 'PORTTA_RUNNER=true\n')
+  return {
+    envFile,
+    runnerDir: join(root, 'runner'),
+    accessDir: join(root, 'access'),
+    dynamicDir: join(root, 'dynamic'),
+  }
 }
 
 const seededDatabase = databasePerFile()
