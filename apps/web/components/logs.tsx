@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import type { LogsResponse, ProjectLogSource } from 'portta-contracts'
-import { useMemo, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils.ts'
 import { useLogStream } from '../lib/ws.ts'
@@ -56,6 +56,7 @@ export function LogViewer({
   onSelectService,
   stream,
   docked = false,
+  chips,
 }: {
   queryKey: readonly unknown[]
   load: (tail: number) => Promise<ViewerResponse>
@@ -77,6 +78,8 @@ export function LogViewer({
    * chips, live from the start, and only the controls used while reading.
    */
   docked?: boolean
+  /** Docked, beside the title: what to read, when it is not a list of services. */
+  chips?: ReactNode
 }) {
   const { t } = useTranslation('common')
   const [tail, setTail] = useState(200)
@@ -122,6 +125,7 @@ export function LogViewer({
       {docked ? (
         <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-2.5">
           <h2 className="text-lg font-semibold text-ink">{t('logs.title')}</h2>
+          {chips}
           {sources && onSelectService ? (
             <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('logs.service')}>
               <FilterChip active={!selectedService} onClick={() => onSelectService(null)}>

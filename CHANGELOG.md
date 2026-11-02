@@ -6,6 +6,12 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Host > Containers selects several containers to start, stop, restart, read the
+  logs of together or remove. Removing asks you to type the count and keeps volumes,
+  images and networks; Portta's own containers cannot be selected.
+
 ### Changed
 
 - The panel has a new look: a slate canvas, white cards, navy for the main action
@@ -13,6 +19,10 @@ All notable changes to Portta are documented here. The format follows
 - Home opens with what needs a person, with the action on the row, then every
   running environment and what is still open. Projects lists each product with its
   environments and next action, and a Project's page shows what it uses by service.
+- Host shows the machine's verdict and facts in its header, with restarting Traefik
+  and running diagnostics on every tab. Health leads with its readings, who uses the
+  most and what its last check found; Containers is one list by origin; Network and
+  Gateway keep what is read most, with the rest one click away.
 - Access answers one question per row: who may open each site, decided in place,
   with opening to everybody asking first. Databases have one button, Connect, and
   what it takes to use the bridge appears under the row.

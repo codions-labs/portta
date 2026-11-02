@@ -22,9 +22,12 @@ export function ContainerActions({
   container,
   onShowDetails,
   inPanel = false,
+  logsInMenu = false,
 }: {
   container: ContainerSummary
   onShowDetails?: () => void
+  /** On a list with one control per row, logs are a line of the menu. */
+  logsInMenu?: boolean
   /** Beside a service's own Logs button: the restart it is opened for, in place of the logs icon. */
   inPanel?: boolean
 }) {
@@ -63,7 +66,7 @@ export function ContainerActions({
               {t('restart')}
             </Button>
           ) : null
-        ) : (
+        ) : logsInMenu ? null : (
           <Button
             variant="ghost"
             size="icon-sm"
@@ -86,6 +89,11 @@ export function ContainerActions({
                 <MenuItem onSelect={onShowDetails}>{t('details')}</MenuItem>
                 <MenuSeparator />
               </>
+            ) : null}
+            {logsInMenu ? (
+              <MenuItem onSelect={() => setShowLogs(true)}>
+                <ScrollText className="size-3.5" /> {t('logs')}
+              </MenuItem>
             ) : null}
             <MenuItem disabled={running || isGateway || act.isPending} onSelect={() => act.mutate('start')}>
               <Play className="size-3.5" /> {t('start')}

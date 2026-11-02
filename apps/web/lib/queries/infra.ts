@@ -9,8 +9,8 @@ export function useStatus(initialData?: Overview) {
   return useQuery({ queryKey: keys.status(), queryFn: api.overview, ...(initialData ? { initialData } : {}) })
 }
 
-export function useGateway() {
-  return useQuery({ queryKey: keys.gateway(), queryFn: api.gateway })
+export function useGateway(enabled = true) {
+  return useQuery({ queryKey: keys.gateway(), queryFn: api.gateway, enabled })
 }
 
 export function useServices() {
@@ -26,20 +26,20 @@ export function useServiceTraefik(id: string, enabled = true) {
   })
 }
 
-export function useDockerHost() {
-  return useQuery({ queryKey: keys.dockerHost(), queryFn: api.host })
+export function useDockerHost(enabled = true) {
+  return useQuery({ queryKey: keys.dockerHost(), queryFn: api.host, enabled })
 }
 
-export function useContainers(filters: { ownership?: string; state?: string; q?: string } = {}) {
-  return useQuery({ queryKey: keys.containers(filters), queryFn: () => api.containers(filters) })
+export function useContainers(filters: { ownership?: string; state?: string; q?: string } = {}, enabled = true) {
+  return useQuery({ queryKey: keys.containers(filters), queryFn: () => api.containers(filters), enabled })
 }
 
 export function useContainerRemovalPreview(id: string, enabled: boolean) {
   return useQuery({ queryKey: keys.containerRemovalPreview(id), queryFn: () => api.removalPreview(id), enabled })
 }
 
-export function useNetwork() {
-  return useQuery({ queryKey: keys.network(), queryFn: api.network })
+export function useNetwork(enabled = true) {
+  return useQuery({ queryKey: keys.network(), queryFn: api.network, enabled })
 }
 
 export function useAccess(enabled = true) {
@@ -79,8 +79,13 @@ export function useMetricsHistory(window = '30m') {
   })
 }
 
-export function useEnvironmentReport() {
-  return useQuery({ queryKey: keys.environmentReport(), queryFn: api.environmentReport, refetchInterval: 60_000 })
+export function useEnvironmentReport(enabled = true) {
+  return useQuery({
+    queryKey: keys.environmentReport(),
+    queryFn: api.environmentReport,
+    refetchInterval: 60_000,
+    enabled,
+  })
 }
 
 export function useHostSecurityReport() {

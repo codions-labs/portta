@@ -1,35 +1,9 @@
 {
   "title": "Gateway",
-  "description": "The gateway's own components: status, diagnostics and logs.",
   "checking": "Checking…",
   "runDiagnostics": "Run diagnostics",
   "restartTraefik": "Restart Traefik",
   "restarted": "Restarted {{components}}. {{note}}:",
-  "components": {
-    "title": "Components",
-    "traefik": "Traefik",
-    "socketProxy": "Socket proxy",
-    "persistence": "Persistence",
-    "tailscale": "Tailscale",
-    "notRunning": "not running",
-    "sharedNetwork": "Shared network",
-    "attached": "{{count}} attached",
-    "missing": "missing",
-    "routedServices": "Routed services"
-  },
-  "versions": {
-    "title": "Versions and profile",
-    "gateway": "Gateway",
-    "panel": "Panel",
-    "profile": "Profile",
-    "domain": "Domain",
-    "traefikDashboard": "Traefik dashboard",
-    "thisPanel": "This panel",
-    "loopbackOnly": "loopback only",
-    "routedForwardAuth": "routed, behind Portta login",
-    "routedNoCredential": "routed with no credential",
-    "readOnly": "read-only"
-  },
   "diagnostics": {
     "title": "Diagnostics",
     "summary": "{{failures}} failure(s), {{warnings}} warning(s) · {{time}}",
@@ -40,7 +14,13 @@
   },
   "logs": {
     "title": "Logs",
-    "componentAria": "Gateway component"
+    "componentAria": "Gateway component",
+    "sources": {
+      "traefik": "traefik",
+      "socket-proxy": "socket proxy",
+      "tailscale": "tailscale",
+      "db": "database"
+    }
   },
   "apply": {
     "title": "Apply saved settings",
@@ -95,18 +75,33 @@
     "showOutput": "Show output",
     "timeoutBody": "The panel has not answered for {{time}}. It may still be starting. Reload the page, or finish it on the host:"
   },
-  "overviewCard": {
-    "title": "Gateway",
-    "profile": "Profile",
-    "domain": "Domain",
-    "listening": "Listening",
-    "tls": "TLS",
-    "tlsEnabled": "enabled ({{mode}})",
+  "actionFailed": "That did not work",
+  "restartConfirm": {
+    "title": "Restart Traefik?",
+    "impact": "Every site on this host goes down for a few seconds while it comes back.",
+    "confirm": "Restart"
+  },
+  "parts": {
+    "traefik": "Traefik",
+    "socketProxy": "Socket proxy",
+    "auth": "Authentication",
     "tailscale": "Tailscale",
-    "tailscaleRunning": "running",
-    "tailscaleEnabledNotRunning": "enabled, not running",
-    "publicAccess": "Public access",
+    "notRunning": "not running"
+  },
+  "details": {
+    "title": "Gateway details",
+    "listening": "Listening on",
     "sharedNetwork": "Shared network",
-    "attached": "{{name}} · {{count}} attached"
+    "attached": "{{name}}, {{count}} attached",
+    "missing": "{{name}} is missing",
+    "routedServices": "Routed services",
+    "persistence": "Persistence",
+    "publicAccess": "Public access",
+    "traefikDashboard": "Traefik dashboard",
+    "thisPanel": "This panel",
+    "loopbackOnly": "Only on this machine",
+    "routedForwardAuth": "Routed, asks for a login",
+    "routedNoCredential": "Routed, no credential",
+    "readOnly": "Read only"
   }
 }

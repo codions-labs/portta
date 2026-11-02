@@ -1,35 +1,9 @@
 {
   "title": "Gateway",
-  "description": "Os componentes próprios do gateway: status, diagnósticos e logs.",
   "checking": "Verificando…",
-  "runDiagnostics": "Executar diagnósticos",
+  "runDiagnostics": "Rodar diagnóstico",
   "restartTraefik": "Reiniciar Traefik",
   "restarted": "{{components}} reiniciado(s). {{note}}:",
-  "components": {
-    "title": "Componentes",
-    "traefik": "Traefik",
-    "socketProxy": "Proxy de socket",
-    "persistence": "Persistência",
-    "tailscale": "Tailscale",
-    "notRunning": "não em execução",
-    "sharedNetwork": "Rede compartilhada",
-    "attached": "{{count}} anexado(s)",
-    "missing": "ausente",
-    "routedServices": "Serviços roteados"
-  },
-  "versions": {
-    "title": "Versões e perfil",
-    "gateway": "Gateway",
-    "panel": "Painel",
-    "profile": "Perfil",
-    "domain": "Domínio",
-    "traefikDashboard": "Dashboard do Traefik",
-    "thisPanel": "Este painel",
-    "loopbackOnly": "apenas loopback",
-    "routedForwardAuth": "roteado, com login Portta",
-    "routedNoCredential": "roteado sem credencial",
-    "readOnly": "somente leitura"
-  },
   "diagnostics": {
     "title": "Diagnósticos",
     "summary": "{{failures}} falha(s), {{warnings}} aviso(s) · {{time}}",
@@ -40,7 +14,13 @@
   },
   "logs": {
     "title": "Logs",
-    "componentAria": "Componente do gateway"
+    "componentAria": "Componente do gateway",
+    "sources": {
+      "traefik": "traefik",
+      "socket-proxy": "socket proxy",
+      "tailscale": "tailscale",
+      "db": "banco"
+    }
   },
   "apply": {
     "title": "Aplicar configurações salvas",
@@ -95,18 +75,33 @@
     "showOutput": "Mostrar saída",
     "timeoutBody": "O painel não responde há {{time}}. Ele pode ainda estar subindo. Recarregue a página, ou termine no host:"
   },
-  "overviewCard": {
-    "title": "Gateway",
-    "profile": "Perfil",
-    "domain": "Domínio",
-    "listening": "Escutando",
-    "tls": "TLS",
-    "tlsEnabled": "ativado ({{mode}})",
+  "actionFailed": "Não deu certo",
+  "restartConfirm": {
+    "title": "Reiniciar o Traefik?",
+    "impact": "Todos os sites deste host saem do ar por alguns segundos enquanto ele volta.",
+    "confirm": "Reiniciar"
+  },
+  "parts": {
+    "traefik": "Traefik",
+    "socketProxy": "Proxy de socket",
+    "auth": "Autenticação",
     "tailscale": "Tailscale",
-    "tailscaleRunning": "em execução",
-    "tailscaleEnabledNotRunning": "ativado, não em execução",
-    "publicAccess": "Acesso público",
+    "notRunning": "parado"
+  },
+  "details": {
+    "title": "Detalhes do gateway",
+    "listening": "Escuta em",
     "sharedNetwork": "Rede compartilhada",
-    "attached": "{{name}} · {{count}} conectado(s)"
+    "attached": "{{name}}, {{count}} conectados",
+    "missing": "{{name}} não existe",
+    "routedServices": "Serviços roteados",
+    "persistence": "Persistência",
+    "publicAccess": "Acesso público",
+    "traefikDashboard": "Painel do Traefik",
+    "thisPanel": "Este painel",
+    "loopbackOnly": "Só nesta máquina",
+    "routedForwardAuth": "Roteado, pede login",
+    "routedNoCredential": "Roteado, sem credencial",
+    "readOnly": "Somente leitura"
   }
 }

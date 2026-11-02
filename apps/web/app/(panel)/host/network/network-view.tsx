@@ -1,13 +1,17 @@
 'use client'
 
+// How this machine is reached, and the Docker networks underneath. Changing any
+// of it happens in Settings; which address answers what is in Access.
+
+import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
-import { EndpointList } from '@/components/entities/endpoint-list'
-import { Empty, ErrorBox, KeyValue, Loading, NoValue } from '@/components/shell-bits'
+import { Empty, ErrorBox, Loading, NoValue } from '@/components/shell-bits'
 import { StateBadge } from '@/components/status'
 import { Badge, StatusIndicator } from '@/components/ui/badge'
-import { Card, CardBody, CardHeader } from '@/components/ui/card'
-import { Table, Td, Th, Tr } from '@/components/ui/table'
+import { Card, CardHeader } from '@/components/ui/card'
+import { useCan } from '@/lib/permissions'
 import { useNetwork } from '@/lib/queries'
 
 const ROLE_TONE = {
@@ -18,6 +22,38 @@ const ROLE_TONE = {
   other: 'outline',
 } as const
 
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 text-sm">
+      <span className="shrink-0 text-muted">{label}</span>
+      <span className="min-w-0 truncate text-right first-letter:uppercase">{children}</span>
+    </div>
+  )
+}
+
+function ReachCard({ title, children }: { title: string; children: ReactNode }) {
+  const { t } = useTranslation('network')
+  const mayChange = useCan('settings:read')
+  return (
+    <Card>
+      <CardHeader
+        title={title}
+        actions={
+          mayChange ? (
+            <Link
+              href="/settings/general"
+              className="rounded-xs text-sm font-medium text-link underline-offset-2 hover:underline focus-ring"
+            >
+              {t('change')}
+            </Link>
+          ) : null
+        }
+      />
+      <div className="space-y-1.5 px-5 py-4">{children}</div>
+    </Card>
+  )
+}
+
 export function NetworkView() {
   const { t } = useTranslation('network')
   const { t: tc } = useTranslation('common')
@@ -27,170 +63,103 @@ export function NetworkView() {
   if (query.error) return <ErrorBox error={query.error} />
   if (!query.data) return null
 
-  const { domains, routes, networks, tailscale, dns, tls } = query.data
+  const { domains, networks, tailscale, dns, tls } = query.data
+  const validation = [tls.mode, dns.cloudflareEnabled ? (dns.zone ?? dns.provider) : null].filter(Boolean).join(', ')
 
   return (
-    <>
-      <p className="mb-4 text-sm text-subtle">{t('description')}</p>
-
+    <div className="space-y-5">
       <div className="grid items-start gap-4 lg:grid-cols-3">
-        <Card>
-          <CardHeader title={t('domains.title')} />
-          <CardBody>
-            <dl className="divide-y divide-line-subtle">
-              <KeyValue label={t('domains.routedDomain')}>
-                <Mono kind="host" tone="ink">
-                  {domains.local}
-                </Mono>
-              </KeyValue>
-              <KeyValue label={t('domains.vpnDomain')}>
-                {domains.private ? (
-                  <Mono kind="host" tone="ink">
-                    {domains.private}
-                  </Mono>
-                ) : (
-                  <NoValue />
-                )}
-              </KeyValue>
-              <KeyValue label={t('domains.publicDomain')}>
-                {domains.public ? (
-                  <Mono kind="host" tone="ink">
-                    {domains.public}
-                  </Mono>
-                ) : (
-                  <NoValue />
-                )}
-              </KeyValue>
-              <KeyValue label={t('domains.scheme')}>{domains.scheme}</KeyValue>
-            </dl>
-          </CardBody>
-        </Card>
+        <ReachCard title={t('domains.title')}>
+          <Row label={t('domains.routedDomain')}>
+            <Mono kind="host" tone="ink">
+              {domains.local}
+            </Mono>
+          </Row>
+          {domains.public && domains.public !== domains.local ? (
+            <Row label={t('domains.publicDomain')}>
+              <Mono kind="host" tone="ink">
+                {domains.public}
+              </Mono>
+            </Row>
+          ) : null}
+          <Row label={t('domains.scheme')}>
+            <Mono kind="text" tone="ink">
+              {domains.scheme}
+            </Mono>
+          </Row>
+        </ReachCard>
 
-        <Card>
-          <CardHeader title={t('tls.title')} />
-          <CardBody>
-            <dl className="divide-y divide-line-subtle">
-              <KeyValue label={t('tls.https')}>
-                <StatusIndicator tone={tls.enabled ? 'ok' : 'neutral'} emphasis="ink">
-                  {tls.enabled ? tc('enabled') : tc('disabled')}
-                </StatusIndicator>
-              </KeyValue>
-              <KeyValue label={t('tls.mode')}>{tls.mode}</KeyValue>
-              <KeyValue label={t('tls.acmeContact')}>
-                <StatusIndicator tone={tls.acmeEmailSet ? 'ok' : 'warn'} emphasis="ink">
-                  {tls.acmeEmailSet ? tc('set') : tc('notSet')}
-                </StatusIndicator>
-              </KeyValue>
-              <KeyValue label={t('tls.directory')}>
-                <Mono kind="url" tone="ink" className="break-all whitespace-normal">
-                  {tls.caServer}
-                </Mono>
-              </KeyValue>
-            </dl>
-          </CardBody>
-        </Card>
+        <ReachCard title={t('tls.title')}>
+          <Row label={t('tls.https')}>
+            <StatusIndicator tone={tls.enabled ? 'ok' : 'neutral'} emphasis="ink">
+              {tls.enabled ? tc('enabled') : tc('disabled')}
+            </StatusIndicator>
+          </Row>
+          <Row label={t('tls.mode')}>
+            <span title={tls.caServer}>
+              <Mono kind="text" tone="ink">
+                {validation}
+              </Mono>
+            </span>
+          </Row>
+          {tls.enabled && !tls.acmeEmailSet ? (
+            <Row label={t('tls.acmeContact')}>
+              <StatusIndicator tone="warn" emphasis="ink">
+                {tc('notSet')}
+              </StatusIndicator>
+            </Row>
+          ) : null}
+        </ReachCard>
 
-        <Card>
-          <CardHeader title={t('vpnDns.title')} />
-          <CardBody>
-            <dl className="divide-y divide-line-subtle">
-              <KeyValue label={t('vpnDns.tailscale')}>
-                {tailscale.enabled ? (
-                  <StateBadge state={tailscale.state} health={tailscale.health} />
-                ) : (
-                  <StatusIndicator tone="neutral" emphasis="ink">
-                    {tc('disabled')}
-                  </StatusIndicator>
-                )}
-              </KeyValue>
-              <KeyValue label={t('vpnDns.tailnetHostname')}>
-                <Mono kind="host" tone="ink">
-                  {tailscale.hostname}
-                </Mono>
-              </KeyValue>
-              <KeyValue label={t('vpnDns.dnsProvider')}>{dns.provider}</KeyValue>
-              <KeyValue label={t('vpnDns.cloudflare')}>
-                <StatusIndicator tone={dns.cloudflareEnabled ? 'ok' : 'neutral'} emphasis="ink">
-                  {dns.cloudflareEnabled ? (dns.zone ?? tc('enabled')) : tc('disabled')}
-                </StatusIndicator>
-              </KeyValue>
-            </dl>
-          </CardBody>
-        </Card>
+        <ReachCard title={t('vpnDns.title')}>
+          <Row label={t('vpnDns.tailscale')}>
+            {tailscale.enabled ? (
+              <StateBadge state={tailscale.state} health={tailscale.health} />
+            ) : (
+              <StatusIndicator tone="neutral" emphasis="ink">
+                {tc('disabled')}
+              </StatusIndicator>
+            )}
+          </Row>
+          <Row label={t('domains.vpnDomain')}>
+            {domains.private ? (
+              <Mono kind="host" tone="ink">
+                {domains.private}
+              </Mono>
+            ) : (
+              <NoValue />
+            )}
+          </Row>
+        </ReachCard>
       </div>
 
-      <Card className="mt-4">
-        <CardHeader title={t('routes.title')} description={t('routes.description')} />
-        {routes.length === 0 ? (
-          <Empty title={t('routes.empty')} />
+      <Card>
+        <CardHeader
+          title={t('networks.title')}
+          actions={<span className="text-xs text-subtle tabular-nums">{networks.length}</span>}
+        />
+        {networks.length === 0 ? (
+          <Empty title={t('networks.empty')} />
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <Th>{t('routes.project')}</Th>
-                <Th>{t('routes.service')}</Th>
-                <Th>{t('routes.status')}</Th>
-                <Th>{t('routes.targetPort')}</Th>
-                <Th>{t('routes.addresses')}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {routes.map((route) => (
-                <Tr key={route.containerId}>
-                  <Td className="text-xs text-muted">{route.project ?? '-'}</Td>
-                  <Td className="font-medium">{route.service ?? route.containerName}</Td>
-                  <Td>
-                    <StateBadge state={route.state} />
-                  </Td>
-                  <Td>
-                    <Mono kind="port">{route.port}</Mono>
-                  </Td>
-                  <Td>
-                    <EndpointList endpoints={route.urls} />
-                  </Td>
-                </Tr>
-              ))}
-            </tbody>
-          </Table>
+          <ul aria-label={t('networks.title')}>
+            {networks.map((network) => (
+              <li
+                key={network.id}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-5 py-2.5 first:border-t-0"
+              >
+                <Mono kind="host" tone="ink" className="min-w-0 flex-[1_1_12rem] truncate">
+                  {network.name}
+                </Mono>
+                {network.internal ? <Badge tone="info">{t('networks.internal')}</Badge> : null}
+                <Badge tone={ROLE_TONE[network.role]}>{t(`networks.roles.${network.role}`)}</Badge>
+                <span className="w-28 shrink-0 text-right text-xs text-subtle tabular-nums">
+                  {t('networks.count', { count: network.containerCount })}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
-
-      <Card className="mt-4">
-        <CardHeader title={t('networks.title')} />
-        <Table>
-          <thead>
-            <tr>
-              <Th>{t('networks.name')}</Th>
-              <Th>{t('networks.role')}</Th>
-              <Th>{t('networks.driver')}</Th>
-              <Th>{t('networks.containers')}</Th>
-              <Th>{t('networks.flags')}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {networks.map((network) => (
-              <Tr key={network.id}>
-                <Td>
-                  <Mono kind="host" tone="ink">
-                    {network.name}
-                  </Mono>
-                </Td>
-                <Td>
-                  <Badge tone={ROLE_TONE[network.role]}>{t(`networks.roles.${network.role}`)}</Badge>
-                </Td>
-                <Td className="text-xs text-muted">{network.driver}</Td>
-                <Td className="text-xs tabular-nums">{network.containerCount}</Td>
-                <Td>
-                  <span className="flex gap-1">
-                    {network.internal ? <Badge tone="info">{t('networks.internal')}</Badge> : null}
-                    {network.managed ? <Badge tone="accent">{t('networks.gateway')}</Badge> : null}
-                  </span>
-                </Td>
-              </Tr>
-            ))}
-          </tbody>
-        </Table>
-      </Card>
-    </>
+    </div>
   )
 }

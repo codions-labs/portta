@@ -60,6 +60,5 @@
     "projects": "By project",
     "table": "Table",
     "services": "By service"
-  },
-  "hostDescription": "The machine these projects run on: its health, containers, network and gateway."
+  }
 }

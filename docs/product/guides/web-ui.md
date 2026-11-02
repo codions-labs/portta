@@ -232,9 +232,9 @@ See [Manage environments](environments.md) and the
 ### Services and Docker
 
 **By service**, in Projects, is every service of every integrated project as one
-filterable list, with its addresses. **Containers**, in Host, is every container on the host, separated
-into Portta, integrated projects, external Compose projects and standalone
-containers, with the networks and published ports. See
+filterable list, with its addresses. **Containers**, in Host, is every container on the host, filtered by
+origin (projects, external, Portta's own) or by port conflict, with its image and
+published ports. See
 [Manage services](services.md).
 
 #### Who may open a service
@@ -256,13 +256,13 @@ the next request and recreates nothing. See
 
 A section of Host, at `/host/network`.
 
-![Authentication disabled: the Network page with domains, TLS, VPN and DNS settings, every routed hostname and the Docker networks with their roles](../../images/auth-disabled-network.png)
+![Authentication disabled: the Network page with addresses, certificates, VPN and the Docker networks with their roles](../../images/auth-disabled-network.png)
 
 **Authentication disabled**: the Network page.
 
-Domains (local, VPN, public), TLS mode and ACME contact, Tailscale state, the DNS
-provider, every routed hostname with its target port, and the Docker networks
-with their role: shared, control, access, or a project's own.
+Addresses, certificates and VPN, each with a link to change it in Settings, and
+the Docker networks with their role: shared, control, access, or a project's own.
+Every routed hostname is in [Access](#access).
 
 ### Access
 
@@ -291,9 +291,11 @@ persistent forwarders created with
 
 ### Gateway
 
-A section of Host, at `/host/gateway`. Component states, versions, the profile, the checks the panel can make from
-inside its container, and logs for Traefik, the socket proxy and Tailscale.
-**Restart Traefik** restarts the container in place. See
+A section of Host, at `/host/gateway`. Traefik, the socket proxy, authentication and
+Tailscale with their state and version, and logs for each source, with the rest one
+click away. **Restart Traefik** and **Run diagnostics** sit in the Host header on
+every tab: restarting asks first and restarts the container in place, and diagnostics
+are the checks the panel can make from inside its container. See
 [Configure the panel](panel-settings.md#gateway).
 
 ### Settings
@@ -369,9 +371,22 @@ Project, `404` for an unknown path or environment.
 
 Never offered: editing configuration or environment variables of a container,
 changing its networks or volumes, running an arbitrary command, resetting a
-database, mass removal, or any kind of prune. The
+database, or any kind of prune. The
 [container console](container-console.md) is a fixed shell inside a project
 container, never a host shell and never a gateway container.
+
+### Acting on several containers
+
+Host > Containers has a checkbox on every row. With some selected, the bar above
+the list starts, stops, restarts, shows their logs together or removes them.
+"Select all" covers what the current filter shows and never a container of
+Portta's own: without those the panel and every site go down, so their
+checkboxes are disabled, and the server refuses them whatever the panel sends.
+
+Removing several asks you to type `remove N`, lists each container and its
+image, and is the same call as removing one: volumes, images and networks stay,
+and only what a container wrote outside any volume is lost. Each removal is in
+the audit log on its own, and a failure on one does not stop the others.
 
 ### Removing a container
 

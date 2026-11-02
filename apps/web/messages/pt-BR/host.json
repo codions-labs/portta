@@ -1,0 +1,31 @@
+{
+  "facts": {
+    "up": "Ativo há",
+    "portta": "Portta",
+    "profile": "Perfil",
+    "profiles": {
+      "local": "local",
+      "remote-private": "privado",
+      "remote-public": "público"
+    }
+  },
+  "health": {
+    "resources": "Recursos",
+    "window": "Últimos 30 min",
+    "of": "de {{total}}",
+    "disk": "Disco",
+    "machine": "Detalhes da máquina",
+    "docker": "Docker",
+    "dockerResources": "Disponível para o Docker",
+    "top": {
+      "title": "Quem mais consome",
+      "empty": "Nada medido ainda",
+      "cpu": "CPU {{value}}"
+    },
+    "checks": {
+      "title": "Verificações",
+      "showAll": "Ver todas as {{count}}",
+      "showFewer": "Ver menos"
+    }
+  }
+}

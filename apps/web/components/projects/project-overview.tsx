@@ -8,8 +8,7 @@ import type { Environment, Project, ProjectEnvironment } from 'portta-contracts'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EnvironmentRow } from '@/components/entities/environment-row'
-import { Empty } from '@/components/shell-bits'
-import { Sparkline } from '@/components/sparkline'
+import { Empty, ReadingCard } from '@/components/shell-bits'
 import { Badge, StatusIndicator } from '@/components/ui/badge'
 import { Card, CardHeader } from '@/components/ui/card'
 import { Segmented } from '@/components/ui/segmented'
@@ -23,31 +22,6 @@ import { useFormat } from '@/lib/use-format'
 /** What the collector keeps: anything longer than an hour is a promise it could not honour. */
 const WINDOWS = ['15m', '30m', '1h'] as const
 type HistoryWindow = (typeof WINDOWS)[number]
-
-function Reading({
-  label,
-  value,
-  unit,
-  points,
-  max,
-}: {
-  label: string
-  value: string
-  unit?: string
-  points: ReadonlyArray<number | null>
-  max?: number
-}) {
-  return (
-    <div role="group" aria-label={label} className="rounded-xl border border-line bg-surface px-5 py-4 shadow-raised">
-      <div className="text-xs font-medium tracking-[0.12em] text-subtle uppercase">{label}</div>
-      <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 font-heading text-3xl font-semibold tabular-nums">
-        {value}
-        {unit ? <span className="font-sans text-sm font-medium tracking-normal text-subtle">{unit}</span> : null}
-      </div>
-      {points.length > 1 ? <Sparkline values={points} max={max} label={label} className="mt-2 h-8 w-full" /> : null}
-    </div>
-  )
-}
 
 export function ProjectOverview({ project }: { project: Project; readOnly?: boolean }) {
   const { t } = useTranslation('projects')
@@ -114,25 +88,25 @@ export function ProjectOverview({ project }: { project: Project; readOnly?: bool
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={t('overview.resources')}>
-        <Reading
+        <ReadingCard
           label={t('overview.cpu')}
           value={percentLabel(measured?.cpuUtilisation ?? null) ?? '—'}
           points={points.map((point) => point?.cpuUtilisation ?? null)}
           max={1}
         />
-        <Reading
+        <ReadingCard
           label={t('overview.memory')}
           value={measured?.memoryUsedBytes == null ? '—' : bytes(measured.memoryUsedBytes)}
           unit={memoryLimit ? t('overview.ofLimit', { limit: bytes(memoryLimit) }) : undefined}
           points={points.map((point) => point?.memoryUsedBytes ?? null)}
         />
-        <Reading
+        <ReadingCard
           label={t('overview.services')}
           value={environment ? String(environment.runningCount) : '—'}
           unit={environment ? t('overview.ofServices', { total: environment.serviceCount }) : undefined}
           points={[]}
         />
-        <Reading
+        <ReadingCard
           label={t('overview.uptime')}
           value={environment?.uptimeSeconds == null ? '—' : uptime(environment.uptimeSeconds)}
           points={[]}

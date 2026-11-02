@@ -60,6 +60,5 @@
     "projects": "Por projeto",
     "table": "Tabela",
     "services": "Por serviço"
-  },
-  "hostDescription": "A máquina onde estes projetos rodam: saúde, contêineres, rede e gateway."
+  }
 }

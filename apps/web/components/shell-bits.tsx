@@ -1,12 +1,13 @@
 'use client'
 
-import { AlertTriangle, CheckCircle2, Info, Loader2, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronDown, Info, Loader2, XCircle } from 'lucide-react'
 import type { ComponentType, HTMLAttributes, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { translateApiError, translateApiHint } from '@/lib/i18n/translate-error.ts'
 import { type Tone, toneBorder, toneText, toneWash } from '../lib/tone.ts'
 import { cn } from '../lib/utils.ts'
 import { DocText } from './doc-text.tsx'
+import { Sparkline } from './sparkline.tsx'
 import { Breadcrumb, type BreadcrumbItem } from './ui/breadcrumb.tsx'
 import { Checkbox, type CheckboxProps, Input, type InputProps, Select, type SelectProps } from './ui/field.tsx'
 
@@ -23,8 +24,11 @@ export function PageHeader({
   /** A compact status strip that belongs to the page, under the title. */
   meta,
   icon,
+  badge,
 }: {
   title: string
+  /** The page's verdict in a word, beside its name. */
+  badge?: ReactNode
   description?: ReactNode
   /** Page verbs: the one primary action, `md`. Never a filter, never a view switcher. */
   actions?: ReactNode
@@ -38,10 +42,13 @@ export function PageHeader({
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
         <div className="min-w-0">
           {breadcrumb && breadcrumb.length >= 2 ? <Breadcrumb items={breadcrumb} className="-ml-1 mb-1" /> : null}
-          <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold text-ink md:text-4xl">
-            {icon ? <span className="shrink-0 text-subtle [&_svg]:size-4">{icon}</span> : null}
-            <span className="truncate">{title}</span>
-          </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold text-ink md:text-4xl">
+              {icon ? <span className="shrink-0 text-subtle [&_svg]:size-4">{icon}</span> : null}
+              <span className="truncate">{title}</span>
+            </h1>
+            {badge ? <span className="shrink-0">{badge}</span> : null}
+          </div>
           {description ? <p className="mt-1.5 max-w-3xl text-base text-subtle">{description}</p> : null}
           {meta ? (
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted">{meta}</div>
@@ -400,5 +407,47 @@ export function KeyValue({ label, children }: { label: string; children: ReactNo
       <dt className="w-36 shrink-0 text-xs text-subtle">{label}</dt>
       <dd className="min-w-0 text-sm text-ink">{children}</dd>
     </div>
+  )
+}
+
+/** One measurement: what it reads now and, when there is history, how it got here. */
+export function ReadingCard({
+  label,
+  value,
+  unit,
+  points = [],
+  max,
+  footnote,
+}: {
+  label: string
+  value: string
+  unit?: string
+  points?: ReadonlyArray<number | null>
+  max?: number
+  footnote?: string
+}) {
+  return (
+    <div role="group" aria-label={label} className="rounded-xl border border-line bg-surface px-5 py-4 shadow-raised">
+      <div className="text-xs font-medium tracking-[0.12em] text-subtle uppercase">{label}</div>
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 font-heading text-3xl font-semibold tabular-nums">
+        {value}
+        {unit ? <span className="font-sans text-sm font-medium tracking-normal text-subtle">{unit}</span> : null}
+      </div>
+      {points.length > 1 ? <Sparkline values={points} max={max} label={label} className="mt-2 h-8 w-full" /> : null}
+      {footnote ? <div className="mt-1.5 text-xs text-subtle">{footnote}</div> : null}
+    </div>
+  )
+}
+
+/** What most people never need, one click away instead of on the page. */
+export function Disclosure({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <details className="group overflow-hidden rounded-xl border border-line bg-surface shadow-raised">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 text-sm font-medium text-muted hover:text-ink focus-ring [&::-webkit-details-marker]:hidden">
+        {title}
+        <ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+      </summary>
+      <div className="border-t border-line px-5 py-3">{children}</div>
+    </details>
   )
 }

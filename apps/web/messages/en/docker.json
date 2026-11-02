@@ -1,72 +1,73 @@
 {
   "title": "Containers",
-  "description": "Every container on this machine, whether or not the gateway knows about it.",
-  "filterOwnership": "Filter by ownership",
-  "filterState": "Filter by state",
   "searchPlaceholder": "Search container, image, project",
   "searchAria": "Search containers",
-  "stats": {
-    "running": "Running",
-    "gateway": "Portta",
-    "integrated": "Integrated",
-    "external": "External",
-    "networks": "Networks",
-    "portConflicts": "Port conflicts"
-  },
-  "groups": {
-    "gateway": {
-      "title": "Portta",
-      "description": "The gateway's own infrastructure."
-    },
-    "integrated": {
-      "title": "Integrated projects",
-      "description": "Compose projects the gateway manages."
-    },
-    "external": {
-      "title": "External Docker",
-      "description": "Compose projects on this host that the gateway does not manage."
-    },
-    "standalone": {
-      "title": "Standalone containers",
-      "description": "Started by hand, outside any Compose project."
-    }
-  },
   "empty": "No container matches the filters",
-  "containers": "Containers",
-  "publishedPorts": {
-    "title": "Published ports",
-    "description": "Useful for spotting the container that already holds the port you need.",
-    "empty": "Nothing is published on the host",
-    "aria": "Published ports",
-    "hostPort": "Port",
-    "container": "Bound by",
-    "owner": "Owner",
-    "conflictBadge": "conflict"
-  },
-  "engine": {
-    "title": "Engine",
-    "docker": "Docker",
-    "host": "Host",
-    "platform": "Platform",
-    "resources": "Resources"
-  },
   "table": {
     "name": "Container",
-    "state": "State",
-    "health": "Health",
     "image": "Image",
-    "project": "Project",
     "ports": "Ports",
     "actions": "Actions",
-    "uptime": "Up",
-    "resources": "Resources",
     "restarts": "{{count}} restarts",
     "restarts_one": "{{count}} restart",
     "restarts_other": "{{count}} restarts",
     "exitCode": "exit {{code}}",
-    "caption": "Containers in {{group}}, their state and what they cost"
+    "origin": "Origin"
   },
-  "anyState": "Any state",
-  "containersTotal": "{{total}} containers total",
-  "networks": "Networks"
+  "chips": {
+    "all": "All {{count}}",
+    "project": "From projects {{count}}",
+    "external": "External {{count}}",
+    "portta": "Portta's {{count}}",
+    "conflict": "Port conflict {{count}}"
+  },
+  "origin": {
+    "portta": "Portta",
+    "project": "Project",
+    "external": "External"
+  },
+  "ports": {
+    "none": "None",
+    "viaGateway": "Through the gateway",
+    "conflict": "Another container publishes this port too"
+  },
+  "selectAll": "Select every selectable container",
+  "select": "Select {{name}}",
+  "locked": "Part of Portta: without it the panel and the sites go down",
+  "lockedName": "{{name}} is part of Portta and cannot be selected",
+  "footnote": "Select all follows the current filter and leaves out Portta's containers: without them the panel and the sites go down.",
+  "bulk": {
+    "aria": "Actions on the selected containers",
+    "selected_one": "{{count}} container selected",
+    "selected_other": "{{count}} containers selected",
+    "start": "Start",
+    "stop": "Stop",
+    "restart": "Restart",
+    "logs": "View logs together",
+    "remove": "Remove",
+    "clear": "Clear selection",
+    "logsTitle_one": "Logs of {{count}} container",
+    "logsTitle_other": "Logs of {{count}} containers",
+    "partial": "{{failed}} of {{count}} failed",
+    "done": {
+      "start_one": "{{count}} container started",
+      "start_other": "{{count}} containers started",
+      "stop_one": "{{count}} container stopped",
+      "stop_other": "{{count}} containers stopped",
+      "restart_one": "{{count}} container restarted",
+      "restart_other": "{{count}} containers restarted",
+      "remove_one": "{{count}} container removed",
+      "remove_other": "{{count}} containers removed"
+    },
+    "confirm": {
+      "title_one": "Remove {{count}} container?",
+      "title_other": "Remove {{count}} containers?",
+      "kept": "Volumes, images and networks stay. Only what was written inside a container, outside any volume, is lost.",
+      "lost": "Whatever is running goes down now. To bring it back, start the environment again.",
+      "typed": "remove {{count}}",
+      "typedHint": "Type {{typed}} to confirm",
+      "action_one": "Remove {{count}} container",
+      "action_other": "Remove {{count}} containers"
+    }
+  }
 }
