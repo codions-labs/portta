@@ -286,10 +286,10 @@ export function testConfig(overrides: Partial<PanelConfig> = {}): PanelConfig {
 
 /**
  * A real SQLite, in memory, migrated, and seeded with the situation nearly
- * every suite needs: one Project with one Repository on a GitHub remote, and
+ * every suite needs: one Project with a working directory, and
  * the two environments it has been seen running.
  *
- * The real engine rather than hand-written stand-ins, one per repository: those
+ * The real engine rather than hand-written stand-ins, one per suite: those
  * are cheap and wrong in the way stand-ins always are — they accept rows a
  * check would refuse, return ids in a shape the driver never produces, and let
  * a query the panel got wrong pass anyway. The real engine costs single-digit

@@ -2,6 +2,7 @@ import { chmodSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Environment } from 'portta-contracts'
+import { readProtectionStore, setProtection, writeProtectionStore } from 'portta-core'
 import { environmentSettings, serviceSettings } from 'portta-db'
 import { afterEach, describe, expect, it } from 'vitest'
 import { GENERATED_FILES } from '../src/services/dynamic.ts'
@@ -136,6 +137,27 @@ describe('a hostname alias', () => {
     expect(response.status).toBe(200)
     const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
     expect(written).toContain('middlewares: [portta-forward-auth]')
+  })
+
+  it('refuses a hostname whose access decision belongs to another service on a public host', async () => {
+    const dir = scratch()
+    const authStore = join(dir, 'protections.json')
+    writeProtectionStore(
+      authStore,
+      setProtection(readProtectionStore(authStore), {
+        scope: 'host:shop.localhost',
+        host: 'shop.localhost',
+        entryPoints: ['websecure'],
+        mode: 'public',
+        label: 'shop',
+        project: 'other',
+        service: 'web',
+      }),
+    )
+    const instance = await app(dir, {}, { profile: 'remote-public', tlsEnabled: true, authStore })
+    const response = await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'shop' })
+    expect(response.status).toBe(400)
+    expect(existsSync(join(instance.dynamicDir, GENERATED_FILES.aliases))).toBe(false)
   })
 
   it('targets the container name, never the Compose service alias', async () => {

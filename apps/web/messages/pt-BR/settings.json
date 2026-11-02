@@ -131,7 +131,6 @@
     "Public access": "Acesso público",
     "DNS": "DNS",
     "Panel": "Painel",
-    "GitHub": "GitHub",
     "Project domain": "Endereços dos projetos",
     "Projects": "Projetos"
   },
@@ -363,7 +362,7 @@
   "roleHints": {
     "owner": "É dono deste painel. Existe exatamente um, e o papel muda por transferência.",
     "admin": "Tudo, menos assumir a propriedade. Vê todos os Projetos.",
-    "developer": "Trabalha nos Projetos de que participa: issues, ambientes, repositórios.",
+    "developer": "Trabalha nos Projetos de que participa: ambientes e serviços.",
     "viewer": "Lê os Projetos de que participa, e não altera nada."
   },
   "localMode": {
@@ -473,7 +472,7 @@
     "currentPassword": "Senha atual",
     "twoFactor": "Segundo fator",
     "twoFactorDescription": "Um aplicativo autenticador, pedido depois da senha.",
-    "twoFactorHint": "Ligar isso acrescenta um passo à sua entrada, e nada mais. Os códigos de recuperação aparecem uma vez, quando você liga.",
+    "twoFactorHint": "Ligar isso acrescenta um passo à sua entrada. Em um painel acessível pela internet, é também o que libera o console do contêiner. Os códigos de recuperação aparecem uma vez, quando você liga.",
     "on": "Ligado",
     "off": "Desligado",
     "turnOn": "Ligar",
@@ -530,7 +529,7 @@
   },
   "audit": {
     "title": "Auditoria",
-    "description": "Quem fez o quê: contas, papéis, tokens, participação em Projetos e configurações. A atividade de desenvolvimento fica na página Atividade.",
+    "description": "Quem fez o quê: contas, papéis, tokens, participação em Projetos, configurações e quem pode abrir cada site.",
     "filterByUser": "Filtrar por usuário",
     "everybody": "Todos",
     "when": "Quando",

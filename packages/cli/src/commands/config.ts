@@ -419,7 +419,7 @@ export async function configSet(
   }
 
   write(context.root, values)
-  if (name === 'panel.access') syncForwardAuth(context.root)
+  if (name === 'panel.access') syncForwardAuth(context.root, context.config.profile)
   output.progress(`${name} = ${value}`)
 
   if (options.apply === false) {

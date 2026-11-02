@@ -30,7 +30,6 @@
     "private": "private",
     "unhealthyCount": "{{count}} unhealthy",
     "sourceReason": {
-      "repoMatch": "its repository belongs to this project",
       "label": "declared by its portta.project label",
       "manual": "linked by hand",
       "path": "it runs from a directory of this project"
@@ -67,7 +66,7 @@
     "title": "Project",
     "description": "What the panel keeps about this product. Nothing here touches a repository or a container.",
     "relativePath": "Directory under Projects Home",
-    "relativePathHint": "One first-level directory of PORTTA_PROJECTS_HOME. Files are never moved.",
+    "relativePathHint": "A directory of PORTTA_PROJECTS_HOME, at any depth. Files are never moved.",
     "archived": "Archived",
     "deleteTitle": "Delete this project",
     "deleteDescription": "Removes the registration and what Portta keeps about it. Nothing on the host changes.",
@@ -118,8 +117,8 @@
       "restartImpact_one": "This restarts {{count}} container; it is briefly unreachable.",
       "restartImpact_other": "This restarts {{count}} containers across {{environments}} environments; each one is briefly unreachable.",
       "deleteTitle": "Delete {{name}}?",
-      "deleteImpact": "This removes the project, its repository registrations, its sessions and activity.",
-      "deleteKeeps": "Kept: every container, volume, network, working directory and GitHub issue. Its environments go back to unassigned."
+      "deleteImpact": "This removes the project and its links to environments.",
+      "deleteKeeps": "Kept: every container, volume, network and working directory. Its environments go back to unassigned."
     },
     "bulk": {
       "start": "Start",

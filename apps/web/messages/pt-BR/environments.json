@@ -37,12 +37,9 @@
     "removeKeepTitle": "Remover este projeto, manter os dados?",
     "removeDataTitle": "Remover este projeto e os dados locais?",
     "removeFromHost": "Remover {{name}} deste host.",
-    "githubUntouched": "O repositório no GitHub, as issues, os branches e os pull requests não são tocados.",
+    "githubUntouched": "Nada fora deste host muda: o repositório do projeto não é tocado.",
     "previewContainers": "{{count}} container(s) serão removidos.",
     "previewVolumes": "Volumes nomeados: {{names}}. O tamanho é desconhecido: o painel não inspeciona volumes.",
-    "alsoDirectory": "Remover também o diretório de trabalho neste host.",
-    "directoryNeedsRunner": "Remover o diretório exige o runner. Sem ele o painel imprime o rm -rf exato.",
-    "dirtyOverride": "A árvore de trabalho está suja ({{staged}} staged, {{unstaged}} unstaged, {{untracked}} untracked). Sobrepor e remover o diretório mesmo assim.",
     "typeName": "Digite {{name}} para confirmar.",
     "copyCommand": "Copiar comando"
   },
@@ -53,7 +50,6 @@
   "tabs": {
     "overview": "Visão geral",
     "services": "Serviços",
-    "git": "Git",
     "logs": "Logs",
     "settings": "Configurações"
   },
@@ -69,8 +65,6 @@
     "description": "O que é este projeto Compose e onde ele está.",
     "integrated": "Integrado",
     "worktree": "Worktree",
-    "gitRoot": "Raiz Git",
-    "repository": "Repositório",
     "networks": "Redes"
   },
   "resources": {
@@ -85,42 +79,6 @@
     "description": "Todos os endereços em que este projeto responde, agrupados por serviço.",
     "empty": "Este projeto não tem serviços",
     "accessPage": "página de Acesso"
-  },
-  "repository": {
-    "title": "Repositório",
-    "description": "Coletado no host; veja a aba Git para o snapshot completo."
-  },
-  "git": {
-    "reading": "Lendo metadados Git coletados",
-    "empty": "Nenhum metadado Git coletado para este projeto",
-    "approved": "aprovado",
-    "changesRequested": "alterações solicitadas",
-    "reviewRequested": "revisão solicitada",
-    "draft": "rascunho",
-    "checksFailing": "checks falhando",
-    "checksPending": "checks pendentes",
-    "checksPassing": "checks passando",
-    "detachedHead": "HEAD desanexado",
-    "uncommittedChanges_one": "{{count}} alteração sem commit",
-    "uncommittedChanges_other": "{{count}} alterações sem commit",
-    "clean": "limpo",
-    "ahead": "{{count}} à frente",
-    "behind": "{{count}} atrás",
-    "staleHint": "mais antigo que {{seconds}}s",
-    "collectedAgo": "coletado {{time}}",
-    "author": "Autor",
-    "workingTree": "Árvore de trabalho",
-    "staged": "{{count}} em stage",
-    "unstaged": "{{count}} fora do stage",
-    "untracked": "{{count}} não rastreados",
-    "unmerged": "{{count}} sem merge",
-    "upstream": "Upstream",
-    "noUpstream": "Sem branch upstream",
-    "remote": "Remoto",
-    "scannedDirectory": "Diretório escaneado",
-    "refreshOnHost": "Atualizar no host",
-    "branch": "Branch",
-    "collected": "Coletado"
   },
   "servicesEmpty": "Este projeto não tem serviços",
   "servicesEmptyHint": "Um projeto entra adicionando o overlay do gateway: veja docs/product/guides/adopting-projects.md.",
@@ -174,7 +132,6 @@
   "primary": "principal",
   "header": {
     "repository": "Repositório",
-    "openRepository": "Abrir repositório",
     "resources": "Recursos",
     "services": "{{running}}/{{total}} serviços em execução",
     "noProject": "não adotado por nenhum projeto",

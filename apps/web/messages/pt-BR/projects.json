@@ -30,7 +30,6 @@
     "private": "privado",
     "unhealthyCount": "{{count}} unhealthy",
     "sourceReason": {
-      "repoMatch": "seu repositório pertence a este projeto",
       "label": "declarado pela label portta.project",
       "manual": "vinculado manualmente",
       "path": "roda a partir de um diretório deste projeto"
@@ -67,7 +66,7 @@
     "title": "Projeto",
     "description": "O que o painel guarda sobre este produto. Nada aqui toca um repositório ou um container.",
     "relativePath": "Diretório no Projects Home",
-    "relativePathHint": "Um diretório de primeiro nível de PORTTA_PROJECTS_HOME. Arquivos nunca são movidos.",
+    "relativePathHint": "Um diretório de PORTTA_PROJECTS_HOME, em qualquer profundidade. Arquivos nunca são movidos.",
     "archived": "Arquivado",
     "deleteTitle": "Excluir este projeto",
     "deleteDescription": "Remove o registro e o que o Portta guarda sobre ele. Nada muda no host.",
@@ -118,8 +117,8 @@
       "restartImpact_one": "Isso reinicia {{count}} contêiner; ele fica brevemente inacessível.",
       "restartImpact_other": "Isso reinicia {{count}} contêineres em {{environments}} ambientes; cada um fica brevemente inacessível.",
       "deleteTitle": "Excluir {{name}}?",
-      "deleteImpact": "Isso remove o projeto, os registros de seus repositórios, suas sessões e atividade.",
-      "deleteKeeps": "Preservado: todo contêiner, volume, rede, diretório de trabalho e issue do GitHub. Os ambientes voltam a ficar sem projeto."
+      "deleteImpact": "Isso remove o projeto e seus vínculos com ambientes.",
+      "deleteKeeps": "Preservado: todo contêiner, volume, rede e diretório de trabalho. Os ambientes voltam a ficar sem projeto."
     },
     "bulk": {
       "start": "Iniciar",

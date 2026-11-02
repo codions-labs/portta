@@ -5,13 +5,6 @@
   "gatewayDown": "Gateway inativo",
   "problems_one": "{{count}} problema",
   "problems_other": "{{count}} problemas",
-  "sessions": {
-    "description": "Quem está trabalhando, em quê, desde quando.",
-    "title": "Agentes e sessões",
-    "empty": "Nenhum agente trabalhando agora",
-    "emptyHint": "Uma sessão aparece aqui quando um agente ou uma pessoa inicia uma sobre uma issue.",
-    "none": "Nenhuma sessão ativa"
-  },
   "attention": {
     "title": "Precisa de atenção",
     "description": "Serviços unhealthy, environments degradados, conflitos, host sob pressão e o que o gateway verifica.",

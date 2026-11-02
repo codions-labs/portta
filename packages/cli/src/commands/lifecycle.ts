@@ -84,7 +84,7 @@ async function compose(
   })
 }
 
-function ensureAuthState(root: string, profile?: string): void {
+function ensureAuthState(root: string, profile: string): void {
   const authDirectory = join(root, 'state/auth')
   mkdirSync(authDirectory, { recursive: true, mode: 0o700 })
   chmodSync(authDirectory, 0o700)
@@ -352,7 +352,7 @@ export function panelDatabaseArtefacts(root: string): string[] {
 }
 
 /** Snapshots the collector and `repos scan` rewrite. Never `state/` itself. */
-export const REGENERABLE_STATE_DIRS = ['state/git', 'state/metrics', 'state/environment'] as const
+export const REGENERABLE_STATE_DIRS = ['state/metrics', 'state/environment'] as const
 
 export function clearRegenerableState(root: string): string[] {
   const cleared: string[] = []

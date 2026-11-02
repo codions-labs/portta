@@ -5,13 +5,6 @@
   "gatewayDown": "Gateway down",
   "problems_one": "{{count}} problem",
   "problems_other": "{{count}} problems",
-  "sessions": {
-    "description": "Who is working, on what, since when.",
-    "title": "Agents and sessions",
-    "empty": "No agent is working right now",
-    "emptyHint": "A session appears here when an agent or a person starts one against an issue.",
-    "none": "No active session"
-  },
   "attention": {
     "title": "Needs attention",
     "description": "Unhealthy services, degraded environments, conflicts, a host under pressure, and what the gateway checks.",

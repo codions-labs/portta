@@ -131,7 +131,6 @@
     "Public access": "Public access",
     "DNS": "DNS",
     "Panel": "Panel",
-    "GitHub": "GitHub",
     "Project domain": "Project addresses",
     "Projects": "Projects"
   },
@@ -363,7 +362,7 @@
   "roleHints": {
     "owner": "Owns this panel. There is exactly one, and the role moves by transfer.",
     "admin": "Everything except taking ownership. Sees every Project.",
-    "developer": "Works on the Projects they are a member of: issues, environments, repositories.",
+    "developer": "Works on the Projects they are a member of: environments and services.",
     "viewer": "Reads the Projects they are a member of, and changes nothing."
   },
   "localMode": {
@@ -473,7 +472,7 @@
     "currentPassword": "Current password",
     "twoFactor": "Second factor",
     "twoFactorDescription": "An authenticator app, asked for after your password.",
-    "twoFactorHint": "Turning it on adds one step to your sign-in and nothing else. Backup codes are shown once, when you turn it on.",
+    "twoFactorHint": "Turning it on adds one step to your sign-in. On a panel reached over the internet it is also what opens the container console. Backup codes are shown once, when you turn it on.",
     "on": "On",
     "off": "Off",
     "turnOn": "Turn on",
@@ -530,7 +529,7 @@
   },
   "audit": {
     "title": "Audit",
-    "description": "Who did what: accounts, roles, tokens, Project membership and settings. Development activity lives on the Activity page.",
+    "description": "Who did what: accounts, roles, tokens, Project membership, settings and who may open which site.",
     "filterByUser": "Filter by user",
     "everybody": "Everybody",
     "when": "When",

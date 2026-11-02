@@ -30,7 +30,6 @@ services:
       - ./apps/web/app:/app/apps/web/app
       - ./apps/web/components:/app/apps/web/components
       - ./apps/web/lib:/app/apps/web/lib
-      - ./apps/web/modules:/app/apps/web/modules
       - ./apps/web/messages:/app/apps/web/messages
       - ./apps/web/server:/app/apps/web/server
       - ./apps/web/public:/app/apps/web/public

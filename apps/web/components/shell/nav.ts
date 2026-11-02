@@ -78,7 +78,7 @@ export function navItemVisible(item: NavItem, permissions: ReadonlySet<string>):
   return !item.permission || permissions.has(item.permission)
 }
 
-/** Which sidebar entry a path belongs to. `/projects/x/activity` is still Projects. */
+/** Which sidebar entry a path belongs to. `/projects/x/settings` is still Projects. */
 export function activeHref(pathname: string): string {
   const first = pathname.split('/').filter(Boolean)[0] ?? 'overview'
   // An environment is reached from a Project, and belongs under it.

@@ -71,7 +71,7 @@ describe('project operations', () => {
     environmentRemovalPreview.mockResolvedValue(preview)
     renderWithQuery(<EnvironmentOperations project={project()} />)
     await user.click(screen.getByRole('button', { name: 'Remove, keep data' }))
-    expect(await screen.findByText(/GitHub repository/)).toBeInTheDocument()
+    expect(await screen.findByText(/the project's repository is not touched/)).toBeInTheDocument()
     const submit = screen.getAllByRole('button', { name: 'Remove, keep data' }).at(-1)!
     expect(submit).toBeDisabled()
     await user.type(screen.getByRole('textbox'), 'alpha')

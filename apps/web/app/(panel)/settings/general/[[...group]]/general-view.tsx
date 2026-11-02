@@ -24,8 +24,6 @@ import { api } from '@/lib/api'
 import { useCan } from '@/lib/permissions'
 import { keys, useConfig } from '@/lib/queries'
 
-/** GitHub is a group of the same file, shown in its own section. */
-const ELSEWHERE = new Set(['GitHub'])
 export function GeneralView({ group }: { group: string | null }) {
   const { t } = useTranslation('settings')
   const { t: tc } = useTranslation('common')
@@ -39,7 +37,7 @@ export function GeneralView({ group }: { group: string | null }) {
   const query = useConfig()
 
   const view = query.data
-  const groups = useMemo(() => (view?.groups ?? []).filter((name) => !ELSEWHERE.has(name)), [view?.groups])
+  const groups = view?.groups ?? []
   const activeGroup = groups.find((name) => slug(name) === group) ?? (group === null ? groups[0] : undefined)
 
   useEffect(() => {

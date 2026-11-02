@@ -46,7 +46,7 @@ function setValues(root: string, values: Record<string, string>): void {
  * ForwardAuth for project hostnames and shares, rendered from the current
  * protection store.
  */
-export function syncForwardAuth(root: string, profile?: string): void {
+export function syncForwardAuth(root: string, profile: string): void {
   const storePath = join(root, 'state/auth/protections.json')
   const store = readProtectionStore(storePath)
   writeProtectionStore(storePath, store)
@@ -173,7 +173,7 @@ export function prepareWebUp(options: WebUpOptions, command: Command): PreparedW
     )
   setValues(initial.root, values)
   ensureInstallationDirectories(initial.root)
-  syncForwardAuth(initial.root)
+  syncForwardAuth(initial.root, initial.config.profile)
   // The values just written win over anything inherited: a PORTTA_WEB=false in
   // the environment would otherwise drop the panel overlays and leave Compose
   // starting a service that no longer exists in its file list.

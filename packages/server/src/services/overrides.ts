@@ -10,7 +10,7 @@
 // Nothing here writes a byte inside a project. See ADR 0001 and ADR 0011.
 
 import type { ContainerSummary, Environment, EnvironmentOverrides, ServiceOverrides } from 'portta-contracts'
-import { parseAliases, renderAliases, type StoredAlias } from 'portta-core'
+import { parseAliases, protectionForHost, readProtectionStore, renderAliases, type StoredAlias } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import type { Database } from '../db/index.ts'
 import { ENVIRONMENT_KEYS, SERVICE_KEYS } from '../db/keys.ts'
@@ -230,6 +230,18 @@ export function planAlias(
       `${host} is already the hostname of a running container`,
       'an alias is an additional hostname; it never replaces one',
     )
+  }
+
+  // On a public host a decision already recorded for this hostname belongs to
+  // whoever made it: an alias must not inherit it for another service.
+  if (config.profile === 'remote-public') {
+    const decided = protectionForHost(readProtectionStore(config.authStore), host)
+    if (decided && (decided.service !== request.service || decided.project !== request.project)) {
+      throw new OverrideRefused(
+        `${host} already has an access decision that belongs to another service`,
+        'remove it with portta protect remove, or choose another hostname',
+      )
+    }
   }
 
   const clash = existing.find(
