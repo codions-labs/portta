@@ -5,6 +5,7 @@
 
 import { ChevronRight, Link2 } from 'lucide-react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import type { ContainerSummary, Environment } from 'portta-contracts'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -131,7 +132,9 @@ export function SitesView() {
   const exposure = useExposure()
   const mayDecide = useCan('service:protect')
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<'all' | Decision>('all')
+  // The command menu links straight to one of these.
+  const asked = useSearchParams().get('filter')
+  const [filter, setFilter] = useState<'all' | Decision>(asked === 'closed' ? 'closed' : 'all')
   const enforced = exposure.data?.enforced ?? false
 
   const sites = useMemo<Site[]>(() => {

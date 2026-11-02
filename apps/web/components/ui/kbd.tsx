@@ -57,3 +57,12 @@ export function Shortcut({ keys, className }: { keys: readonly string[]; classNa
     </span>
   )
 }
+
+/** The same question for Alt, which a Mac draws as ⌥. */
+export function useAltKey(): string {
+  return useSyncExternalStore(
+    never,
+    () => (/Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌥' : 'Alt'),
+    () => 'Alt',
+  )
+}

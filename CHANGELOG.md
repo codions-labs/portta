@@ -23,6 +23,8 @@ All notable changes to Portta are documented here. The format follows
   and running diagnostics on every tab. Health leads with its readings, who uses the
   most and what its last check found; Containers is one list by origin; Network and
   Gateway keep what is read most, with the rest one click away.
+- The command menu finds services by name and offers what can be done to them first,
+  beside their state, address, who may open them and what they use.
 - Settings keeps its sections beside the page, grouped by this host and people, with
   a search that opens the setting it finds. Addresses is three choices and the result
   they give, and saving sits at the foot of the section.

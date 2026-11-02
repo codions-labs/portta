@@ -326,9 +326,14 @@ panel does not sign people in. Every section is described in
 
 **Authentication disabled**: the command menu.
 
-<kbd>⌘</kbd> <kbd>K</kbd> (<kbd>Ctrl</kbd> <kbd>K</kbd> elsewhere) or **Command
-menu** at the top of the sidebar opens a search over actions, pages, Projects
-and preferences such as the theme. <kbd>[</kbd> toggles the sidebar.
+<kbd>⌘</kbd> <kbd>K</kbd> (<kbd>Ctrl</kbd> <kbd>K</kbd> elsewhere) or the search at
+the top of the sidebar opens a search over services, actions, pages, Projects and
+preferences such as the theme. Name a service, such as `shop web`, and what can be
+done to it comes first, beside its state, address, who may open it and what it uses:
+open the site, copy the address, read its logs, create a temporary link, restart it
+or open its console, each offered only if you may. <kbd>⌥</kbd> (<kbd>Alt</kbd>
+elsewhere) with the letter shown runs it without leaving the search, since the letter
+alone is part of what you type. <kbd>[</kbd> toggles the sidebar.
 
 ### Documentation
 

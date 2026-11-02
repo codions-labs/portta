@@ -36,7 +36,8 @@
     "navigate": "Ir para",
     "projects": "Projetos",
     "actions": "Ações",
-    "preferences": "Preferências"
+    "preferences": "Preferências",
+    "found": "Também encontrado"
   },
   "theme": {
     "label": "Tema",
@@ -60,5 +61,41 @@
     "projects": "Por projeto",
     "table": "Tabela",
     "services": "Por serviço"
+  },
+  "commandKinds": {
+    "service": "Serviço",
+    "project": "Projeto",
+    "page": "Página",
+    "filter": "Filtro",
+    "action": "Ação",
+    "preference": "Preferência"
+  },
+  "commandFilters": {
+    "closedSites": "Sites sem decisão"
+  },
+  "commandActions": {
+    "copyFailed": "Não foi possível copiar o endereço",
+    "connect": "Conectar",
+    "openSite": "Abrir site",
+    "copyAddress": "Copiar endereço",
+    "logs": "Ver logs",
+    "share": "Criar link temporário",
+    "restart": "Reiniciar",
+    "console": "Abrir console",
+    "details": "Ver serviço",
+    "restarted": "{{name}} reiniciando",
+    "failed": "Não foi possível reiniciar {{name}}"
+  },
+  "commandPreview": {
+    "aria": "Como está {{name}}",
+    "address": "Endereço",
+    "access": "Quem pode abrir",
+    "login": "login {{user}}",
+    "usage": "Uso"
+  },
+  "commandFooter": {
+    "navigate": "navegar",
+    "run": "executar",
+    "close": "fechar"
   }
 }

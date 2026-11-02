@@ -36,7 +36,8 @@
     "navigate": "Go to",
     "projects": "Projects",
     "actions": "Actions",
-    "preferences": "Preferences"
+    "preferences": "Preferences",
+    "found": "Also found"
   },
   "theme": {
     "label": "Theme",
@@ -60,5 +61,41 @@
     "projects": "By project",
     "table": "Table",
     "services": "By service"
+  },
+  "commandKinds": {
+    "service": "Service",
+    "project": "Project",
+    "page": "Page",
+    "filter": "Filter",
+    "action": "Action",
+    "preference": "Preference"
+  },
+  "commandFilters": {
+    "closedSites": "Sites with no decision"
+  },
+  "commandActions": {
+    "copyFailed": "Could not copy the address",
+    "connect": "Connect",
+    "openSite": "Open site",
+    "copyAddress": "Copy address",
+    "logs": "View logs",
+    "share": "Create temporary link",
+    "restart": "Restart",
+    "console": "Open console",
+    "details": "View service",
+    "restarted": "{{name}} restarting",
+    "failed": "Could not restart {{name}}"
+  },
+  "commandPreview": {
+    "aria": "How {{name}} is doing",
+    "address": "Address",
+    "access": "Who may open it",
+    "login": "login {{user}}",
+    "usage": "Usage"
+  },
+  "commandFooter": {
+    "navigate": "navigate",
+    "run": "run",
+    "close": "close"
   }
 }

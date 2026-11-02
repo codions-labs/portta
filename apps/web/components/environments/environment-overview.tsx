@@ -182,7 +182,11 @@ export function EnvironmentOverview({ name }: { name: string }) {
   const served = useEnvironmentServices(name)
   const room = useRoomForPanel()
   const mayReadLogs = useCan('logs:read')
-  const [section, setSection] = useState<ServiceSection>(params.get('section') === 'share' ? 'share' : 'overview')
+  const [section, setSection] = useState<ServiceSection>(() => {
+    // Sites and the command menu link straight to these.
+    const asked = params.get('section')
+    return asked === 'share' || asked === 'console' || asked === 'access' ? asked : 'overview'
+  })
   const environment = environmentQuery.data
   if (!environment) return <Loading />
 

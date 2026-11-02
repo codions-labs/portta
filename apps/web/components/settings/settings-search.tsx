@@ -8,18 +8,11 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePrincipal } from '@/lib/principal'
 import { useConfig } from '@/lib/queries'
+import { folded } from '@/lib/utils'
 import { hostGroupItems, visibleSections } from './sections'
 import { ALWAYS_HIDDEN } from './visibility'
 
 const SHOWN = 8
-
-/** So "certificacao" finds "certificação". */
-function folded(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-}
 
 export function SettingsSearch({ signsPeopleIn }: { signsPeopleIn: boolean }) {
   const { t } = useTranslation('settings')
