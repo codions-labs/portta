@@ -21,17 +21,16 @@ test.describe('the panel end to end', () => {
     await page.goto('/')
     await expect(page).toHaveURL(/\/overview$/)
 
-    // The route name is the page's h1 for a screen reader; what a person sees
-    // at the top is the host, so the heading is asserted present, not visible.
-    await expect(page.getByRole('heading', { name: 'Home', level: 1 })).toBeAttached()
-    await expect(page.getByText('Gateway running')).toBeVisible()
-    await expect(page).toHaveTitle('Overview · Portta')
+    // The harness host has no project yet, so the page says where to start. The heading is
+    // what a screen reader announces as the page; the title is the route's name.
+    await expect(page.getByRole('heading', { name: 'Your server is ready', level: 1 })).toBeVisible()
+    await expect(page).toHaveTitle('Home · Portta')
 
     // No browser in the way: what arrives is what the server rendered. A page
     // that needed the client to fetch its own API would be blank here.
     const html = await request.get('/overview')
     expect(html.status()).toBe(200)
-    expect(await html.text()).toContain('Needs attention')
+    expect(await html.text()).toContain('Your server is ready')
 
     // One process, one origin: a session cookie set by the pages is the same
     // cookie the API sees, which is the reason the panel is not two servers.
