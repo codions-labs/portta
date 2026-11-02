@@ -26,7 +26,3 @@ export function useApiTokens(all = false) {
 export function useAudit(filters: AuditFilters = {}) {
   return useQuery({ queryKey: keys.audit({ ...filters }), queryFn: () => api.audit(filters) })
 }
-
-export function useAgentPermissions() {
-  return useQuery({ queryKey: keys.agentPermissions(), queryFn: api.agentPermissions })
-}

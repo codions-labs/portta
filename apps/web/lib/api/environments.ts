@@ -7,7 +7,6 @@ import type {
   EnvironmentRemovalPreview,
   EnvironmentRunnerStartResult,
   EnvironmentServices,
-  ProjectGit,
   ProjectLogsResponse,
   ProjectRebuildResult,
   ProjectRemoveResult,
@@ -38,10 +37,7 @@ export const environmentsApi = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  removeEnvironment: (
-    name: string,
-    body: { confirmation: string; volumes: boolean; directory: boolean; overrideDirty?: boolean },
-  ) =>
+  removeEnvironment: (name: string, body: { confirmation: string; volumes: boolean }) =>
     request<ProjectRemoveResult>(`/environments/${encodeURIComponent(name)}/operations/remove`, {
       method: 'POST',
       body: JSON.stringify(body),
@@ -59,7 +55,6 @@ export const environmentsApi = {
       `/environments/${encodeURIComponent(name)}/services/${encodeURIComponent(service)}/actions/${action}`,
       { method: 'POST', body: '{}' },
     ),
-  environmentGit: (name: string) => request<ProjectGit>(`/environments/${encodeURIComponent(name)}/git`),
   environmentLogs: (name: string, options: { tail?: number; service?: string | null } = {}) => {
     const query = new URLSearchParams()
     if (options.tail !== undefined) query.set('tail', String(options.tail))

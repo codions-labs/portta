@@ -9,7 +9,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DashboardCard } from '@/components/dashboard-card'
 import { ProjectDomainCard } from '@/components/domain-card'
-import { AgentPermissionsCard } from '@/components/settings/agent-permissions-card'
 import { PanelSettings } from '@/components/settings/panel-settings'
 import { ProjectAccessSettings } from '@/components/settings/project-access-settings'
 import { RestartSummary } from '@/components/settings/restart-summary'
@@ -201,7 +200,6 @@ export function GeneralView({ group }: { group: string | null }) {
             )}
             {activeGroup === 'Project domain' ? <ProjectDomainCard domain={liveDomain} /> : null}
             {activeGroup === 'Traefik' ? <DashboardCard /> : null}
-            {activeGroup === 'Panel' ? <AgentPermissionsCard editable={mayManage} /> : null}
           </div>
         ) : (
           <div className="min-w-0 flex-1 rounded-lg border border-line bg-surface">

@@ -35,12 +35,7 @@ export default async function ProjectLayout({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ProjectHeader project={project} />
-      <ProjectTabs
-        slug={project.slug}
-        name={project.name}
-        repositories={project.repositories.length}
-        environments={project.environments.length}
-      />
+      <ProjectTabs slug={project.slug} name={project.name} environments={project.environments.length} />
       <div role="tabpanel" tabIndex={0} className="flex min-h-0 flex-1 flex-col pt-4 outline-none">
         {children}
       </div>

@@ -7,34 +7,20 @@
 
 import { createServer } from 'node:http'
 import next from 'next'
-import {
-  AGENT_DEFAULT_PERMISSIONS,
-  ConfigError,
-  createAuth,
-  createPrincipalResolver,
-  hasOwner,
-  type Permission,
-  resolveSecurityMode,
-} from 'portta-auth-core'
+import { ConfigError, createAuth, createPrincipalResolver, hasOwner, resolveSecurityMode } from 'portta-auth-core'
 import {
   type AppDeps,
   consoleRoute,
   createApp,
-  createCommitWatch,
-  createForgeClient,
   createMaintenance,
   createSnapshotCache,
   createUpgradeHandler,
   createVerdictCache,
   Database,
   DockerClient,
-  forgeStatus,
   LiveHub,
   loadConfig,
   logStreamRoute,
-  moduleJobs,
-  moduleWsRoutes,
-  SERVER_MODULES,
 } from 'portta-server'
 import { WebSocketServer } from 'ws'
 import { registerDeps } from '../lib/server/deps.ts'
@@ -73,17 +59,6 @@ try {
 
 const client = new DockerClient(config.dockerApi)
 
-// The way to `gh` and Linear, which live on the host beside the daemon. The
-// client is always constructible; whether the daemon answers is a per-request
-// answer, not a boot condition (ADR 0018, ADR 0047).
-const forge = createForgeClient(config)
-void forgeStatus(forge).then((status) => {
-  if (status.github.authenticated) process.stdout.write(`issues: gh signed in as ${status.github.account}\n`)
-  else if (status.github.available)
-    process.stdout.write(`issues: gh is installed but nobody is signed in (${status.github.reason})\n`)
-  else process.stdout.write(`issues unavailable: ${status.github.reason}\n`)
-})
-
 const cache = createSnapshotCache(client, config, 1000, (snapshot) => db.recordEnvironmentsSeen(snapshot.environments))
 const hub = new LiveHub(client, cache)
 const verdict = createVerdictCache(config)
@@ -98,18 +73,9 @@ const principals = createPrincipalResolver({
   security,
   db: db.handle,
   auth,
-  // What an agent holds is a setting, so it is read per request rather than
-  // captured at boot: changing it in the panel takes effect on the next call.
-  agentPermissions: async () => {
-    const stored = await db.settings.getGlobal('agentPermissions').catch(() => null)
-    return Array.isArray(stored) && stored.length > 0 ? (stored as Permission[]) : AGENT_DEFAULT_PERMISSIONS
-  },
 })
 
-// Every registered module: which ones exist is a build decision, not a setting.
-const modules = SERVER_MODULES
-
-const deps: AppDeps = { config, client, cache, hub, verdict, db, forge, security, auth, principals, modules }
+const deps: AppDeps = { config, client, cache, hub, verdict, db, security, auth, principals }
 
 // Before `next.prepare()`: a page rendered during preparation would otherwise
 // find nothing registered. See lib/server/deps.ts for why this is a global.
@@ -122,21 +88,15 @@ registerPrincipals(principals)
 const app = next({ dev: development, turbopack: development, dir: process.cwd() })
 await app.prepare()
 
-// What the repositories produced, noticed from the host scan once a minute,
-// and the hourly housekeeping: quiet sessions abandoned, old activity pruned.
-const jobs: Startable[] = [
-  hub,
-  createCommitWatch(config, db, hub),
-  createMaintenance(db, hub),
-  ...moduleJobs(deps, modules),
-]
+// The hourly housekeeping: expired tokens and old audit entries are pruned.
+const jobs: Startable[] = [hub, createMaintenance(db)]
 
 // The WebSocket half of the panel. One server, no port of its own: it never
 // listens, it only takes sockets the upgrade handler has already authorised.
 const sockets = new WebSocketServer({ noServer: true })
 const wsUpgrade = createUpgradeHandler({
   principals,
-  routes: [logStreamRoute(deps), consoleRoute(deps), ...moduleWsRoutes(deps, modules)],
+  routes: [logStreamRoute(deps), consoleRoute(deps)],
   server: sockets,
   trustedOrigins: security.trustedOrigins,
 })

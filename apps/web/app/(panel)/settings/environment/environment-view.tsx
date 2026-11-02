@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { useEnvironmentReport, useHostSecurityReport } from '@/lib/queries'
 import { useFormat } from '@/lib/use-format'
-import { SshKeysPanel } from './ssh-keys-panel'
 
 const CATEGORIES = ['infrastructure', 'development', 'agents'] as const
 
@@ -139,9 +138,6 @@ export function EnvironmentView() {
           )}
         </div>
       )}
-      <div className="mt-6">
-        <SshKeysPanel />
-      </div>
     </>
   )
 }

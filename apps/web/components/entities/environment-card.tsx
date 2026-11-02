@@ -3,13 +3,11 @@
 import type { Environment } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
 import { environmentHealth, healthTone } from '../../lib/health.ts'
-import { useEnvironmentGit } from '../../lib/queries/index.ts'
 import { serviceRowsFor } from '../../lib/services.ts'
 import { useFormat } from '../../lib/use-format.ts'
 import { EnvironmentActions } from '../environment-actions.tsx'
 import { Badge, StatusIndicator } from '../ui/badge.tsx'
 import { Card, CardHeader } from '../ui/card.tsx'
-import { GitStatusLine } from './git-status-line.tsx'
 import { EnvironmentOpenMenu } from './open-test-menu.tsx'
 import { ServiceTable } from './service-table.tsx'
 
@@ -30,7 +28,6 @@ export function EnvironmentCard({
 }) {
   const { t } = useTranslation('environments')
   const { uptime } = useFormat()
-  const git = useEnvironmentGit(environment.name)
   const health = environmentHealth(environment)
   const rows = serviceRowsFor(environment, null, readOnly).filter((row) => !row.hidden)
   const hidden = serviceRowsFor(environment, null, readOnly).filter((row) => row.hidden)
@@ -94,9 +91,6 @@ export function EnvironmentCard({
           </>
         }
       />
-      {git.data ? (
-        <GitStatusLine git={git.data} variant="line" className="border-b border-line" refreshHint={false} />
-      ) : null}
       <ServiceTable
         services={rows}
         containers={environment.services}

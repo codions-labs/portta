@@ -22,11 +22,11 @@ export function useProjects(initialData?: ProjectSummary[]) {
 }
 
 /**
- * Every Project with its repositories and environments: one request for the
+ * Every Project with its environments: one request for the
  * list, one per project for the detail, all cached under the same keys the
  * project page uses. Projects are few on a development host; this is how a
- * page that starts from an environment finds the Project and the repository
- * it belongs to without a route the API does not have.
+ * page that starts from an environment finds the Project it belongs to
+ * without a route the API does not have.
  */
 export function useProjectDetails() {
   const summaries = useProjects()
@@ -45,22 +45,15 @@ export function useProjectDetails() {
 export interface EnvironmentOwner {
   slug: string
   name: string
-  repository: { id: string; name: string } | null
 }
 
-/** Which Project, and which of its repositories, an environment belongs to. */
+/** Which Project an environment belongs to. */
 export function useEnvironmentOwners() {
   const { projects, isPending, error } = useProjectDetails()
   const owners = new Map<string, EnvironmentOwner>()
   for (const project of projects) {
     for (const environment of project.environments) {
-      const repository =
-        project.repositories.find((candidate) => candidate.environments.includes(environment.environment)) ?? null
-      owners.set(environment.environment, {
-        slug: project.slug,
-        name: project.name,
-        repository: repository ? { id: repository.id, name: repository.name } : null,
-      })
+      owners.set(environment.environment, { slug: project.slug, name: project.name })
     }
   }
   return { owners, isPending, error }

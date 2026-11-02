@@ -105,7 +105,6 @@ describe('the vocabularies the database owns', () => {
     }
     expect(db().select().from(users).all()).toHaveLength(4)
   })
-
 })
 
 describe('the checks the database keeps', () => {

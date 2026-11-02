@@ -18,11 +18,8 @@ function summary(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
     name: 'Meu Produto',
     description: null,
     archived: false,
-    taskProvider: null,
-    linearTeam: null,
     relativePath: null,
     location: 'external',
-    repositoryCount: 2,
     environmentCount: 2,
     runningEnvironmentCount: 1,
     environments: [
@@ -34,15 +31,14 @@ function summary(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
 }
 
 describe('the project list model', () => {
-  it('keeps the counts only the dashboard knows as null when it is unavailable', () => {
+  it('has no health verdict of its own when the dashboard is unavailable', () => {
     const item = toListItem(summary(), undefined)
-    expect(item.activeSessions).toBeNull()
-    expect(item.repositoryCount).toBe(2)
+    expect(item.health).toBeNull()
   })
 
   it('merges the dashboard pulse onto the catalog entry', () => {
     const [item] = toListItems([summary()], [makePulse()])
-    expect(item?.activeSessions).toBe(1)
+    expect(item?.health).toBe('ok')
     expect(item?.environments).toHaveLength(2)
   })
 })
@@ -106,15 +102,9 @@ describe('filters', () => {
 })
 
 describe('the default order', () => {
-  it('puts what is wrong above what is merely recent', () => {
-    const broken = toListItem(
-      summary({ slug: 'a', name: 'A' }),
-      makePulse({ slug: 'a', health: 'unhealthy', lastActivityAt: 1 }),
-    )
-    const fine = toListItem(
-      summary({ slug: 'b', name: 'B' }),
-      makePulse({ slug: 'b', health: 'ok', lastActivityAt: 999 }),
-    )
+  it('puts what is wrong above what is fine', () => {
+    const broken = toListItem(summary({ slug: 'a', name: 'A' }), makePulse({ slug: 'a', health: 'unhealthy' }))
+    const fine = toListItem(summary({ slug: 'b', name: 'B' }), makePulse({ slug: 'b', health: 'ok' }))
     expect([fine, broken].sort(defaultProjectOrder)[0]?.slug).toBe('a')
   })
 })

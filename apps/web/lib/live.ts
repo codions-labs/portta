@@ -27,7 +27,7 @@ export function keysFor(event: Pick<LiveEvent, 'kind' | 'action' | 'name' | 'pro
     keys.access(),
     keys.metricsCurrent(),
   ]
-  const work: QueryKey[] = [keys.projects(), ['issues'], keys.overview(), keys.activity()]
+  const work: QueryKey[] = [keys.projects(), keys.overview()]
 
   switch (event.kind) {
     case 'hello':
@@ -39,12 +39,10 @@ export function keysFor(event: Pick<LiveEvent, 'kind' | 'action' | 'name' | 'pro
     case 'bridge':
       return event.project ? [...runtime, keys.environment(event.project), keys.projects()] : runtime
     case 'config':
-      if (event.action === 'issue') return work
-      if (event.action === 'github') return [keys.forgeStatus(), ...work]
       if (event.action === 'overrides') return [keys.environments(), keys.services(), keys.status()]
       return [keys.config(), keys.gateway(), keys.status()]
     default:
-      return event.project ? [...work, keys.environment(event.project), ['repositories']] : work
+      return event.project ? [...work, keys.environment(event.project)] : work
   }
 }
 

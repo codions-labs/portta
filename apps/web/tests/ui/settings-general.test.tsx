@@ -13,8 +13,6 @@ class ApiError extends Error {
 
 const config = vi.fn()
 const patchConfig = vi.fn()
-const agentPermissions = vi.fn()
-const setAgentPermissions = vi.fn()
 const github = vi.fn()
 
 vi.mock('@/lib/api', () => ({
@@ -22,14 +20,11 @@ vi.mock('@/lib/api', () => ({
   api: {
     config: () => config(),
     patchConfig: (...args: unknown[]) => patchConfig(...args),
-    agentPermissions: () => agentPermissions(),
-    setAgentPermissions: (...args: unknown[]) => setAgentPermissions(...args),
     github: () => github(),
   },
 }))
 
 const { GeneralView } = await import('../../app/(panel)/settings/general/[[...group]]/general-view.tsx')
-const { AgentPermissionsCard } = await import('../../components/settings/agent-permissions-card.tsx')
 
 function field(overrides: Record<string, unknown> = {}) {
   return {
@@ -94,18 +89,6 @@ beforeEach(() => {
   patchConfig
     .mockReset()
     .mockResolvedValue({ ok: true, saved: [], pendingRestart: false, applyCommand: 'portta apply', view: null })
-  agentPermissions.mockReset().mockResolvedValue({
-    permissions: ['task:read', 'task:write'],
-    defaults: ['task:read', 'task:write'],
-    available: ['task:read', 'task:write', 'task:delete', 'settings:read'],
-    configured: false,
-  })
-  setAgentPermissions.mockReset().mockResolvedValue({
-    permissions: ['task:read'],
-    defaults: ['task:read', 'task:write'],
-    available: ['task:read', 'task:write', 'task:delete', 'settings:read'],
-    configured: true,
-  })
 })
 
 describe('the General settings', () => {
@@ -129,25 +112,6 @@ describe('the General settings', () => {
     const readOnly = principal({ permissions: ['settings:read'] })
     renderWithQuery(<GeneralView group="panel" />, undefined, readOnly)
     await screen.findByRole('link', { name: 'Panel' })
-    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
-  })
-})
-
-describe('what a local agent may do', () => {
-  it('saves the list somebody ticked, and never a name the panel does not know', async () => {
-    renderWithQuery(<AgentPermissionsCard editable />, undefined, principal())
-    await screen.findByText('Using the default')
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-    await userEvent.click(screen.getByRole('checkbox', { name: 'task:write' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
-    expect(setAgentPermissions).toHaveBeenCalledWith(['task:read'])
-    expect(await screen.findByRole('button', { name: 'Restore the default' })).toBeInTheDocument()
-  })
-
-  it('is inert for somebody who may only read', async () => {
-    renderWithQuery(<AgentPermissionsCard editable={false} />, undefined, principal())
-    await screen.findByRole('checkbox', { name: 'task:read' })
-    expect(screen.getByRole('checkbox', { name: 'task:read' })).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
   })
 })

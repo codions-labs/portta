@@ -1,46 +1,22 @@
 'use client'
 
-// The overview tab: who is working on it, what code it has, what is running,
-// and what happened.
+// The overview tab: what is running and what it costs.
 
 import Link from 'next/link'
-import type { ActivityEvent, Environment, Project, ProjectEnvironment, Session } from 'portta-contracts'
+import type { Environment, Project, ProjectEnvironment } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
-import { ActivityTimeline } from '@/components/entities/activity-timeline'
 import { EnvironmentCard } from '@/components/entities/environment-card'
-import { RepositoryRow } from '@/components/entities/repository-row'
 import { ResourceUsage } from '@/components/entities/resource-usage'
-import { SessionRow } from '@/components/entities/session-row'
-import { ProjectIssuesCard } from '@/components/issues/project-issues-card'
-import { Empty, Loading, SectionHeader } from '@/components/shell-bits'
+import { Empty, SectionHeader } from '@/components/shell-bits'
 import { Badge, StatusIndicator } from '@/components/ui/badge'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { environmentHealth, healthTone } from '@/lib/health'
-import { useEnvironments, useMetricsCurrent, useProjectActivity, useSessions } from '@/lib/queries'
+import { useEnvironments, useMetricsCurrent } from '@/lib/queries'
 
-export function ProjectOverview({
-  project,
-  readOnly,
-  initialSessions,
-  initialActivity,
-}: {
-  project: Project
-  readOnly: boolean
-  initialSessions: Session[]
-  initialActivity: ActivityEvent[]
-}) {
+export function ProjectOverview({ project, readOnly }: { project: Project; readOnly: boolean }) {
   const { t } = useTranslation('projects')
-  const { t: ts } = useTranslation('sessions')
-  const { t: ta } = useTranslation('activity')
-  const sessions = useSessions(project.slug, { active: true })
-  const activity = useProjectActivity(project.slug, { limit: '20' })
   const environments = useEnvironments(true)
   const metrics = useMetricsCurrent()
-
-  // The server read these for this render, so the page is the page on first
-  // paint; the queries take over the moment they answer.
-  const activeSessions = sessions.data ?? initialSessions
-  const events = activity.data?.events ?? initialActivity
 
   const known = new Map((environments.data ?? []).map((environment) => [environment.name, environment]))
   const adopted = project.environments
@@ -60,52 +36,15 @@ export function ProjectOverview({
 
   return (
     <div className="space-y-4">
-      {/* The work comes first, and only where the provider is resolved: a card
-          whose whole content would be "this project has no provider" belongs on
-          the Issues tab, which is where somebody went looking for it. */}
-      {project.work.provider ? <ProjectIssuesCard project={project} /> : null}
-
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader title={ts('active', { count: activeSessions.length })} />
-          {activeSessions.length === 0 ? (
-            <Empty title={ts('none')} hint={ts('noneHint', { slug: project.slug })} />
-          ) : (
-            activeSessions.map((session) => <SessionRow key={session.id} session={session} />)
-          )}
-        </Card>
-        <Card>
-          <CardHeader title={t('overview.resources')} />
-          <CardBody>
-            {measured.length === 0 ? (
-              <p className="text-xs text-subtle">{t('overview.noMeasurement')}</p>
-            ) : (
-              <ResourceUsage cpu={cpu} memoryBytes={memory} variant="bar" stale={metrics.data?.stale} />
-            )}
-          </CardBody>
-        </Card>
-      </div>
-
       <Card>
-        <CardHeader
-          title={t('repositoriesCard.title')}
-          description={t('repositoriesCard.description')}
-          actions={
-            <Link
-              className="rounded-xs text-xs text-accent hover:underline focus-ring"
-              href={`/projects/${encodeURIComponent(project.slug)}/repositories`}
-            >
-              {t('overview.manageRepositories')}
-            </Link>
-          }
-        />
-        {project.repositories.length === 0 ? (
-          <Empty title={t('repositoriesCard.empty')} hint={t('repositoriesCard.emptyHint')} />
-        ) : (
-          project.repositories.map((repository) => (
-            <RepositoryRow key={repository.id} repository={repository} projectSlug={project.slug} density="card" />
-          ))
-        )}
+        <CardHeader title={t('overview.resources')} />
+        <CardBody>
+          {measured.length === 0 ? (
+            <p className="text-xs text-subtle">{t('overview.noMeasurement')}</p>
+          ) : (
+            <ResourceUsage cpu={cpu} memoryBytes={memory} variant="bar" stale={metrics.data?.stale} />
+          )}
+        </CardBody>
       </Card>
 
       <div className="space-y-3">
@@ -141,21 +80,6 @@ export function ProjectOverview({
           ))
         )}
       </div>
-
-      <Card>
-        <CardHeader
-          title={ta('recent')}
-          actions={
-            <Link
-              className="rounded-xs text-xs text-accent hover:underline focus-ring"
-              href={`/projects/${encodeURIComponent(project.slug)}/activity`}
-            >
-              {ta('all')}
-            </Link>
-          }
-        />
-        {activity.isPending && events.length === 0 ? <Loading /> : <ActivityTimeline events={events} compact />}
-      </Card>
     </div>
   )
 }
@@ -195,16 +119,10 @@ export function AdoptedRow({ environment }: { environment: ProjectEnvironment })
 
 export function sourceKey(
   source: ProjectEnvironment['source'],
-):
-  | 'detail.sourceReason.repoMatch'
-  | 'detail.sourceReason.label'
-  | 'detail.sourceReason.path'
-  | 'detail.sourceReason.manual' {
-  return source === 'repo-match'
-    ? 'detail.sourceReason.repoMatch'
-    : source === 'label'
-      ? 'detail.sourceReason.label'
-      : source === 'path'
-        ? 'detail.sourceReason.path'
-        : 'detail.sourceReason.manual'
+): 'detail.sourceReason.label' | 'detail.sourceReason.path' | 'detail.sourceReason.manual' {
+  return source === 'label'
+    ? 'detail.sourceReason.label'
+    : source === 'path'
+      ? 'detail.sourceReason.path'
+      : 'detail.sourceReason.manual'
 }

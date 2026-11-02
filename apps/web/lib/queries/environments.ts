@@ -13,10 +13,6 @@ export function useEnvironment(name: string) {
 }
 
 /** A host snapshot changes once a minute at most; thirty seconds is plenty. */
-export function useEnvironmentGit(name: string) {
-  return useQuery({ queryKey: keys.environmentGit(name), queryFn: () => api.environmentGit(name), staleTime: 30_000 })
-}
-
 export function useEnvironmentSettings(name: string, enabled = true) {
   return useQuery({
     queryKey: keys.environmentSettings(name),

@@ -5,7 +5,6 @@
 // Portta's, and calling the library directly would go around them.
 
 import type {
-  AgentPermissions,
   ApiToken,
   ApiTokens,
   AuditPage,
@@ -65,13 +64,6 @@ export const adminApi = {
     request<{ ok: true; revoked: string }>(`/auth/tokens/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   audit: (filters: AuditFilters = {}) => request<AuditPage>(`/audit${query(filters)}`),
-
-  agentPermissions: () => request<AgentPermissions>('/settings/agent-permissions'),
-  setAgentPermissions: (permissions: string[] | null) =>
-    request<AgentPermissions>('/settings/agent-permissions', {
-      method: 'PUT',
-      body: JSON.stringify({ permissions }),
-    }),
 }
 
 export type { ApiToken }

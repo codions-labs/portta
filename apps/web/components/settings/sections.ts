@@ -4,14 +4,7 @@
 // landing section, so the two can never disagree about what somebody has. A
 // section nobody can open is not shown and not redirected to.
 
-export type BaseSettingsSectionId =
-  | 'general'
-  | 'environment'
-  | 'users'
-  | 'tokens'
-  | 'security'
-  | 'integrations'
-  | 'audit'
+export type BaseSettingsSectionId = 'general' | 'environment' | 'users' | 'tokens' | 'security' | 'audit'
 
 export interface SettingsSection {
   id: BaseSettingsSectionId
@@ -34,7 +27,6 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { id: 'users', href: '/settings/users', permission: 'user:list', needsAccounts: true },
   { id: 'tokens', href: '/settings/tokens', permission: 'token:read', needsAccounts: true },
   { id: 'security', href: '/settings/security', needsAccounts: true },
-  { id: 'integrations', href: '/settings/integrations', permission: 'issue:read' },
   { id: 'audit', href: '/settings/audit', permission: 'audit:read', needsAccounts: true },
 ]
 

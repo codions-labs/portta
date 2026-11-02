@@ -1,6 +1,6 @@
 import 'server-only'
 import { notFound, redirect } from 'next/navigation'
-import { readActivity, readProject, readRepository, readSessions } from 'portta-server'
+import { readProject } from 'portta-server'
 import { cache } from 'react'
 import { serverDeps } from './deps.ts'
 import { requirePrincipal } from './principal.ts'
@@ -33,21 +33,6 @@ async function context() {
 export const projectPage = cache(async (slug: string) => {
   const { deps, principal } = await context()
   return readProject(deps, principal, slug)
-})
-
-export const repositoryPage = cache(async (id: string) => {
-  const { deps, principal } = await context()
-  return readRepository(deps, principal, id)
-})
-
-export const activityPage = cache(async (query: { projectId?: string; issueRef?: string; limit?: number } = {}) => {
-  const { deps, principal } = await context()
-  return readActivity(deps, principal, query)
-})
-
-export const sessionsPage = cache(async (query: { projectId?: string; issueRef?: string; limit?: number } = {}) => {
-  const { deps, principal } = await context()
-  return readSessions(deps, principal, { status: ['active'], ...query })
 })
 
 /** Read-only mode is a property of the panel, and every page asks it. */

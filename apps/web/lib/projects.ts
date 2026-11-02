@@ -16,22 +16,16 @@ export interface ProjectListItem {
   name: string
   description: string | null
   archived: boolean
-  repositoryCount: number
   environmentCount: number
   runningEnvironments: number
   unhealthyServices: number
   environments: ProjectEnvironmentFacts[]
-  /** Null when the dashboard is unavailable: the panel has no database. */
-  activeSessions: number | null
   /**
    * The dashboard's own verdict on the project's environments. Null when the
    * dashboard is unavailable, and then the state is computed from the
    * environments the catalog listed.
    */
   health: ProjectPulse['health'] | null
-  lastCommit: ProjectPulse['lastCommit']
-  lastActivityAt: number | null
-  lastActivity: string | null
   resources: ProjectPulse['resources']
 }
 
@@ -41,17 +35,12 @@ export function toListItem(summary: ProjectSummary, pulse: ProjectPulse | undefi
     name: summary.name,
     description: summary.description,
     archived: summary.archived,
-    repositoryCount: summary.repositoryCount,
     environmentCount: summary.environmentCount,
     runningEnvironments: summary.runningEnvironmentCount,
     unhealthyServices:
       pulse?.unhealthyServices ?? summary.environments.reduce((sum, entry) => sum + entry.unhealthyCount, 0),
     environments: summary.environments.map((entry) => ({ ...entry })),
-    activeSessions: pulse?.activeSessions ?? null,
     health: pulse?.health ?? null,
-    lastCommit: pulse?.lastCommit ?? null,
-    lastActivityAt: pulse?.lastActivityAt ?? null,
-    lastActivity: pulse?.lastActivity ?? null,
     resources: pulse?.resources ?? null,
   }
 }
@@ -95,16 +84,11 @@ export function fromPulse(pulse: ProjectPulse): ProjectListItem {
     name: pulse.name,
     description: null,
     archived: pulse.archived,
-    repositoryCount: pulse.repositoryCount,
     environmentCount: pulse.environmentCount,
     runningEnvironments: pulse.runningEnvironments,
     unhealthyServices: pulse.unhealthyServices,
     environments: [],
-    activeSessions: pulse.activeSessions,
     health: pulse.health,
-    lastCommit: pulse.lastCommit,
-    lastActivityAt: pulse.lastActivityAt,
-    lastActivity: pulse.lastActivity,
     resources: pulse.resources,
   }
 }
@@ -162,11 +146,9 @@ export function matchesProjectFilters(item: ProjectListItem, filters: ProjectFil
   return haystack.includes(needle)
 }
 
-/** Most interesting first: problems, then work, then whatever moved last. */
+/** Most interesting first: problems, then running, then by name. */
 export function defaultProjectOrder(left: ProjectListItem, right: ProjectListItem): number {
   const byState = projectStateRank(right) - projectStateRank(left)
   if (byState !== 0) return byState
-  const byActivity = (right.lastActivityAt ?? 0) - (left.lastActivityAt ?? 0)
-  if (byActivity !== 0) return byActivity
   return left.name.localeCompare(right.name)
 }

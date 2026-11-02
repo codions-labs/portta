@@ -1608,15 +1608,7 @@ export const RemovalPreview = named(
 export type RemovalPreview = z.infer<typeof RemovalPreview>
 
 export const LiveEventKind = named(
-  z.enum([
-    'container',
-    'network',
-    'bridge',
-    'health',
-    'project',
-    'config',
-    'hello',
-  ]),
+  z.enum(['container', 'network', 'bridge', 'health', 'project', 'config', 'hello']),
   'LiveEventKind',
 )
 export type LiveEventKind = z.infer<typeof LiveEventKind>

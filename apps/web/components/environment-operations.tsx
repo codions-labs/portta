@@ -121,8 +121,6 @@ function RemoveDialog({ project, mode, onClose }: { project: Environment; mode: 
   const { t: tc } = useTranslation('common')
   const queryClient = useQueryClient()
   const [confirmation, setConfirmation] = useState('')
-  const [directory, setDirectory] = useState(false)
-  const [overrideDirty, setOverrideDirty] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [result, setResult] = useState<ProjectRemoveResult | null>(null)
 
@@ -133,8 +131,6 @@ function RemoveDialog({ project, mode, onClose }: { project: Environment; mode: 
       api.removeEnvironment(project.name, {
         confirmation,
         volumes: mode === 'and-local-data',
-        directory: mode === 'and-local-data' && directory,
-        overrideDirty: overrideDirty || undefined,
       }),
     onSuccess: (body) => {
       setResult(body)
@@ -197,49 +193,18 @@ function RemoveDialog({ project, mode, onClose }: { project: Environment; mode: 
           ) : null}
         </div>
       ) : (
-        <>
-          {mode === 'and-local-data' && data?.directoryRemovalAvailable ? (
-            <label className="mt-3 flex items-start gap-2 text-sm">
-              <Checkbox
-                className="mt-0.5"
-                checked={directory}
-                onChange={(event) => setDirectory(event.target.checked)}
-              />
-              <span>{t('alsoDirectory')}</span>
-            </label>
-          ) : null}
-          {mode === 'and-local-data' && !data?.directoryRemovalAvailable ? (
-            <p className="mt-2 text-xs text-muted">{t('directoryNeedsRunner')}</p>
-          ) : null}
-          {directory && data?.git.dirty ? (
-            <label className="mt-2 flex items-start gap-2 text-sm text-warn">
-              <Checkbox
-                className="mt-0.5"
-                checked={overrideDirty}
-                onChange={(event) => setOverrideDirty(event.target.checked)}
-              />
-              <span>
-                {t('dirtyOverride', {
-                  staged: data.git.staged,
-                  unstaged: data.git.unstaged,
-                  untracked: data.git.untracked,
-                })}
-              </span>
-            </label>
-          ) : null}
-          <Field label={t('typeName', { name: project.name })} className="mt-3">
-            {(id) => (
-              <Input
-                id={id}
-                mono
-                value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            )}
-          </Field>
-        </>
+        <Field label={t('typeName', { name: project.name })} className="mt-3">
+          {(id) => (
+            <Input
+              id={id}
+              mono
+              value={confirmation}
+              onChange={(event) => setConfirmation(event.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          )}
+        </Field>
       )}
     </Dialog>
   )

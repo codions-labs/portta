@@ -1,28 +1,23 @@
 'use client'
 
-import { AlertTriangle, Boxes, CheckCircle2, CircleDot, GitCommitHorizontal, ShieldCheck, XCircle } from 'lucide-react'
+import { AlertTriangle, Boxes, CheckCircle2, CircleDot, ShieldCheck, XCircle } from 'lucide-react'
 import type { AttentionItem, DevelopmentOverview, HostPressure, Overview } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
-import { CodeChip, Mono } from '@/components/copy'
 import { DiagnosticText } from '@/components/diagnostic-text'
-import { CommitRow } from '@/components/entities/commit-row'
 import { ProjectRow } from '@/components/entities/project-card'
 import { ResourceUsage } from '@/components/entities/resource-usage'
-import { SessionRow } from '@/components/entities/session-row'
 import { EnvironmentActions } from '@/components/environment-actions'
 import { HostHeader, HostReadings, HostSummarySkeleton, pressureReasons } from '@/components/host-summary'
-import { AssignedWorkPanel } from '@/components/issues/assigned-work-panel'
-import { Empty, ErrorBox, Loading, NoValue, SectionHeader } from '@/components/shell-bits'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardBody, CardHeader, CardSection } from '@/components/ui/card'
+import { Empty, ErrorBox, Loading } from '@/components/shell-bits'
+import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { ApiError } from '@/lib/api'
 import { fromPulse } from '@/lib/projects'
 import { useDevelopmentOverview, useEnvironments, useMetricsCurrent, useMetricsHistory, useStatus } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 
 /**
- * What is happening: the host it happens on, the work, who is on it, what
- * needs attention, what changed. Infrastructure has its own pages; this one
+ * What is happening: the host it happens on, what needs attention, what is
+ * running and what it costs. Infrastructure has its own pages; this one
  * answers the question a person asks when they open the panel.
  *
  * The page has no visible title: its subject is the host, so the host's
@@ -93,13 +88,6 @@ function Dashboard({ data }: { data: DevelopmentOverview }) {
       <div className="space-y-4">
         <AttentionBand data={data} />
 
-        {/* The work and who is on it, side by side. With nobody working the
-            work takes the whole row rather than leaving half of it empty. */}
-        <div className={cn('grid items-start gap-4', data.sessions.length > 0 && 'xl:grid-cols-2')}>
-          <AssignedWorkPanel work={data.work} />
-          {data.sessions.length > 0 ? <SessionsPanel data={data} /> : null}
-        </div>
-
         <div className="grid items-start gap-4 xl:grid-cols-5">
           <div className="min-w-0 xl:col-span-3">
             <ProjectsPanel data={data} />
@@ -108,30 +96,8 @@ function Dashboard({ data }: { data: DevelopmentOverview }) {
             <EnvironmentUsagePanel data={data} />
           </div>
         </div>
-
-        <CodePanel data={data} />
       </div>
     </>
-  )
-}
-
-function SessionsPanel({ data }: { data: DevelopmentOverview }) {
-  const { t } = useTranslation('overview')
-  const { t: ts } = useTranslation('sessions')
-  return (
-    <Card>
-      <CardHeader
-        title={t('sessions.title')}
-        meta={
-          <Badge tone="agent" dot>
-            {ts('active', { count: data.sessions.length })}
-          </Badge>
-        }
-      />
-      {data.sessions.map((session) => (
-        <SessionRow key={session.id} session={session} showProject />
-      ))}
-    </Card>
   )
 }
 
@@ -289,93 +255,6 @@ function EnvironmentUsagePanel({ data }: { data: DevelopmentOverview }) {
           )
         })
       )}
-    </Card>
-  )
-}
-
-/**
- * Recent commits and local changes. With nothing collected yet it is a
- * heading and one line, not a card with an empty state in the middle.
- */
-function CodePanel({ data }: { data: DevelopmentOverview }) {
-  const { t } = useTranslation('overview')
-  const dirty = data.code.dirtyRepositories
-  const commits = data.code.recentCommits
-
-  if (dirty.length === 0 && commits.length === 0) {
-    return (
-      <section aria-label={t('code.title')}>
-        <SectionHeader title={t('code.title')} description={t('code.description')} />
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-subtle">
-          <GitCommitHorizontal className="size-3.5" aria-hidden />
-          <span className="text-muted">{t('code.empty')}</span>
-          <span>{t('code.emptyHintShort')}</span>
-          <CodeChip tone="muted">portta repos scan</CodeChip>
-        </div>
-      </section>
-    )
-  }
-
-  return (
-    <Card>
-      <CardHeader title={t('code.title')} icon={<GitCommitHorizontal />} description={t('code.description')} />
-      {dirty.length > 0 ? (
-        <CardSection label={t('code.dirty')} count={dirty.length}>
-          <ul className="divide-y divide-line-subtle">
-            {dirty.map((repository) => (
-              <li key={repository.id} className="flex h-8 flex-wrap items-center gap-2 px-3 text-sm">
-                <a
-                  className="rounded-xs font-medium underline-offset-2 hover:underline focus-ring"
-                  href={`/projects/${encodeURIComponent(repository.project)}/repositories/${encodeURIComponent(repository.id)}`}
-                >
-                  {repository.name}
-                </a>
-                <span className="text-2xs text-subtle">{repository.project}</span>
-                {repository.branch ? (
-                  <Mono kind="branch" className="text-2xs">
-                    {repository.branch}
-                  </Mono>
-                ) : (
-                  <NoValue />
-                )}
-                {repository.changed > 0 ? (
-                  <Badge tone="warn">{t('code.uncommitted', { count: repository.changed })}</Badge>
-                ) : null}
-                {repository.ahead > 0 ? <Badge tone="outline">↑{repository.ahead}</Badge> : null}
-                {repository.behind > 0 ? <Badge tone="outline">↓{repository.behind}</Badge> : null}
-              </li>
-            ))}
-          </ul>
-        </CardSection>
-      ) : null}
-      {commits.length > 0 ? (
-        <CardSection label={t('code.recent')} count={commits.length}>
-          <ul className="divide-y divide-line-subtle">
-            {commits.map((commit) => (
-              <li key={`${commit.repository.id}-${commit.sha}`} className="flex items-center gap-2 px-3 py-0.5 text-sm">
-                <a
-                  className="w-32 shrink-0 truncate rounded-xs text-xs text-subtle hover:text-ink focus-ring"
-                  href={`/projects/${encodeURIComponent(commit.project)}/repositories/${encodeURIComponent(commit.repository.id)}/commits`}
-                  title={`${commit.project} · ${commit.repository.name}`}
-                >
-                  {commit.repository.name}
-                </a>
-                <CommitRow
-                  commit={{
-                    sha: commit.sha,
-                    shortSha: commit.shortSha,
-                    subject: commit.subject,
-                    author: commit.author,
-                    date: commit.date,
-                    url: commit.url,
-                  }}
-                  className="min-w-0 flex-1"
-                />
-              </li>
-            ))}
-          </ul>
-        </CardSection>
-      ) : null}
     </Card>
   )
 }

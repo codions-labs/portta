@@ -82,7 +82,3 @@ export function useEnvironmentReport() {
 export function useHostSecurityReport() {
   return useQuery({ queryKey: keys.hostSecurityReport(), queryFn: api.hostSecurityReport, refetchInterval: 60_000 })
 }
-
-export function useSshKeys() {
-  return useQuery({ queryKey: keys.sshKeys(), queryFn: api.sshKeys })
-}

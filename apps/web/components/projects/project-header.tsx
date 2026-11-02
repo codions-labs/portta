@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { EnvironmentOpenMenu } from '@/components/entities/open-test-menu'
 import { PageHeader } from '@/components/shell-bits'
 import { Badge, StatusIndicator } from '@/components/ui/badge'
-import { useEnvironments, useSessions } from '@/lib/queries'
+import { useEnvironments } from '@/lib/queries'
 
 /** The environment the Open menu targets: the first running one, else the first. */
 function primaryEnvironment(project: Project, environments: Environment[]): Environment | null {
@@ -22,13 +22,11 @@ function primaryEnvironment(project: Project, environments: Environment[]): Envi
 export function ProjectHeader({ project }: { project: Project }) {
   const { t } = useTranslation('projects')
   const { t: tn } = useTranslation('nav')
-  const sessions = useSessions(project.slug, { active: true })
   const environments = useEnvironments(true)
 
   const primary = primaryEnvironment(project, environments.data ?? [])
   const running = project.environments.filter((entry) => entry.running).length
   const unhealthy = project.environments.reduce((sum, entry) => sum + entry.unhealthyCount, 0)
-  const active = (sessions.data ?? []).length
 
   return (
     <PageHeader
@@ -42,11 +40,6 @@ export function ProjectHeader({ project }: { project: Project }) {
             <StatusIndicator tone={unhealthy > 0 ? 'danger' : running > 0 ? 'ok' : 'neutral'}>
               {t('running', { running, total: project.environments.length })}
               {unhealthy > 0 ? ` · ${t('pulse.unhealthy', { count: unhealthy })}` : ''}
-            </StatusIndicator>
-          ) : null}
-          {active > 0 ? (
-            <StatusIndicator tone="agent" pulse>
-              {t('pulse.sessions', { count: active })}
             </StatusIndicator>
           ) : null}
         </>

@@ -1,5 +1,4 @@
 import type {
-  ActivityEvent,
   ContainerSummary,
   DevelopmentOverview,
   DockerHost,
@@ -7,10 +6,7 @@ import type {
   EnvironmentOperable,
   EnvironmentStartable,
   ProjectPulse,
-  Repository,
-  RepositoryGit,
   Service,
-  Session,
 } from 'portta-contracts'
 
 export function makeStartable(ok = false): EnvironmentStartable {
@@ -60,9 +56,6 @@ export function makeEnvironment(overrides: Partial<Environment> = {}): Environme
     startable: remembered ? { ok: true, reason: null, via: 'runner' } : makeStartable(),
     namespace: null,
     group: null,
-    repo: null,
-    repoUrl: null,
-    gitRoot: null,
     serviceCount: services.length,
     runningCount: services.filter((service) => service.state === 'running').length,
     healthyCount: services.filter((service) => service.health === 'healthy').length,
@@ -97,9 +90,6 @@ export function makeContainer(overrides: Partial<ContainerSummary> = {}): Contai
     workingDir: null,
     namespace: null,
     group: null,
-    repo: null,
-    repoUrl: null,
-    gitRoot: null,
     networks: ['bridge'],
     onGatewayNetwork: false,
     traefikEnabled: false,
@@ -298,214 +288,15 @@ export function makeService(overrides: Partial<Service> = {}): Service {
   return { ...base, ...overrides }
 }
 
-export function makeRepository(overrides: Partial<Repository> = {}): Repository {
-  return {
-    id: 'r1',
-    projectId: 'ws-1',
-    name: 'api',
-    role: 'api',
-    provider: 'github',
-    localPath: '/srv/projects/shop/api',
-    relativePath: 'api',
-    remoteUrl: 'git@github.com:acme/api.git',
-    position: 0,
-    scanKey: 'abcdef012345',
-    scanPath: '/srv/projects/shop/api',
-    git: {
-      branch: 'main',
-      detached: false,
-      head: {
-        sha: '9f2c1abfeed',
-        shortSha: '9f2c1ab',
-        subject: 'Add invoice totals',
-        author: 'Ada',
-        date: 1_700_000_000,
-      },
-      dirty: true,
-      changed: 7,
-      ahead: 3,
-      behind: 0,
-      base: 'origin/main',
-      collectedAt: Math.floor(Date.now() / 1000) - 40,
-      stale: false,
-    },
-    github: { slug: 'acme/api', htmlUrl: 'https://github.com/acme/api', role: null, position: 0 },
-    environments: ['alpha'],
-    instructionCount: 2,
-    ...overrides,
-  }
-}
-
-export function makeRepositoryGit(overrides: Partial<RepositoryGit> = {}): RepositoryGit {
-  return {
-    key: 'abcdef012345',
-    collected: true,
-    collectedAt: Math.floor(Date.now() / 1000) - 40,
-    ageSeconds: 40,
-    stale: false,
-    staleAfterSeconds: 900,
-    path: '/srv/projects/shop/api',
-    name: 'api',
-    git: {
-      branch: 'main',
-      detached: false,
-      head: {
-        sha: '9f2c1abfeed',
-        shortSha: '9f2c1ab',
-        subject: 'Add invoice totals',
-        author: 'Ada',
-        date: 1_700_000_000,
-      },
-      staged: 2,
-      unstaged: 5,
-      untracked: 0,
-      unmerged: 0,
-      dirty: true,
-      upstream: 'origin/main',
-      ahead: 3,
-      behind: 0,
-      remote: 'git@github.com:acme/api.git',
-    },
-    remote: {
-      url: 'git@github.com:acme/api.git',
-      host: 'github.com',
-      slug: 'acme/api',
-      kind: 'github',
-      repoUrl: 'https://github.com/acme/api',
-    },
-    links: {
-      repo: 'https://github.com/acme/api',
-      commit: 'https://github.com/acme/api/commit/9f2c1abfeed',
-      branch: 'https://github.com/acme/api/tree/main',
-    },
-    commits: [
-      {
-        sha: '9f2c1abfeed',
-        shortSha: '9f2c1ab',
-        subject: 'Add invoice totals',
-        author: 'Ada',
-        date: 1_700_000_000,
-        url: 'https://github.com/acme/api/commit/9f2c1abfeed',
-      },
-      {
-        sha: '1234567abcd',
-        shortSha: '1234567',
-        subject: 'Start invoices',
-        author: 'Bob',
-        date: 1_699_990_000,
-        url: null,
-      },
-    ],
-    instructions: [
-      {
-        path: 'AGENTS.md',
-        audience: 'any',
-        sizeBytes: 120,
-        modifiedAt: 1_700_000_000,
-        sha256: 'a',
-        dirty: true,
-        content: '# Rules\nNever prune.\n',
-        truncated: false,
-      },
-      {
-        path: '.cursor/rules/style.mdc',
-        audience: 'cursor',
-        sizeBytes: 70_000,
-        modifiedAt: 1_700_000_000,
-        sha256: 'b',
-        dirty: false,
-        content: null,
-        truncated: true,
-      },
-    ],
-    specifications: [],
-    environments: ['alpha'],
-    forge: {
-      kind: 'github',
-      collectedAt: 1_700_000_000,
-      authenticated: true,
-      reason: null,
-      pulls: [
-        {
-          number: 61,
-          title: 'Add invoice totals',
-          state: 'OPEN',
-          draft: false,
-          reviewDecision: 'REVIEW_REQUIRED',
-          checks: 'passing',
-          url: 'https://github.com/acme/api/pull/61',
-          headRefName: 'feat/61',
-        },
-      ],
-    },
-    reason: null,
-    refreshCommand: './bin/portta repos scan --path /srv/projects/shop/api',
-    ...overrides,
-  }
-}
-
-export function makeSession(overrides: Partial<Session> = {}): Session {
-  return {
-    id: 's1',
-    project: 'produto',
-    issueRef: 'github:acme/api#42',
-    repository: { id: 'r1', name: 'api' },
-    environment: 'produto',
-    actor: 'claude',
-    actorKind: 'agent',
-    agent: 'claude-code',
-    status: 'active',
-    startedAt: Math.floor(Date.now() / 1000) - 720,
-    lastActivityAt: Math.floor(Date.now() / 1000) - 60,
-    endedAt: null,
-    summary: null,
-    headBefore: null,
-    headAfter: null,
-    commits: [{ sha: 'a'.repeat(40), subject: 'Add totals', at: 1_700_000_000 }],
-    ...overrides,
-  }
-}
-
-export function makeEvent(overrides: Partial<ActivityEvent> = {}): ActivityEvent {
-  return {
-    id: 'e1',
-    at: 1_700_000_000,
-    kind: 'issue.state',
-    actor: 'claude',
-    actorKind: 'agent',
-    source: 'cli',
-    summary: '#42 moved to in progress',
-    project: 'produto',
-    issueRef: 'github:acme/api#42',
-    repositoryId: null,
-    repositoryName: null,
-    environment: null,
-    sessionId: null,
-    data: {},
-    ...overrides,
-  }
-}
-
 export function makePulse(overrides: Partial<ProjectPulse> = {}): ProjectPulse {
   return {
     slug: 'produto',
     name: 'Meu Produto',
     archived: false,
-    activeSessions: 1,
-    repositoryCount: 2,
     environmentCount: 1,
     runningEnvironments: 1,
     unhealthyServices: 0,
     health: 'ok',
-    lastCommit: {
-      sha: 'a'.repeat(40),
-      shortSha: 'aaaaaaa',
-      subject: 'Add totals',
-      repository: 'api',
-      date: 1_700_000_000,
-    },
-    lastActivityAt: 1_700_000_000,
-    lastActivity: 'claude started #42',
     resources: { cpuUtilisation: 0.12, memoryUsedBytes: 400_000_000 },
     ...overrides,
   }
@@ -514,8 +305,6 @@ export function makePulse(overrides: Partial<ProjectPulse> = {}): ProjectPulse {
 export function makeOverview(overrides: Partial<DevelopmentOverview> = {}): DevelopmentOverview {
   return {
     generatedAt: 1_700_000_000,
-    work: { available: true, assigned: [], unavailableReason: null },
-    sessions: [makeSession()],
     attention: [
       {
         kind: 'service-unhealthy',
@@ -528,23 +317,6 @@ export function makeOverview(overrides: Partial<DevelopmentOverview> = {}): Deve
       },
     ],
     projects: [makePulse()],
-    code: {
-      recentCommits: [
-        {
-          sha: 'a'.repeat(40),
-          shortSha: 'aaaaaaa',
-          subject: 'Add totals',
-          author: 'Ada',
-          date: 1_700_000_000,
-          url: null,
-          repository: { id: 'r1', name: 'api' },
-          project: 'produto',
-        },
-      ],
-      dirtyRepositories: [
-        { id: 'r1', name: 'api', project: 'produto', branch: 'main', changed: 3, ahead: 1, behind: 0 },
-      ],
-    },
     runtime: { environmentsRunning: 1, environmentsTotal: 2, servicesRunning: 4, servicesUnhealthy: 1, routedUrls: 2 },
     resources: {
       host: {

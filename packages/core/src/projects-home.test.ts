@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   classifyProjectLocation,
   defaultProjectsHome,
-  isDescendantPath,
   normalizeProjectsHome,
   ProjectsHomeError,
   parseRelativeProjectPath,

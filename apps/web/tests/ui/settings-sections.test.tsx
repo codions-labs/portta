@@ -10,15 +10,15 @@ const OWNER = SETTINGS_SECTIONS.flatMap((section) => (section.permission ? [sect
 describe('which Settings sections somebody has', () => {
   it('leaves a developer their own tokens and their own account', () => {
     const ids = visibleSections({
-      permissions: ['token:read', 'issue:read', 'project:read'],
+      permissions: ['token:read', 'project:read'],
       signsPeopleIn: true,
     }).map((section) => section.id)
-    expect(ids).toEqual(['tokens', 'security', 'integrations'])
+    expect(ids).toEqual(['tokens', 'security'])
   })
 
   it('hides everything about accounts when the panel signs nobody in', () => {
     const ids = visibleSections({ permissions: OWNER, signsPeopleIn: false }).map((section) => section.id)
-    expect(ids).toEqual(['general', 'environment', 'integrations'])
+    expect(ids).toEqual(['general', 'environment'])
   })
 })
 
@@ -28,7 +28,7 @@ describe('the Settings rail', () => {
     renderWithQuery(
       <SettingsSections signsPeopleIn />,
       undefined,
-      principal({ role: 'developer', permissions: ['token:read', 'issue:read'] }),
+      principal({ role: 'developer', permissions: ['token:read'] }),
     )
     expect(screen.getByRole('link', { name: 'API tokens' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Security' })).toHaveAttribute('href', '/settings/security')
