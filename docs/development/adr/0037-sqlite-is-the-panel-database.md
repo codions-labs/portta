@@ -1,7 +1,6 @@
 # 0037. The panel's database is SQLite, through Drizzle
 
-**Status:** Accepted; see [0013](0013-what-the-panel-persists.md),
-0049
+**Status:** Accepted; see [0013](0013-what-the-panel-persists.md)
 
 ## Context
 
@@ -9,8 +8,7 @@ The panel serves one host — its own installation, its own operator, at most
 the handful of people [ADR 0038](0038-roles-and-project-access.md) gives
 accounts to. There is no second writer, no replica, no connection pool worth
 the name, no query that needs a planner, and nothing in the schema that is not
-a row somebody wrote from this host. The largest table is bounded activity
-(ADR 0032).
+a row somebody wrote from this host. The largest table is the audit log.
 
 A database server was considered and rejected. It would charge on every axis
 an installation is measured by: a container to pull and keep running; a
@@ -21,11 +19,6 @@ an external mode, each with its own failure; and a second dependency that has
 to be up, reachable and migrated before the panel opens HTTP, which is the most
 common way a fresh installation never reaches its first screen. None of that
 buys anything the panel uses.
-
-ADR 0049 puts the host daemon's state — which
-is written far harder, many times a second, by processes the panel does not
-own — in SQLite through `better-sqlite3`. The panel's model is written far
-more gently, and the same engine fits it at least as well.
 
 ## Decision
 
@@ -44,10 +37,8 @@ it there rather than each building a path, and neither side derives the other's:
 a panel with no variable is a misconfigured container, so it gets the documented
 container path instead of guessing from its working directory.
 
-`state/panel/` sits beside `state/host/` and not inside it. The daemon owns its
-own SQLite databases there, the two have different processes, lifetimes and
-backups, and a shared directory would make "which file is the panel's" a thing
-to look up.
+`state/panel/` is the panel's own directory, so "which file is the panel's" is
+never a thing to look up.
 
 In WAL mode a database is three files, so `databaseFiles()` returns all three.
 Everything that copies, moves or removes a Portta database moves all three;
@@ -68,8 +59,7 @@ the other. `packages/db/src/client.ts` sets, on every connection:
   otherwise make every `references(...)` in the schema decorative, including the
   cascades a Project delete depends on;
 - `synchronous = NORMAL`, the documented safe pairing with WAL: durable against
-  a process crash, at risk only from losing power mid-checkpoint, which is the
-  same trade ADR 0049 makes.
+  a process crash, at risk only from losing power mid-checkpoint.
 
 ### The migration lock is `BEGIN IMMEDIATE`
 
@@ -174,10 +164,9 @@ for any import the root makes.
   table that declares `vocabulary()` and forgets `vocabularyCheck()` —
   `packages/db/tests/schema.test.ts` is where that is caught.
 - Losing power mid-checkpoint can lose the most recent writes. That is the
-  `synchronous = NORMAL` trade, taken deliberately and identically to the host
-  daemon's.
+  `synchronous = NORMAL` trade, taken deliberately.
 - [ADR 0013](0013-what-the-panel-persists.md)'s division stands: the panel
   persists decisions, Docker and Traefik own their own live state, and the
-  panel does not copy it in. ADR 0049 says
-  what the CLI may do with the panel's file, which is the operations on an
-  installation and never a write to the model.
+  panel does not copy it in. The CLI's
+  operations on the panel's file are operations on an installation, never a
+  write to the model.

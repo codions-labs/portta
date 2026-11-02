@@ -17,7 +17,7 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 
 - [Use the web panel](product/guides/web-ui.md) — Open the panel, navigate its pages and inspect live state.
 - [Add an existing project](product/guides/adopting-projects.md) — Add a Portta overlay to an existing Compose application.
-- [Manage projects](product/guides/projects.md) — Organize repositories and environments into Projects.
+- [Manage projects](product/guides/projects.md) — Organize environments into Projects.
 - [Manage environments](product/guides/environments.md) — Inspect and operate an isolated Compose environment.
 - [Manage services](product/guides/services.md) — Inspect HTTP services, containers and their endpoints.
 - [Open a console in a project container](product/guides/container-console.md) — Open a scoped interactive shell in a running project container.
@@ -38,7 +38,6 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 - [Configure persistent Tailscale services](product/guides/tailscale-services.md) — Give selected services stable private addresses.
 - [Publish through Cloudflare Tunnel](product/guides/cloudflare-tunnel.md) — Publish HTTPS routes through a Cloudflare Tunnel.
 - [Enable public access](product/guides/public-access.md) — Enable deliberate internet access to selected routes.
-- [Open remote tunnels](product/guides/remote-tunnels.md) — Reach a remote host through SSH and private bridges.
 
 ### Guides / Authentication and sharing
 
@@ -77,7 +76,7 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 ### Concepts
 
 - [Portta architecture](product/concepts/architecture.md) — Understand the gateway components and lifecycle boundaries.
-- [Projects, environments and services](product/concepts/project-model.md) — Understand Projects, repositories, environments, services and endpoints.
+- [Projects, environments and services](product/concepts/project-model.md) — Understand Projects, environments, services and endpoints.
 - [Addresses and access](product/concepts/addresses-and-access.md) — Understand project domains, panel addresses and exposure decisions.
 - [Networking](product/concepts/networking.md) — Understand Docker networks, namespaces and hostname routing.
 - [Persistence](product/concepts/persistence.md) — Understand durable panel decisions and live runtime observations.
@@ -127,7 +126,7 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 - [0028. Operational image contexts live under docker/images/](development/adr/0028-operational-images-live-under-docker.md)
 - [0029. Product behavior lives in TypeScript](development/adr/0029-product-behavior-lives-in-typescript.md)
 - [0030. The panel may operate a project, without owning it](development/adr/0030-the-panel-and-a-project-lifecycle.md)
-- [0031. Projects, repositories and environments are distinct](development/adr/0031-projects-home-and-project.md)
+- [0031. Projects and environments are distinct](development/adr/0031-projects-home-and-project.md)
 - [0034. A child process is never silent for long](development/adr/0034-child-process-output.md)
 - [0035. The panel authenticates its own requests](development/adr/0035-authentication-lives-in-the-panel.md)
 - [0036. The panel is a Next application on a server of its own](development/adr/0036-next-app-router-and-the-custom-server.md)

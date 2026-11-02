@@ -25,25 +25,22 @@ minified by esbuild rather than by lightningcss for exactly this reason.
 portta/
 ├── apps/web/                the panel: Next.js pages and the process that serves them
 │   ├── app/                 routes; (panel)/ carries the shell, docs/ the documentation
-│   ├── components/          ui/ primitives, shell/, entities/, issues/, projects/, settings/
+│   ├── components/          ui/ primitives, shell/, entities/, projects/, settings/
 │   ├── lib/                 api client, queries, live, i18n, docs collector
 │   ├── messages/            en/*.json, pt-BR/*.json
-│   ├── modules/             the web registry and one directory per module (taskflow/)
 │   └── server/              main.ts (the process), compose.ts (the dispatcher)
 ├── apps/auth/               the ForwardAuth service for project hostnames and shares
 ├── packages/core/           portta-core — shared derivations (private)
 ├── packages/contracts/      portta-contracts — API schemas, types, openapi.json
-├── packages/mcp/            portta-mcp — the MCP tools, served over stdio by the CLI and over HTTP by the panel
 ├── packages/db/             portta-db — Drizzle schema, migrations, client
 ├── packages/auth/           portta-auth-core — who is asking, and what they may do
 ├── packages/server/         portta-server — services, Hono API, background work
-├── packages/cli/            @codions/portta — TypeScript CLI, including `portta flow`
-├── packages/host/           portta-host — the host daemon and its modules, bundled into the CLI
+├── packages/cli/            @codions/portta — TypeScript CLI
 ├── bin/portta                Node checkout launcher for the same CLI
 ├── scripts/                 fixed runner-image entrypoint only
 ├── docker/
 │   ├── compose/              gateway Compose base and overlays
-│   └── images/               operational image contexts (apply, sandbox, toolbox)
+│   └── images/               operational image contexts (apply, toolbox)
 ├── config/, docs/, tests/, templates/
 └── package.json             workspaces: ["apps/*", "packages/*"]
 ```
@@ -54,12 +51,10 @@ portta/
 | `apps/auth` | `portta-auth` | no | ForwardAuth for project hostnames and shares |
 | `packages/core` | `portta-core` | no | Pure derivations: `env`, `config`, `discovery`, `capabilities`, `endpoints`, `inventory`, `apply`, `tunnel`, `password`, `metrics`. No process execution, ever |
 | `packages/contracts` | `portta-contracts` | no | The API's Zod schemas and types, and the generated `openapi.json` |
-| `packages/mcp` | `portta-mcp` | no (bundled into the CLI, imported by the server) | The MCP tool registrations, one call to the panel API each, and the tool lists both transports assert against. Nothing that knows a process: the CLI hands it a client and the host's resolver, the panel hands it its own API (ADR 0054) |
 | `packages/db` | `portta-db` | no | The schema, the generated migrations and the client. No business rule |
 | `packages/auth` | `portta-auth-core` | no | Better Auth, the security mode, the `Principal`, and the one `authorize` |
-| `packages/server` | `portta-server` | no | Every business rule: services, the Hono API, Docker, Traefik, Git, persistence, background work, and the client that asks the host daemon for issues |
-| `packages/cli` | `@codions/portta` | yes, by `publish.yaml`; see [Publish the Portta CLI](publish-cli.md) | Commands, formatting, provisioning, and every effect: `process`, `docker`, `host`, `metrics`. Its build bundles `dist/cli.js`, the daemon and its assets |
-| `packages/host` | `portta-host` | no (bundled into the CLI as `dist/host.js` and `dist/supervisor.js`) | The long-running process on the host: a token-protected Hono server that answers issue requests through `gh` and Linear (`/api/forge`) and serves the modules needing git, tmux or the host's shell, starting with Taskflow. `portta host serve` starts it; `portta host service` installs it as the `portta-host` user service |
+| `packages/server` | `portta-server` | no | Every business rule: services, the Hono API, Docker, Traefik, persistence and background work |
+| `packages/cli` | `@codions/portta` | yes, by `publish.yaml`; see [Publish the Portta CLI](publish-cli.md) | Commands, formatting, provisioning, and every effect: `process`, `docker`, `host`, `metrics`. Its build bundles `dist/cli.js` and its assets |
 
 `bin/` and `scripts/` stay at the root. They are narrow runtime boundaries, not
 alternative command implementations, and are not a workspace.
@@ -81,7 +76,7 @@ writer of the SQLite database at `state/panel/portta.db`
 `portta db status|shell|dump|restore` work on that file from the host
 (`shell` and `dump` through `sqlite3`, `restore` only while the panel is
 stopped); `portta db migrate` asks the running panel. Docker inventory,
-URLs, `.env`, `doctor`, Git collection, host metrics, `bootstrap` / `up` /
+URLs, `.env`, `doctor`, host metrics, `bootstrap` / `up` /
 `down` run locally through core.
 
 ## Who may import whom
@@ -98,7 +93,6 @@ flowchart LR
     server[packages/server]
     web[apps/web]
     cli[packages/cli]
-    host[packages/host]
     fauth[apps/auth]
 
     contracts --> core
@@ -117,9 +111,6 @@ flowchart LR
     web --> server
     cli --> core
     cli --> contracts
-    cli --> host
-    host --> core
-    host --> contracts
     fauth --> core
 ```
 
@@ -146,8 +137,7 @@ Read the edges as consequences, not preferences:
   decision is a second answer, and one of them will be wrong. It knows the
   database because the users are rows, and nothing else in it opens a socket.
 - **`packages/server` is the only place with a business rule**, and the only
-  one that opens Docker, Traefik, Git or the panel's database. It reaches
-  GitHub and Linear only through the host daemon. It exports names,
+  one that opens Docker, Traefik or the panel's database. It exports names,
   never `export *` from a service, so `apps/web` cannot reach past what it
   means to offer.
 - **`apps/web` composes.** A page calls a service through `lib/server/deps.ts`;
@@ -159,10 +149,6 @@ Read the edges as consequences, not preferences:
   decision" true by construction rather than by care. The `portta db`
   maintenance commands handle the database as a file, never through the
   schema.
-- **`packages/host` knows core and contracts, and nothing that opens the
-  panel's database.** It is bundled into the CLI, so it can depend on nothing
-  the CLI could not ship, and the panel reaches it only over HTTP through its
-  authorised module proxy.
 
 ## Where new code goes
 
@@ -180,58 +166,16 @@ Read the edges as consequences, not preferences:
 | A host probe: an address, a tool's location, a file mode | `packages/cli` `src/host.ts`, with the verdict it feeds in `packages/core` |
 | Host and project resource metrics | Types and normalizers in `packages/core` `metrics.ts`; collection in `packages/cli` `src/metrics/`. The panel only reads the files. See [Host metrics](../product/reference/host-metrics.md) |
 | Anything else you were about to write in Bash | `packages/cli`. See [shell scripts](scripts.md): being the interface to `openssl`, `ssh` or `docker run` is not a reason |
-| Persistent settings, project overrides, a Project's issue provider | The panel API, never a second database client |
-| A document | `docs/product/` or `docs/development/`, classified in `docs/navigation.json`; a module's pages in its own `docs/modules/<id>/` with its `navigation.json`. See [Contribute documentation](documentation.md) |
+| Persistent settings and project overrides | The panel API, never a second database client |
+| A document | `docs/product/` or `docs/development/`, classified in `docs/navigation.json`. See [Contribute documentation](documentation.md) |
 
 Do not put panel-only code in `packages/core` "for later". A module enters
 core when a second consumer exists, not in anticipation.
 
-## Official modules
-
-A module is a vertical slice compiled into Portta and always on: whether it is
-present is a build decision, not an operator setting. It has no workspace of
-its own. Its manifest — id, name, permissions, activity kinds and documentation
-directory — is declared with `defineModule` from `portta-core/modules` and
-listed in `MODULES` there.
-Each layer then keeps a static registry beside its own code, and those files are
-the only way code outside the module reaches it:
-
-| Registry | What a module adds |
-|---|---|
-| `packages/core/src/modules/index.ts` | Activity kinds after `ACTIVITY_KINDS`; resources and role grants read by `packages/auth` |
-| `packages/server/src/modules/index.ts` | Routes under `/api/modules/<id>`, WebSocket routes under `/ws/modules/<id>/`, jobs, OpenAPI tags, panel diagnostics |
-| `packages/host/src/modules/index.ts` | What the host daemon runs for the module: routes under `/api/modules/<id>`, sockets under `/ws/modules/<id>/`, and what to release when it stops |
-| `packages/cli/src/modules/index.ts` | A command group, MCP tools, `portta doctor` checks |
-| `apps/web/modules/index.ts` | Rail entries, Project tabs, Settings sections, translation namespaces |
-
-Every list a module can extend is the base list followed by the modules', so an
-empty registry leaves the output unchanged and a module never reorders or
-redefines a base entry.
-
-### Taskflow
-
-Taskflow is the first module. Its parts follow the workspaces above rather than
-living in one directory; the table of where each part lives is in the module's
-development page.
-
-The panel never runs Taskflow's work: it forwards the module's routes to the
-daemon through its authorised proxy
-(Host daemon and module proxy). `portta flow` commands call
-the daemon directly with the token from `state/host`, and a few of them run the
-Taskflow runtime in the CLI process.
-
-The published package carries everything the module needs, so an installation
-never reads the source tree: `dist/cli.js`, `dist/host.js` (the daemon
-`portta host serve` starts as a child process), `dist/supervisor.js` (the ACP
-supervisor the module starts on demand, which outlives a daemon restart),
-`dist/assets/workflows` (from `packages/host/workflows`) and
-`dist/assets/skills/portta-workflows` (from `skills/portta-workflows`). See the
-module's development page.
-
 ## How to add a command
 
 1. Decide the path with the rule above. If the command needs a fact from
-   Docker, Git or the host, it runs locally. If it needs a preference stored
+   Docker or the host, it runs locally. If it needs a preference stored
    by the panel, it calls the API.
 2. If the behaviour already exists in the panel, extract the shared function
    into `packages/core` in the same change that the CLI starts calling it.
@@ -250,12 +194,10 @@ installed command is `portta`. Details in [ADR 0015](adr/0015-node-is-required-o
 
 The root `AGENTS.md` is an index and holds the repository-wide agent testing
 policy. A per-directory instruction file exists only where a directory has
-rules that are not true of the rest of the repository; today those are the two
-module files, `apps/web/modules/taskflow/CLAUDE.md` and
-`packages/host/src/modules/taskflow/CLAUDE.md`. Document once; reference
+rules that are not true of the rest of the repository. Document once; reference
 everywhere it is needed. The operating rules for agents on a shared host already live in
 [agent-guidelines.md](../agent-guidelines.md).
 
 ## Documentation knowledge boundary
 
-Core owns pure documentation compilation and search. Contracts owns API schemas. The server loads the corpus and exposes read endpoints. Next renders the corpus directly; CLI and MCP read their bundled corpus or an explicitly selected panel. Build tooling reads source files and emits distribution artifacts. No interface keeps an independently edited copy.
+Core owns pure documentation compilation and search. Contracts owns API schemas. The server loads the corpus and exposes read endpoints. Next renders the corpus directly; the CLI reads its bundled corpus or an explicitly selected panel. Build tooling reads source files and emits distribution artifacts. No interface keeps an independently edited copy.

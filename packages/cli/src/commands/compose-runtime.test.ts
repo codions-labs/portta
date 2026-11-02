@@ -807,4 +807,34 @@ describe('who may open a routed hostname on a public host', () => {
     mocks.profile = 'remote-public'
     await expect(runtimeAction('up', { path: workspace }, command)).rejects.toThrow(/not ready/)
   })
+
+  it('refuses a project that brings its own Traefik router, or routes a service Portta keeps private', async () => {
+    const workspace = arrange()
+    const labelled = {
+      services: {
+        web: { ports: [{ target: 3000, published: '80' }], labels: { 'traefik.http.routers.mine.rule': 'Host(`x`)' } },
+        api: { ports: [{ target: 4000, published: '81' }] },
+      },
+    }
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version') ? result('2.24.4') : args.includes('branch') ? result('') : result(labelled),
+    )
+    await expect(
+      prepareComposeRuntime({ path: workspace, public: ['web', 'api'], dryRun: true }, command),
+    ).rejects.toThrow(/Traefik routing of its own/)
+  })
+
+  it('does not inherit a decision that belongs to another service', async () => {
+    const workspace = arrange()
+    const first = await prepareComposeRuntime({ path: workspace, protect: ['web'], public: ['api'] }, command)
+    const records = registry()
+    const stolen = records.protections.find((record) => record.service === 'web')!
+    const { writeProtectionStore } = await import('portta-core')
+    writeProtectionStore(join(mocks.root, 'state/auth/protections.json'), {
+      ...records,
+      protections: records.protections.map((record) => (record === stolen ? { ...record, service: 'other' } : record)),
+    })
+    const again = await prepareComposeRuntime({ path: workspace, dryRun: true }, command)
+    expect(again.pending.map((entry) => entry.service)).toEqual([first.services[0]?.name])
+  })
 })

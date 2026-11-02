@@ -161,19 +161,17 @@ panel. From inside the directory:
 
 ```
 portta projects resolve --json
-portta projects context <slug> --json
 ```
 
-`resolve` says which Project the directory belongs to, or that none does;
-`context` is what to read before working there. Both are read-only.
+`resolve` says which Project the directory belongs to, or that none does. It
+is read-only.
 
-## Skill, CLI and MCP
+## Skill and CLI
 
 The CLI is the contract: every rule above is enforced by `portta adopt`, not
-by this text. This skill only orders the verbs and says what to ask. An agent
-with `portta mcp` configured has the same facts through the panel's tools;
-adoption itself is a CLI action, because it reads the project directory on
-the host.
+by this text. This skill only orders the verbs and says what to ask.
+Adoption is a CLI action, because it reads the project directory on the
+host.
 
 Install this skill with `npx skills add codions-labs/portta --skill
 portta-adopt-compose -g`. The full contract, the compatibility rules and the

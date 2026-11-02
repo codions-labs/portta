@@ -42,7 +42,7 @@
         {
           "source": "docs/product/guides/projects.md",
           "slug": "projects",
-          "description": "Organize repositories and environments into Projects."
+          "description": "Organize environments into Projects."
         },
         {
           "source": "docs/product/guides/environments.md",
@@ -129,11 +129,6 @@
           "source": "docs/product/guides/public-access.md",
           "slug": "public-access",
           "description": "Enable deliberate internet access to selected routes."
-        },
-        {
-          "source": "docs/product/guides/remote-tunnels.md",
-          "slug": "remote-tunnels",
-          "description": "Reach a remote host through SSH and private bridges."
         }
       ]
     },
@@ -287,7 +282,7 @@
         {
           "source": "docs/product/concepts/project-model.md",
           "slug": "project-model",
-          "description": "Understand Projects, repositories, environments, services and endpoints."
+          "description": "Understand Projects, environments, services and endpoints."
         },
         {
           "source": "docs/product/concepts/addresses-and-access.md",
@@ -513,7 +508,7 @@
         {
           "source": "docs/development/adr/0031-projects-home-and-project.md",
           "slug": "adr/0031-projects-home-and-project",
-          "description": "0031. Projects, repositories and environments are distinct."
+          "description": "0031. Projects and environments are distinct."
         },
         {
           "source": "docs/development/adr/0034-child-process-output.md",

@@ -54,7 +54,7 @@ So sharing one port between raw TCP services requires one of:
 The gateway takes the distinct-port route for sessions, and offers distinct
 identities for the persistent case.
 
-## The four levels of access
+## The three levels of access
 
 ### A. Application to service
 
@@ -121,12 +121,6 @@ Equivalent, with no gateway at all:
 docker compose exec postgres psql -U app -d app
 ```
 
-### D. A service on a VPS
-
-`portta remote access open deploy@vps --project demo-shop --service postgres`
-opens the same bridge on the VPS's loopback and carries it to you over SSH;
-see [Reach a remote service](remote-tunnels.md).
-
 ## A persistent private address
 
 For the database you connect to daily, `portta service publish --private`
@@ -182,9 +176,6 @@ TablePlus, DBeaver, DataGrip and friends all want a host and a port:
 | Host | `127.0.0.1` |
 | Port | whatever `access open` printed |
 | User / password / database | the project's own |
-
-Remote is identical: `remote access open` gives you a local address too, so
-the client never needs to know the VPS exists.
 
 Note that the port changes each time you open a bridge, because the kernel
 picks a free one. Use `--local-port 55432` if you want a saved connection to

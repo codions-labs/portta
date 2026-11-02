@@ -1,6 +1,6 @@
 # 0030. The panel may operate a project, without owning it
 
-**Status:** Accepted; see [0001](0001-decoupled-infrastructure.md), 0047
+**Status:** Accepted; see [0001](0001-decoupled-infrastructure.md)
 
 ## Context
 
@@ -58,18 +58,13 @@ change, not a patch.
 
 The request the runner reads is `{ verb, project, flags? }` in
 `state/runner/request.json`. Flags are a closed set too: `no-cache` is valid
-only with `build`; `directory` is valid only with `down-volumes`. Adding a
+only with `build`. Adding a
 flag is the same class of change as adding a verb. The working directory and
 Compose files come from Docker's own labels
 (`com.docker.compose.project.working_dir`, `.config_files`), never from a
 path the panel supplied. The runner translates those host paths through
 `/host` so it can read the files; `--project-directory` stays the host path,
 because Compose hands bind mounts to the daemon.
-
-Directory removal is the runner's job, not the panel's. The path is the
-label, validated as an existing directory that is not `/`, not a top-level
-directory, and does not walk up. A dirty working tree is refused unless the
-operator overrides after seeing the counts.
 
 ### Where a project lives
 
@@ -86,7 +81,7 @@ removed. The snapshot records `config_files` beside `working_dir` in
 `environments`, and a remembered Environment is a full `Environment` with no
 services and `presence: remembered`. Start on one hands the runner
 `{ verb: "up", project, workingDir, configFiles }`. The panel validates both
-paths against the bound `remove_working_dir` already applies (absolute, no
+paths against a bound (absolute, no
 `..`, not `/`, not a top-level directory) and refuses a comma, a quote or a
 backslash, which is what lets the shell read the list as text. The runner
 uses those fields **only** when `docker ps` finds no container for the
@@ -106,10 +101,10 @@ repository root is already mounted at its own path and needs no link.
 
 ### The safety envelope
 
-- A verb that destroys data (`down-volumes`, directory removal) requires the
+- A verb that destroys data (`down-volumes`) requires the
   **project name typed back**, checked on the server.
 - Portta's own components are refused by name, reusing `assertNotGatewayOwned`.
-- No operation ever touches a Git remote, a forge repository, an issue or a
+- No operation ever touches a Git remote, a forge repository or a
   branch.
 - Every operation is logged where the operator can read it back.
 - The working directory is validated as an existing directory and never
@@ -130,8 +125,3 @@ Docker socket and a view of the host filesystem. The closed verb set, the
 opt-in key, and the project name validated against the live snapshot are what
 keep it bounded. A project started outside Compose has no working-directory
 label and is reported as not operable rather than offered a dead button.
-
-Work that needs the host itself rather than Compose — worktrees, terminals,
-agent runs — goes through the host daemon
-(ADR 0047) under the same
-operate-not-own claim.

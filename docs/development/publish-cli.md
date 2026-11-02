@@ -214,8 +214,6 @@ Nothing in this repository can repair that; these are one-time settings changes.
    so an installed runtime can pull anonymously.
 
 3. **Repository configuration.** Environments, secrets, variables, rulesets and
-   branch protection are all gone. `taskflow-live-integrations.yaml` needs the
-   `live-integration-certification` environment with the `PORTTA_FLOW_E2E_*`
-   variables and the `PORTTA_FLOW_E2E_GITHUB_TOKEN` and `LINEAR_API_KEY` secrets.
+   branch protection are all gone.
 
 See npm's documentation for [publishing a package](https://docs.npmjs.com/cli/v11/commands/npm-publish/), [two-factor authentication](https://docs.npmjs.com/about-two-factor-authentication/), and [trusted publishing](https://docs.npmjs.com/trusted-publishers/).

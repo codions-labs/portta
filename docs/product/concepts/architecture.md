@@ -16,9 +16,8 @@ network.
 flowchart LR
     subgraph host [Host]
         CLI["portta CLI"]
-        HD["Host daemon<br/>127.0.0.1:5111"]
         MC["Metrics collector<br/>portta host watch"]
-        STATE[("state/<br/>metrics, environment, git,<br/>panel/portta.db")]
+        STATE[("state/<br/>metrics, environment,<br/>panel/portta.db")]
         SOCK[/"/var/run/docker.sock"/]
     end
 
@@ -46,7 +45,6 @@ flowchart LR
     Browser -- "127.0.0.1:8081" --> WEB
     WEB --> WSP
     WSP --> SOCK
-    WEB -- "host.docker.internal" --> HD
     WEB --> STATE
     MC --> STATE
     CLI --> SOCK
@@ -67,8 +65,7 @@ own private network and are not on this picture at all.
 | Panel socket proxy (`web-socket-proxy`) | Container on `portta-web` only | The panel's own filtered Docker API: reads, the container lifecycle and four exec endpoints. |
 | Applier (`portta-apply`) | Stopped helper container, no network | Prepared by `portta up` when `PORTTA_APPLY=true`; the panel starts it to run `portta up`. |
 | Runner (`portta-runner`) | Stopped helper container, no network | Prepared by `portta up` when `PORTTA_RUNNER=true`; the panel starts it to run one Compose verb against one project. |
-| Host daemon | Process on the host, `127.0.0.1:5111` | `portta host serve` or the `portta-host` user service. Reads and writes issues through `gh` and Linear; serves the Taskflow module. |
-| Metrics collector | Detached process on the host | `portta host watch`: host and Docker metrics every 5 s, readiness every 5 min, `portta repos scan` every minute, into `state/`. |
+| Metrics collector | Detached process on the host | `portta host watch`: host and Docker metrics every 5 s, readiness every 5 min, into `state/`. |
 | Access bridges | On-demand `alpine/socat` containers | `portta access open`: a loopback port into one project's private network, removed on close. |
 | Toolbox | One-shot container | Pinned operational tools (`portta toolbox run`, database clients). |
 | Tailscale (`tailscale/tailscale`) | Optional sidecar | With `TAILSCALE_ENABLED=true` on a remote profile, Traefik shares its network namespace and answers on the tailnet. |
@@ -108,33 +105,22 @@ a lock before the panel opens HTTP
 
 ### What the panel reads from the host
 
-The panel mounts no project directory. Host facts reach it as files and HTTP:
+The panel mounts no project directory. Host facts reach it as read-only files:
 
 ```mermaid
 flowchart LR
     subgraph host [Host]
         W["portta host watch"] --> M["state/metrics"]
         W --> ENV["state/environment"]
-        W --> G["state/git"]
-        D["Host daemon"] --> GH["gh / Linear"]
-        TOK["state/host/token"]
     end
     subgraph panel [Panel container]
         P[Panel]
     end
     M -- "read-only mount" --> P
     ENV -- "read-only mount" --> P
-    G -- "read-only mount" --> P
-    TOK -- "read-only mount" --> P
-    P -- "PORTTA_HOST_URL<br/>host.docker.internal:5111" --> D
 ```
 
-Whenever the panel is on, `docker/compose/features/panel-host.yaml` maps
-`host.docker.internal` to the host gateway, sets `PORTTA_HOST_URL` and mounts
-the daemon token read-only. On Linux the daemon must listen on the Docker bridge
-address (`PORTTA_HOST_BIND`) for the container to reach it. See
-[Host metrics](../reference/host-metrics.md) and
-Run the host daemon.
+See [Host metrics](../reference/host-metrics.md).
 
 ## Networks
 
@@ -213,7 +199,7 @@ injects ([ADR 0005](../../development/adr/0005-hostname-convention.md)):
 So a project never writes its own name into a routing rule, and a new worktree
 gets new hostnames by changing one environment variable.
 
-## How the panel and remote access attach
+## How the panel and the other attachments attach
 
 The gateway's Compose model is `docker/compose/compose.yaml` plus overlays the
 CLI selects from `.env`:
@@ -222,7 +208,7 @@ CLI selects from `.env`:
 |---|---|---|
 | Profile `local` or remote | `attach/host.yaml` | Traefik publishes 80/443 on `PORTTA_BIND_ADDRESS` |
 | Remote profile with `TAILSCALE_ENABLED=true` | `attach/tailscale.yaml` | Traefik runs in the Tailscale container's network namespace |
-| `PORTTA_WEB=true` | `features/web.yaml`, `features/panel-host.yaml` | The panel, its socket proxy and its route to the host daemon |
+| `PORTTA_WEB=true` | `features/web.yaml` | The panel and its socket proxy |
 | `PORTTA_WEB_EXPOSE=local` or `tailscale` | `features/web-bind.yaml` | Publishes the panel on `PORTTA_WEB_BIND_ADDRESS:PORTTA_WEB_PORT` |
 | `PORTTA_WEB_EXPOSE=vpn` | `features/web-bind.yaml`, `features/web-vpn.yaml` | Also routes it at `PORTTA_WEB_HOST.<domain>` |
 | `PORTTA_WEB_EXPOSE=public` | `features/panel-public.yaml` | Traefik's own `panel` entrypoint on the panel port |

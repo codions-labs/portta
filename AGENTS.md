@@ -89,7 +89,7 @@ This table is the **maximum** default, not the minimum. Prefer a file or `-t`.
 | Changed area                                                   | Default validation                                                                           |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `packages/core/src/**`                                         | matching `portta-core` test file/name                                                        |
-| `packages/contracts/src/**`                                    | matching `portta-contracts` test + `openapi:check` only when the contract/OpenAPI can change; `openapi:taskflow:check` for `packages/contracts/src/taskflow/**` |
+| `packages/contracts/src/**`                                    | matching `portta-contracts` test + `openapi:check` only when the contract/OpenAPI can change |
 | `packages/db/src/schema/**`                                    | matching `portta-db` test + `db:check` when schema/migrations change                         |
 | `packages/auth/src/**`                                         | matching `portta-auth-core` test                                                             |
 | `packages/server/src/**`                                       | matching `portta-server` test file/name                                                      |

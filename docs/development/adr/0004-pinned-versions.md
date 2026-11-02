@@ -23,7 +23,6 @@ Every image pins an explicit version tag. As of this writing:
 | `alpine` | `3.24.1` | applier and toolbox base |
 | `node` | `24.20.0-alpine` | panel image build and runtime |
 | `ghcr.io/codions-labs/portta` | `${PORTTA_VERSION}` | published runtime image shared by the panel and ForwardAuth |
-| `ghcr.io/codions-labs/portta-sandbox` | `${PORTTA_VERSION}`, on `node:24.20.0-bookworm-slim` | Taskflow sandbox |
 | `codions-labs/portta-apply` | generated runtime version | the optional applier and runner ([ADR 0026](0026-applying-settings-from-the-panel.md)) |
 | `codions-labs/portta-toolbox` | generated runtime version | local diagnostic and database clients |
 | `traefik/whoami` | `v1.12.0` | fixtures only |

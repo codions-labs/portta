@@ -11,8 +11,6 @@ The repository contains only these deliberate shell boundaries:
 |---|---|
 | `scripts/lib/runner-exec.sh` | Fixed entrypoint inside the isolated project-runner image |
 | `tests/**/*.sh` | Docker-backed assertions and their test-only helpers |
-| `docker/images/sandbox/**/*.sh` | The sandbox image's build context: agent installers, the entrypoint and the verification script, run inside the image |
-| `packages/host/tests/support/*.sh` | Test-only tmux isolation for the host daemon's suites |
 
 `bin/portta` is a Node launcher. In a checkout it rebuilds `packages/cli` when
 the source is newer than the bundle, then executes that same bundle. In an npm

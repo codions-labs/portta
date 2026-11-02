@@ -39,18 +39,13 @@ output is versioned by an envelope on every command:
 { "schema": "projects.context", "version": 1, "data": { } }
 ```
 
-`schema` is the command path (`status`, `envs.list`, `projects.context`);
+`schema` is the command path (`status`, `envs.list`, `projects.show`);
 `version` is an integer that only advances on an incompatible change to
 `data` — a field removed, a type changed or a meaning changed. An optional
 field added is compatible and leaves the version alone. A script or an agent
 reads the two fields first and stops on a `schema` or `version` it does not
 know, instead of breaking on a silent change. The fields of `data` per command
 are in the [CLI reference](../reference/cli.md#json-shapes).
-
-The Development Context is versioned on its own as well, because it is read
-over the API and MCP without the CLI: `GET /api/projects/:slug/context`
-carries `schema: "development-context"` and `version: 1` in the body, under
-the same rule.
 
 ## Query documentation
 

@@ -7,8 +7,7 @@ controls. Hierarchy comes from surface and edge, not from shadow or colour.
 
 The reference is Linear's product interface: its density, its restraint with
 colour and its keyboard-first interaction. The identity, the tokens and the
-components are Portta's own. This page is the reference; the module
-instruction file `apps/web/modules/taskflow/CLAUDE.md` points here.
+components are Portta's own. This page is the reference.
 
 Everything here is implemented in `apps/web/app/globals.css` (tokens) and
 `apps/web/components/ui/` (primitives). When a value in this page and a
@@ -96,8 +95,7 @@ the same on a host with no fonts of its own.
 | `text-sm` | 13 / 20 | rows, controls, body of a card, menu items |
 | `text-base` | 14 / 22 | the page body, dialog titles, the command input |
 | `text-lg` | 16 / 24 | page titles |
-| `text-xl` | 18 / 24 | the title of an issue or a Run, the number on a stat tile |
-| `text-2xl` | 22 / 28 | the title of a workflow's page; rare |
+| `text-xl` | 18 / 24 | the title of a detail page, the number on a stat tile |
 | `text-3xl` | 28 / 32 | the title of a documentation page, and nothing in the panel proper |
 
 Weights: 400 for text, 500 for labels, titles of rows and buttons, 600 for
@@ -225,7 +223,7 @@ Shell (components/shell/shell.tsx)
 ├── ConnectionBanner / ApplyBar      full-width strips
 ├── Sidebar (canvas)                 brand · ⌘K · groups of nav links · controls
 └── Main panel (surface, hairline)   PageHeader → content
-    └── an issue page                content + a 17rem property column
+    └── a detail page                content
 CommandPalette · Dialogs · Toasts    portalled
 ```
 
@@ -269,8 +267,7 @@ gateway's and the host's state beside them — and keeps the route name as a
 screen-reader-only `h1`.
 
 A list is a table (`DataTable`) or a list of rows inside a card. A detail is
-content on the left and properties on the right (`PropertyRow`,
-`components/issues/property-row.tsx`), the way an issue page does it.
+content under a header.
 
 ## Accessibility
 

@@ -57,8 +57,7 @@ never an error.
 30 seconds is **stale**.
 
 Readiness changes more slowly and is collected every five minutes. Use
-`portta envs report` to refresh only that report. The same watcher runs
-`portta repos scan` once a minute.
+`portta envs report` to refresh only that report.
 
 `portta up` and `portta web up` start the watcher. `portta down` and
 `portta web down` stop it. If the gateway stays up after `web down`, the

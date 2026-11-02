@@ -1,6 +1,6 @@
 # 0001. The gateway is infrastructure, not a parent project
 
-**Status:** Accepted; see [0030](0030-the-panel-and-a-project-lifecycle.md), 0047
+**Status:** Accepted; see [0030](0030-the-panel-and-a-project-lifecycle.md)
 
 ## Context
 
@@ -49,6 +49,5 @@ anyone's data; several gateways could even coexist on different networks.
 Costs: the gateway cannot fix a project that misconfigures itself. It can only
 detect and report, which is why `doctor` and `analyze` carry so much weight. It
 may operate a project's runtime state on request, through one opt-in runner
-with a closed verb set ([ADR 0030](0030-the-panel-and-a-project-lifecycle.md))
-and a host daemon the operator starts
-(ADR 0047); it still owns nothing.
+with a closed verb set ([ADR 0030](0030-the-panel-and-a-project-lifecycle.md));
+it still owns nothing.

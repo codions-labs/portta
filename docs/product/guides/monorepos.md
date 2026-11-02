@@ -105,24 +105,21 @@ It reads the resolved Compose model, so it sees every service regardless of
 where its Dockerfile lives, classifies each, and proposes only the ones that
 look like they serve HTTP.
 
-## A monorepo is one repository in one Project
+## A monorepo is one directory in one Project
 
 The Project model does not treat a monorepo as a special case: it is a
-Project that owns exactly one repository. What differs is what runs against
-it — several worktrees, each its own `COMPOSE_PROJECT_NAME`, each adopted by
+Project whose directory is the monorepo. What differs is what runs against
+it: several worktrees, each its own `COMPOSE_PROJECT_NAME`, each adopted by
 the same Project.
 
 ```text
 Project  "Plataforma"
-├── repositories   acme/plataforma
-└── environments   plataforma            (label)
-                   plataforma-issue182   (repo-match)
-                   plataforma-issue190    (repo-match)
+└── environments   plataforma           (label)
+                   plataforma-issue182  (label)
+                   plataforma-issue190  (label)
 ```
 
 The worktrees stay independent environments: their
 overrides do not inherit, their hostnames do not collide, and stopping one
 touches none of the others. The Project is what says they are the same
 product.
-
-See Work and issues for how an environment is tied to the issue it is running for, which is what makes one worktree per issue readable in the panel.

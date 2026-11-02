@@ -25,8 +25,8 @@ stops all of them at once; removing them takes the rows with the account.
 **Its default is the smallest thing that is useful.** A token declares whether
 it is used by a person or by an agent. A person's holds their whole role, as if
 they were at the keyboard. An agent's holds what agents hold on this panel —
-the `agentPermissions` setting, defaulting to a developer minus the three
-things that change how the panel itself behaves. Asking for scopes the owner
+a developer's permissions minus the ones that change how the panel itself
+behaves. Asking for scopes the owner
 does not hold is a 400 that names exactly which ones did not fit.
 
 **The secret is shown once.** The panel stores a hash and the first characters,

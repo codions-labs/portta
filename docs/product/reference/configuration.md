@@ -106,13 +106,12 @@ See [Configure TCP routing](../guides/tcp-routing.md).
 | `PORTTA_AUTH_USER` | same as `PORTTA_WEB_USER` | User the ForwardAuth service runs as; same reason |
 | `PORTTA_APPLY` | `true` in `.env.example` | Prepare the applier the panel may start to run `portta up` ([ADR 0026](../../development/adr/0026-applying-settings-from-the-panel.md)). Set `false` on a host where the panel is reachable by anyone you would not give a shell |
 | `PORTTA_RUNNER` | `true` in `.env.example` | Prepare the project runner the panel may start to drive Compose for one project ([ADR 0030](../../development/adr/0030-the-panel-and-a-project-lifecycle.md)) |
-| `PORTTA_PROJECTS_HOME` | `~/projects` (`/srv/projects` as root) | Projects Home, the directory managed Projects live under. `portta repos scan` reads it on the host, and development/demo commands discover `portta-demo-*` repositories there. The panel only receives the path as a string to classify locations, and never mounts it ([ADR 0031](../../development/adr/0031-projects-home-and-project.md), [ADR 0044](../../development/adr/0044-example-projects-live-in-projects-home.md)) |
+| `PORTTA_PROJECTS_HOME` | `~/projects` (`/srv/projects` as root) | Projects Home, the directory managed Projects live under. Development/demo commands discover `portta-demo-*` projects there. The panel only receives the path as a string to classify locations, and never mounts it ([ADR 0031](../../development/adr/0031-projects-home-and-project.md), [ADR 0044](../../development/adr/0044-example-projects-live-in-projects-home.md)) |
 | `PORTTA_RUNTIME_DATABASE_FILE` | `/app/state/panel/portta.db` | The panel's SQLite file, inside the container. Compose sets it over a bind mount of `$PORTTA_HOME/state/panel`; the CLI resolves the host path from `$PORTTA_HOME` instead, and neither derives the other's ([ADR 0037](../../development/adr/0037-sqlite-is-the-panel-database.md)) |
 | `PORTTA_AUTH_SECRET` | generated | **Secret.** Signs the panel's sessions and tokens, and the ForwardAuth process's host-scoped cookies. Rotating it signs everybody out of both |
 | `PORTTA_AUTH_IMAGE` | Portta release image | Image running the isolated auth process |
 | `PORTTA_RUNTIME_DOCS` | `true` | Serve this documentation at `/docs`, from the panel image. Static text with no host information in it, so a routed panel may serve it |
 | `PORTTA_RUNTIME_API_DOCS` | empty | Serve the API reference and its console at `/docs/api`. Empty means the safe default: on for loopback, off when routed |
-| `PORTTA_MCP_HTTP` | `false` | Serve the MCP tools over Streamable HTTP at `POST /api/mcp`, for an agent that has no CLI where it runs. The same tools as `portta mcp`, behind the same credential and the same agent ceiling; reachable from wherever the panel is (MCP reference, ADR 0054) |
 | `PORTTA_RUNTIME_TRAEFIK_API` | derived from the attachment | Override for the Traefik API endpoint behind the panel's bounded write surface ([ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md)) |
 
 The panel binds loopback by default. `PORTTA_AUTH_MODE=disabled` is accepted
@@ -196,37 +195,6 @@ Key, which authenticates everything in the account and cannot be scoped.
 The tunnel credential and configuration live under `state/cloudflared/`, never
 in `.env`. See [Cloudflare Tunnel](../guides/cloudflare-tunnel.md) and
 [ADR 0025](../../development/adr/0025-cloudflare-tunnel.md).
-
-## Issues
-
-There is nothing here for GitHub. The panel holds no forge credential: it asks
-the host daemon, and the daemon runs the operator's own `gh`, which carries its
-own authentication (ADR 0018).
-Signing in is `gh auth login` on the host, not a variable.
-
-| Variable | Default | Meaning |
-|---|---|---|
-| `LINEAR_API_KEY` | — | **Secret.** Read by the host daemon, not by the panel. Set it in the environment `portta host serve` runs with; without it Linear reports itself unauthenticated and the panel says so |
-
-Which provider a Project uses is a property of the Project, not of the
-installation: a repository with a GitHub remote is enough, and Linear is chosen
-on the Project along with its team key. See
-Connect GitHub and Work with issues.
-
-## Host daemon
-
-| Variable | Default | Meaning |
-|---|---|---|
-| `PORTTA_HOST_BIND` | `127.0.0.1` | Where `portta host serve` listens. On Linux, the Docker bridge gateway (for example `172.17.0.1`); never `0.0.0.0` |
-| `PORTTA_HOST_PORT` | `5111` | The daemon's port |
-| `PORTTA_HOST_STATE_DIR` | `state/host` in the installation | The daemon's state directory: its token and each module's state |
-| `PORTTA_HOST_URL` | `http://host.docker.internal:<PORTTA_HOST_PORT>` | Where the panel reaches the daemon |
-
-Whenever the panel is on, it is wired to the daemon: `host.docker.internal`
-mapped to the host gateway, `PORTTA_HOST_URL`, and the token mounted read-only.
-The token lives at `state/host/token`, `0600`, and is never written to `.env`.
-Issues need the daemon; without it, issue views say the provider could not be
-reached. See Run the host daemon.
 
 ## Secrets
 

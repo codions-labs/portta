@@ -47,6 +47,7 @@ const Service = z
         z.union([z.string(), z.object({ source: z.string().optional(), type: z.string().optional() }).passthrough()]),
       )
       .optional(),
+    labels: z.union([z.array(z.string()), z.record(z.string(), z.unknown())]).optional(),
     privileged: z.boolean().optional(),
     devices: z.array(z.string()).optional(),
     pid: z.string().optional(),
@@ -319,6 +320,58 @@ type AdoptionOptions = {
   public?: string[]
 }
 
+/** Service labels as `key -> value`, whichever spelling Compose resolved them to. */
+function labelsOf(service: { labels?: string[] | Record<string, unknown> }): Map<string, string> {
+  const result = new Map<string, string>()
+  const labels = service.labels
+  if (Array.isArray(labels)) {
+    for (const entry of labels) {
+      const at = entry.indexOf('=')
+      result.set(at < 0 ? entry : entry.slice(0, at), at < 0 ? '' : entry.slice(at + 1))
+    }
+  } else if (labels) for (const [key, value] of Object.entries(labels)) result.set(key, String(value ?? ''))
+  return result
+}
+
+/**
+ * Traefik routing a public host cannot allow.
+ *
+ * On a public host every route must pass through ForwardAuth, and the only
+ * router Portta gates is the one it names. A project that brings its own router,
+ * a TCP or UDP route, or `traefik.enable` on a service Portta keeps private
+ * would be reachable with no decision at all, so the plan refuses it instead of
+ * trusting the label. The routed services' own generated labels are the only
+ * `traefik.*` labels allowed through.
+ */
+function routingViolations(
+  model: { services: Record<string, { labels?: string[] | Record<string, unknown> }> },
+  routed: ReadonlySet<string>,
+  projectName: string,
+): string[] {
+  const found: string[] = []
+  for (const [name, service] of Object.entries(model.services)) {
+    const router = `${projectName}-${name}`
+    for (const [key, value] of labelsOf(service)) {
+      if (!key.startsWith('traefik.')) continue
+      if (key === 'traefik.enable') {
+        if (!routed.has(name) && value.trim().toLowerCase() === 'true') found.push(`${name}: ${key}=${value}`)
+        continue
+      }
+      if (!routed.has(name)) {
+        found.push(`${name}: ${key}`)
+        continue
+      }
+      const generated =
+        key === 'traefik.docker.network' ||
+        key.startsWith(`traefik.http.services.${router}.`) ||
+        key === `traefik.http.routers.${router}.service` ||
+        key === `traefik.http.routers.${router}.middlewares`
+      if (!generated) found.push(`${name}: ${key}`)
+    }
+  }
+  return found
+}
+
 function manifestWithOptions(manifest: RuntimeManifest, options: AdoptionOptions): RuntimeManifest {
   return Manifest.parse({
     ...manifest,
@@ -478,14 +531,32 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
       detail: 'manual integration on a public host: Portta cannot put its services behind ForwardAuth',
     })
   } else if (publicHost) {
+    const routedNames = new Set(services.filter((service) => service.route === 'http').map((service) => service.name))
+    const violations = routingViolations(model, routedNames, projectName)
+    if (violations.length > 0)
+      throw new RefusedError(
+        'this project declares Traefik routing of its own, which a public host cannot gate',
+        `remove from the Compose files: ${violations.join('; ')}`,
+      )
     const registry = readExposure(context.root)
     for (const service of services) {
       if (service.route !== 'http' || !service.host) continue
-      if (protect.has(service.name) || open.has(service.name) || protectionForHost(registry, service.host)) continue
+      if (protect.has(service.name) || open.has(service.name)) continue
+      const record = protectionForHost(registry, service.host)
+      // A record answers the question only when it is this service's. One that
+      // names another project or service is somebody else's decision about a
+      // reused hostname, and is not inherited.
+      const mine =
+        record &&
+        (!record.project || record.project === projectName) &&
+        (!record.service || record.service === service.name)
+      if (mine) continue
       pending.push({
         code: 'public_exposure',
         service: service.name,
-        detail: `${service.name} would answer at ${service.host} on a public host; decide who may open it`,
+        detail: record
+          ? `${service.host} already has a decision that belongs to ${record.project ?? '?'}/${record.service ?? '?'}; decide again for ${service.name}`
+          : `${service.name} would answer at ${service.host} on a public host; decide who may open it`,
         option: `--protect ${service.name}  or  --public ${service.name}`,
       })
     }

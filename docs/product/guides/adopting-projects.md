@@ -41,8 +41,7 @@ portta runtime status /path/to/project
 
 An agent can drive this flow with the `portta-adopt-compose` skill
 (`npx skills add codions-labs/portta --skill portta-adopt-compose -g`), which
-orders these verbs and says what to ask before each pending decision; see
-the working agreement.
+orders these verbs and says what to ask before each pending decision.
 
 `adopt` persists optional exposure intent in Portta state. A project that wants
 to version this intent may instead provide `.portta/runtime.json`; it contains
@@ -221,29 +220,22 @@ See [Use monorepos and worktrees](monorepos.md).
 
 The panel works out a project's identity from the labels Compose already
 injects: the project name, the working directory, and a worktree namespace when
-the directory basename disagrees with the project name. Three optional labels
-settle what that inference cannot. All of them are optional.
+the directory basename disagrees with the project name. One optional label
+settles what that inference cannot.
 
 | Label | When it helps |
 |---|---|
 | `portta.project` | `COMPOSE_PROJECT_NAME` is a per-worktree namespace and five worktrees should group under one heading |
-| `portta.repo` | `owner/name` or a remote URL. Gives repository and commit links with no host-side Git at all |
-| `portta.git.root` | The repository root, when the Compose file is not at it (see [Use monorepos and worktrees](monorepos.md)) |
 
 ```yaml
 services:
   web:
     labels:
       - "portta.project=demo-shop"
-      - "portta.repo=owner/demo-shop"
 ```
 
-Declare them on any one service; the first that does wins for the whole
-project. `portta envs analyze` reports which ones a project sets, and says
-"none (inferred from the Compose labels)" when it sets none, because that is
-the normal answer rather than a finding.
-
-See ADR 0010.
+Declare it on any one service; the first that does wins for the whole project.
+It is optional, and most projects never need it.
 
 ## Runtime manifest
 
@@ -257,8 +249,7 @@ outside Git. A maintained project may commit the optional equivalent,
 A project may own its whole integration instead of letting Portta generate
 the overlay: a `compose.portta.yaml` beside its Compose file, with the
 networks, labels and port resets written by hand from the
-[templates](../../../templates/README.md), or generated once with
-`portta envs init <path>`. Record that choice in `.portta/runtime.json` with
+[templates](../../../templates/README.md). Record that choice in `.portta/runtime.json` with
 `"mode": "manual"` and the overlay listed in `compose.files`: `portta runtime
 up` then validates and operates the project's own files and adds no routing
 mutation of its own. `portta adopt --manual` records the same mode for the

@@ -23,23 +23,14 @@ The same gateway, the same commands, one host away. Two modes:
 
 ## Preparing the host
 
-Two ways. Over SSH by hand, the same install as anywhere else:
+Over SSH, the same install as anywhere else:
 
 ```bash
 ssh deploy@vps.example.com 'npm install -g @codions/portta && portta setup --profile remote-private --yes'
 ```
 
-Or from your workstation, `portta remote bootstrap`, which prepares the host
-from a Git checkout of the repository; see
-Prepare a remote host. Either way, secrets are never
-copied from your machine: set `TS_AUTHKEY`, `ACME_EMAIL` and
-`CF_DNS_API_TOKEN` in the host's `.env`. Then drive it from anywhere:
-
-```bash
-portta remote status deploy@vps.example.com
-portta remote doctor deploy@vps.example.com
-portta remote urls   deploy@vps.example.com
-```
+Secrets are never copied from your machine: set `TS_AUTHKEY`, `ACME_EMAIL` and
+`CF_DNS_API_TOKEN` in the host's `.env`.
 
 ## Private mode
 
@@ -112,8 +103,7 @@ asks before recreating, and leaves `state/` untouched, including ACME
 certificates and the Tailscale identity.
 
 To take a new release as well, run `npm install -g @codions/portta && portta
-setup` on the host, or `portta remote bootstrap` again for a host prepared
-from a checkout ([Update Portta](update.md)).
+setup` on the host ([Update Portta](update.md)).
 
 ## Backing up
 

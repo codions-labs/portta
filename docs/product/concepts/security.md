@@ -157,7 +157,7 @@ deliberately.
   [Configure authentication](../guides/authentication.md),
   [ADR 0035](../../development/adr/0035-authentication-lives-in-the-panel.md) and
   [ADR 0051](../../development/adr/0051-authentication-is-optional-inside-a-trusted-network.md).
-- **Live channels.** The event stream needs `activity:read` and filters every
+- **Live channels.** The event stream needs `environment:read` and filters every
   event against the principal that opened it; an event about a Project somebody
   does not reach is never delivered, and an event about no Project at all goes
   only to `scope: 'all'`. The log WebSocket is authorised *before* the
@@ -193,17 +193,6 @@ A mutating request and every browser WebSocket upgrade must come from the
 panel's own origin, so a page on another site cannot drive it through
 `127.0.0.1`. `PORTTA_WEB_READ_ONLY=true` refuses every write, which is the
 right setting when an agent is driving it.
-
-`PORTTA_MCP_HTTP=true` adds a second way in for agents: the tools `portta mcp`
-serves over stdio, served by the panel itself at `POST /api/mcp`. It is off by
-default because it goes wherever the panel goes — loopback, a tailnet, a VPN
-or a public hostname, exactly as `PORTTA_WEB_EXPOSE` decides — so exposing the
-panel exposes it. It is behind the same principal as every route: a protected
-panel refuses the exchange without a `ptt_` token, and what a tool may do is
-what that token holds. On an open panel every call through it is an agent's,
-under the `agentPermissions` ceiling, whatever the request declared; the one
-tool that reads the host, `resolve_project`, is not served. See
-ADR 0054.
 
 ### Applying settings, and what it costs
 
@@ -274,10 +263,6 @@ applied; and a schema migration that actually applied something.
 
 What is deliberately **not** recorded:
 
-- **Development work.** Work sessions, commits and what happened around an issue
-  are the work record and live in `activity_events`, which the Activity page
-  reads. Mixing
-  them in would bury the ten entries that matter under a thousand that do not.
 - **Reads.** Nobody's browsing is logged. The log answers "who changed this",
   not "who looked at it".
 - **Anything that authenticates.** No request body, no password, no hash, no
@@ -371,8 +356,8 @@ for operator-controlled commands.
 - **A panel that asks nobody who they are.** Where `PORTTA_AUTH_MODE=disabled`
   is accepted, the boundary is the network's rather than Portta's: a tailnet ACL
   that admits a device admits an operator, and a stolen VPN profile is a stolen
-  panel. There is no per-user attribution either — activity, sessions and audit
-  record the local operator. `doctor` warns and names the assumption instead of
+  panel. There is no per-user attribution either: the audit log
+  records the local operator. `doctor` warns and names the assumption instead of
   implying a boundary nothing enforces.
 - **Multi-tenancy.** Every project on a host shares one Traefik and one shared
   network. This is a single-developer or single-team tool.
@@ -386,24 +371,10 @@ a public issue.
 
 ## Outbound network access
 
-The panel makes exactly two kinds of outbound request, and neither leaves the
-host: Traefik's API on an internal address, and the host daemon on
-`host.docker.internal`, which the panel is always wired to.
+The panel makes one kind of outbound request, and it does not leave the host:
+Traefik's API on an internal address.
 
-**It holds no forge credential, and makes no call to a forge.** Issues are read
-and written by the operator's own `gh`, or by Linear's API with a key in the
-daemon's environment — both on the host, in a process the operator started
-(ADR 0018,
-ADR 0047). A panel
-that is routed over a VPN therefore gains no route to the internet by being
-routed, and there is no long-lived key in `state/` for it to lose.
-
-What that moves rather than removes is the trust in the daemon's token: whoever
-can read `state/host/token` can drive the daemon, and through it the operator's
-`gh`. That token is as sensitive as the operator's shell and is treated that
-way — `0600`, never in `.env`, never in a response, never in a log. The panel
-mounts it read-only.
-
-Without a running daemon, issue views say the provider could not be reached and
-nothing else changes. See Connect GitHub and
-Run the host daemon.
+**It holds no forge credential, and makes no call to a forge or to any other
+service.** A panel that is routed over a VPN therefore gains no route to the
+internet by being routed, and there is no long-lived key in `state/` for it to
+lose.

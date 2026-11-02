@@ -11,7 +11,7 @@ http://demo-site-web.localhost             demo-site            web
 
 All of those services listen on the same internal port. None of them publishes a port on the host.
 
-![The Portta Overview: host resources, what needs attention, the Projects, the environments using the host and recent commits](docs/images/auth-disabled-overview.png)
+![The Portta panel: host resources, what needs attention, the Projects and the environments using the host](docs/images/auth-disabled-overview.png)
 
 ## The problem it solves
 
@@ -23,8 +23,7 @@ Running several projects, branches or agent worktrees side by side on one host b
 - **Parallel environments.** Each Compose project name is a namespace, so a branch or a worktree runs next to the main checkout with its own containers, volumes and URLs.
 - **Private datastores.** Databases and caches stay on each project's private network. You reach one through a temporary loopback bridge or opt-in TLS routing, never through a published port.
 - **Reachable from where you are.** `*.localhost` on a workstation, a domain derived from the host address, your own wildcard domain, Tailscale, or a Cloudflare Tunnel that needs no open port.
-- **The work around the code.** The panel groups environments into Projects, shows each repository's branch, commits and instruction files, reads and writes issues live in GitHub or Linear, and shows logs, resources and activity. The CLI and `portta mcp` expose the same model to scripts and coding agents.
-- **Taskflow.** Git worktrees, persistent agent sessions and multi-agent workflow runs, driven from the panel or the CLI.
+- **Projects.** The panel groups environments into Projects and shows their logs and resources. The CLI exposes the same model to scripts and coding agents.
 
 ## What Portta is not
 
@@ -36,7 +35,7 @@ It is host infrastructure installed once, not a parent Compose project. It does 
 
 Portta is experimental: a proof of concept built for one small team with fairly
 specific needs, published in that state. It is opinionated about how a project
-is laid out, how environments are named and where work is tracked, and it does
+is laid out, how environments are named, and it does
 not try to fit every workflow. Expect rough edges: errors and unexpected
 behaviour can happen in normal use.
 
@@ -57,7 +56,7 @@ evaluation.
 | Node.js and npm | Node 24 or newer |
 | Operating system | macOS or Linux with a POSIX shell |
 
-Optional: Git (repository metadata and Taskflow), [`gh`](https://cli.github.com) signed in (GitHub issues), `sqlite3` (`portta db shell` and backups), [`just`](https://github.com/casey/just) (checkout shortcuts).
+Optional: `sqlite3` (`portta db shell` and backups), [`just`](https://github.com/casey/just) (checkout shortcuts).
 
 | Verified environment | Evidence |
 |---|---|
@@ -100,7 +99,7 @@ portta runtime up /path/to/project        # start it through the gateway
 portta urls                               # the routed hostnames
 ```
 
-Open the panel to see the environment, its services, logs and resources, and to group repositories into a Project. Follow [Configure your first environment](docs/product/getting-started/first-environment.md) and [Add your first project](docs/product/getting-started/first-project.md).
+Open the panel to see the environment, its services, logs and resources, and to group environments into a Project. Follow [Configure your first environment](docs/product/getting-started/first-environment.md) and [Add your first project](docs/product/getting-started/first-project.md).
 
 | Command | What it does |
 |---|---|
@@ -109,9 +108,7 @@ Open the panel to see the environment, its services, logs and resources, and to 
 | `portta access open --project <p> --service <s>` | A temporary loopback bridge to a private service, such as a database. |
 | `portta web up --expose local\|tailscale\|vpn\|public\|domain` | How the panel is reached. `public` and `domain` require accounts. |
 | `portta config set panel.auth required` | Turn on accounts, roles, Project membership and API tokens. |
-| `portta projects list` / `portta issues list` | Projects in the panel, and the issues of a Project. |
-| `portta host serve --detach` | The host daemon for issues and Taskflow. |
-| `portta mcp` | Serve the Portta tools to a coding agent over stdio. |
+| `portta projects list` | Projects in the panel. |
 | `portta backup` / `portta update` | Back up the installation, or pull the pinned images and recreate. |
 
 Every command accepts `--json`. The complete list is in the [CLI reference](docs/product/reference/cli.md).
@@ -128,7 +125,7 @@ Portta publishes its working method as agent skills, so Claude Code, Codex, Open
 npx skills add codions-labs/portta -g
 ```
 
-The skills cover branches and worktrees (`portta-method`), commits, pull requests, issues, resolving an issue end to end, authoring workflows, and adopting a Compose project through the CLI (`portta-adopt-compose`). See the working agreement.
+The skills cover adopting a Compose project through the CLI (`portta-adopt-compose`).
 
 ## Develop Portta
 
@@ -145,8 +142,7 @@ This builds the local images, starts the gateway and the panel with hot reloadin
 - [Documentation index](docs/README.md), also served by the panel at `/docs` and by `portta docs`
 - [Portta architecture](docs/product/concepts/architecture.md), [Networking](docs/product/concepts/networking.md) and [Security](docs/product/concepts/security.md)
 - [Choose remote access](docs/product/guides/remote-development.md): Tailscale, Cloudflare Tunnel or a public host
-- [Configuration reference](docs/product/reference/configuration.md), [CLI reference](docs/product/reference/cli.md) and MCP reference
-- Taskflow
+- [Configuration reference](docs/product/reference/configuration.md) and [CLI reference](docs/product/reference/cli.md)
 - [Architecture decisions](docs/development/adr/README.md)
 - [Changelog](CHANGELOG.md)
 
