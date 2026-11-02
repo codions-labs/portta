@@ -155,6 +155,14 @@ export function documentationState({ mode = 'disabled', profile = 'local' } = {}
     networkTxBytes: 102400,
     ...(GIT[name] ? { git: GIT[name](Math.floor(Date.now() / 1000)) } : {}),
   }))
+  snapshot.dockerStorage = {
+    collectedAt: Math.floor(Date.now() / 1000),
+    projects: [...projects.keys()].map((name, index) => ({
+      composeProject: name,
+      volumeBytes: (4 - index) * 1.5 * GiB,
+      layerBytes: 120 * 1024 * 1024,
+    })),
+  }
   const refresh = () => {
     snapshot.collectedAt = Math.floor(Date.now() / 1000)
     writeFileSync(join(metricsDir, 'current.json'), JSON.stringify(snapshot))

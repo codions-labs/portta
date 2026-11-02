@@ -2,6 +2,8 @@
 // systeminformation and Docker; the panel only reads the JSON. Nothing here
 // opens a path or imports the library — fixtures stay kernel-free.
 
+import type { DockerStorage } from './docker-storage.ts'
+
 export const METRICS_VERSION = 1
 export const COLLECT_INTERVAL_MS = 5_000
 export const HISTORY_INTERVAL_MS = 15_000
@@ -143,6 +145,8 @@ export interface MetricsSnapshot {
   host: HostMetrics
   runtime: { name: RuntimeName } | null
   projects: ProjectResourceMetrics[]
+  /** What each project keeps on the Docker disk; absent from an older collector. */
+  dockerStorage?: DockerStorage | null
 }
 
 export interface MetricsHistoryPoint {

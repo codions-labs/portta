@@ -109,7 +109,7 @@ function UsageCard({ kind, split, points }: { kind: UsageKind; split: UsageSplit
           .map(({ id, value }) => `${t(`part.${id}`)} ${percentLabel(value / split.total)}`)
           .join(', ')}
       />
-      {kind === 'disk' ? <p className="mt-2 text-xs text-muted">{t('diskWhole')}</p> : <Legend split={split} />}
+      {split.projects === null ? <p className="mt-2 text-xs text-muted">{t('diskWhole')}</p> : <Legend split={split} />}
     </ReadingCard>
   )
 }
@@ -129,7 +129,7 @@ export function UsageCards() {
   const points = history.data?.points ?? []
   const memory = usageSplit('memory', host, projects)
   const cpu = usageSplit('cpu', host, projects)
-  const disk = usageSplit('disk', host, projects)
+  const disk = usageSplit('disk', host, projects, metrics.data?.dockerStorage)
   const others = readingsFor(host, history.data, format, to as never).filter((reading) => !SPLIT.has(reading.id))
   return (
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label={t('resources')}>
@@ -165,7 +165,7 @@ export function WhoUsesServer({ kind, onKind }: { kind: UsageKind; onKind: (kind
   const metrics = useMetricsCurrent()
   const host = metrics.data?.host
   if (!host) return null
-  const split = usageSplit(kind, host, metrics.data?.projects ?? [])
+  const split = usageSplit(kind, host, metrics.data?.projects ?? [], metrics.data?.dockerStorage)
   const total = split?.total ?? 1
   const share = split ? projectsOfUsed(split) : null
   const shown = split?.shares.slice(0, SHOWN) ?? []
@@ -231,6 +231,11 @@ export function WhoUsesServer({ kind, onKind }: { kind: UsageKind; onKind: (kind
           <p className="border-t border-line px-5 py-3 text-sm text-muted">
             {share === null ? (
               t('who.diskNote')
+            ) : kind === 'disk' ? (
+              <>
+                <b className="font-semibold text-ink">{t('who.verdict.disk', { percent: percentLabel(share) })}</b>{' '}
+                {t('who.diskScope')}
+              </>
             ) : (
               <>
                 <b className="font-semibold text-ink">{t(`who.verdict.${kind}`, { percent: percentLabel(share) })}</b>{' '}

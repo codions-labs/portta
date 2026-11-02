@@ -32,7 +32,7 @@
       "ofCores": "{{used}} de {{total}} núcleos",
       "freeOf": "{{free}} livres",
       "ofWhole": "de {{total}}",
-      "diskWhole": "O disco inteiro em que o servidor roda. A divisão por projeto ainda não é medida.",
+      "diskWhole": "O disco inteiro em que o servidor roda. O que cada projeto guarda nele aparece quando o coletor informar.",
       "part": {
         "projects": "Projetos",
         "portta": "Portta",
@@ -54,11 +54,12 @@
           "disk": "Os projetos ocupam {{percent}} do disco em uso."
         },
         "rest": "Os outros {{percent}} são do sistema, do Portta e de outros programas.",
-        "diskNote": "Por enquanto o disco aparece inteiro. Dividir por projeto exige medir o armazenamento de cada um, o que ainda não é coletado.",
+        "diskNote": "O disco aparece inteiro até o coletor informar o que cada projeto guarda nele. Atualize-o com portta up.",
         "list": "Projetos, do que mais usa ao que menos usa · parte do servidor",
         "more": "Mais {{count}} projetos",
         "empty": "Nenhum projeto usa este recurso agora.",
-        "unmeasured": "O servidor não informa este recurso."
+        "unmeasured": "O servidor não informa este recurso.",
+        "diskScope": "Conta para o projeto: os volumes e a camada de escrita dos contêineres. Imagens, arquivos nas pastas dos projetos e o resto do disco entram como sistema."
       }
     },
     "clock": {

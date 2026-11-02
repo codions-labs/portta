@@ -962,6 +962,26 @@ export const RuntimeHint = named(
 )
 export type RuntimeHint = z.infer<typeof RuntimeHint>
 
+export const DockerStorageInfo = named(
+  z
+    .object({
+      collectedAt: unixSeconds,
+      projects: z.array(
+        z
+          .object({
+            composeProject: z.string(),
+            volumeBytes: z.number().describe("The project's named volumes"),
+            layerBytes: z.number().describe('The writable layer of its containers'),
+          })
+          .strict(),
+      ),
+    })
+    .strict()
+    .describe('What each Compose project keeps on the Docker disk. Images are shared and are not counted here'),
+  'DockerStorageInfo',
+)
+export type DockerStorageInfo = z.infer<typeof DockerStorageInfo>
+
 export const MetricsCurrent = named(
   z
     .object({
@@ -974,6 +994,7 @@ export const MetricsCurrent = named(
       host: HostMetrics.nullable(),
       runtime: RuntimeHint.nullable(),
       projects: z.array(ProjectResourceMetrics),
+      dockerStorage: DockerStorageInfo.nullable().optional(),
     })
     .strict(),
   'MetricsCurrent',

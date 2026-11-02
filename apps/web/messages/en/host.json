@@ -32,7 +32,7 @@
       "ofCores": "{{used}} of {{total}} cores",
       "freeOf": "{{free}} free",
       "ofWhole": "of {{total}}",
-      "diskWhole": "The whole disk the server runs on. Splitting it by project is not measured yet.",
+      "diskWhole": "The whole disk the server runs on. What each project keeps on it appears once the collector reports it.",
       "part": {
         "projects": "Projects",
         "portta": "Portta",
@@ -54,11 +54,12 @@
           "disk": "Projects use {{percent}} of the disk in use."
         },
         "rest": "The other {{percent}} is the system, Portta and other programs.",
-        "diskNote": "The disk is shown as a whole for now. Splitting it by project needs a storage measurement per project, which is not collected yet.",
+        "diskNote": "The disk is shown as a whole until the collector reports what each project keeps on it. Update it with portta up.",
         "list": "Projects, largest first · share of the server",
         "more": "{{count}} more projects",
         "empty": "No project is using this resource right now.",
-        "unmeasured": "The server does not report this resource."
+        "unmeasured": "The server does not report this resource.",
+        "diskScope": "Counted for a project: its volumes and the writable layer of its containers. Images, files in project folders and everything else on the disk count as the system."
       }
     },
     "clock": {

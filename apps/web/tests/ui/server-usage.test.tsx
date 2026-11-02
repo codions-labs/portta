@@ -41,6 +41,13 @@ beforeEach(() =>
     stale: false,
     collectorActive: true,
     runtime: { name: 'docker-engine' },
+    dockerStorage: {
+      collectedAt: 1,
+      projects: [
+        { composeProject: 'shop', volumeBytes: 30 * GB, layerBytes: 2 * GB },
+        { composeProject: 'portta', volumeBytes: 4 * GB, layerBytes: 0 },
+      ],
+    },
     projects: [project('shop', 3 * GB, 0.3), project('blog', 1 * GB, 0.1), project('portta', 0.5 * GB, 0.05, true)],
     host: {
       hostname: 'vps-01',
@@ -113,10 +120,19 @@ describe('the server page', () => {
     expect(await screen.findByText('Projects use 50% of the CPU in use.')).toBeInTheDocument()
   })
 
-  it('shows the disk whole until storage is measured per project', async () => {
+  it('splits the disk by project once the collector reports what each keeps', async () => {
     renderWithQuery(<HostHealthView />, 'en')
     await userEvent.click(await screen.findByRole('button', { name: 'Disk' }))
-    expect(await screen.findByText(/The disk is shown as a whole for now/)).toBeInTheDocument()
+    expect(await screen.findByText('Projects use 15% of the disk in use.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /shop/ })).toHaveAttribute('href', '/environments/shop')
+  })
+
+  it('shows the disk whole when the collector has not reported it', async () => {
+    const current = await metricsCurrent()
+    metricsCurrent.mockResolvedValue({ ...current, dockerStorage: null })
+    renderWithQuery(<HostHealthView />, 'en')
+    await userEvent.click(await screen.findByRole('button', { name: 'Disk' }))
+    expect(await screen.findByText(/The disk is shown as a whole until/)).toBeInTheDocument()
   })
 
   it('names the time zone the server is set to', async () => {

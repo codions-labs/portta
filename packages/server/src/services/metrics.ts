@@ -48,6 +48,7 @@ export function readCurrentMetrics(config: PanelConfig, now = Date.now()): Metri
     host: parsed.host,
     runtime: parsed.runtime ?? null,
     projects: parsed.projects ?? [],
+    dockerStorage: parsed.dockerStorage ?? null,
   }
 }
 

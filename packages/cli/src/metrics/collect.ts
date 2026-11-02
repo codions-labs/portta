@@ -13,6 +13,7 @@ import {
 } from 'portta-core'
 import { dockerOperatingSystem, inspectContainers, readContainerStats } from '../docker.js'
 import { readGit, workingDirectories } from './git.js'
+import { readDockerStorage } from './storage.js'
 import { loadInstance } from './store.js'
 
 type Settled<T> = PromiseSettledResult<T>
@@ -159,6 +160,8 @@ export async function collectSnapshot(root: string, now = Date.now()): Promise<M
   } catch {
     snapshot.projects = []
   }
+
+  snapshot.dockerStorage = readDockerStorage(now)
 
   return snapshot
 }

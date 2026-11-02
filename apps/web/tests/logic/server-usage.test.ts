@@ -63,7 +63,32 @@ describe('what the server is used for', () => {
     expect(split.free).toBe(20 * GB)
   })
 
-  it('does not split the disk, which is not measured per project yet', () => {
+  it('splits the disk by what each project keeps on it, once that is reported', () => {
+    const storage = {
+      collectedAt: 1,
+      projects: [
+        { composeProject: 'shop', volumeBytes: 30 * GB, layerBytes: 2 * GB },
+        { composeProject: 'blog', volumeBytes: 5 * GB, layerBytes: 1 * GB },
+        { composeProject: 'portta', volumeBytes: 4 * GB, layerBytes: 0 },
+        { composeProject: 'stopped', volumeBytes: 10 * GB, layerBytes: 0 },
+      ],
+    }
+    const split = usageSplit(
+      'disk',
+      host,
+      [project('shop', 1, 1), project('blog', 1, 1), project('portta', 1, 1, true)],
+      storage,
+    )!
+    expect(split.projects).toBe(48 * GB)
+    expect(split.portta).toBe(4 * GB)
+    expect(split.system).toBe(156 * GB)
+    expect(split.free).toBe(304 * GB)
+    // A project that is stopped still keeps its volumes.
+    expect(split.shares.map((share) => share.environment)).toEqual(['shop', 'stopped', 'blog'])
+    expect(projectsOfUsed(split)).toBeCloseTo(48 / 208)
+  })
+
+  it('does not split the disk before the collector reports it', () => {
     const split = usageSplit('disk', host, [project('shop', 1, 1)])!
     expect(split.used).toBe(208 * GB)
     expect(split.free).toBe(304 * GB)

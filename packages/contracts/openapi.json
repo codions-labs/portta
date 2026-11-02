@@ -5453,6 +5453,46 @@
         ],
         "additionalProperties": false
       },
+      "DockerStorageInfo": {
+        "type": "object",
+        "properties": {
+          "collectedAt": {
+            "type": "number",
+            "description": "Unix timestamp in seconds"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "composeProject": {
+                  "type": "string"
+                },
+                "volumeBytes": {
+                  "type": "number",
+                  "description": "The project's named volumes"
+                },
+                "layerBytes": {
+                  "type": "number",
+                  "description": "The writable layer of its containers"
+                }
+              },
+              "required": [
+                "composeProject",
+                "volumeBytes",
+                "layerBytes"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "collectedAt",
+          "projects"
+        ],
+        "additionalProperties": false,
+        "description": "What each Compose project keeps on the Docker disk. Images are shared and are not counted here"
+      },
       "MetricsCurrent": {
         "type": "object",
         "properties": {
@@ -5517,6 +5557,16 @@
             "items": {
               "$ref": "#/components/schemas/ProjectResourceMetrics"
             }
+          },
+          "dockerStorage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DockerStorageInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
