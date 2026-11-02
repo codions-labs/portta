@@ -58,11 +58,7 @@ await build({
   banner: {
     js: '#!/usr/bin/env node\nimport { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);',
   },
-  // Chunk names carry no directory, so every module still sees `dist/` as
-  // `import.meta.dirname`, which is how the bundle locates its assets. The
-  // assertion below keeps that true.
-  splitting: true,
-  chunkNames: '[name]-[hash]',
+  splitting: false,
   // Names survive minification so a stack trace from an installed CLI still
   // points at something, and lines stay short enough that the frame Node prints
   // above it is readable rather than 80 KB of one line. Together they cost
