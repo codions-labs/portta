@@ -22,7 +22,7 @@ active.
 Then it asks a single confirmation naming that domain:
 
 ```
-expose opted-in HTTP services on *.dev.example.com? [y/N]
+serve this host's HTTP services on *.dev.example.com over the internet? Each site stays closed until you decide who may open it [y/N]
 ```
 
 On yes it sets `PUBLIC_ENABLED=true` and `PORTTA_PROFILE=remote-public` in

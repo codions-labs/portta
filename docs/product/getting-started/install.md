@@ -27,6 +27,10 @@ once without installing the command globally:
 npx @codions/portta setup
 ```
 
+`npx` leaves no `portta` command behind. Everything after setup (`portta up`,
+`portta adopt`, `portta doctor`) needs the command, so install it too with
+`npm install -g @codions/portta`; it finds the installation `npx` made.
+
 `latest` is the release channel, so no tag needs naming. Setup checks Node,
 Docker and Compose, asks one confirmation naming the installation directory
 (`~/portta` by default), and then:
@@ -92,6 +96,11 @@ The directory contains the current release runtime and the host's state:
 `.env`, `config/` and `state/` are preserved on repeated setup; the runtime
 assets are updated from the npm package. Setup refuses a non-empty directory
 that is not a Portta installation. See [Update Portta](../guides/update.md).
+
+## Next
+
+- A project on this machine: [Configure your first environment](first-environment.md).
+- A server on the internet, with a domain: [Deploy Portta on a server](../guides/deploy.md).
 
 ## Check the gateway
 

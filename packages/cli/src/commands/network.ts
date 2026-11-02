@@ -99,7 +99,10 @@ export async function publicEnable(command: Command): Promise<void> {
   }
   if (context.config.tcpEnabled)
     throw new RefusedError('public access cannot be enabled while TCP entrypoints are active')
-  await confirm(`expose opted-in HTTP services on *.${publicDomain}?`, global.yes === true)
+  await confirm(
+    `serve this host's HTTP services on *.${publicDomain} over the internet? Each site stays closed until you decide who may open it`,
+    global.yes === true,
+  )
   await writeSetting('PUBLIC_ENABLED', 'true', command)
   if (!context.config.publicDomain) await writeSetting('PUBLIC_DOMAIN', publicDomain, command)
   await writeSetting('PORTTA_PROFILE', 'remote-public', command)

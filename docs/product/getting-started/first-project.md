@@ -13,7 +13,7 @@ sign in with an account allowed to create Projects.
 1. Open **Projects**. Existing Projects appear as cards; **Table** switches to a
    table.
 
-   ![Authentication disabled: the Projects page with Demo Shop, Demo Site and the Docker Compose fixture as cards, and the New project button](../../images/auth-disabled-projects.png)
+   ![Authentication disabled: the Projects page with Demo A, Demo Monorepo and Demo Shop as cards, and the New project button](../../images/auth-disabled-projects.png)
 
    **Authentication disabled**: the Projects page.
 

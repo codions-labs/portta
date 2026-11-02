@@ -52,7 +52,7 @@ npm install -g @codions/portta
 portta setup
 ```
 
-`setup` checks Node, Docker and Compose, asks for one confirmation, installs the runtime into `~/portta`, pulls the pinned images and starts the gateway. `portta setup --dry-run` reports what it would do. See [Install Portta](docs/product/getting-started/install.md).
+`setup` checks Node, Docker and Compose, asks for one confirmation, installs the runtime into `~/portta`, pulls the pinned images and starts the gateway. `portta setup --dry-run` reports what it would do. To run the installer once without installing the command, use `npx @codions/portta setup`; for daily use install the command globally. See [Install Portta](docs/product/getting-started/install.md).
 
 ## Use it in three commands
 
@@ -66,7 +66,15 @@ On a public host, `adopt` stops until you decide for each routed service: `--pro
 
 ## A public host
 
-Point a wildcard DNS record at the server, give Portta a DNS token restricted to that zone, and every project is reachable at `project-service.<domain>` over HTTPS. Read [Run a public host](docs/product/guides/public-host.md), then follow the [deploy guide](docs/product/guides/deploy.md).
+For a server on the internet, with every project at `project-service.example.com`:
+
+1. Create two DNS-only records pointing at the server: `A example.com` and `A *.example.com`. The wildcard does not cover the domain itself, which is where the panel lives.
+2. Create a Cloudflare API token with **Zone, DNS, Edit** on that zone, used to issue one wildcard certificate.
+3. On the server, `npm install -g @codions/portta && portta setup`.
+4. Put the public profile, the domain and the token in `~/portta/.env`, then `portta up remote-public`.
+5. `portta dns check && portta doctor`, then open `https://example.com` and create the owner.
+
+The [deploy guide](docs/product/guides/deploy.md) has each step with the exact records and values, and [Run a public host](docs/product/guides/public-host.md) explains the per-site decisions.
 
 ## Agents
 

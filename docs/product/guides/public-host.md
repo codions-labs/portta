@@ -14,7 +14,10 @@ use the [deploy guide](deploy.md) for a first installation step by step.
   the server. Use **DNS only** (not proxied) at Cloudflare or any provider.
 - A DNS API token restricted to that zone, so Portta can answer the ACME DNS-01
   challenge for a wildcard certificate. It is stored on the host, never in a
-  repository.
+  repository. Cloudflare is the supported provider; for another one see
+  [Configure DNS and TLS](dns-and-tls.md).
+
+The [deploy guide](deploy.md) walks through the DNS records and the token.
 
 ## Configuration
 
@@ -30,6 +33,8 @@ TLS_ENABLED=true
 TLS_MODE=acme
 ACME_EMAIL=you@example.com
 ACME_DNS_PROVIDER=cloudflare
+CF_DNS_API_TOKEN=<the token, never committed>
+PORTTA_WEB=true
 PORTTA_WEB_EXPOSE=domain
 PORTTA_PANEL_ADVERTISED_HOST=example.com
 PORTTA_AUTH_MODE=required
