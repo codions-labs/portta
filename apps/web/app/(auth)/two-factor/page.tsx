@@ -1,8 +1,9 @@
 // The second factor, reached only after a password was accepted.
 
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { serverTranslation } from '@/lib/i18n/server'
-import { AuthCard } from '../auth-card'
+import { AuthCard, AuthSingle } from '../auth-card'
 import { authStatus } from '../status'
 import { TwoFactorForm } from './two-factor-form'
 
@@ -14,8 +15,19 @@ export default async function TwoFactorPage() {
 
   const { t } = await serverTranslation('auth')
   return (
-    <AuthCard title={t('twoFactorTitle')} description={t('twoFactorDescription')}>
-      <TwoFactorForm />
-    </AuthCard>
+    <AuthSingle
+      footer={
+        <Link
+          href="/sign-in"
+          className="text-center text-sm font-medium text-link underline-offset-2 hover:underline focus-ring"
+        >
+          {t('otherAccount')}
+        </Link>
+      }
+    >
+      <AuthCard title={t('twoFactorTitle')} description={t('twoFactorDescription')}>
+        <TwoFactorForm />
+      </AuthCard>
+    </AuthSingle>
   )
 }

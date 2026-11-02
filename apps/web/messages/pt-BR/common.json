@@ -221,5 +221,7 @@
       "impact": "Quem tiver o endereço abre o site, sem login. Vale na próxima requisição.",
       "confirm": "Abrir para todos"
     }
-  }
+  },
+  "showPassword": "Mostrar senha",
+  "hidePassword": "Ocultar senha"
 }

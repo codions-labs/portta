@@ -1,17 +1,57 @@
 {
   "protectedAccess": "Acesso protegido",
-  "heading": "Uma porta privada para seu ambiente.",
-  "explanation": "Este serviço é protegido na borda do Portta. Entre por aqui; a aplicação atrás dela nunca recebe sua senha.",
-  "proxyBoundary": "Credencial verificada antes do serviço protegido",
-  "destination": "Destino",
+  "heading": "Este projeto está em um ambiente privado.",
+  "destination": "Você está acessando",
   "project": "Projeto",
   "service": "Serviço",
   "username": "Usuário",
   "password": "Senha",
   "showPassword": "Mostrar senha",
   "hidePassword": "Ocultar senha",
-  "signIn": "Entrar",
+  "signIn": "Entrar no projeto",
   "signingIn": "Verificando acesso…",
-  "invalid": "Usuário ou senha inválidos.",
-  "protectedBy": "Protegido pelo Portta"
+  "invalid": "Usuário ou senha incorretos.",
+  "protectedBy": "Protegido pelo Portta",
+  "explanation": "Você está abrindo uma versão de trabalho, compartilhada só com quem foi convidado. Por isso, pedimos uma confirmação antes de mostrar o conteúdo.",
+  "whyLabel": "Por que esta página aparece",
+  "reasons": {
+    "wip": {
+      "title": "É um trabalho em andamento",
+      "help": "O conteúdo pode mudar, ficar fora do ar por alguns minutos ou usar dados de teste."
+    },
+    "guests": {
+      "title": "O acesso é só para convidados",
+      "help": "Quem cuida do projeto definiu um usuário e uma senha para que ele não fique aberto a qualquer pessoa na internet."
+    },
+    "private": {
+      "title": "Sua senha não chega ao projeto",
+      "help": "O Portta confere o acesso antes de abrir o projeto. A aplicação nunca recebe sua senha."
+    }
+  },
+  "technology": "Tecnologia",
+  "formHint": "Use o usuário e a senha que você recebeu.",
+  "locked_one": "Muitas tentativas incorretas. Por segurança, tente de novo em {{count}} minuto.",
+  "locked_other": "Muitas tentativas incorretas. Por segurança, tente de novo em {{count}} minutos.",
+  "noAccess": "Não recebeu o acesso? Peça à pessoa ou à equipe que enviou este endereço.",
+  "unavailableKicker": "Acesso indisponível",
+  "unavailableHeading": "Este acesso não está mais disponível.",
+  "unavailableLead": "O endereço que você abriu não tem mais uma proteção ativa. Se era um link temporário, o prazo combinado pode ter acabado.",
+  "unavailableWhyLabel": "O que isso significa",
+  "unavailableReasons": {
+    "expected": {
+      "title": "Isso pode ser esperado",
+      "help": "Links temporários são criados com prazo, para que o acesso não fique aberto para sempre."
+    },
+    "untouched": {
+      "title": "O projeto não foi afetado",
+      "help": "Só este endereço parou de funcionar. Nada mudou no projeto."
+    },
+    "comeBack": {
+      "title": "Como voltar a acessar",
+      "help": "Peça um novo link à pessoa ou à equipe que compartilhou este endereço com você."
+    }
+  },
+  "unavailableCardTitle": "Sem acesso por aqui",
+  "unavailableCard": "O prazo deste link pode ter acabado, ou o acesso foi alterado. Quem enviou pode criar outro em poucos segundos.",
+  "unavailableHelp": "Não sabe quem enviou? Procure a mensagem em que recebeu este endereço."
 }

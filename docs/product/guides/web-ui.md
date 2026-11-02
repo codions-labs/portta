@@ -161,6 +161,19 @@ and sign-in attempts from one address are rate-limited:
 
 **Authentication enabled**: a refused sign-in.
 
+The sign-in and the creation of the owner say what the panel is beside the form, and
+the password can be shown while typing it; the owner's password tells you how far it is
+from the ten characters it needs. The second factor is one card: six digits, or a backup
+code, or another account.
+
+A site protected by a password has its own login page, since the people who open it are
+clients and reviewers who have never heard of Portta. It says why it appears (a work in
+progress, shared with guests only, the application never receives the password), names
+the service, project and technology, and says how long to wait after too many wrong
+tries. An address nobody protects any more, such as a temporary link that ended, answers
+with a page that explains what that means and says nothing about whether the address ever
+existed.
+
 Once signed in, the panel is the same panel; the account menu at the foot of the
 sidebar names who you are, and Settings gains Users, API tokens, Security and
 Audit.

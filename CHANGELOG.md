@@ -16,6 +16,9 @@ All notable changes to Portta are documented here. The format follows
 
 - The panel has a new look: a slate canvas, white cards, navy for the main action
   and blue for links, in Manrope, Inter and IBM Plex Mono, with larger controls.
+- The panel's sign-in, owner creation and second-factor pages, and the login page of a
+  protected site, say what they are for. The site's explains why it appears, tells how
+  long to wait when locked, and answers an ended link with a page of its own.
 - Adding a project has a page of its own with the four ways in, from a folder, from what
   already runs, an empty project or the terminal.
 - A host with no project yet opens on where to start and what is left to prepare.

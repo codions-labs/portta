@@ -304,6 +304,57 @@ describe('ForwardAuth app', () => {
     expect(logs[0]?.address).toBe('203.0.113.4')
   })
 
+  function contextOf(body: string): Record<string, unknown> {
+    const match = /<script id="portta-auth-context" type="application\/json">(.*?)<\/script>/s.exec(body)
+    return JSON.parse(match?.[1] ?? '{}') as Record<string, unknown>
+  }
+
+  it('tells the page how long the lock lasts, once too many were wrong', async () => {
+    const limiter = new LoginLimiter({ wait: async () => undefined })
+    const { app } = setup({ limiter })
+    const attempt = () =>
+      app.request('/__portta/auth/login', {
+        method: 'POST',
+        headers: {
+          ...forwarded,
+          origin: 'https://demo.example.com',
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: 'user=reviewer&password=wrong&next=%2F',
+      })
+    let last = await attempt()
+    for (let count = 1; count < 5; count += 1) last = await attempt()
+    expect(last.status).toBe(429)
+    expect(contextOf(await last.text())).toMatchObject({ state: 'login', error: true, lockedMinutes: 15 })
+    expect(contextOf(await (await attempt()).text()).lockedMinutes).toBe(15)
+  })
+
+  it('does not tell a wrong password it was locked', async () => {
+    const { app } = setup({ limiter: new LoginLimiter({ wait: async () => undefined }) })
+    const response = await app.request('/__portta/auth/login', {
+      method: 'POST',
+      headers: {
+        ...forwarded,
+        origin: 'https://demo.example.com',
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body: 'user=reviewer&password=wrong&next=%2F',
+    })
+    expect(response.status).toBe(401)
+    expect(contextOf(await response.text())).not.toHaveProperty('lockedMinutes')
+  })
+
+  it('answers an address nobody protects with a page that explains, and says nothing about it', async () => {
+    const { app } = setup()
+    const response = await app.request('/__portta/auth/login', {
+      headers: { ...forwarded, 'x-forwarded-host': 'ended.example.com', 'accept-language': 'pt-BR' },
+    })
+    expect(response.status).toBe(404)
+    const context = contextOf(await response.text())
+    expect(context).toMatchObject({ state: 'unavailable', locale: 'pt-BR' })
+    expect(context).not.toHaveProperty('protection')
+  })
+
   it('rejects cross-origin login and clears logout cookies', async () => {
     const { app } = setup()
     const refused = await app.request('/__portta/auth/login', {

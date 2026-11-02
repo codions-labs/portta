@@ -221,5 +221,7 @@
       "impact": "Whoever has the address opens the site, with no login. It applies on the next request.",
       "confirm": "Open to everybody"
     }
-  }
+  },
+  "showPassword": "Show password",
+  "hidePassword": "Hide password"
 }
