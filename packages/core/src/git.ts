@@ -105,7 +105,7 @@ export function parseGitHead(text: string): GitState['head'] {
 export function repositoryRunsCommands(configList: string): boolean {
   const dangerous = [
     /^filter\./,
-    /^core\.(fsmonitor|sshcommand|pager|editor|askpass|gitproxy|hookspath|attributesfile|alternaterefscommand)$/,
+    /^core\.(fsmonitor|sshcommand|pager|editor|askpass|gitproxy|hookspath|attributesfile|alternaterefscommand|worktree)$/,
     /^gpg\./,
     /^diff\..*\.(textconv|command)$/,
     /^credential\./,
@@ -118,10 +118,15 @@ export function repositoryRunsCommands(configList: string): boolean {
     /^submodule\..*\.(update|fetchrecursesubmodules)$/,
   ]
   for (const line of configList.split('\n')) {
-    const [scope, entry] = line.split('\t')
+    // With `--show-scope` a line is `scope<TAB>key=value`; from `--file` it is `key=value` alone,
+    // and everything in that one file is the repository's.
+    const tab = line.indexOf('\t')
+    const scope = tab === -1 ? 'local' : line.slice(0, tab)
     if (scope !== 'local' && scope !== 'worktree') continue
-    const key = (entry ?? '').split('=')[0]?.toLowerCase() ?? ''
+    const key = (tab === -1 ? line : line.slice(tab + 1)).split('=')[0]?.toLowerCase() ?? ''
     if (dangerous.some((pattern) => pattern.test(key))) return true
+    // Every repository says `core.bare=false`; a bare one has no work tree to read.
+    if (key === 'core.bare' && line.endsWith('=true')) return true
   }
   return false
 }

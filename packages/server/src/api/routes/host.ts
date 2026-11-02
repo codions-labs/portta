@@ -1,9 +1,11 @@
 import { Hono } from 'hono'
+import { principalOf } from 'portta-auth-core/hono'
 import { EnvironmentReport, MetricsCurrent, MetricsHistory, SecurityReport } from 'portta-contracts'
 import type { AppDeps } from '../../deps.ts'
+import { adoptions, visible } from '../../services/access-control.ts'
 import { readEnvironmentReport } from '../../services/environment.ts'
 import { readHostSecurityReport } from '../../services/host-security.ts'
-import { historyWindowSeconds, readCurrentMetrics, readMetricsHistory } from '../../services/metrics.ts'
+import { historyWindowSeconds, metricsFor, readCurrentMetrics, readMetricsHistory } from '../../services/metrics.ts'
 import { documentRoute } from '../openapi.ts'
 
 export function hostRoutes(deps: AppDeps): Hono {
@@ -51,7 +53,24 @@ export function hostRoutes(deps: AppDeps): Hono {
         'Reads state/metrics/current.json written by the CLI collector. The panel never collects. A missing file is an empty object, never an error.',
       errors: [500],
     }),
-    (c) => c.json(readCurrentMetrics(deps.config)),
+    async (c) => {
+      const metrics = readCurrentMetrics(deps.config)
+      const principal = principalOf(c)
+      if (principal.scope === 'all') return c.json(metrics)
+      const owners = await adoptions(deps.db)
+      const seen = new Set(
+        visible(principal, metrics.projects, (project) => owners.get(project.composeProject) ?? null).map(
+          (project) => project.composeProject,
+        ),
+      )
+      // A stopped project has storage and no running containers, so it is named by its own owner.
+      for (const entry of metrics.dockerStorage?.projects ?? []) {
+        if (visible(principal, [entry], (row) => owners.get(row.composeProject) ?? null).length > 0) {
+          seen.add(entry.composeProject)
+        }
+      }
+      return c.json(metricsFor(metrics, (composeProject) => seen.has(composeProject)))
+    },
   )
 
   app.get(

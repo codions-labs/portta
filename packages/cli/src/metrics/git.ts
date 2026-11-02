@@ -8,7 +8,18 @@
 // short lead: no optional locks (it must not write the index), no prompts, no
 // fsmonitor (a repository can name a command there) and no hooks path.
 
-import { realpathSync, statSync } from 'node:fs'
+import {
+  copyFileSync,
+  lstatSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
 import { isAbsolute, join, relative, sep } from 'node:path'
 import type { GitState } from 'portta-contracts'
 import { composeProjectOf, GIT_FILE_LIMIT, parseGitHead, parseGitStatus, repositoryRunsCommands } from 'portta-core'
@@ -20,7 +31,7 @@ const MTIME_FILES = 50
 
 const cache = new Map<string, { at: number; state: GitState | null }>()
 
-async function git(directory: string, args: readonly string[]): Promise<string | null> {
+async function git(view: View, args: readonly string[]): Promise<string | null> {
   const result = await runProcess(
     'git',
     [
@@ -34,8 +45,10 @@ async function git(directory: string, args: readonly string[]): Promise<string |
       'log.showSignature=false',
       '-c',
       'protocol.allow=never',
+      `--git-dir=${view.gitDir}`,
+      `--work-tree=${view.directory}`,
       '-C',
-      directory,
+      view.directory,
       ...args,
     ],
     {
@@ -73,18 +86,28 @@ function newestMtime(directory: string, files: GitState['files']): number | null
  * The label is written by whoever started the container, so it is not taken at its word: a
  * project whose containers disagree has none, a path inside Portta's own installation has
  * none, and one this user does not own has none, which is also git's own rule for a repository.
+ * Compose also records the files it read, so the folder must hold them: a label that names some
+ * other folder without a compose file in it was not written by Compose for that project.
+ * Where the collector cannot tell who it runs as, nothing is trusted.
  */
 export function workingDirectories(
   identities: ReadonlyArray<{ labels: Record<string, string> }>,
   root: string,
-  uid: number | undefined = process.getuid?.(),
+  uid: number | null = process.getuid?.() ?? null,
 ): Map<string, string> {
+  if (uid === null) return new Map()
   const claimed = new Map<string, Set<string>>()
+  const files = new Map<string, Set<string>>()
   for (const { labels } of identities) {
     const project = composeProjectOf(labels)
     const directory = labels['com.docker.compose.project.working_dir']
     if (!project || !directory) continue
     claimed.set(project, (claimed.get(project) ?? new Set()).add(directory))
+    const named = files.get(project) ?? new Set()
+    for (const file of (labels['com.docker.compose.project.config_files'] ?? '').split(',')) {
+      if (file !== '') named.add(file)
+    }
+    files.set(project, named)
   }
   const trusted = new Map<string, string>()
   for (const [project, directories] of claimed) {
@@ -94,13 +117,25 @@ export function workingDirectories(
       const real = realpathSync(only)
       const inside = relative(realpathSync(root), real)
       if (inside === '' || (!inside.startsWith('..') && !inside.startsWith(sep))) continue
-      if (uid !== undefined && statSync(real).uid !== uid) continue
+      if (statSync(real).uid !== uid) continue
+      if (!holdsComposeFiles(real, files.get(project))) continue
       trusted.set(project, real)
     } catch {
       // Not there on this host: nothing to read.
     }
   }
   return trusted
+}
+
+/** Every file the project's containers say Compose read is there, and inside the folder. */
+function holdsComposeFiles(directory: string, named: ReadonlySet<string> | undefined): boolean {
+  if (!named || named.size === 0) return false
+  for (const file of named) {
+    if (!isAbsolute(file)) return false
+    const inside = relative(directory, realpathSync(file))
+    if (inside === '' || inside.startsWith('..') || isAbsolute(inside)) return false
+  }
+  return true
 }
 
 /** Null when this is not a work tree git can read, or git is not there. */
@@ -114,23 +149,71 @@ export async function readGit(directory: string, now = Date.now()): Promise<GitS
   return state
 }
 
+interface View {
+  /** The folder the work tree is. */
+  directory: string
+  /** A private repository directory: the real one's data, and a copy of its configuration that was checked. */
+  gitDir: string
+}
+
+const CONFIG_LIMIT = 64 * 1024
+
+/**
+ * A directory git can read the repository through without trusting the one in the project.
+ *
+ * Checking the project's `.git/config` and then letting git read it again leaves a gap in which
+ * a container that can write there changes it, so git is pointed at a copy made once and
+ * checked, and the rest (HEAD, index, refs, objects) is linked in. Null for anything but a plain
+ * `.git` folder of this user's: a linked work tree or a submodule has its repository elsewhere.
+ */
+function privateView(directory: string, uid: number | undefined): View | null {
+  const real = join(directory, '.git')
+  const info = lstatSync(real, { throwIfNoEntry: false })
+  if (!info?.isDirectory() || (uid !== undefined && info.uid !== uid)) return null
+  const config = readFileSync(join(real, 'config'))
+  if (config.length > CONFIG_LIMIT) return null
+  const gitDir = mkdtempSync(join(tmpdir(), 'portta-git-'))
+  try {
+    writeFileSync(join(gitDir, 'config'), config, { mode: 0o600 })
+    // HEAD is copied, not linked: git reads a linked HEAD as an old-style symbolic ref.
+    copyFileSync(join(real, 'HEAD'), join(gitDir, 'HEAD'))
+    for (const name of ['index', 'refs', 'objects', 'packed-refs', 'shallow']) {
+      if (lstatSync(join(real, name), { throwIfNoEntry: false })) symlinkSync(join(real, name), join(gitDir, name))
+    }
+    return { directory, gitDir }
+  } catch {
+    rmSync(gitDir, { recursive: true, force: true })
+    return null
+  }
+}
+
 async function read(directory: string, collectedAt: number): Promise<GitState | null> {
-  // Before anything that could run what the repository names: its own settings, not the owner's.
-  const config = await git(directory, ['config', '--list', '--show-scope'])
+  let view: View | null = null
+  try {
+    view = privateView(directory, process.getuid?.())
+  } catch {
+    return null
+  }
+  if (!view) return null
+  try {
+    return await readThrough(view, collectedAt)
+  } finally {
+    rmSync(view.gitDir, { recursive: true, force: true })
+  }
+}
+
+async function readThrough(view: View, collectedAt: number): Promise<GitState | null> {
+  const { directory } = view
+  // Before anything that could run what the repository names: the copy git will read, not the owner's.
+  const config = await git(view, ['config', '--file', join(view.gitDir, 'config'), '--list'])
   if (config === null || repositoryRunsCommands(config)) return null
-  const status = await git(directory, [
-    'status',
-    '--porcelain=v2',
-    '--branch',
-    '--no-renames',
-    '--ignore-submodules=all',
-  ])
+  const status = await git(view, ['status', '--porcelain=v2', '--branch', '--no-renames', '--ignore-submodules=all'])
   if (status === null) return null
   const parsed = parseGitStatus(status)
   const log =
     parsed.oid === null
       ? null
-      : await git(directory, ['log', '-1', '--no-show-signature', '--format=%h%x1f%s%x1f%an%x1f%ct'])
+      : await git(view, ['log', '-1', '--no-show-signature', '--format=%h%x1f%s%x1f%an%x1f%ct'])
   const head = log === null ? null : parseGitHead(log)
   const changedAt = newestMtime(directory, parsed.files)
   const times = [head?.at ?? null, changedAt].filter((value): value is number => value !== null)

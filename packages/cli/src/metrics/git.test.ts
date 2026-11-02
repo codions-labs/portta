@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -90,6 +90,24 @@ describe('a repository that names a command is not read', () => {
     expect(ran).toBe(false)
   })
 
+  it('a work tree somewhere else than the folder it was asked about', async () => {
+    const { state } = await refused((root) => run(root, 'config', 'core.worktree', '/'))
+    expect(state).toBeNull()
+  })
+
+  it('a bare repository', async () => {
+    const { state } = await refused((root) => run(root, 'config', 'core.bare', 'true'))
+    expect(state).toBeNull()
+  })
+
+  it('a linked work tree, whose repository lives in another folder', async () => {
+    const root = repository()
+    const linked = mkdtempSync(join(tmpdir(), 'portta-linked-'))
+    rmSync(linked, { recursive: true })
+    run(root, 'worktree', 'add', linked)
+    expect(await readGit(linked, Date.now() + 1)).toBeNull()
+  })
+
   it('an included file', async () => {
     const { state } = await refused((root) => run(root, 'config', 'include.path', '../elsewhere'))
     expect(state).toBeNull()
@@ -99,9 +117,14 @@ describe('a repository that names a command is not read', () => {
 describe('which folder a project was started from', () => {
   const root = mkdtempSync(join(tmpdir(), 'portta-root-'))
   const mine = mkdtempSync(join(tmpdir(), 'portta-mine-'))
-  const labels = (project: string, directory: string) => ({
-    labels: { 'com.docker.compose.project': project, 'com.docker.compose.project.working_dir': directory },
+  const labels = (project: string, directory: string, files = [join(directory, 'compose.yaml')]) => ({
+    labels: {
+      'com.docker.compose.project': project,
+      'com.docker.compose.project.working_dir': directory,
+      'com.docker.compose.project.config_files': files.join(','),
+    },
   })
+  writeFileSync(join(mine, 'compose.yaml'), 'services: {}\n')
 
   it('takes the folder when every container of the project agrees', () => {
     expect(workingDirectories([labels('a', mine), labels('a', mine)], root).get('a')).toBeTruthy()
@@ -120,6 +143,18 @@ describe('which folder a project was started from', () => {
     symlinkSync(inside, link)
     expect(workingDirectories([labels('c', inside)], root).has('c')).toBe(false)
     expect(workingDirectories([labels('d', link)], root).has('d')).toBe(false)
+  })
+
+  it('takes none when Compose did not read a file in that folder', () => {
+    const elsewhere = mkdtempSync(join(tmpdir(), 'portta-elsewhere-'))
+    writeFileSync(join(elsewhere, 'compose.yaml'), 'services: {}\n')
+    expect(workingDirectories([labels('f', mine, [join(elsewhere, 'compose.yaml')])], root).has('f')).toBe(false)
+    expect(workingDirectories([labels('g', mine, [join(mine, 'missing.yaml')])], root).has('g')).toBe(false)
+    expect(workingDirectories([labels('h', mine, [])], root).has('h')).toBe(false)
+  })
+
+  it('takes none where the collector cannot tell who it runs as', () => {
+    expect(workingDirectories([labels('i', mine)], root, null).size).toBe(0)
   })
 
   it('takes none for a folder the collector does not own', () => {

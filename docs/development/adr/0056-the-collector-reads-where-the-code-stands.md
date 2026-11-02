@@ -40,14 +40,22 @@ What is never done:
   can carry, and a repository's own configuration can name commands that git runs even
   to read: a clean filter during `status`, `core.fsmonitor`, a signature program during
   `log`, a remote's helper. So the repository's local settings are read first, never the
-  owner's, and one that sets any such key is **not read at all**. On top of that,
+  owner's, and one that sets any such key is **not read at all**. The settings checked are
+  the ones git then uses: the collector copies the repository's configuration once, checks
+  the copy, and points git at a private directory that holds that copy and links to the
+  rest, so a container that edits the file in between changes nothing. A repository that
+  names another work tree (`core.worktree`), a bare one, and a linked work tree or
+  submodule, whose repository lives elsewhere, are not read. On top of that,
   `core.fsmonitor` and the hooks path are overridden, signatures and submodules are
   ignored, `protocol.allow` is `never`, lazy fetching is off, bare repositories need to be
   explicit, prompts are off, and each call times out.
 - **Not any directory.** The label is not taken at its word. A project whose containers
   disagree about it has no folder, a path inside Portta's own installation has none (also
   through a link), and neither has one the collector's user does not own, which is also
-  git's own rule for a repository. What is left is metadata of repositories that user
+  git's own rule for a repository, or whose user the collector cannot tell. The folder must
+  also hold the Compose files the containers say Compose read
+  (`com.docker.compose.project.config_files`), so a label that names some other folder
+  without one is not followed. What is left is metadata of repositories that user
   already owns, shown to people who may read the host's metrics.
 - **Nothing large.** Every string a repository supplies is cut to a fixed size, so a
   repository cannot make the snapshot large.
@@ -61,6 +69,11 @@ reading and the screen shows nothing, rather than an error.
 
 **The README says what is true.** Portta does not manage git; it reads the state of the
 repository of a project it runs, on the host, without contacting any remote.
+
+**Who sees what.** `/api/metrics/current` is the host's, but what is per project, its
+use, its disk and its code, is returned only for the projects a person's scope sees,
+with Portta's own. The host's totals stay whole, and what they do not see counts as the
+system in them.
 
 **The cost is bounded.** Each directory is read at most every thirty seconds, however
 often the collector runs, and a slow repository costs five seconds and not the loop.
