@@ -10,6 +10,7 @@ import {
   patchEnvFile,
   porttaImages,
   prepareEnvFile,
+  protectionForHost,
   readProtectionStore,
   renderAliases,
   renderAuthDynamic,
@@ -56,8 +57,17 @@ export function syncForwardAuth(root: string, profile: string): void {
   // An alias the panel wrote on a private host must not become an open door when
   // the host goes public: its router is rendered again for the profile now in use.
   const aliasFile = join(dynamic, 'portta-aliases.yaml')
-  if (existsSync(aliasFile))
-    writeEnvFile(aliasFile, renderAliases(parseAliases(readFileSync(aliasFile, 'utf8')), profile === 'remote-public'))
+  if (existsSync(aliasFile)) {
+    const publicHost = profile === 'remote-public'
+    // An alias whose hostname carries a decision made for another service would
+    // inherit it, so on a public host it is left out until the conflict is gone.
+    const aliases = parseAliases(readFileSync(aliasFile, 'utf8')).filter((alias) => {
+      if (!publicHost) return true
+      const decided = protectionForHost(store, alias.host)
+      return !decided || (decided.service === alias.service && decided.project === alias.project)
+    })
+    writeEnvFile(aliasFile, renderAliases(aliases, publicHost))
+  }
 }
 
 /**

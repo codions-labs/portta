@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { renderAliases } from 'portta-core'
+import { renderAliases, setProtection, writeProtectionStore } from 'portta-core'
 import { describe, expect, it } from 'vitest'
 import { syncForwardAuth } from './web.js'
 
@@ -27,5 +27,32 @@ describe('syncForwardAuth', () => {
 
     syncForwardAuth(root, 'remote-private')
     expect(readFileSync(file, 'utf8')).not.toContain('middlewares')
+  })
+
+  it('leaves out an alias whose hostname carries a decision made for another service', () => {
+    const root = mkdtempSync(join(tmpdir(), 'portta-sync-'))
+    const dynamic = join(root, 'config/traefik/dynamic')
+    mkdirSync(dynamic, { recursive: true })
+    mkdirSync(join(root, 'state/auth'), { recursive: true })
+    const file = join(dynamic, 'portta-aliases.yaml')
+    writeFileSync(file, renderAliases([ALIAS]))
+    writeProtectionStore(
+      join(root, 'state/auth/protections.json'),
+      setProtection(
+        { version: 1, protections: [] },
+        {
+          scope: 'host:store.example.test',
+          host: 'store.example.test',
+          entryPoints: ['websecure'],
+          mode: 'public',
+          label: 'store',
+          project: 'other',
+          service: 'web',
+        },
+      ),
+    )
+
+    syncForwardAuth(root, 'remote-public')
+    expect(readFileSync(file, 'utf8')).not.toContain('store.example.test`')
   })
 })

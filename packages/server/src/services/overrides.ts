@@ -232,16 +232,15 @@ export function planAlias(
     )
   }
 
-  // On a public host a decision already recorded for this hostname belongs to
-  // whoever made it: an alias must not inherit it for another service.
-  if (config.profile === 'remote-public') {
-    const decided = protectionForHost(readProtectionStore(config.authStore), host)
-    if (decided && (decided.service !== request.service || decided.project !== request.project)) {
-      throw new OverrideRefused(
-        `${host} already has an access decision that belongs to another service`,
-        'remove it with portta protect remove, or choose another hostname',
-      )
-    }
+  // A decision already recorded for this hostname belongs to whoever made it,
+  // on every profile because it outlives a switch to a public host: an alias
+  // must not inherit it for another service.
+  const decided = protectionForHost(readProtectionStore(config.authStore), host)
+  if (decided && (decided.service !== request.service || decided.project !== request.project)) {
+    throw new OverrideRefused(
+      `${host} already has an access decision that belongs to another service`,
+      'remove it with portta protect remove, or choose another hostname',
+    )
   }
 
   const clash = existing.find(
