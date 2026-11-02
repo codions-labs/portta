@@ -108,7 +108,9 @@ look like they serve HTTP.
 ## A monorepo is one directory in one Project
 
 The Project model does not treat a monorepo as a special case: it is a
-Project whose directory is the monorepo. What differs is what runs against
+Project whose directory is the monorepo, at any depth under Projects Home. When
+a Project's directory sits inside another's, the deepest directory wins for the
+environments that run from it. What differs is what runs against
 it: several worktrees, each its own `COMPOSE_PROJECT_NAME`, each adopted by
 the same Project.
 

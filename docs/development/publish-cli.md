@@ -206,8 +206,8 @@ Nothing in this repository can repair that; these are one-time settings changes.
 
 2. **GHCR packages.** The container packages survive the deletion but lose their
    Actions access to the repository, so image pushes fail with
-   `denied: permission_denied: write_package`. For each package — `portta` and
-   `portta-sandbox` — open its settings under
+   `denied: permission_denied: write_package`. For the `portta` package, open its
+   settings under
    `github.com/orgs/<owner>/packages/container/<name>/settings`, then Manage
    Actions access → Add repository → `portta` → **Write**. Package visibility is
    a separate setting and is not restored by this step: `portta` must stay public

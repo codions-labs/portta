@@ -19,6 +19,7 @@ that process is a dispatcher over four things:
 ```text
 /api/*        the Hono API, including the event stream
 upgrade /ws/* WebSocket, authorised before the handshake
+/_next/*      Next's own upgrade handler for hot reload, in development only
 /*            Next's handler: the pages, their data, their assets
 ```
 
@@ -96,7 +97,7 @@ apps/web/
 
 ### Shell and navigation
 
-The sidebar has two groups. **Development** — Overview and Projects — is the
+The sidebar has two groups. Overview and Projects, with no heading, are the
 daily flow; **Infrastructure** — Services, Docker, Network, Access, Gateway —
 is the technical perspective over the same host; Settings sits alone at the
 end. Each section sets a contextual browser title ending in `Portta`; a

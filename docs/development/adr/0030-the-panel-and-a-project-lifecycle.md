@@ -12,9 +12,9 @@ run `docker system prune`.
 Operating is a different claim. The panel starts, stops, restarts and removes
 one container at a time ([ADR 0008](0008-web-panel-socket-proxy.md)), with
 `assertNotGatewayOwned` refusing Portta's own components and `removeContainer`
-hard-coding `v=0`. Four features that follow from a remote development host —
-turning a whole project off, rebuilding it, removing it from this host, starting
-a per-workspace editor — cannot be built against a reading of ADR 0001 that
+hard-coding `v=0`. Three features that follow from a remote development host —
+turning a whole project off, rebuilding it, removing it from this host —
+cannot be built against a reading of ADR 0001 that
 forbids operating, and cannot be built by widening the socket proxy either.
 [ADR 0026](0026-applying-settings-from-the-panel.md) rejects that: resolving
 overlays against `.env` is reimplementing Compose inside the panel.

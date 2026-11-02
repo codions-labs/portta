@@ -39,8 +39,9 @@ The panel then answers on `https://example.com` and asks for a login.
 
 ## The three states of a site
 
-Every routed hostname is in one of three states, recorded in the ForwardAuth
-registry:
+On the `remote-public` profile every routed service passes through the
+ForwardAuth middleware. Each hostname is in one of three states, recorded in
+the registry, `state/auth/protections.json`:
 
 | State | What a visitor sees |
 |---|---|
@@ -50,7 +51,13 @@ registry:
 
 Because the decision lives in the registry and not in your Compose file, you can
 change it at any time, from the CLI or the panel, and it applies on the next
-request. No container is recreated and your repository is never edited.
+request. No container is recreated and your Compose file is never edited. A
+closed hostname answers `401` with an empty body.
+
+A project that declares Traefik routing of its own (`traefik.*` router labels)
+is refused on a public host, because Portta cannot put that router behind
+ForwardAuth. A project adopted with `--manual` is reported as a finding for the
+same reason.
 
 ## Deciding when you adopt
 
@@ -61,9 +68,10 @@ portta adopt /srv/shop --protect web --public api
 ```
 
 `--protect` generates a password and prints it **once**; only a hash is stored.
-Give it to whoever needs it. Running `adopt` or `runtime up` again does not ask
-twice. Without a flag `adopt --dry-run` lists the pending decision as
-`public_exposure`.
+`--public` lets everybody open the service. Give the password to whoever needs
+it. Running `adopt` or `runtime up` again does not ask twice. Without a flag,
+`adopt` stops and `adopt --dry-run` lists the pending decision as
+`public_exposure`, one for each routed service.
 
 Later, change a hostname directly:
 
@@ -71,21 +79,25 @@ Later, change a hostname directly:
 portta protect host shop-web.example.com     # a new password, shown once
 portta protect open shop-web.example.com     # open to everybody
 portta protect remove shop-web.example.com   # closed again
+portta protect status                        # every decision, without credentials
 ```
 
 ## Access for a client
 
-From the service drawer in the panel: protect it with a password and copy the
-URL and password together, or create a temporary link that expires on its own
-(1, 4 or 24 hours). A temporary link has its own hostname,
-`<project>-<service>-<id>-share.<domain>`, one DNS label deep so the wildcard
-certificate covers it. Temporary links are created from the panel and the API,
-not the CLI.
+From the service drawer in the panel, in the Share with a client section:
+protect the service with a password (**Protect with a password**) and give the
+person the URL and the password, or create a temporary link that expires on its
+own (1, 4 or 24 hours). Deciding for a hostname needs the `service:protect`
+permission, which only the owner and administrators hold. A temporary link has
+its own hostname, `<project>-<service>-<id>-share.<domain>`, one DNS label deep
+so the wildcard certificate covers it. Temporary links are created from the
+panel and the API, not the CLI.
 
 ## Operating projects from the panel
 
 By default the panel only observes on a public host. To let a signed-in session
-start, stop and remove projects, set all of:
+start, stop and remove projects, the runner has to be on (`PORTTA_RUNNER=true`,
+the default in `.env.example`) and all of these must be set:
 
 ```env
 PORTTA_RUNNER_PUBLIC=true
@@ -94,10 +106,16 @@ PORTTA_AUTH_MODE=required
 TLS_ENABLED=true
 ```
 
-This hands Compose to anyone who can sign in to the panel. Keep accounts few,
-turn on two-factor authentication (the container console requires it on an
-exposed panel), and understand that a compromised account can operate every
-project. The setting is edited on the host: the panel cannot change it.
+Otherwise the runner is not prepared and the panel says why. Applying saved
+settings from the panel is always refused on a public host: run `portta up` on
+the host.
+
+Starting and stopping projects hands Compose to anyone who can sign in to the
+panel. Keep accounts few, turn on two-factor authentication (the container
+console requires it when the panel is exposed on a domain or publicly), and
+understand that a compromised account can operate every project. The setting is
+edited on the host: the panel cannot change it, and `portta doctor` warns while
+it is on.
 
 ## Not supported: proxied DNS
 

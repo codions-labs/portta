@@ -4,10 +4,10 @@ Documentation is part of the installed product. Markdown is canonical; every int
 
 ## Add a page
 
-1. Choose `docs/product/` for user/operator content, `docs/development/` for contribution content, or `docs/modules/<module>/` for a module's own pages.
+1. Choose `docs/product/` for user/operator content or `docs/development/` for contribution content.
 2. Decide whether the reader is learning, performing a task, consulting a contract, or understanding a concept.
 3. Write one H1 and a concise introduction. Add prerequisites and expected results to procedures when useful.
-4. Register the source, stable slug and description in `docs/navigation.json`, or in the module's own `navigation.json` for a module page. Array position determines order; the group determines audience and category. Markdown titles come only from H1.
+4. Register the source, stable slug and description in `docs/navigation.json`. Array position determines order; the group determines audience and category. Markdown titles come only from H1.
 5. Run `npm run docs:generate`, then `npm run docs:check`.
 
 Do not add front matter, numbered filenames for order, or unpublished files to the public roots. Internal instructions and research are repository-only. A new public page without classification fails validation.
@@ -28,7 +28,7 @@ Use GitHub alerts: `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, `CAUTION`. Reserve `CA
 
 ## Architecture
 
-`navigation.json` defines audience, groups, descriptions and stable public slugs. Core provides pure compilation and query functions. The build reads sources and validates links, then emits a versioned corpus. The server loads that corpus for the API; Next renders its Markdown. In development, the server compiles source changes in memory because the documentation mount is read-only. CLI and MCP query the bundled corpus locally or an explicitly selected panel.
+`navigation.json` defines audience, groups, descriptions and stable public slugs. Core provides pure compilation and query functions. The build reads sources and validates links, then emits a versioned corpus. The server loads that corpus for the API; Next renders its Markdown. In development, the server compiles source changes in memory because the documentation mount is read-only. The CLI queries the bundled corpus locally or an explicitly selected panel.
 
 The README index and citation map are generated outputs. Never edit them independently. Public content must work offline and match the installed version. Internal research, agent instructions and audits are never included in the published corpus.
 

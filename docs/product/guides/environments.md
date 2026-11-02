@@ -46,7 +46,10 @@ remembers where it ran (`working_dir`, the Compose files) and lists it as
 **remembered**, with no services. On a Project page it stays under its
 Project. Two things can happen to it: **Start**, which asks the runner for
 `docker compose up` with the remembered paths when `PORTTA_RUNNER=true`, or
-answers with the exact command to run on the host when it is not; and
+answers with the exact command to run on the host when it is not (on a public
+host the runner also needs `PORTTA_RUNNER_PUBLIC=true`, the panel on its own
+domain with `PORTTA_AUTH_MODE=required` and `TLS_ENABLED=true`, see
+[Run a public host](public-host.md#operating-projects-from-the-panel)); and
 **Forget**, which drops the row with its overrides and links, and touches
 nothing on the host. A live environment cannot be forgotten: stop and remove
 it first. Removing an environment (with or without its volumes) leaves it

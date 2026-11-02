@@ -8,7 +8,7 @@ standing decision ([Run a public host](public-host.md)); a share is neither: it
 is one extra address that ends by itself.
 
 ```text
-Exposure   Protected · reviewer · expires in 6 h        Revoke   Regenerate
+Share      Protected · reviewer · expires in 6 h        Revoke   Regenerate
            https://storefront-web-a7f3-share.dev.example.com
 ```
 
@@ -28,9 +28,10 @@ the id and the suffix inside the 63 octets a label may have
 
 ## Making one
 
-From the panel: open a service, and the Exposure section offers an expiry and
-the two modes. That is where the decision is made, so that is where the button
-is; the CLI manages what already exists.
+From the panel: open a service, and the Share with a client section offers an
+expiry (1, 4 or 24 hours) and the two modes, **Share with a password** and
+**Share publicly**. That is where the decision is made, so that is where the
+button is; the CLI manages what already exists.
 
 A protected share generates its password (twenty characters over a thirty-two
 symbol alphabet, so about a hundred bits), **shows it exactly once**, and stores
@@ -47,9 +48,9 @@ portta share gc            # remove the ones that have expired
 ```
 
 The panel and the CLI manage the same objects, the way they already do for
-[access bridges](tcp-access.md). Active shares are counted on the Overview, and
-expired or dangling ones show up in the diagnostics, because an exposure nobody
-remembers is exactly the one worth surfacing.
+[access bridges](tcp-access.md). Expired or dangling ones show up in the
+diagnostics on the Gateway page, because an exposure nobody remembers is
+exactly the one worth surfacing.
 
 ## What is actually written
 
@@ -88,8 +89,8 @@ way. The panel cannot rewrite a container's labels, and would not if it could:
 that is the project's configuration, not the gateway's
 ([ADR 0001](../../development/adr/0001-decoupled-infrastructure.md)).
 
-The panel may write exactly three filenames in that directory — `portta-shares.yaml`,
-`portta-aliases.yaml` and `portta-auth.yaml` — and refuses every
+The panel may write exactly three filenames in that directory: `portta-shares.yaml`,
+`portta-aliases.yaml` and `portta-auth.yaml`. It refuses every
 other path in its own process, so `middlewares.yaml`, `tcp.yaml` and anything
 you put there yourself are never touched
 ([ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md)).
@@ -104,6 +105,7 @@ Refusals rather than warnings, following the precedent
   web entrypoint. See [Open a TCP bridge](tcp-access.md).
 - **a service that is not on the shared network.** Traefik dials backends over
   it; a service that never joined has nothing to route to.
+- **a service that is not running.** Start it first.
 - **`public` without `PUBLIC_ENABLED` and `PUBLIC_DOMAIN`.**
 - **`protected` when TLS is off on a remote profile.** A password sent in clear
   is not protection, and pretending otherwise is worse than refusing.
@@ -116,7 +118,8 @@ Refusals rather than warnings, following the precedent
 
 Not multi-user identity for your project. One credential, no users and no roles:
 it is a door you open for an afternoon. See [Configure authentication](authentication.md)
-for protecting a project-owned router with the same login.
+for protecting a project-owned router with the same login, and
+[Run a public host](public-host.md) for a decision that does not expire.
 
 Not a tunnel either. A share is only reachable where the gateway already is: on
 the VPN for the private profile, on the internet only when public access is

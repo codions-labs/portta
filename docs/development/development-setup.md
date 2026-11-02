@@ -23,9 +23,8 @@ npm ci
 ```
 
 `npm ci` installs every workspace from one lockfile. `bin/portta` needs it: it
-builds the CLI from `packages/cli`, `packages/core`, `packages/contracts` and
-`packages/host` whenever those sources are newer than the bundle, and then runs
-that bundle.
+builds the CLI from `packages/cli`, `packages/core` and `packages/contracts`
+whenever those sources are newer than the bundle, and then runs that bundle.
 
 ## Start Portta
 
@@ -103,7 +102,7 @@ flowchart TD
     images --> up["start the gateway and the panel with hot reload"]
     up --> owner["create admin@admin.com<br/>(only when authentication is required)"]
     owner --> migrate["apply pending migrations"]
-    migrate --> stacks["docker compose up -d in each example<br/>(with .portta/compose.portta.yaml when present)"]
+    migrate --> stacks["docker compose up -d in each example<br/>(with the example's own overlay when present)"]
     stacks --> register["register the Project<br/>from .portta/portta.example.json"]
     register --> urls["print routed URLs"]
 ```
@@ -164,7 +163,7 @@ WebSockets, documentation and Next's HMR all answer on
 `docker/compose/features/web-dev.yaml` bind-mounts the source into the panel
 container, so the image's `node_modules` stay in place:
 
-- `apps/web/{app,components,lib,modules,messages,server,public}`
+- `apps/web/{app,components,lib,messages,server,public}`
 - `packages/{core,contracts,auth,db,server}/src`
 - `packages/db/drizzle`, so a newly generated migration is visible to
   `just db-migrate` without a rebuild

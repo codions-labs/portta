@@ -19,7 +19,8 @@ Solid lines are ownership; dotted lines are links Portta records or infers.
 ## Projects Home
 
 One directory per installation, `PORTTA_PROJECTS_HOME` (default `~/projects`,
-or `/srv/projects` as root). A Project directory sits under it at any depth. The
+or `/srv/projects` as root). A Project directory sits under it at any depth, and when
+one Project's directory contains another's, the deepest directory wins. The
 panel receives the path only as a string and never mounts it.
 See [ADR 0031](../../development/adr/0031-projects-home-and-project.md).
 

@@ -79,8 +79,7 @@ and a panel that signs people in, pass.
 
 ![Authentication disabled: Settings Users says this panel does not sign people in, and to set PORTTA_AUTH_MODE=required on the host to turn accounts on](../../images/auth-disabled-settings-users.png)
 
-**Authentication disabled** — Settings offers only General, Environment and
-Integrations; a bookmark into Users says the panel does not sign people in.
+**Authentication disabled** — Settings offers only General and Environment; a bookmark into Users says the panel does not sign people in.
 
 `disabled` is the statement that reaching the panel already means being somebody
 the network let in, and the access mode is the answer Portta has for that.
@@ -401,28 +400,39 @@ and garbage collection remove its protection record. See
 
 ### Protecting a project hostname
 
-Portta never edits a consumer project's router. Create the host record, then opt
-that router into the generated middleware in the project's own Compose file:
+Who may open a project hostname is a record in `state/auth/protections.json`, one
+per hostname: `protected` asks for the record's credential, `public` lets
+everybody in, and no record means closed.
+
+On a public host (profile `remote-public`) every routed service already passes
+through the ForwardAuth middleware, so the record is the whole decision. It
+applies on the next request, no container is recreated and the project's files
+are never edited. `portta adopt` asks for it (`--protect <service>` or
+`--public <service>`), and later:
 
 ```bash
 portta protect host demo-shop-web.example.com --project demo-shop --service web
+portta protect open demo-shop-api.example.com --project demo-shop --service api
+portta protect status
+portta protect status demo-shop-web.example.com
+portta protect remove demo-shop-web.example.com
 ```
+
+`protect host` creates or rotates the credential and prints a generated password
+once (`--password-stdin` takes yours). `protect status` never shows hashes.
+Removing a record closes the host on a public host. See
+[Run a public host](public-host.md).
+
+Off a public host Portta adds nothing to a project's router. A router that
+should be gated opts in with a label in the project's own Compose file:
 
 ```yaml
 labels:
   - "traefik.http.routers.demo-shop-web.middlewares=portta-forward-auth@file"
 ```
 
-Inspect or remove records without exposing hashes:
-
-```bash
-portta protect status
-portta protect status demo-shop-web.example.com
-portta protect remove demo-shop-web.example.com
-```
-
-Removing the record does not edit the project label. Until the label is removed,
-the unresolved protection fails closed.
+Until that label exists the record does nothing, and removing the record while
+the label stays leaves the host closed.
 
 ## State and recovery
 

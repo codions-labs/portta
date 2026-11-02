@@ -1,6 +1,6 @@
 # 0011. The panel has a bounded Traefik write surface
 
-**Status:** Accepted; see 0048
+**Status:** Accepted
 
 The panel reads Traefik's API for runtime routing facts. Its dynamic directory
 is writable only so it can materialize three current decisions:

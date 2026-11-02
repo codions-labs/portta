@@ -24,7 +24,7 @@ matrix with one axis per decision:
 | Profile | `profiles/{local,local-tls,remote,remote-tls,remote-tls-dns,remote-tls-http,public}.yaml` | the profile, plus TLS mode |
 | Dashboard | `features/dashboard{,-tailscale}.yaml` | `PORTTA_DASHBOARD` and the attachment |
 | TCP | `features/tcp{,-tailscale}.yaml` | `PORTTA_TCP` |
-| Panel | `features/web.yaml` and `panel-host.yaml`, then `web-{bind,build,dev,vpn}.yaml`, `panel-{domain,public}.yaml`, `auth-{build,dev}.yaml` | `PORTTA_WEB`, the panel access mode and the build mode |
+| Panel | `features/web.yaml`, then `web-{bind,build,dev,vpn}.yaml`, `panel-{domain,public}.yaml`, `auth-{build,dev}.yaml` | `PORTTA_WEB`, the panel access mode and the build mode |
 | Tunnel | `features/cloudflare-tunnel.yaml` | the tunnel provider ([ADR 0025](0025-cloudflare-tunnel.md)) |
 
 ### Why the pairs are not consolidated
@@ -67,7 +67,7 @@ docker/
     └── features/   dashboard.yaml, dashboard-tailscale.yaml, tcp.yaml,
                     tcp-tailscale.yaml, web.yaml, web-bind.yaml, web-build.yaml,
                     web-dev.yaml, web-vpn.yaml, panel-domain.yaml,
-                    panel-host.yaml, panel-public.yaml, auth-build.yaml,
+                    panel-public.yaml, auth-build.yaml,
                     auth-dev.yaml, cloudflare-tunnel.yaml
 ```
 
@@ -96,5 +96,5 @@ Compose file under `docker/compose/`.
 Invoking `docker compose -f …` by hand against these files is not a supported
 interface: the base file says so in its header, and the CLI is the stable
 operational contract. `just` and `./bin/portta` go through the CLI, and
-consumer projects are unaffected: `compose.portta.yaml` lives in the adopted
-project, not here.
+consumer projects are unaffected: their overlay lives in the installation's
+state, not here.

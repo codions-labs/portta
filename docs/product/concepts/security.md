@@ -21,7 +21,12 @@ The realistic risks are, in order:
 - The local profile binds Traefik to `127.0.0.1`. `doctor` **fails** if the
   local profile is bound anywhere else.
 - The public profile is off, and turning it on prints what will become
-  reachable and asks for confirmation.
+  reachable and asks for confirmation. On it, every routed hostname passes
+  through ForwardAuth and the registry (`state/auth/protections.json`) decides
+  per hostname: protected (a login), public (everybody), or no record, which is
+  closed. `portta adopt` stops until each routed service has a decision, and a
+  project that declares Traefik routing of its own is refused because it could
+  bypass the gate. Changes apply on the next request.
 - Databases and caches are never published and never joined to the shared
   network. `doctor` fails on a datastore published on `0.0.0.0` and warns on
   one attached to the shared network.
@@ -140,8 +145,8 @@ deliberately.
   `portta config set` in either direction and by the panel's own process at
   boot, because they answer whoever finds the address. `local`, `tailscale` and
   `vpn` may run without a login: the reachable set is already an authenticated
-  set — this machine, a device somebody enrolled in the tailnet, a client
-  holding a VPN credential — so a second credential closes nothing that was not
+  set, this machine, a device somebody enrolled in the tailnet, a client
+  holding a VPN credential, so a second credential closes nothing that was not
   already closed. The one combination the access mode does not settle is `local`
   bound to something other than loopback, which is the LAN and not an
   authenticated set; without `PORTTA_AUTH_ALLOW_LAN=true` in `.env` the panel
@@ -161,8 +166,8 @@ deliberately.
   event against the principal that opened it; an event about a Project somebody
   does not reach is never delivered, and an event about no Project at all goes
   only to `scope: 'all'`. The log WebSocket is authorised *before* the
-  handshake becomes a socket — `logs:read`, scoped to the Project that adopted
-  the environment — and a refusal is answered as HTTP and then closed, never
+  handshake becomes a socket, `logs:read`, scoped to the Project that adopted
+  the environment, and a refusal is answered as HTTP and then closed, never
   left hanging. One `upgrade` listener owns every `/ws/…` path, including the
   ones it refuses. Query parameters are validated before anything uses them,
   and the stream comes from the Docker API through the panel's own socket
@@ -202,17 +207,18 @@ stopped container holding the Docker socket, whose command is fixed at
 creation, and the panel gains a button that starts it.
 
 Said plainly: **anyone who can write through the panel can then run `portta up`
-on this host, in a root container holding the socket** — which is root on the
+on this host, in a root container holding the socket**, which is root on the
 host. The sharpest edge is `PORTTA_PROFILE`, which the Settings page can already
-write: saving `remote-public` and applying puts every opted-in service on the
-internet with nobody at a terminal.
+write: saving `remote-public` and applying puts the gateway on the internet with
+nobody at a terminal. Every routed service stays closed until somebody decides
+who may open it, but the host itself is then reachable.
 
 What bounds it: only an edit of `.env` on the host changes it, because
 `PORTTA_APPLY` is deliberately absent from the panel's field catalogue, so the
 panel cannot enable itself. It is refused in read-only mode, refused when the
 panel is exposed publicly, and refused on the `remote-public` profile. The
 applier takes no argument from the panel, has no network, and the panel gains no
-new Docker permission for it — `start` was already allowed. The server security
+new Docker permission for it, `start` was already allowed. The server security
 tests fail the build if the proxy flags or the allowlist grow. See
 [ADR 0026](../../development/adr/0026-applying-settings-from-the-panel.md).
 
@@ -236,8 +242,11 @@ ADR-level change.
 What bounds it: only an edit of `.env` on the host changes it, because
 `PORTTA_RUNNER` is deliberately absent from the panel's field catalogue. Set it
 to `false` where that trade is wrong. It is
-refused in read-only mode, refused when the panel is exposed publicly, and
-refused on the `remote-public` profile. The runner takes no command line from
+refused in read-only mode and refused when the panel is exposed `public`. On the
+`remote-public` profile it is refused too, unless `PORTTA_RUNNER_PUBLIC=true`
+is also set on the host and the panel is on its own domain
+(`PORTTA_WEB_EXPOSE=domain`) with `PORTTA_AUTH_MODE=required` and
+`TLS_ENABLED=true`; `portta doctor` warns while that is on. The runner takes no command line from
 the panel. The working directory comes from Docker's own labels, not from a
 path the request supplied. Rebuild is `build` (volumes preserved). Removal
 is `down` or `down-volumes`; directory removal is a flag on `down-volumes`
@@ -249,7 +258,7 @@ the server. See [ADR 0030](../../development/adr/0030-the-panel-and-a-project-li
 
 Who did what, to what, and from where. Written by the panel to its own
 database, read at **Settings → Audit** and at `GET /api/audit` with
-`audit:read` — which only `owner` and `admin` hold.
+`audit:read`, which only `owner` and `admin` hold.
 
 What is recorded is a closed list, fixed in
 [ADR 0035](../../development/adr/0035-authentication-lives-in-the-panel.md) and in
@@ -258,7 +267,8 @@ sign-in; every change to an account, a role, a password, a ban, a session or a
 Project membership; tokens created and revoked; Projects created, updated and
 deleted; an environment started, stopped, restarted, rebuilt, destroyed or
 forgotten; a service restarted; a container operated or removed; a bridge
-opened or closed; a share created or revoked; settings changed; the gateway
+opened or closed; a site protected, opened, closed or given a new password; a
+share created or revoked; a console opened or closed; settings changed; the gateway
 applied; and a schema migration that actually applied something.
 
 What is deliberately **not** recorded:
@@ -267,7 +277,7 @@ What is deliberately **not** recorded:
   not "who looked at it".
 - **Anything that authenticates.** No request body, no password, no hash, no
   token, no environment value. Each entry carries a small object the caller
-  chose — a role, a list of setting *names*, a count — and a scrubber redacts a
+  chose, a role, a list of setting *names*, a count, and a scrubber redacts a
   field named like a secret or a value shaped like one (`ptt_…`, a scrypt
   hash, a PEM header) before it is written. `packages/server/tests/audit*`
   passes a token through and asserts it does not come out.
@@ -326,7 +336,8 @@ labels are validated before they are used as arguments.
 
 The container console is a stronger, separately granted boundary. Only owner
 and administrator hold `container:console`; developer, viewer and the default
-agent do not. The browser never supplies a command, user or privilege flag:
+agent do not. When the panel is exposed on a `domain` or `public`, the account
+must also have a second factor turned on; on loopback it does not. The browser never supplies a command, user or privilege flag:
 the server chooses `/bin/bash` or `/bin/sh` for a running service resolved from
 an environment and refuses Portta's own containers. Sessions have idle and
 maximum limits, and opening and closing are audited without recording commands
@@ -337,7 +348,7 @@ or output. See [Open a container console](../guides/container-console.md) and
 
 Settings → Environment includes a read-only Host security report for the SSH
 server, host firewalls and Fail2ban. Its probes use only an explicit command
-allowlist, never `sudo`, and store only named configuration values — no host key
+allowlist, never `sudo`, and store only named configuration values, no host key
 paths, tokens, banned addresses or raw command output. Findings are contextual:
 password authentication is a recommendation on a public server and neutral on
 an isolated workstation. A permissions failure is reported as indeterminate.
@@ -349,10 +360,11 @@ for operator-controlled commands.
 - **Firewall.** Docker's published ports bypass UFW, so the bind address is
   the boundary the gateway actually relies on. See
   [Configure firewall rules](../guides/firewall.md).
-- **Project authorization and multi-user identity.** A project can opt one
-  router into Portta's single-credential ForwardAuth with
-  `portta-forward-auth@file`; Portta does not add roles, accounts or edit that
-  project's labels. Use the VPN or a full IdP when that is the boundary needed.
+- **Project authorization and multi-user identity.** A hostname is protected by
+  one credential, or open to everybody, or closed: on a public host Portta
+  gates every routed service itself, elsewhere a project can opt one router
+  into the same ForwardAuth with `portta-forward-auth@file`. Portta does not add
+  roles or accounts for it, and does not edit the project's Compose file. Use the VPN or a full IdP when that is the boundary needed.
 - **A panel that asks nobody who they are.** Where `PORTTA_AUTH_MODE=disabled`
   is accepted, the boundary is the network's rather than Portta's: a tailnet ACL
   that admits a device admits an operator, and a stolen VPN profile is a stolen
@@ -374,7 +386,6 @@ a public issue.
 The panel makes one kind of outbound request, and it does not leave the host:
 Traefik's API on an internal address.
 
-**It holds no forge credential, and makes no call to a forge or to any other
-service.** A panel that is routed over a VPN therefore gains no route to the
+**It holds no credential for an outside service, and makes no call to one.** A panel that is routed over a VPN therefore gains no route to the
 internet by being routed, and there is no long-lived key in `state/` for it to
 lose.

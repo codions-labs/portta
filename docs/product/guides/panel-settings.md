@@ -2,8 +2,8 @@
 
 ## Gateway
 
-Component states, versions, the profile, diagnostics, and logs for Traefik, the
-socket proxy and Tailscale.
+Component states (Traefik, the socket proxy, persistence and Tailscale), versions,
+the profile, diagnostics, and logs for Traefik, the socket proxy and Tailscale.
 
 **Diagnostics are not `portta doctor`.** They are the checks a container
 can make honestly: components present and healthy, the shared network, services
@@ -23,9 +23,9 @@ cannot see truthfully. The panel says so and points at the command.
 Settings is a place with six sections, and which of them somebody sees
 depends on what they hold. The rail lists only the ones they can open;
 `/settings` itself redirects to the first of them, so an owner lands on
-General and a viewer lands on their own tokens. A panel with
+General and a viewer, who holds no settings permission, lands on Environment. A panel with
 `PORTTA_AUTH_MODE=disabled` has no accounts, so Users, API tokens, Security
-and Audit are not offered at all — and a bookmark into one of them says the
+and Audit are not offered at all; a bookmark into one of them says the
 panel does not sign people in rather than showing an empty table.
 
 | Section | What it is | Who has it |
@@ -74,8 +74,8 @@ See [Host environment readiness](../reference/host-readiness.md).
 **Users** lists who can sign in with their role, whether the account is usable,
 and the Projects it reaches. Creating one hands over the first password on the
 spot: this panel sends no email. The row menu carries the role, a password
-reset, Project access, the open sessions, the ban and the removal — each of
-them absent rather than disabled when the rule behind it would refuse
+reset, Project access, the open sessions, the ban and the removal. Each of
+them is absent rather than disabled when the rule behind it would refuse
 ([Authentication](authentication.md#the-rules-a-role-cannot-express)). Removing
 asks for the email to be typed. Transferring ownership is offered to the owner
 alone, and never on their own row.
@@ -92,8 +92,8 @@ the app, and then shows the backup codes once. The session list marks the
 browser you are reading it in and signs the others out one at a time.
 
 **Audit** is who did what: sign-ins and failed sign-ins, accounts, roles,
-tokens, Project membership, settings, and every lifecycle operation on an
-environment or a container. Newest first, filtered by account, paged backwards.
+tokens, Project membership, settings, who protected, opened or closed a site,
+and every lifecycle operation on an environment or a container. Newest first, filtered by account, paged backwards.
 No password, token or other secret value is ever written to it
 ([security](../concepts/security.md#the-audit-log)).
 

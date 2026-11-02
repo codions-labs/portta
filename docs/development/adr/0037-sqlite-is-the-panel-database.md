@@ -126,7 +126,7 @@ for a statement that will never supply it.
 ### One baseline, and tests on the real engine
 
 `packages/db/drizzle/` holds a single generated baseline, `0000_current.sql`,
-with twenty tables. `db:generate` and `db:check` share one role: drizzle-kit
+with fifteen tables. `db:generate` and `db:check` share one role: drizzle-kit
 writes the journal the programmatic migrator reads, and `drizzle.config.ts`
 repeats the migrations table name because the two have to agree.
 
@@ -146,8 +146,7 @@ that declared it. npm hoists it there — unless it cannot, and `better-auth`
 declares `better-sqlite3` as an optional peer at `^12.0.0`, so a v13 in the tree
 splits into two copies and the hoisted one is not the one the schema was built
 against. The version is therefore pinned to `^12.11.1` in the root manifest
-*and* in every workspace that uses it (`packages/db`, `packages/cli`,
-`packages/host`), and the root dependency exists for the hoisting rather than
+*and* in the workspace that uses it (`packages/db`), and the root dependency exists for the hoisting rather than
 for any import the root makes.
 
 ## Consequences

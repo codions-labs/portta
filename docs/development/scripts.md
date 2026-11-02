@@ -10,6 +10,7 @@ The repository contains only these deliberate shell boundaries:
 | Path | Purpose |
 |---|---|
 | `scripts/lib/runner-exec.sh` | Fixed entrypoint inside the isolated project-runner image |
+| `packages/cli/assets/agents/hook.sh.tmpl` | The session hook `portta agents install` writes for Claude Code and Codex; it only runs `portta agent context --format hook` and always exits 0 |
 | `tests/**/*.sh` | Docker-backed assertions and their test-only helpers |
 
 `bin/portta` is a Node launcher. In a checkout it rebuilds `packages/cli` when
@@ -30,5 +31,4 @@ not such a boundary.
 
 Run the command's targeted Vitest file and `npm run build --workspace=@codions/portta`
 when the executable or packaging changes. `tests/lint.sh` runs ShellCheck over
-`scripts/` and `tests/`; the sandbox image scripts and the host test helper are
-outside its scope. The executable bit is required only for `bin/portta`.
+every `*.sh` under `scripts/` and `tests/`. The executable bit is required only for `bin/portta`.

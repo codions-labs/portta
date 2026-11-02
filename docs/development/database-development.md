@@ -56,10 +56,10 @@ The constraint is the other half, and every table that declares a vocabulary
 lists it beside its indexes:
 
 ```ts
-export const workSessions = sqliteTable('work_sessions', {
-  status: vocabulary('status', SESSION_STATUS_VALUES).notNull().default('active'),
+export const projectEnvironments = sqliteTable('project_environments', {
+  source: vocabulary('source', ADOPTION_SOURCE_VALUES).notNull(),
 }, (table) => [
-  vocabularyCheck('work_sessions', table.status, SESSION_STATUS_VALUES),
+  vocabularyCheck('project_environments', table.source, ADOPTION_SOURCE_VALUES),
 ])
 ```
 
@@ -138,8 +138,8 @@ See [Testing](testing.md) for current guidance.
 
 ## `better-sqlite3` is pinned, and the pin is load-bearing
 
-`better-sqlite3` is fixed at `^12.11.1` in the root manifest and in every
-workspace that uses it. Do not remove it from the root as redundant: Drizzle's
+`better-sqlite3` is fixed at `^12.11.1` in the root manifest and in
+`packages/db`, the workspace that uses it. Do not remove it from the root as redundant: Drizzle's
 driver imports `better-sqlite3` from inside `node_modules/drizzle-orm/`, so the
 package has to resolve from the workspace root, and `better-auth` declares it as
 an optional peer at `^12.0.0` — a v13 in the tree splits into two copies and the

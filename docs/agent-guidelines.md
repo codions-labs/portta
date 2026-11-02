@@ -104,7 +104,7 @@ directory:
 portta down                    # or: portta runtime down <path>
 ```
 
-Add `-v` only if the data is yours and you are sure.
+`down` stops containers and keeps volumes and data.
 
 ## Reaching databases: the order to try
 
@@ -185,6 +185,11 @@ responsibility, not the tool's.
 Databases and caches on a VPS are reached over the VPN or from the VPS itself,
 never over the internet. Never enable public access to make something easier to reach. If a human wants
 that, they will run `portta public enable` themselves.
+
+On a public host every routed service is closed until somebody decides who may
+open it, and `portta adopt` stops with a pending `public_exposure` decision
+until `--protect <service>` (a generated credential) or `--public <service>`
+(no login) is given. Ask the human which one; never choose `--public` yourself.
 
 ---
 

@@ -41,7 +41,7 @@ portta/
 ├── docker/
 │   ├── compose/              gateway Compose base and overlays
 │   └── images/               operational image contexts (apply, toolbox)
-├── config/, docs/, tests/, templates/
+├── config/, docs/, skills/, templates/, tests/, tooling/
 └── package.json             workspaces: ["apps/*", "packages/*"]
 ```
 
@@ -192,8 +192,8 @@ installed command is `portta`. Details in [ADR 0015](adr/0015-node-is-required-o
 
 ## AGENTS.md
 
-The root `AGENTS.md` is an index and holds the repository-wide agent testing
-policy. A per-directory instruction file exists only where a directory has
+The root `AGENTS.md` is an index. It holds the contribution rules (branches,
+commits, staging) and the repository-wide agent testing policy. A per-directory instruction file exists only where a directory has
 rules that are not true of the rest of the repository. Document once; reference
 everywhere it is needed. The operating rules for agents on a shared host already live in
 [agent-guidelines.md](../agent-guidelines.md).

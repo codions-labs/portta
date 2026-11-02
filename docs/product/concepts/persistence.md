@@ -13,7 +13,7 @@ before the HTTP listener starts. See
 [ADR 0037](../../development/adr/0037-sqlite-is-the-panel-database.md).
 
 > [!NOTE]
-> In WAL mode a SQLite database is three files — `portta.db`, `portta.db-wal`
+> In WAL mode a SQLite database is three files, `portta.db`, `portta.db-wal`
 > and `portta.db-shm`. Anything that copies, moves or removes the database moves
 > all three; copying only the first is how a backup silently loses the most
 > recent writes.
@@ -30,8 +30,8 @@ Decisions:
 - **Projects** (`projects`): the product the operator recognises, its slug,
   description and its directory relative to Projects Home; which environments
   it adopted (`project_environments`), and why (`manual`, `label` or `path`);
-- **Audit** (`audit_log`): the sensitive writes — who signed in, who changed a
-  role, who destroyed an environment — so "who did that" is answerable months
+- **Audit** (`audit_log`): the sensitive writes, who signed in, who changed a
+  role, who destroyed an environment, so "who did that" is answerable months
   later. Never a request body, a password, a hash or a token;
 - environment identity (`environments`, one row per `COMPOSE_PROJECT_NAME` ever
   seen, with `working_dir` and `config_files` as Docker last recorded them, so
@@ -42,6 +42,10 @@ Decisions:
 Fifteen tables in total.
 
 ## What is not persisted
+
+Who may open a routed hostname is not in this file either. It is the ForwardAuth
+registry, `state/auth/protections.json`, which the auth service reads on every
+request and which `portta backup` includes with the rest of `state/`.
 
 Container state, health, ports, networks, URLs, logs and
 Traefik status come from their live owners. A stopped container disappears from

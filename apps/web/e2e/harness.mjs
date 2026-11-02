@@ -186,7 +186,16 @@ docker.listen(DOCKER_PORT, '127.0.0.1', () => {
       PORTTA_RUNTIME_ENV_FILE: join(root, 'e2e/env.fixture'),
       PORTTA_RUNTIME_VERSION: 'e2e',
       PORTTA_RUNTIME_BRIDGE_SETTLE_MS: '0',
-      PORTTA_PROFILE: 'local',
+      PORTTA_PROFILE: process.env.PORTTA_E2E_PROFILE ?? 'local',
+      ...(process.env.PORTTA_E2E_PROFILE === 'remote-public'
+        ? { PUBLIC_DOMAIN: 'portta.test', PUBLIC_ENABLED: 'true', TLS_ENABLED: 'true' }
+        : {}),
+      ...(process.env.PORTTA_E2E_STATE
+        ? {
+            PORTTA_RUNTIME_AUTH_STORE: join(process.env.PORTTA_E2E_STATE, 'protections.json'),
+            PORTTA_RUNTIME_DYNAMIC_DIR: process.env.PORTTA_E2E_STATE,
+          }
+        : {}),
       PORTTA_DOMAIN: 'localhost',
       PORTTA_NETWORK: 'portta',
       // Open unless the run says otherwise. The protected harness is a second

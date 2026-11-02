@@ -13,7 +13,7 @@ can do, so it is explicit, it shows you exactly what changes, and it asks.
 portta public enable
 ```
 
-It resolves the domain that would go public — `PUBLIC_DOMAIN` if set,
+It resolves the domain that would go public: `PUBLIC_DOMAIN` if set,
 otherwise the already-configured project domain, as long as it isn't
 `localhost`. Without either it refuses, pointing at
 `portta config set domain.mode auto`. It also refuses while a TCP entrypoint is
@@ -26,7 +26,10 @@ expose opted-in HTTP services on *.dev.example.com? [y/N]
 ```
 
 On yes it sets `PUBLIC_ENABLED=true` and `PORTTA_PROFILE=remote-public` in
-`.env` and immediately runs `docker compose up -d` to apply it.
+`.env` (and `PUBLIC_DOMAIN` when only the project domain supplied the name) and
+immediately runs `docker compose up -d` to apply it. Projects adopted while the
+host was private need a decision for each routed service before they open: see
+[Run a public host](public-host.md).
 
 ```bash
 portta public status
@@ -34,7 +37,7 @@ portta public disable
 ```
 
 `disable` sets `PUBLIC_ENABLED=false` and always switches `PORTTA_PROFILE`
-back to `remote-private`, then tells you to run `portta up` to apply it — it
+back to `remote-private`, then tells you to run `portta up` to apply it. It
 does not restart anything itself. Consumer projects keep running throughout.
 
 ## What public mode does and does not change
@@ -51,7 +54,7 @@ Never public, in any profile:
 - the Docker API and the socket proxy
 - the Traefik dashboard
 
-`doctor` and the CI exposure job both fail if any of those bind `0.0.0.0`.
+`doctor` fails if any of those bind `0.0.0.0`.
 
 ## Prerequisites
 
@@ -80,5 +83,7 @@ forge a header Traefik manages by exploiting a backend that normalises
 underscores.
 
 Every routed hostname passes through the ForwardAuth middleware, and the
-registry decides: a login, everybody, or nothing. A hostname nobody decided
-about is closed. See [Run a public host](public-host.md).
+registry (`state/auth/protections.json`) decides: a login, everybody, or
+nothing. A hostname nobody decided about is closed. A project that declares
+Traefik routing of its own is refused on a public host, because Portta cannot
+put that router behind ForwardAuth. See [Run a public host](public-host.md).

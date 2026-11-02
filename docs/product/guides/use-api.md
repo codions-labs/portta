@@ -41,7 +41,7 @@ output is versioned by an envelope on every command:
 
 `schema` is the command path (`status`, `envs.list`, `projects.show`);
 `version` is an integer that only advances on an incompatible change to
-`data` — a field removed, a type changed or a meaning changed. An optional
+`data`: a field removed, a type changed or a meaning changed. An optional
 field added is compatible and leaves the version alone. A script or an agent
 reads the two fields first and stops on a `schema` or `version` it does not
 know, instead of breaking on a silent change. The fields of `data` per command

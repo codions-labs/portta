@@ -15,6 +15,11 @@ default; viewers never do. Agents do not receive this permission by default
 either. With authentication disabled, every request that is not an agent is the
 local operator, who holds it.
 
+When the panel is reached on a domain or publicly (`PORTTA_WEB_EXPOSE=domain` or
+`public`), the console also needs a signed-in account with a second factor
+turned on (Settings, Security); a token is not enough. On a panel bound to
+loopback no second factor is asked.
+
 Close the console when finished. It also closes after 15 minutes without input
 or output and has a two-hour maximum. Portta interrupts the foreground command,
 exits the fixed shell and verifies the Docker exec state before releasing its

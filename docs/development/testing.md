@@ -155,8 +155,8 @@ covered.
 
 Always close instances. Schema tests retain real constraints, foreign keys,
 transactions and sequences. Migration tests explicitly use fresh instances.
-Snapshots contain no shared mutable rows. `seededDatabase()` adds the Project,
-repository and environments needed by service tests. Avoid redundant seeds.
+Snapshots contain no shared mutable rows. `seededDatabase()` adds the Project and
+the environments needed by service tests. Avoid redundant seeds.
 
 `db:check` copies schema/config/migrations to a temporary package, runs the
 actual generator there, compares SQL and metadata, and removes the temporary

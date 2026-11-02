@@ -77,7 +77,10 @@ and cannot resolve or reach each other.
 
 ## Multi-homed services
 
-A service reachable through the gateway sits on two networks:
+A service reachable through the gateway sits on two networks. For a project
+adopted with `portta adopt`, Portta adds that in the overlay it generates and
+keeps in its own state, and never edits the project's Compose file. By hand
+(manual mode) it looks like this:
 
 ```yaml
 services:

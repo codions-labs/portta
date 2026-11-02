@@ -33,8 +33,8 @@ Integration is a small contract, nothing more:
 2. those services set `traefik.enable=true`;
 3. the project sets a unique `COMPOSE_PROJECT_NAME`.
 
-The recommended shape for that contract is a separate overlay file the project
-owns, `compose.portta.yaml`, so the project's own Compose file keeps
+Portta derives that contract as a generated overlay kept in the installation's
+own state, outside the repository, so the project's own Compose file keeps
 describing the application and nothing else, and still runs standalone.
 
 Everything the gateway creates is labelled `portta.managed=true`, and
@@ -42,12 +42,12 @@ every destructive path checks that label first.
 
 ## Consequences
 
-Good: any Docker project can adopt the gateway by adding one file; projects
+Good: any Docker project can adopt the gateway without editing its own files; projects
 stay in their own repositories; the gateway can be removed without touching
 anyone's data; several gateways could even coexist on different networks.
 
 Costs: the gateway cannot fix a project that misconfigures itself. It can only
-detect and report, which is why `doctor` and `analyze` carry so much weight. It
+detect and report, which is why `doctor` and `envs analyze` carry so much weight. It
 may operate a project's runtime state on request, through one opt-in runner
 with a closed verb set ([ADR 0030](0030-the-panel-and-a-project-lifecycle.md));
 it still owns nothing.

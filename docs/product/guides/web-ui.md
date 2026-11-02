@@ -133,7 +133,7 @@ With **Authentication disabled** there is no sign-in page: every request is the
 local operator, holding every permission on every Project.
 
 With **Authentication enabled** (`PORTTA_AUTH_MODE=required`), the first visit to
-a panel with no owner lands on `/setup`, which creates the owner — the only
+a panel with no owner lands on `/setup`, which creates the owner: the only
 account ever created that way.
 
 ![Authentication enabled: the Create the owner page asks for a name, an email and a password of at least ten characters](../../images/auth-enabled-setup.png)
@@ -176,9 +176,10 @@ See [Authentication](authentication.md) and
 
 ## The pages
 
-The sidebar groups the pages into **Development** (Overview, Projects) and
-**Infrastructure** (Services, Docker, Network, Access, Gateway), then Settings.
-An entry the current person may not open is not listed. Every page is a route,
+The sidebar lists Overview and Projects, then an **Infrastructure** group
+(Services, Docker, Network, Access, Gateway), then Settings. Environments are
+reached from Projects (**Environments on this host**). An entry the current
+person may not open is not listed. Every page is a route,
 so a link, a bookmark and the back button all work.
 
 ### Overview
@@ -188,8 +189,8 @@ so a link, a bookmark and the back button all work.
 **Authentication disabled**: the Overview on the demo host.
 
 The Overview, in the order the questions come. The top line names
-the machine — its commercial name or hostname, its kind, OS, architecture and
-uptime — beside the gateway's state and the host's verdict: **Normal**,
+the machine (its commercial name or hostname, its kind, OS, architecture and
+uptime) beside the gateway's state and the host's verdict: **Normal**,
 **Watch**, **Under pressure** or **Critical**. Below it, one cell per reading
 `portta host collect` reported: CPU, memory, storage, and where the machine has
 them GPU, temperature, battery and load, each with the last thirty minutes in
@@ -224,6 +225,22 @@ list, with its addresses. **Docker** is every container on the host, separated
 into Portta, integrated projects, external Compose projects and standalone
 containers, with the networks and published ports. See
 [Manage services](services.md).
+
+#### Who may open a service
+
+Opening a service shows its drawer. On a public host the **Share with a client**
+section is where its hostname gets a decision: nobody has decided yet, so it is
+closed.
+
+![Authentication disabled: the service drawer on a public host, where nobody has decided about the hostname and it is closed](../../images/auth-disabled-exposure-closed.png)
+
+**Protect with a password** generates a login and shows the password once; only
+its hash is stored. **Open to everybody** removes the login, **Close it** goes
+back to closed, and a new password replaces the old one. Every change applies on
+the next request and recreates nothing. See
+[Run a public host](public-host.md).
+
+![Authentication disabled: the same service after Protect with a password, showing the one-time password](../../images/auth-disabled-exposure-protected.png)
 
 ### Network
 
@@ -267,10 +284,11 @@ inside its container, and logs for Traefik, the socket proxy and Tailscale.
 ### Settings
 
 **General** (Projects, project addresses, project access, TLS, DNS, the panel
-and Traefik), **Environment** (host readiness and security findings) are always
-listed. **Users**, **API tokens**, **Security** and **Audit** appear
-with authentication enabled; with it disabled a bookmark into one of them says
-the panel does not sign people in. Every section is described in
+and Traefik) is listed to whoever holds `settings:read`, and **Environment**
+(host readiness and security findings) to whoever holds `metrics:read`.
+**Users**, **API tokens**, **Security** and **Audit** appear with
+authentication enabled; with it disabled a bookmark into one of them says the
+panel does not sign people in. Every section is described in
 [Configure the panel](panel-settings.md); the accounts pages are shown in
 [Authentication](authentication.md).
 
@@ -310,7 +328,7 @@ keeps following the operating system.
 **The event stream** (`GET /api/events`, server-sent events) keeps the pages
 current: a container changed state, an environment started or stopped.
 It needs `environment:read`, and every event is filtered against the principal it
-is delivered to — an event about a Project somebody does not reach is not
+is delivered to: an event about a Project somebody does not reach is not
 delivered. The browser reconnects on its own; the panel sends a keepalive every
 twenty seconds so a proxy does not close a quiet stream.
 
@@ -319,7 +337,7 @@ twenty seconds so a proxy does not close a quiet stream.
 reconnects with a widening delay, and falls back to polling every three seconds
 when it cannot stay up. The handshake is authorised before it becomes a socket:
 `logs:read`, scoped to the Project that adopted the environment. A refusal is an
-HTTP status — `401` with no credential, `403` without the permission or the
+HTTP status: `401` with no credential, `403` without the permission or the
 Project, `404` for an unknown path or environment.
 
 ## Actions
@@ -328,9 +346,10 @@ Project, `404` for an unknown path or environment.
 |---|---|
 | Project service | logs, console, start, stop, restart, details, remove (with confirmation) |
 | External container | logs, start, stop, restart, details, remove (with confirmation) |
+| Service hostname | protect with a password, open to everybody, close it, temporary link (`service:protect`: owner and administrators) |
 | Environment | start, stop, restart, rebuild, remove (keeping or dropping its data), forget when remembered |
 | TCP service | open a loopback bridge, close it, copy host / port / connection string |
-| Gateway | status, diagnostics, logs, restart Traefik, apply saved settings (opt-in) |
+| Gateway | status, diagnostics, logs, restart Traefik, apply saved settings (with `PORTTA_APPLY=true`) |
 
 Never offered: editing configuration or environment variables of a container,
 changing its networks or volumes, running an arbitrary command, resetting a
@@ -363,8 +382,8 @@ portta up
 ### Applying settings from the panel
 
 With `PORTTA_APPLY=true` (the default in `.env.example`), `portta up` also
-prepares a stopped container whose command is fixed at creation — `portta up`,
-with no argument the panel can influence — and the pending bar gains an **Apply
+prepares a stopped container whose command is fixed at creation (`portta up`,
+with no argument the panel can influence), and the pending bar gains an **Apply
 and restart** button that starts it.
 
 The confirmation names the pending keys and says that this panel is one of the
@@ -389,10 +408,10 @@ All of these live in `.env`; `portta web up` sets the first ones for you.
 | `PORTTA_WEB` | `false` | Whether the panel starts with the gateway |
 | `PORTTA_WEB_BIND_ADDRESS` | `127.0.0.1` | Interface the panel is published on |
 | `PORTTA_WEB_PORT` | `8081` | Host port |
-| `PORTTA_WEB_EXPOSE` | `local` | `local`, `tailscale`, `vpn`, `public` or `domain` — see [Reaching it](#reaching-it) |
+| `PORTTA_WEB_EXPOSE` | `local` | `local`, `tailscale`, `vpn`, `public` or `domain`, see [Reaching it](#reaching-it) |
 | `PORTTA_WEB_HOST` | `portta-web` | Hostname label used by `--expose vpn` |
 | `PORTTA_WEB_READ_ONLY` | `false` | Refuse every mutating endpoint |
-| `PORTTA_AUTH_MODE` | `disabled` | `disabled` or `required` — see [Authentication](authentication.md) |
+| `PORTTA_AUTH_MODE` | `disabled` | `disabled` or `required`, see [Authentication](authentication.md) |
 | `PORTTA_WEB_DEV` | `false` | Development mode: hot reload on the same port the API answers on |
 | `PORTTA_WEB_NETWORK` | `portta-web` | The panel's internal control network |
 | `PORTTA_WEB_USER` | `node` | User the container runs as, see below |
@@ -429,7 +448,8 @@ knows nothing about panel accounts. See [Authentication](authentication.md).
 **Traefik configuration.** The panel mounts `config/traefik/dynamic/`
 read-write and may write exactly three filenames in it: `portta-shares.yaml`,
 `portta-aliases.yaml` and `portta-auth.yaml`. Any other path is refused before
-the write. See [ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md).
+the write. It also keeps the ForwardAuth registry, `state/auth/protections.json`,
+which holds who may open each hostname. See [ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md).
 
 **Docker.** Its own socket proxy grants the read endpoints, the container
 lifecycle and exec, and denies images, volumes, build, swarm, secrets, plugins
@@ -439,6 +459,11 @@ inspecting the console session, and `prune`, `archive` and container `attach`
 are denied even where the proxy would forward them. See
 [ADR 0008](../../development/adr/0008-web-panel-socket-proxy.md) and
 [ADR 0043](../../development/adr/0043-container-console-over-docker-exec.md).
+
+**Console.** A shell in a project container is held by the owner and
+administrators only. When the panel is exposed on a `domain` or `public`, the
+account also needs two-factor authentication turned on (Settings, Security);
+on loopback it does not. See [Open a console](container-console.md).
 
 **Container creation.** One shape only: the socat TCP bridge, with a fixed
 image, fixed labels, no binds, no mounts, no capabilities and no privileged

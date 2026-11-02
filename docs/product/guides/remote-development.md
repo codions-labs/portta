@@ -73,7 +73,9 @@ portta public enable
 
 It resolves the public domain, refuses if none can be found or a TCP
 entrypoint is active, then asks a single confirmation naming that domain. See
-[Enable public access](public-access.md).
+[Enable public access](public-access.md). On this profile every routed service
+passes through ForwardAuth and stays closed until somebody decides who may open
+it: [Run a public host](public-host.md).
 
 ## TLS
 

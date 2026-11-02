@@ -15,7 +15,9 @@ disabled.
 The products you recognise, as cards or as a table: running environments,
 health and resources. **New project** creates one from a name, a slug and a
 description; the slug is also what an environment's `portta.project` label must
-say to be adopted automatically. A Project needs the panel's database and the
+say to be adopted automatically. A Project may be tied to a directory under
+Projects Home at any depth; when two Projects contain a Compose directory, the
+deepest one wins. A Project needs the panel's database and the
 page says so when it is unavailable. `Environments on this host` opens the list
 of every Compose project Docker is running, adopted or not.
 

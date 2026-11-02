@@ -6,7 +6,7 @@
 
 Runnable demonstrations kept inside the source repository of Portta would make consumer
 projects part of the product checkout, deny each one its own Git history, and
-make repository discovery unlike the normal Projects Home workflow they are
+make how they are found unlike the normal Projects Home workflow they are
 meant to demonstrate.
 
 Tests need example-shaped projects too. Reading the runnable demonstrations

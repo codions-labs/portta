@@ -39,9 +39,10 @@ portta adopt /path/to/project --service web:3000
 portta runtime status /path/to/project
 ```
 
-An agent can drive this flow with the `portta-adopt-compose` skill
-(`npx skills add codions-labs/portta --skill portta-adopt-compose -g`), which
-orders these verbs and says what to ask before each pending decision.
+An agent can drive this flow with the `portta-adopt-compose` skill, installed
+by `portta agents install`, which orders these verbs and says what to ask before
+each pending decision. A project with no Compose file yet is the job of the
+`portta-dockerize` skill.
 
 `adopt` persists optional exposure intent in Portta state. A project that wants
 to version this intent may instead provide `.portta/runtime.json`; it contains
@@ -51,8 +52,8 @@ is the project contract in [ADR 0052](../../development/adr/0052-the-portta-dire
 and the file is specified in [The `.portta` directory](../reference/portta-directory.md).
 
 `adopt` is the one closed interface for inspection, explicit decisions and
-plan materialization. The lower-level `prepare` and `init` are its two steps
-and are listed in the [CLI reference](../reference/cli.md).
+plan materialization. Its options are listed in the
+[CLI reference](../reference/cli.md).
 
 ## Decisions that need confirmation
 
@@ -93,18 +94,23 @@ A compatible project:
 
 Nothing else. No Dockerfile changes, no directory moves, no shared base image.
 
-## Optional Portta login
+## Who may open it
 
-The project owns its router labels, so Portta never adds authentication behind
-your back. To protect a hostname, create its credential and opt the router into
-the generated middleware with a label:
+On a local or private host nothing is added: the project's hostnames are open
+to whoever reaches the host. On a public host (profile `remote-public`) every
+routed service passes through ForwardAuth, and `adopt` stops with a pending
+`public_exposure` until each routed service has a decision:
 
 ```bash
-portta protect host demo-shop-web.example.com --project demo-shop --service web
+portta adopt /path/to/project --protect web --public api
 ```
 
-See [Protecting a project hostname](authentication.md#protecting-a-project-hostname)
-for the label, rotation, removal and API clients.
+`--protect` generates a password and prints it once; `--public` lets everybody
+open the service. A hostname with no decision stays closed. A project that
+routes Traefik itself (its own `traefik.*` router labels) is refused on a
+public host, and a manual integration is reported as a finding because Portta
+cannot put its services behind ForwardAuth. See [Run a public host](public-host.md)
+and [Protecting a project hostname](authentication.md#protecting-a-project-hostname).
 
 ## The overlay
 
@@ -140,6 +146,10 @@ networks:
     external: true
     name: portta
 ```
+
+On a public host the overlay also names each router and attaches the
+`portta-forward-auth@file` middleware to it, and a service Portta keeps private
+gets `traefik.enable=false`.
 
 ```bash
 portta runtime up /path/to/project
@@ -247,7 +257,7 @@ outside Git. A maintained project may commit the optional equivalent,
 ## Manual mode
 
 A project may own its whole integration instead of letting Portta generate
-the overlay: a `compose.portta.yaml` beside its Compose file, with the
+the overlay: an overlay file of its own beside its Compose file, with the
 networks, labels and port resets written by hand from the
 [templates](../../../templates/README.md). Record that choice in `.portta/runtime.json` with
 `"mode": "manual"` and the overlay listed in `compose.files`: `portta runtime
@@ -258,7 +268,7 @@ be named in `runtime.json` for the plan to include it. Without a recorded plan,
 such a project runs with plain Compose:
 
 ```bash
-docker compose -f compose.yaml -f compose.portta.yaml up -d
+docker compose -f compose.yaml -f <your-overlay>.yaml up -d
 ```
 
 ## Keeping the project runnable without the gateway

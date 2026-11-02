@@ -4,8 +4,8 @@
 
 This record classifies state and decides identity. **No synchronisation is
 implemented.** Two gateways know nothing about each other. What keeps that
-possible later is small: a few nullable columns, one instance row, and
-`updated_at` on every decision table. This page says what those seams are for,
+possible later is small: a project slug, one instance row, and `updated_at` on
+every decision table. This page says what those seams are for,
 and what they are not for.
 
 ## Context
@@ -20,9 +20,8 @@ narrower: **most of what a gateway knows is true only of the machine it runs
 on**, and trying to share it would be actively wrong. A container id, a
 loopback port, an absolute path and a Docker network are facts about one host.
 
-The schema carries `instance.id` (a UUID), `environments.repo_url`,
-`environments.repo_subpath` and `projects.slug`, with `updated_at` on every
-decision table. [ADR 0014](0014-monorepo-and-the-typescript-cli.md) places
+The schema carries `instance.id` (a UUID) and `projects.slug`, with
+`updated_at` on every decision table. [ADR 0014](0014-monorepo-and-the-typescript-cli.md) places
 persistent decisions behind the panel API; this record says which of those
 decisions could ever travel.
 
@@ -40,13 +39,12 @@ the same feature as showing another machine's containers.
 |---|---|---|---|
 | **Runtime** | container ids, state, health, uptime, published ports, networks, mounts, working_dir, access-bridge ports, Traefik routers and their live status, Docker logs and stats | Docker Engine, Traefik API, kernel-allocated ports | **Never.** Re-derived in milliseconds and wrong anywhere else |
 | **Instance** | bind address, domains, TLS mode, profile, ACME, `TS_AUTHKEY`, `CF_DNS_API_TOKEN`, the session secret, `COMPOSE_PROJECT_NAME` of the gateway itself | `.env` | **Never.** Host-specific, and half of it is secret |
-| **Project** | display name, description, primary service, hidden services, ordering, notes, `repo_url` / `repo_subpath` / `slug` | the panel's SQLite database (`projects`, `environments`, `project_settings`, `service_settings`) | **Yes**, with the identity rules below |
+| **Project** | display name, description, primary service, hidden services, ordering, notes, `slug` | the panel's SQLite database (`projects`, `environments`, `project_settings`, `service_settings`) | **Yes**, with the identity rules below |
 | **User** | theme, default page, table density | the panel's SQLite database (`settings`) | **Yes**, and low stakes either way |
 | **Shareable, with translation** | hostname alias | the panel's SQLite database (`service_settings.alias`) plus a generated Traefik file | **Partly** — see aliases |
 
 Host metrics under `state/metrics/` are runtime observations collected on the
-host. They are not shareable as a source of truth; `repo_url` extracted from a Git file is a portable
-*coordinate*, which is a different column doing a different job.
+host. They are not shareable as a source of truth.
 
 Share records (temporary extra hostnames with expiry) are instance-scoped:
 they bind a live container name to a host-specific domain. They are not
@@ -54,72 +52,34 @@ project decisions.
 
 `COMPOSE_PROJECT_NAME` of a *consumer* environment is local identity, not
 shareable on its own: `storefront` on the laptop and `storefront` on the VPS
-are probably the same project, and `storefront-issue59` is a worktree that
+are probably the same project, and `storefront-review` is a worktree that
 may not exist remotely at all.
 
 ### Project identity
 
-Not a distributed identity system. A **local id plus portable coordinates**:
+Not a distributed identity system. A **local id plus a portable name**:
 
 ```text
 projects
   id               INTEGER PRIMARY KEY   local, never shared, never meaningful elsewhere
   slug             TEXT                  a stable, user-visible name, unique per instance
+  relative_path    TEXT NULL             the project's directory under Projects Home
 
 environments
   compose_project  TEXT UNIQUE    the namespace, per ADR 0006 — local identity
   working_dir      TEXT NULL      local only
-  repo_url         TEXT NULL      normalised remote: github.com/owner/repo
-  repo_subpath     TEXT NULL      for a monorepo package
 ```
 
-`(repo_url, repo_subpath)` is the portable coordinate. `slug` is the fallback
-for a project with no Git, and the manual association two people (or two
-gateways) can agree on.
+`slug` is the manual association two people (or two gateways) can agree on.
+`relative_path` and `working_dir` are paths on one host and never travel.
 
-The worktree case: `storefront` and `storefront-issue59` share a `repo_url`
-and differ in `compose_project`. Sharing, if it is ever built, operates on
-the repository coordinate. Per-environment overrides stay local.
+The worktree case: `storefront` and `storefront-review` differ in
+`compose_project`. Per-environment overrides stay local.
 [ADR 0013](0013-what-the-panel-persists.md) forbids two worktrees from
 inheriting each other's aliases.
 
-Nothing merges. `repo_url` is a coordinate, not a key.
-`compose_project` stays the local identity.
-
-### `repo_url` normalisation
-
-A pure function. Inputs that denote the same repository must compare equal.
-Covered forms, with examples:
-
-| Input | Normalised |
-|---|---|
-| `git@github.com:acme/storefront.git` | `github.com/acme/storefront` |
-| `https://github.com/acme/storefront` | `github.com/acme/storefront` |
-| `https://github.com/acme/storefront.git` | `github.com/acme/storefront` |
-| `ssh://git@github.com/acme/storefront.git` | `github.com/acme/storefront` |
-| `git@gitlab.com:acme/storefront.git` | `gitlab.com/acme/storefront` |
-| `https://git.example.com/acme/storefront.git` | `git.example.com/acme/storefront` |
-| empty / no remote | `null` |
-
-Rules:
-
-1. Strip the scheme (`git+ssh://`, `ssh://`, `https://`, `http://`).
-2. Strip a leading `git@` user and rewrite `host:path` to `host/path`.
-3. Strip a trailing `.git`.
-4. Strip a trailing slash.
-5. Lowercase the host. Do **not** lowercase the path: some forges are
-   case-sensitive, GitHub is not, and over-normalising merges distinct
-   repositories on a self-hosted forge.
-6. Drop a trailing `.wiki.git` or `/issues` suffix; those are not the
-   repository.
-7. Submodules are separate repositories with their own remotes; a consumer
-   project's `repo_url` is the superproject, and `repo_subpath` names a
-   package inside it, not a submodule.
-8. No remote, or a remote that is a local path, yields `null`. `slug` then
-   carries identity if a person supplies one.
-
-The function is pure string work, with no network and no process, and is
-tested with a fixture table covering every row above.
+Nothing merges. `slug` is a name, not a key. `compose_project` stays the local
+identity.
 
 ### Instance identity
 
@@ -154,7 +114,7 @@ when the Traefik file is written, not when the preference is stored.
 - Two gateways know nothing about each other.
 - Anyone proposing synchronisation later starts from a page that already
   says what may be shared and what identifies a project across machines.
-- If it is never built, the cost was a few nullable columns and one table
+- If it is never built, the cost was one table
   that makes `portta status --json` able to say which gateway answered.
 - Runtime state must not leak into "shareable". A review check on every new
   column: is this a decision a person made, or an observation a machine

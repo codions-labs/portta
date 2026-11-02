@@ -60,13 +60,14 @@ own private network and are not on this picture at all.
 |---|---|---|
 | Traefik (`traefik:v3.7.12`) | Container on `portta` and `portta-control` | The only process holding 80/443. Routes by hostname. |
 | Docker socket proxy (`tecnativa/docker-socket-proxy:v0.5.0`) | Container on `portta-control` only | Read-only, filtered Docker API for Traefik's discovery. No host port. |
-| `portta-auth` | Container on `portta`, part of the base gateway | ForwardAuth for protected *project* hostnames and shares: a login page and host-scoped sessions on port 4180, no published port. Not the panel's login. |
+| `portta-auth` | Container on `portta`, part of the base gateway | ForwardAuth for *project* hostnames and shares: a login page and host-scoped sessions on port 4180, no published port. It reads the registry `state/auth/protections.json`; on a public host every routed hostname passes through it. Not the panel's login. |
 | Panel (`web`) | Optional container on `portta` and `portta-web` | One Node process: pages, the API, the event stream and WebSocket upgrades on one port. Opens its SQLite file itself. |
 | Panel socket proxy (`web-socket-proxy`) | Container on `portta-web` only | The panel's own filtered Docker API: reads, the container lifecycle and four exec endpoints. |
-| Applier (`portta-apply`) | Stopped helper container, no network | Prepared by `portta up` when `PORTTA_APPLY=true`; the panel starts it to run `portta up`. |
-| Runner (`portta-runner`) | Stopped helper container, no network | Prepared by `portta up` when `PORTTA_RUNNER=true`; the panel starts it to run one Compose verb against one project. |
+| Applier (`portta-apply`) | Stopped helper container, no network | Prepared by `portta up` when `PORTTA_APPLY=true`; the panel starts it to run `portta up`. Never prepared on `remote-public`. |
+| Runner (`portta-runner`) | Stopped helper container, no network | Prepared by `portta up` when `PORTTA_RUNNER=true`; the panel starts it to run one Compose verb against one project. On `remote-public` it also needs `PORTTA_RUNNER_PUBLIC=true` and a panel on its own domain with sign-in and TLS. |
 | Metrics collector | Detached process on the host | `portta host watch`: host and Docker metrics every 5 s, readiness every 5 min, into `state/`. |
 | Access bridges | On-demand `alpine/socat` containers | `portta access open`: a loopback port into one project's private network, removed on close. |
+| Agent layer | Files on the machine where the CLI runs | `portta agents install` writes an instruction, a session hook and the skills `portta-host-context`, `portta-adopt-compose` and `portta-dockerize` for Claude Code, Codex, OpenCode and Pi. The hook runs `portta agent context`, which tells the agent what this host and directory are. Nothing runs in a container. |
 | Toolbox | One-shot container | Pinned operational tools (`portta toolbox run`, database clients). |
 | Tailscale (`tailscale/tailscale`) | Optional sidecar | With `TAILSCALE_ENABLED=true` on a remote profile, Traefik shares its network namespace and answers on the tailnet. |
 | Cloudflare Tunnel (`cloudflared`) | Optional container on `portta` | With `CLOUDFLARE_TUNNEL_ENABLED=true`, carries HTTPS to Traefik with no open port. |
@@ -85,7 +86,7 @@ Pages, API, events and WebSockets all answer on one port, from one Node
 process: a session cookie has one origin, and a panel split across two ports
 would need a proxy in front of it to have one. A small HTTP server dispatches
 `/api/*` to Hono, `/ws/*` to the authorised upgrade handler and everything else
-to Next's App Router — see
+to Next's App Router, see
 [ADR 0036](../../development/adr/0036-next-app-router-and-the-custom-server.md).
 
 It signs people in itself. `PORTTA_AUTH_MODE=disabled` (the default) answers
@@ -174,8 +175,10 @@ private network and the shared one. Nothing else changes about it.
 1. `demo-shop-web.localhost` resolves to `127.0.0.1` (see
    [Develop applications locally](../guides/local-development.md)).
 2. Traefik, holding `127.0.0.1:80`, matches the `Host` header.
-3. When the hostname is protected, Traefik first asks `portta-auth` through
-   ForwardAuth and only forwards an authenticated request.
+3. When the hostname is protected, or the host is public (where every routed
+   hostname is), Traefik first asks `portta-auth` through ForwardAuth. It
+   forwards the request only when the registry says protected and the session
+   is valid, or public. A hostname with no record is refused.
 4. The matching router points at a service Traefik built from the container's
    labels, and dials the container **over the `portta` network**, pinned by
    `providers.docker.network` so a multi-homed container is never reached
@@ -260,6 +263,6 @@ code path that can remove a consumer container, network or volume.
 It does not own a project's containers, volumes or release cycle. On request it
 may start, stop or restart what it can see, in Compose dependency order, and it
 may ask Compose to rebuild or take a project down through the runner. Rebuild
-preserves volumes. Removal is two named modes — keep data, or include local
-data — and the Compose project name is typed back, on the server. It cannot
+preserves volumes. Removal is two named modes, keep data, or include local
+data, and the Compose project name is typed back, on the server. It cannot
 repair a misconfigured project. `doctor` and `analyze` only observe.

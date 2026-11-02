@@ -104,8 +104,9 @@ See [Configure TCP routing](../guides/tcp-routing.md).
 | `PORTTA_WEB_NETWORK` | `portta-web` | The panel's own internal control network |
 | `PORTTA_WEB_USER` | `node` in the image; setup records `$(id -u):$(id -g)` when the key is empty | User the panel container runs as, so Settings can save `.env` |
 | `PORTTA_AUTH_USER` | same as `PORTTA_WEB_USER` | User the ForwardAuth service runs as; same reason |
-| `PORTTA_APPLY` | `true` in `.env.example` | Prepare the applier the panel may start to run `portta up` ([ADR 0026](../../development/adr/0026-applying-settings-from-the-panel.md)). Set `false` on a host where the panel is reachable by anyone you would not give a shell |
+| `PORTTA_APPLY` | `true` in `.env.example` | Prepare the applier the panel may start to run `portta up` ([ADR 0026](../../development/adr/0026-applying-settings-from-the-panel.md)). Set `false` on a host where the panel is reachable by anyone you would not give a shell. Never prepared on the `remote-public` profile, or with panel access `public` |
 | `PORTTA_RUNNER` | `true` in `.env.example` | Prepare the project runner the panel may start to drive Compose for one project ([ADR 0030](../../development/adr/0030-the-panel-and-a-project-lifecycle.md)) |
+| `PORTTA_RUNNER_PUBLIC` | unset | On the `remote-public` profile, lets the runner serve the panel. Honoured only with panel access `domain`, `PORTTA_AUTH_MODE=required` and `TLS_ENABLED=true`; refused with panel access `public`. Edited in `.env` on the host, never from the panel |
 | `PORTTA_PROJECTS_HOME` | `~/projects` (`/srv/projects` as root) | Projects Home, the directory managed Projects live under. Development/demo commands discover `portta-demo-*` projects there. The panel only receives the path as a string to classify locations, and never mounts it ([ADR 0031](../../development/adr/0031-projects-home-and-project.md), [ADR 0044](../../development/adr/0044-example-projects-live-in-projects-home.md)) |
 | `PORTTA_RUNTIME_DATABASE_FILE` | `/app/state/panel/portta.db` | The panel's SQLite file, inside the container. Compose sets it over a bind mount of `$PORTTA_HOME/state/panel`; the CLI resolves the host path from `$PORTTA_HOME` instead, and neither derives the other's ([ADR 0037](../../development/adr/0037-sqlite-is-the-panel-database.md)) |
 | `PORTTA_AUTH_SECRET` | generated | **Secret.** Signs the panel's sessions and tokens, and the ForwardAuth process's host-scoped cookies. Rotating it signs everybody out of both |
@@ -171,6 +172,13 @@ limits are unforgiving.
 
 Off by default and deliberately awkward to turn on. `portta public enable`
 prints exactly what will become reachable and asks for confirmation.
+
+On the `remote-public` profile every routed service passes ForwardAuth, and
+`state/auth/protections.json` decides per hostname: protected (a credential),
+public (everybody) or no record, which is closed. `portta adopt` stops until
+each routed service has a decision, and `portta protect` changes one at any
+time without recreating a container
+([ADR 0027](../../development/adr/0027-forward-authentication-service.md)).
 
 ## Cloudflare
 
