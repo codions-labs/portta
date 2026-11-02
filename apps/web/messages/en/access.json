@@ -94,7 +94,7 @@
     "shownOnce": "It appears only now. Give it to whoever needs access.",
     "unknownRouters_one": "{{count}} service answers with no login on addresses the panel cannot list",
     "unknownRouters_other": "{{count}} services answer with no login on addresses the panel cannot list",
-    "unknownRoutersHint": "Their routing rule does not name one address: a regexp, a wildcard or no Host at all. Addresses in the same environment read as open because this router may answer them. Give it the login gate or a Host rule.",
+    "unknownRoutersHint": "Their routing rule does not name one address: a regexp, a wildcard or no Host at all. Every address on this host reads as open because this router may answer it. Give it the login gate or a Host rule.",
     "filters": {
       "all": "All {{count}}",
       "unprotected": "No login, open {{count}}",

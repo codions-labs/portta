@@ -3950,11 +3950,35 @@
             "items": {
               "$ref": "#/components/schemas/ExposureEntry"
             }
+          },
+          "openRouters": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "names": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Only those this caller may see; count is the whole host."
+              }
+            },
+            "required": [
+              "count",
+              "names"
+            ],
+            "additionalProperties": false,
+            "description": "Containers answering with no login on names that cannot be listed. Any of them means no address on this host can be called protected."
           }
         },
         "required": [
           "enforced",
-          "entries"
+          "entries",
+          "openRouters"
         ],
         "additionalProperties": false
       },

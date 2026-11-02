@@ -69,6 +69,28 @@ describe('who may open a service, from the panel', () => {
     expect(listed.entries).toHaveLength(1)
   })
 
+  it('names a router open on names nobody can list, whichever project it belongs to', async () => {
+    const loose = {
+      ...PROJECT_A[0]!,
+      id: 'loose',
+      name: 'loose-1',
+      labels: { 'traefik.enable': 'true', 'traefik.http.routers.w.rule': 'HostRegexp(`.+`)' },
+    }
+    const dir = mkdtempSync(join(tmpdir(), 'portta-exposure-'))
+    const { app } = makeApp(
+      { containers: [...GATEWAY, ...gatedProjects, loose] },
+      { authStore: join(dir, 'protections.json'), dynamicDir: dir, profile: 'remote-public', tlsEnabled: true },
+    )
+    const listed = await (await app.request('/api/exposure')).json()
+    expect(listed.openRouters).toEqual({ count: 1, names: ['loose-1'] })
+  })
+
+  it('has no open router to report while nothing routes around the gate', async () => {
+    const { app } = panel()
+    const listed = await (await app.request('/api/exposure')).json()
+    expect(listed.openRouters).toEqual({ count: 0, names: [] })
+  })
+
   it('replaces the password when asked again, and the old one stops working', async () => {
     const { app, authStore } = panel()
     const first = (await (await put(app, '/api/services/a-web/exposure')).json()) as { password: string }

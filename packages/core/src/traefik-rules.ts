@@ -79,9 +79,11 @@ function tokenize(rule: string): Token[] {
       tokens.push({ kind: 'string', text: rule.slice(at + 1, end) })
       at = end + 1
     } else if (char === '"') {
-      const match = /^"((?:[^"\\]|\\.)*)"/.exec(rule.slice(at))
-      if (!match) throw new Error('unterminated string')
-      tokens.push({ kind: 'string', text: (match[1] as string).replace(/\\(.)/g, '$1') })
+      // These are Go string literals, so `\x2e` is a dot. Nothing here decodes
+      // that, and a name read wrong is worse than one not read: it fails closed.
+      const match = /^"([^"\\]*)"/.exec(rule.slice(at))
+      if (!match) throw new Error('unterminated or escaped string')
+      tokens.push({ kind: 'string', text: match[1] as string })
       at += match[0].length
     } else {
       const match = /^[A-Za-z_][A-Za-z0-9_]*/.exec(rule.slice(at))

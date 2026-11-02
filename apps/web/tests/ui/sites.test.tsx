@@ -57,7 +57,7 @@ function row(host: string) {
 
 beforeEach(() => {
   environments.mockReset().mockResolvedValue([live])
-  exposure.mockReset().mockResolvedValue({ enforced: true, entries: [] })
+  exposure.mockReset().mockResolvedValue({ enforced: true, entries: [], openRouters: { count: 0, names: [] } })
 })
 
 describe('Sites', () => {
@@ -73,6 +73,7 @@ describe('Sites', () => {
   it('reads the labels even when the registry holds a decision for that address', async () => {
     exposure.mockResolvedValue({
       enforced: true,
+      openRouters: { count: 0, names: [] },
       entries: [{ host: 'open.example.test', mode: 'protected', user: 'x', project: null, service: null, label: 'x' }],
     })
     renderWithQuery(<SitesView />)
@@ -100,53 +101,30 @@ describe('Sites', () => {
     expect(rows).toHaveLength(2)
   })
 
-  it('does not call an address safe beside a router open on names it cannot list', async () => {
+  it('calls no address safe while a router is open on names nobody can list', async () => {
     environments.mockResolvedValue([
       makeEnvironment({
         name: 'shop',
-        services: [
-          makeContainer({ id: 'gated', name: 'shop-web-1', labels: GATED, urls: [route('shop.example.test')] }),
-          makeContainer({
-            id: 'wide',
-            name: 'shop-api-1',
-            labels: { 'traefik.enable': 'true', 'traefik.http.routers.api.rule': 'HostRegexp(`.+`)' },
-          }),
-        ],
+        services: [makeContainer({ id: 'gated', labels: GATED, urls: [route('shop.example.test')] })],
       }),
     ])
     exposure.mockResolvedValue({
       enforced: true,
       entries: [{ host: 'shop.example.test', mode: 'protected', user: 'x', project: null, service: null, label: 'x' }],
+      openRouters: { count: 1, names: ['loose-1'] },
     })
     renderWithQuery(<SitesView />)
     await screen.findByRole('link', { name: 'shop.example.test' })
     expect(row('shop.example.test').getByText('Open, no login')).toBeInTheDocument()
     expect(screen.getByText(/1 service answers with no login on addresses/)).toBeInTheDocument()
-    expect(screen.getByText('shop-api-1')).toBeInTheDocument()
+    expect(screen.getByText('loose-1')).toBeInTheDocument()
   })
 
-  it("does not count Portta's own bare path, which sits on a port of its own", async () => {
-    environments.mockResolvedValue([
-      makeEnvironment({
-        name: 'portta',
-        services: [
-          makeContainer({ id: 'gated', name: 'shop-web-1', labels: GATED, urls: [route('shop.example.test')] }),
-          makeContainer({
-            id: 'panel',
-            name: 'portta-web-1',
-            labels: {
-              'portta.managed': 'true',
-              'traefik.enable': 'true',
-              'traefik.http.routers.portta-panel.rule': 'PathPrefix(`/`)',
-            },
-          }),
-        ],
-      }),
-    ])
+  it('warns somebody who may not see the name of what is open', async () => {
+    exposure.mockResolvedValue({ enforced: true, entries: [], openRouters: { count: 2, names: [] } })
     renderWithQuery(<SitesView />)
     await screen.findByRole('link', { name: 'shop.example.test' })
-    expect(row('shop.example.test').queryByText('Open, no login')).toBeNull()
-    expect(screen.queryByText(/answers with no login on addresses/)).toBeNull()
+    expect(screen.getByText(/2 services answer with no login on addresses/)).toBeInTheDocument()
   })
 
   it('says nothing about access until the registry answers', async () => {

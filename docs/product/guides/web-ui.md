@@ -276,8 +276,8 @@ called protected only because the registry says so. On a public host, a route
 without the login gate reads **Open, no login**, with no decision to take until the
 gate is there. A router that has no gate and no single address to list, such as a
 `HostRegexp`, a wildcard or a rule with no `Host`, may answer any name on the host
-depending on rule length: Access and Home name it, and the addresses of its
-environment read as open too.
+depending on rule length, whichever project it belongs to: Access and Home name
+it, and every address on the host reads as open until it is fixed.
 
 ![Authentication disabled: the Access page with no open bridge and the TCP services of each project, each with its gateway address and an Open local access button](../../images/auth-disabled-access.png)
 

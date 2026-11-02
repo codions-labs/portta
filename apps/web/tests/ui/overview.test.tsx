@@ -55,7 +55,7 @@ beforeEach(() => {
   })
   metricsHistory.mockReset().mockResolvedValue({ windowSeconds: 1800, points: [] })
   environments.mockReset().mockResolvedValue([])
-  exposure.mockReset().mockResolvedValue({ enforced: false, entries: [] })
+  exposure.mockReset().mockResolvedValue({ enforced: false, entries: [], openRouters: { count: 0, names: [] } })
 })
 
 describe('the development dashboard', () => {
@@ -92,6 +92,7 @@ describe('who may open an environment on a public host', () => {
     environments.mockResolvedValue([makeEnvironment({ name: 'produto', urls: [route] })])
     exposure.mockResolvedValue({
       enforced,
+      openRouters: { count: 0, names: [] },
       entries: entries.map((entry) => ({ ...entry, user: null, project: null, service: null, label: 'x' })),
     })
   }

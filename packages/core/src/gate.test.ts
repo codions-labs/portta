@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { hasForwardAuth } from './forward-auth.ts'
-import { gatewayAlreadyPublic, ungatedContainers } from './gate.ts'
+import { gatewayAlreadyPublic, openCatchAllContainers, ungatedContainers } from './gate.ts'
 import type { ContainerRecord } from './inventory.ts'
 
 function container(name: string, labels: Record<string, string>, state = 'running'): ContainerRecord {
@@ -119,5 +119,25 @@ describe('a gateway that already answers the network', () => {
     expect(gatewayAlreadyPublic([traefik('0.0.0.0', 'running', 8080)])).toBe(false)
     expect(gatewayAlreadyPublic([traefik(null)])).toBe(false)
     expect(gatewayAlreadyPublic([])).toBe(false)
+  })
+})
+
+describe('openCatchAllContainers', () => {
+  const wide = { 'traefik.enable': 'true', 'traefik.http.routers.w.rule': 'HostRegexp(`.+`)' }
+
+  it('finds a router with no gate and no address, wherever it runs', () => {
+    expect(openCatchAllContainers([{ name: 'loose', state: 'running', labels: wide }]).map((c) => c.name)).toEqual([
+      'loose',
+    ])
+  })
+
+  it("leaves out Portta's own, what is stopped, and what names its address", () => {
+    expect(
+      openCatchAllContainers([
+        { state: 'running', labels: { ...wide, 'portta.managed': 'true' } },
+        { state: 'exited', labels: wide },
+        { state: 'running', labels: { 'traefik.enable': 'true', 'traefik.http.routers.w.rule': 'Host(`a.test`)' } },
+      ]),
+    ).toEqual([])
   })
 })

@@ -33,7 +33,7 @@ const container = makeContainer({
 })
 
 beforeEach(() => {
-  exposure.mockReset().mockResolvedValue({ enforced: true, entries: [] })
+  exposure.mockReset().mockResolvedValue({ enforced: true, entries: [], openRouters: { count: 0, names: [] } })
   protectService.mockReset().mockResolvedValue({ ok: true, entry: null, password: 'abcde-fghij', note: '' })
   openService.mockReset().mockResolvedValue({ ok: true, entry: null, note: '' })
   closeService.mockReset().mockResolvedValue({ ok: true, entry: null, note: '' })
@@ -51,6 +51,7 @@ describe('who may open a service', () => {
   it('does not present stored credentials as protection when its router does not enforce them', async () => {
     exposure.mockResolvedValue({
       enforced: false,
+      openRouters: { count: 0, names: [] },
       entries: [
         {
           host: 'shop-web.example.test',
@@ -81,6 +82,7 @@ describe('who may open a service', () => {
   it('shows a protected host and offers a new password, opening and closing', async () => {
     exposure.mockResolvedValue({
       enforced: true,
+      openRouters: { count: 0, names: [] },
       entries: [
         {
           host: 'shop-web.example.test',

@@ -23,6 +23,7 @@ describe('ruleHosts', () => {
     ['a name that is not Host', 'HostSNI(`a.test`)', [], true],
     ['single quotes, which Traefik refuses', "Host('a.test')", [], true],
     ['text that does not parse', 'Host(`a.test`', [], true],
+    ['an escape, which only Go would decode', 'Host("a\\x2etest")', [], true],
   ])('reads %s', (_name, rule, hosts, unknown) => {
     expect(ruleHosts(rule)).toEqual({ hosts, unknown })
   })

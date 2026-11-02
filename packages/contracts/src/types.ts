@@ -528,6 +528,15 @@ export const ExposureView = named(
         .boolean()
         .describe('True on a public host: a hostname with no entry is closed. Elsewhere protection is optional.'),
       entries: z.array(ExposureEntry),
+      openRouters: z
+        .object({
+          count: z.number().int(),
+          names: z.array(z.string()).describe('Only those this caller may see; count is the whole host.'),
+        })
+        .strict()
+        .describe(
+          'Containers answering with no login on names that cannot be listed. Any of them means no address on this host can be called protected.',
+        ),
     })
     .strict(),
   'ExposureView',

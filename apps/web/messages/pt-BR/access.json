@@ -94,7 +94,7 @@
     "shownOnce": "Ela aparece só agora. Entregue a quem precisa de acesso.",
     "unknownRouters_one": "{{count}} serviço responde sem login em endereços que o painel não consegue listar",
     "unknownRouters_other": "{{count}} serviços respondem sem login em endereços que o painel não consegue listar",
-    "unknownRoutersHint": "A regra de roteamento não nomeia um endereço: é uma regexp, um curinga ou não tem Host. Os endereços do mesmo ambiente aparecem como abertos porque esse roteador pode responder por eles. Coloque o gate de login ou uma regra Host.",
+    "unknownRoutersHint": "A regra de roteamento não nomeia um endereço: é uma regexp, um curinga ou não tem Host. Todos os endereços deste host aparecem como abertos porque esse roteador pode responder por eles. Coloque o gate de login ou uma regra Host.",
     "filters": {
       "all": "Todos {{count}}",
       "unprotected": "Sem login {{count}}",
