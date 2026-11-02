@@ -87,12 +87,15 @@ describe('what a repository is allowed to say', () => {
 })
 
 describe('repositoryRunsCommands', () => {
-  const local = (entry: string) => `global\tuser.name=Ada\nlocal\t${entry}\n`
+  /** `git config --list -z`: key, newline, value, NUL. */
+  const records = (...entries: string[]) => `${entries.map((entry) => entry.replace('=', '\n')).join('\0')}\0`
 
   it.each([
     'filter.lfs.clean=git-lfs clean',
     'core.fsmonitor=touch /tmp/x',
     'core.sshCommand=nc evil',
+    'core.worktree=/',
+    'core.bare=true',
     'gpg.program=/tmp/x',
     'diff.x.textconv=/tmp/x',
     'remote.origin.uploadpack=/tmp/x',
@@ -101,15 +104,19 @@ describe('repositoryRunsCommands', () => {
     'includeIf.gitdir:/.path=/tmp/x',
     'credential.helper=!/tmp/x',
   ])('refuses a repository that sets %s', (entry) => {
-    expect(repositoryRunsCommands(local(entry))).toBe(true)
+    expect(repositoryRunsCommands(records('core.bare=false', entry))).toBe(true)
   })
 
-  it('leaves an ordinary repository alone, and the owner alone', () => {
-    expect(repositoryRunsCommands(local('core.bare=false\nlocal\tremote.origin.url=git@x:y.git'))).toBe(false)
-    expect(repositoryRunsCommands('global\tfilter.lfs.clean=git-lfs clean\nsystem\tcore.pager=less\n')).toBe(false)
+  it('cannot be hidden by a tab in the name of a section or in a value', () => {
+    expect(repositoryRunsCommands(records('filter.a\tb.clean=x'))).toBe(true)
+    expect(repositoryRunsCommands(records('filter.x.clean=a\tb'))).toBe(true)
+    expect(repositoryRunsCommands(records('core.fsmonitor=\tx'))).toBe(true)
   })
 
-  it('looks at the work tree settings too', () => {
-    expect(repositoryRunsCommands('worktree\tcore.fsmonitor=x\n')).toBe(true)
+  it('leaves an ordinary repository alone', () => {
+    expect(
+      repositoryRunsCommands(records('core.bare=false', 'core.filemode=true', 'remote.origin.url=git@x:y.git')),
+    ).toBe(false)
+    expect(repositoryRunsCommands('')).toBe(false)
   })
 })

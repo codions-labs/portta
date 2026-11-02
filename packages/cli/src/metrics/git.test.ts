@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -108,6 +108,26 @@ describe('a repository that names a command is not read', () => {
     expect(await readGit(linked, Date.now() + 1)).toBeNull()
   })
 
+  it('a filter hidden behind a tab in the name of its section', async () => {
+    const { state, ran } = await refused((root, marker) => {
+      appendFileSync(join(root, '.git', 'config'), `[filter "a\tb"]\n\tclean = touch ${marker}\n`)
+      writeFileSync(join(root, '.gitattributes'), '* filter=a\tb\n')
+    })
+    expect(state).toBeNull()
+    expect(ran).toBe(false)
+  })
+
+  it('a configuration that is a link, or too large', async () => {
+    const root = repository()
+    const config = join(root, '.git', 'config')
+    appendFileSync(config, `# ${'x'.repeat(70_000)}\n`)
+    expect(await readGit(root, Date.now() + 1)).toBeNull()
+    const other = repository()
+    rmSync(join(other, '.git', 'config'))
+    symlinkSync(config, join(other, '.git', 'config'))
+    expect(await readGit(other, Date.now() + 1)).toBeNull()
+  })
+
   it('an included file', async () => {
     const { state } = await refused((root) => run(root, 'config', 'include.path', '../elsewhere'))
     expect(state).toBeNull()
@@ -143,6 +163,11 @@ describe('which folder a project was started from', () => {
     symlinkSync(inside, link)
     expect(workingDirectories([labels('c', inside)], root).has('c')).toBe(false)
     expect(workingDirectories([labels('d', link)], root).has('d')).toBe(false)
+  })
+
+  it('takes none for a folder that two projects both name', () => {
+    const both = workingDirectories([labels('j', mine), labels('k', mine)], root)
+    expect(both.has('j') || both.has('k')).toBe(false)
   })
 
   it('takes none when Compose did not read a file in that folder', () => {

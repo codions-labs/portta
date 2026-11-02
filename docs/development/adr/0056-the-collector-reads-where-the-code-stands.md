@@ -41,8 +41,9 @@ What is never done:
   to read: a clean filter during `status`, `core.fsmonitor`, a signature program during
   `log`, a remote's helper. So the repository's local settings are read first, never the
   owner's, and one that sets any such key is **not read at all**. The settings checked are
-  the ones git then uses: the collector copies the repository's configuration once, checks
-  the copy, and points git at a private directory that holds that copy and links to the
+  the ones git then uses: the collector copies the repository's configuration once, through
+  a descriptor it checked (a regular file of its user, of a fixed small size, never a link),
+  checks the copy key by key from NUL-separated records, and points git at a private directory that holds that copy and links to the
   rest, so a container that edits the file in between changes nothing. A repository that
   names another work tree (`core.worktree`), a bare one, and a linked work tree or
   submodule, whose repository lives elsewhere, are not read. On top of that,
@@ -55,7 +56,10 @@ What is never done:
   git's own rule for a repository, or whose user the collector cannot tell. The folder must
   also hold the Compose files the containers say Compose read
   (`com.docker.compose.project.config_files`), so a label that names some other folder
-  without one is not followed. What is left is metadata of repositories that user
+  without one is not followed, and a folder that two projects both name is given to
+  neither. These catch a label that is wrong or careless. They do not prove who wrote it:
+  whoever can start a container on the host can write any label, and the collector has no
+  record of its own to compare it with. What is left is metadata of repositories that user
   already owns, shown to people who may read the host's metrics.
 - **Nothing large.** Every string a repository supplies is cut to a fixed size, so a
   repository cannot make the snapshot large.

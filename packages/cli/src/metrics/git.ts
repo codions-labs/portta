@@ -9,10 +9,13 @@
 // fsmonitor (a repository can name a command there) and no hooks path.
 
 import {
-  copyFileSync,
+  closeSync,
+  constants,
+  fstatSync,
   lstatSync,
   mkdtempSync,
-  readFileSync,
+  openSync,
+  readSync,
   realpathSync,
   rmSync,
   statSync,
@@ -86,8 +89,9 @@ function newestMtime(directory: string, files: GitState['files']): number | null
  * The label is written by whoever started the container, so it is not taken at its word: a
  * project whose containers disagree has none, a path inside Portta's own installation has
  * none, and one this user does not own has none, which is also git's own rule for a repository.
- * Compose also records the files it read, so the folder must hold them: a label that names some
- * other folder without a compose file in it was not written by Compose for that project.
+ * Compose also records the files it read, so the folder must hold them, and a folder that two
+ * projects both name is given to neither. These catch a label that is wrong or careless; they are
+ * not proof of who wrote it, which only a record Portta made itself could be.
  * Where the collector cannot tell who it runs as, nothing is trusted.
  */
 export function workingDirectories(
@@ -109,10 +113,15 @@ export function workingDirectories(
     }
     files.set(project, named)
   }
+  // A folder two projects both name is claimed by at least one that did not start there.
+  const claims = new Map<string, number>()
+  for (const directories of claimed.values()) {
+    for (const directory of directories) claims.set(directory, (claims.get(directory) ?? 0) + 1)
+  }
   const trusted = new Map<string, string>()
   for (const [project, directories] of claimed) {
     const [only] = directories
-    if (directories.size !== 1 || !only || !isAbsolute(only)) continue
+    if (directories.size !== 1 || !only || !isAbsolute(only) || claims.get(only) !== 1) continue
     try {
       const real = realpathSync(only)
       const inside = relative(realpathSync(root), real)
@@ -157,6 +166,31 @@ interface View {
 }
 
 const CONFIG_LIMIT = 64 * 1024
+const HEAD_LIMIT = 4 * 1024
+
+/**
+ * A small regular file of this user's, read through the descriptor that was checked.
+ *
+ * Not a link (a project could make one to something large or secret), not a pipe, and never
+ * more than `limit` bytes: what is read is what was opened, so nothing swaps in after the check.
+ */
+function readSmallFile(path: string, limit: number, uid: number | undefined): Buffer | null {
+  let fd: number
+  try {
+    fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+  } catch {
+    return null
+  }
+  try {
+    const info = fstatSync(fd)
+    if (!info.isFile() || info.size > limit || (uid !== undefined && info.uid !== uid)) return null
+    const buffer = Buffer.alloc(limit + 1)
+    const read = readSync(fd, buffer, 0, limit + 1, 0)
+    return read > limit ? null : buffer.subarray(0, read)
+  } finally {
+    closeSync(fd)
+  }
+}
 
 /**
  * A directory git can read the repository through without trusting the one in the project.
@@ -170,13 +204,14 @@ function privateView(directory: string, uid: number | undefined): View | null {
   const real = join(directory, '.git')
   const info = lstatSync(real, { throwIfNoEntry: false })
   if (!info?.isDirectory() || (uid !== undefined && info.uid !== uid)) return null
-  const config = readFileSync(join(real, 'config'))
-  if (config.length > CONFIG_LIMIT) return null
+  const config = readSmallFile(join(real, 'config'), CONFIG_LIMIT, uid)
+  const head = readSmallFile(join(real, 'HEAD'), HEAD_LIMIT, uid)
+  if (!config || !head) return null
   const gitDir = mkdtempSync(join(tmpdir(), 'portta-git-'))
   try {
     writeFileSync(join(gitDir, 'config'), config, { mode: 0o600 })
     // HEAD is copied, not linked: git reads a linked HEAD as an old-style symbolic ref.
-    copyFileSync(join(real, 'HEAD'), join(gitDir, 'HEAD'))
+    writeFileSync(join(gitDir, 'HEAD'), head, { mode: 0o600 })
     for (const name of ['index', 'refs', 'objects', 'packed-refs', 'shallow']) {
       if (lstatSync(join(real, name), { throwIfNoEntry: false })) symlinkSync(join(real, name), join(gitDir, name))
     }
@@ -205,7 +240,7 @@ async function read(directory: string, collectedAt: number): Promise<GitState | 
 async function readThrough(view: View, collectedAt: number): Promise<GitState | null> {
   const { directory } = view
   // Before anything that could run what the repository names: the copy git will read, not the owner's.
-  const config = await git(view, ['config', '--file', join(view.gitDir, 'config'), '--list'])
+  const config = await git(view, ['config', '--file', join(view.gitDir, 'config'), '--list', '-z'])
   if (config === null || repositoryRunsCommands(config)) return null
   const status = await git(view, ['status', '--porcelain=v2', '--branch', '--no-renames', '--ignore-submodules=all'])
   if (status === null) return null

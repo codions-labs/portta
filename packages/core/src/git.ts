@@ -99,10 +99,15 @@ export function parseGitHead(text: string): GitState['head'] {
  *
  * `git status` runs a clean filter and an fsmonitor, `log` can run a signature program, and
  * a remote can name a helper, all from keys a repository carries. Reading is refused for a
- * repository that sets any of them. Takes `git config --list --show-scope` and looks at what
- * the repository (local) and its work tree set, never at the owner's own configuration.
+ * repository that sets any of them, or that names another work tree, or is bare.
+ *
+ * Takes `git config --file <the repository's config> --list -z`: records end in NUL, and a
+ * record is the key, a newline and the value. The key is everything before that first newline,
+ * whatever it contains (a tab in a subsection included), so nothing the file says can move
+ * a key out of the check. It reads the one file git is about to be pointed at, never the
+ * owner's own configuration.
  */
-export function repositoryRunsCommands(configList: string): boolean {
+export function repositoryRunsCommands(configRecords: string): boolean {
   const dangerous = [
     /^filter\./,
     /^core\.(fsmonitor|sshcommand|pager|editor|askpass|gitproxy|hookspath|attributesfile|alternaterefscommand|worktree)$/,
@@ -117,16 +122,14 @@ export function repositoryRunsCommands(configList: string): boolean {
     /^url\./,
     /^submodule\..*\.(update|fetchrecursesubmodules)$/,
   ]
-  for (const line of configList.split('\n')) {
-    // With `--show-scope` a line is `scope<TAB>key=value`; from `--file` it is `key=value` alone,
-    // and everything in that one file is the repository's.
-    const tab = line.indexOf('\t')
-    const scope = tab === -1 ? 'local' : line.slice(0, tab)
-    if (scope !== 'local' && scope !== 'worktree') continue
-    const key = (tab === -1 ? line : line.slice(tab + 1)).split('=')[0]?.toLowerCase() ?? ''
+  for (const record of configRecords.split('\0')) {
+    if (record === '') continue
+    const newline = record.indexOf('\n')
+    const key = (newline === -1 ? record : record.slice(0, newline)).toLowerCase()
+    const value = newline === -1 ? '' : record.slice(newline + 1)
     if (dangerous.some((pattern) => pattern.test(key))) return true
     // Every repository says `core.bare=false`; a bare one has no work tree to read.
-    if (key === 'core.bare' && line.endsWith('=true')) return true
+    if (key === 'core.bare' && value.trim().toLowerCase() !== 'false') return true
   }
   return false
 }
