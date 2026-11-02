@@ -68,6 +68,7 @@ function attempted(email: string | null, ip: string | null): Principal {
     source: 'web',
     sessionId: null,
     tokenId: null,
+    twoFactor: false,
     ip,
   }
 }

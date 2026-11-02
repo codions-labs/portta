@@ -5,7 +5,7 @@ import { auditLog, seedMinimal } from 'portta-db'
 import { afterEach, describe, expect, it } from 'vitest'
 import { WebSocket, WebSocketServer } from 'ws'
 import type { AppDeps } from '../../src/deps.ts'
-import { consoleRoute } from '../../src/realtime/ws/console.ts'
+import { consoleNeedsSecondFactor, consoleRoute } from '../../src/realtime/ws/console.ts'
 import { createUpgradeHandler } from '../../src/realtime/ws/upgrade.ts'
 import { DockerApiError } from '../../src/services/docker/client.ts'
 import { FULL_HOST } from '../fixtures.ts'
@@ -34,7 +34,9 @@ class ConsoleStream extends Duplex {
   }
 }
 
-async function fixture(options: { missing?: boolean; attachDelay?: number; principal?: Principal | null } = {}) {
+async function fixture(
+  options: { missing?: boolean; attachDelay?: number; principal?: Principal | null; webExpose?: string } = {},
+) {
   const seeded = await seededDatabase({ empty: true })
   await seedMinimal(seeded.db)
   const panel = makeApp({ containers: FULL_HOST }, {}, seeded.database)
@@ -63,7 +65,7 @@ async function fixture(options: { missing?: boolean; attachDelay?: number; princ
   })
 
   const deps: AppDeps = {
-    config: panel.config,
+    config: { ...panel.config, webExpose: options.webExpose ?? panel.config.webExpose },
     client,
     cache: panel.cache,
     hub: panel.hub,
@@ -200,5 +202,44 @@ describe('container console WebSocket', () => {
       action: 'container.console_closed',
       metadata: expect.objectContaining({ teardownConfirmed: true, reason: 'exec exited' }),
     })
+  })
+})
+
+describe('the console on a panel that is reachable beyond loopback', () => {
+  const account = (twoFactor: boolean) =>
+    principalFor({ kind: 'user', userId: 'u1', role: 'owner', permissions: new Set(permissionsOf('owner')), twoFactor })
+
+  function closeOf(port: number): Promise<{ code: number; reason: string }> {
+    return new Promise((resolve, reject) => {
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/ws/environments/alpha/console?service=api`)
+      socket.on('close', (code, reason) => resolve({ code, reason: String(reason) }))
+      socket.on('error', reject)
+      setTimeout(() => reject(new Error('no close')), 2_000).unref()
+    })
+  }
+
+  it('needs a second factor on a domain or public panel, and never on loopback', () => {
+    const config = (webExpose: string) => ({ config: { webExpose } }) as never
+    expect(consoleNeedsSecondFactor(config('domain'), account(false))).toBe(true)
+    expect(consoleNeedsSecondFactor(config('public'), account(false))).toBe(true)
+    expect(consoleNeedsSecondFactor(config('domain'), account(true))).toBe(false)
+    expect(consoleNeedsSecondFactor(config('local'), account(false))).toBe(false)
+    expect(consoleNeedsSecondFactor(config('tailscale'), account(false))).toBe(false)
+    expect(consoleNeedsSecondFactor(config('domain'), principalFor())).toBe(false)
+  })
+
+  it('closes the session without a shell and says where to turn it on', async () => {
+    const item = await fixture({ principal: account(false), webExpose: 'domain' })
+    const closed = await closeOf(item.port)
+    expect(closed.code).toBe(1008)
+    expect(closed.reason).toContain('Settings, Security')
+    expect(item.shells).toEqual([])
+  })
+
+  it('opens the shell once the account has a second factor', async () => {
+    const item = await fixture({ principal: account(true), webExpose: 'domain' })
+    const connected = await connect(item.port, '/ws/environments/alpha/console?service=api')
+    expect(connected.control.at(-1)).toMatchObject({ kind: 'open' })
+    connected.socket.close()
   })
 })

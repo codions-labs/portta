@@ -29,6 +29,8 @@ export interface Principal {
   source: PrincipalSource
   sessionId: string | null
   tokenId: string | null
+  /** Whether the account behind the request has a second factor. Always false for `local`. */
+  twoFactor: boolean
   /**
    * The address this request appeared to come from, or null.
    *

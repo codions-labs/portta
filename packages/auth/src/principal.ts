@@ -117,6 +117,7 @@ export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
       source: readSource(headers.get('x-portta-source'), 'web'),
       sessionId: null,
       tokenId: null,
+      twoFactor: false,
       ip: readAddress(headers),
     }
   }
@@ -158,6 +159,7 @@ export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
       source: readSource(headers.get('x-portta-source') ?? metadata.source ?? null, 'api'),
       sessionId: null,
       tokenId: record.id,
+      twoFactor: user.twoFactorEnabled === true,
       ip: readAddress(headers),
     }
   }
@@ -185,6 +187,7 @@ export function createPrincipalResolver(deps: ResolverDeps): PrincipalResolver {
       source: readSource(headers.get('x-portta-source'), 'web'),
       sessionId: session.session.id,
       tokenId: null,
+      twoFactor: (user as { twoFactorEnabled?: boolean | null }).twoFactorEnabled === true,
       ip: readAddress(headers),
     }
   }
@@ -214,6 +217,7 @@ export function principalFor(overrides: Partial<Principal> = {}): Principal {
     source: 'web',
     sessionId: null,
     tokenId: null,
+    twoFactor: false,
     ip: null,
     ...overrides,
   }
