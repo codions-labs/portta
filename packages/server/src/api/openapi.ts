@@ -231,7 +231,7 @@ export function openApiOptions(version: string): Partial<GenerateSpecOptions> {
         version,
         summary: 'Runtime inventory and bounded control for Portta.',
         description:
-          'The API used by the panel UI, the CLI and local agents. Every operation that is not public declares the permission it needs (x-portta-permission), and the panel decides: a session cookie or a Portta token names a user, and their role says what they hold. Read-only mode leaves every principal with the reads alone, and an agent that announces itself with X-Portta-Actor holds what the agentPermissions setting grants. Writes can also be refused by the same-origin guard.',
+          'The API used by the panel UI, the CLI and local agents. Every operation that is not public declares the permission it needs (x-portta-permission), and the panel decides: a session cookie or a Portta token names a user, and their role says what they hold. Read-only mode leaves every principal with the reads alone, and an agent that announces itself with X-Portta-Actor holds the default agent permissions, which leave out reconfiguring an environment and opening a console. Writes can also be refused by the same-origin guard.',
         license: { name: 'MIT' },
       },
       jsonSchemaDialect: 'https://json-schema.org/draft/2020-12/schema',

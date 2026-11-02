@@ -2,7 +2,6 @@ import { type DomainMode, resolveDomain } from './domain.ts'
 
 export const AUTH_BUILD_FILE = 'docker/compose/features/auth-build.yaml'
 export const AUTH_DEV_FILE = 'docker/compose/features/auth-dev.yaml'
-export const PANEL_HOST_FILE = 'docker/compose/features/panel-host.yaml'
 
 export const TRUTHY = new Set(['1', 'true', 'yes', 'on', 'enabled'])
 
@@ -283,11 +282,6 @@ export function composeFiles(config: GatewayConfig): string[] {
     if (config.webExpose === 'domain') {
       files.push('docker/compose/features/panel-domain.yaml')
     }
-    // The panel's way to the host daemon: a name for the host, and the token.
-    // Always, because Issues are read through it (ADR 0018) and the panel has
-    // no other way to reach `gh`. A daemon that is not running degrades the
-    // surfaces that need it rather than the panel.
-    files.push(PANEL_HOST_FILE)
   }
   // Auth is a gateway service, not a panel extra. Its local-build overlay is
   // selected by the same flags as the panel.

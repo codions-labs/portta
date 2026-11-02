@@ -31,7 +31,7 @@ describe('docsHref', () => {
     expect(docsHref('docs/development/adr/0031-projects-home-and-project.md')).toBe(
       '/docs/adr/0031-projects-home-and-project',
     )
-    expect(docsHref('docs/product/guides/github.md')).toBe('/docs/github')
+    expect(docsHref('docs/product/guides/sharing.md')).toBe('/docs/sharing')
     expect(slugFor('docs/development/adr/README.md')).toBe('adr')
   })
 
@@ -69,10 +69,10 @@ describe('DocText', () => {
 
   it('stays plain text when the panel does not serve the documentation', async () => {
     overview.mockResolvedValue(status(false))
-    renderWithQuery(<DocText>See docs/product/guides/github.md.</DocText>)
+    renderWithQuery(<DocText>See docs/product/guides/sharing.md.</DocText>)
     await waitFor(() => {
       expect(screen.queryByRole('link')).not.toBeInTheDocument()
     })
-    expect(screen.getByText('See docs/product/guides/github.md.')).toBeInTheDocument()
+    expect(screen.getByText('See docs/product/guides/sharing.md.')).toBeInTheDocument()
   })
 })

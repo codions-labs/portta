@@ -4,7 +4,7 @@
 
 A Project is the product being developed and is persisted by the panel. It can
 own multiple repositories and running environments, and points at where its
-work lives ([ADR 0050](0050-work-lives-in-an-external-provider.md)). A
+work lives (ADR 0050). A
 Repository is a code location with a remote. An Environment is a Compose
 project observed on the host.
 

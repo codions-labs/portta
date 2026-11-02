@@ -44,31 +44,11 @@
     "adopt": "Adopt an environment",
     "adoptButton": "Adopt"
   },
-  "issues": {
-    "title": "Issues",
-    "description": "Projected from GitHub. Every row says how old the answer is.",
-    "filterAria": "Filter issues",
-    "status": "Status",
-    "state": "Issue state",
-    "reading": "Reading the issue projection",
-    "needsDatabase": "Issues need the panel's database",
-    "needsDatabaseHint": "They are a projection of GitHub, kept locally so they answer while GitHub is unreachable."
-  },
-  "repositoriesCard": {
-    "title": "Repositories",
-    "description": "The Git of this product. Local first; GitHub is optional metadata.",
-    "empty": "No repository yet",
-    "emptyHint": "Add one the host scanned, or name it by hand.",
-    "remove": "Unregister"
-  },
   "environmentsLink": "Environments on this host ({{count}})",
   "tabs": {
     "label": "{{name}} sections",
     "overview": "Overview",
-    "issues": "Issues",
-    "repositories": "Repositories ({{count}})",
     "environments": "Environments ({{count}})",
-    "activity": "Activity",
     "settings": "Settings"
   },
   "pulse": {
@@ -81,7 +61,6 @@
   "overview": {
     "resources": "Resources",
     "noMeasurement": "No environment of this project is measured right now.",
-    "manageRepositories": "Manage",
     "manageEnvironments": "Manage"
   },
   "settings": {
@@ -92,15 +71,10 @@
     "archived": "Archived",
     "deleteTitle": "Delete this project",
     "deleteDescription": "Removes the registration and what Portta keeps about it. Nothing on the host changes.",
-    "deleteRemoves": "Removed: the project, its repositories' registrations, its sessions and activity.",
-    "deleteKeeps": "Kept: every container, volume, network, working directory and GitHub issue. Environments go back to unassigned.",
+    "deleteRemoves": "Removed: the project and its adoptions.",
+    "deleteKeeps": "Kept: every container, volume, network and working directory. Environments go back to unassigned.",
     "typeSlug": "Type {{slug}} to confirm",
-    "deleteButton": "Delete project",
-    "provider": "Where work lives",
-    "providerHint": "GitHub Issues, or Linear. Derived means: GitHub, when a repository here has a GitHub remote.",
-    "providerDerived": "Derived from the repository",
-    "linearTeam": "Linear team",
-    "linearTeamHint": "The team key its issues belong to, such as ENG."
+    "deleteButton": "Delete project"
   },
   "actions": {
     "label": "Environments",

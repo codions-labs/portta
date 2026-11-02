@@ -54,7 +54,7 @@ portta/
 | `apps/auth` | `portta-auth` | no | ForwardAuth for project hostnames and shares |
 | `packages/core` | `portta-core` | no | Pure derivations: `env`, `config`, `discovery`, `capabilities`, `endpoints`, `inventory`, `apply`, `tunnel`, `password`, `metrics`. No process execution, ever |
 | `packages/contracts` | `portta-contracts` | no | The API's Zod schemas and types, and the generated `openapi.json` |
-| `packages/mcp` | `portta-mcp` | no (bundled into the CLI, imported by the server) | The MCP tool registrations, one call to the panel API each, and the tool lists both transports assert against. Nothing that knows a process: the CLI hands it a client and the host's resolver, the panel hands it its own API ([ADR 0054](adr/0054-mcp-tools-are-shared-and-served-over-http.md)) |
+| `packages/mcp` | `portta-mcp` | no (bundled into the CLI, imported by the server) | The MCP tool registrations, one call to the panel API each, and the tool lists both transports assert against. Nothing that knows a process: the CLI hands it a client and the host's resolver, the panel hands it its own API (ADR 0054) |
 | `packages/db` | `portta-db` | no | The schema, the generated migrations and the client. No business rule |
 | `packages/auth` | `portta-auth-core` | no | Better Auth, the security mode, the `Principal`, and the one `authorize` |
 | `packages/server` | `portta-server` | no | Every business rule: services, the Hono API, Docker, Traefik, Git, persistence, background work, and the client that asks the host daemon for issues |
@@ -212,11 +212,11 @@ redefines a base entry.
 
 Taskflow is the first module. Its parts follow the workspaces above rather than
 living in one directory; the table of where each part lives is in the module's
-[development page](../modules/taskflow/development.md#repository-layout).
+development page.
 
 The panel never runs Taskflow's work: it forwards the module's routes to the
 daemon through its authorised proxy
-([Host daemon and module proxy](host-daemon.md)). `portta flow` commands call
+(Host daemon and module proxy). `portta flow` commands call
 the daemon directly with the token from `state/host`, and a few of them run the
 Taskflow runtime in the CLI process.
 
@@ -226,7 +226,7 @@ never reads the source tree: `dist/cli.js`, `dist/host.js` (the daemon
 supervisor the module starts on demand, which outlives a daemon restart),
 `dist/assets/workflows` (from `packages/host/workflows`) and
 `dist/assets/skills/portta-workflows` (from `skills/portta-workflows`). See the
-module's [development page](../modules/taskflow/development.md).
+module's development page.
 
 ## How to add a command
 

@@ -5,7 +5,7 @@ which repositories and environments make them up, what is running, how to reach
 and test it, what the logs say and how much of the host it uses. It complements
 the CLI and `portta mcp` rather than replacing them: all three work on the same
 API and the same model
-([ADR 0032](../../development/adr/0032-portta-development-model.md)). Docker and
+(ADR 0032). Docker and
 Traefik remain the live sources of runtime facts; the panel persists the
 decisions — Projects, repositories, sessions — and a bounded history of what
 happened ([ADR 0013](../../development/adr/0013-what-the-panel-persists.md)).
@@ -211,7 +211,7 @@ the slug is what an environment's `portta.project` label must say to be adopted
 automatically. Opening a Project shows its state, an **Open / Test** menu for
 its primary environment, and its Overview, Issues, Repositories, Environments,
 Activity and Settings tabs. See [Manage projects](projects.md) and
-[Work with issues](issues.md).
+Work with issues.
 
 ### Environments
 

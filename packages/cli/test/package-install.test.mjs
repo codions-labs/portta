@@ -42,12 +42,9 @@ test('the packed npm package installs, runs, and ships its runtime assets outsid
 
     // The build splits the shared graph into chunks that the entry points
     // import by relative path, and `files` has to carry all of them. One lone
-    // .js would mean the split silently collapsed back into two copies.
+    // .js would mean the split silently collapsed back into one file.
     const chunks = readdirSync(join(installed, 'dist')).filter((name) => name.endsWith('.js'))
-    assert.ok(chunks.length > 2, `expected chunks beside the entry points, got ${chunks.join(', ')}`)
-
-    // The host daemon ships beside the CLI that starts it.
-    assert.equal(existsSync(join(installed, 'dist', 'host.js')), true, 'missing dist/host.js')
+    assert.ok(chunks.length > 2, `expected chunks beside the entry point, got ${chunks.join(', ')}`)
 
     // What the npm page shows: the build writes both from the repository root.
     assert.equal(existsSync(join(installed, 'LICENSE')), true)

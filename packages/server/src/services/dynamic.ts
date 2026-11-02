@@ -8,13 +8,9 @@
 // (middlewares.yaml, tcp.yaml, local-tls.yaml, anything a user dropped in)
 // belongs to the user and is never touched.
 //
-// The list is three fixed names plus one per registered module, derived from
-// the module manifests rather than written out again here: a module that is
-// not in `MODULES` has no file, and no module can widen the surface by naming
-// a path itself.
+// The list is three fixed names.
 //
-// See docs/development/adr/0011-bounded-traefik-write-surface.md and
-// docs/development/adr/0048-module-endpoints-through-traefik.md.
+// See docs/development/adr/0011-bounded-traefik-write-surface.md.
 
 import {
   accessSync,

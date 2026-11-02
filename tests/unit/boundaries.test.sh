@@ -76,12 +76,6 @@ assert_eq "" "$(forbidden packages/core/src)"
 it "portta-contracts imports only portta-core"
 assert_eq "" "$(forbidden packages/contracts/src portta-core)"
 
-# The MCP tools are one call to the panel each, served by the CLI over stdio
-# and by the panel over HTTP. They name the contract and nothing that would
-# tie them to either process.
-it "portta-mcp imports only portta-contracts"
-assert_eq "" "$(forbidden packages/mcp/src portta-contracts)"
-
 # Persistence holds no business rule, so it has nothing to ask auth or the
 # services for.
 it "portta-db imports only portta-core"
@@ -96,13 +90,7 @@ assert_eq "" "$(forbidden packages/auth/src portta-core portta-db portta-contrac
 # opens the SQLite database the panel owns, which is why it cannot import the
 # packages that could.
 it "portta the CLI never imports the database, auth or the server"
-assert_eq "" "$(forbidden packages/cli/src portta-core portta-contracts portta-host portta-mcp)"
-
-# The host daemon runs beside the CLI, on the host, and reaches the panel's
-# data only through the panel. It is bundled into the CLI, so it may not need
-# anything the CLI could not ship either.
-it "portta-host imports only portta-core and portta-contracts"
-assert_eq "" "$(forbidden packages/host/src portta-core portta-contracts)"
+assert_eq "" "$(forbidden packages/cli/src portta-core portta-contracts)"
 
 # The ForwardAuth service protects project hostnames and shares. It is not the
 # panel and must not grow into it.

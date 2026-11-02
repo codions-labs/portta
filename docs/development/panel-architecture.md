@@ -126,7 +126,7 @@ The database stores decisions and identity, not observations. Everything live on
 screen (services, URLs, networks, ports, health and bridges) is still read from
 Docker at request time, so a container that disappears stops appearing. An issue
 is a third case: it belongs to GitHub or Linear, is read at request time and is
-never stored ([ADR 0050](adr/0050-work-lives-in-an-external-provider.md)).
+never stored (ADR 0050).
 The database keeps the gateway instance, project identity and repositories,
 typed preferences, accounts, tokens and SSH keys, sessions, activity and audit, and which
 environments run for which issue. It is a boot dependency: a panel that cannot
@@ -143,13 +143,13 @@ Traefik configuration, an embedded Traefik dashboard, a tunnel service, or
 being a replacement for Portainer or Docker Desktop.
 
 Sessions, activity and issues are described in
-[Connect GitHub](../product/guides/github.md),
-[Work with issues](../product/guides/issues.md) and
-[MCP reference](../product/reference/mcp.md). What is out of scope there: nothing about an issue is stored, so there is no offline reading
+Connect GitHub,
+Work with issues and
+MCP reference. What is out of scope there: nothing about an issue is stored, so there is no offline reading
 and no board; GitHub Projects v2 fields are not read; and a web editor or a file
 browser beyond the instruction files is a later step. Local Git stays
-host-collected ([ADR 0010](adr/0010-git-collected-on-the-host.md) and
-[ADR 0032](adr/0032-portta-development-model.md)).
+host-collected (ADR 0010 and
+ADR 0032).
 
 Sharing is deliberately narrow: one additional hostname per service, with an
 expiry, on a network the gateway already answers. It is not authentication for
@@ -170,7 +170,7 @@ issue is read and written live by the host daemon (`portta host serve`), which
 runs on the host where the operator's tools are signed in:
 
 - **GitHub** through the `gh` CLI session on the host
-  ([ADR 0018](adr/0018-github-issues-through-the-gh-cli.md)).
+  (ADR 0018).
 - **Linear** through `LINEAR_API_KEY` in the daemon's environment.
 
 The issue services in `packages/server/src/services/issues/` decide which
@@ -178,9 +178,9 @@ repository or Linear team a Project means and project the daemon's answer into
 the contract; `host-client.ts` there is the typed client to the daemon's
 `/api/forge/*` routes, sending the token from `state/host/token`. Nothing the browser sent reaches the daemon. The panel
 stores only the issue reference (`github:owner/repo#113`, `linear:ENG-42`) and
-the environments linked to it ([ADR 0050](adr/0050-work-lives-in-an-external-provider.md)).
+the environments linked to it (ADR 0050).
 
 When the daemon is not running, or no provider is signed in on the host, issue
 views say that the provider could not be reached rather than showing an empty
-list. See [Run the host daemon](../product/guides/host-daemon.md) and
-[Host daemon and module proxy](host-daemon.md).
+list. See Run the host daemon and
+Host daemon and module proxy.

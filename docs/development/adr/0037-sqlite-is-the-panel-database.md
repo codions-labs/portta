@@ -1,7 +1,7 @@
 # 0037. The panel's database is SQLite, through Drizzle
 
 **Status:** Accepted; see [0013](0013-what-the-panel-persists.md),
-[0049](0049-host-state-in-sqlite.md)
+0049
 
 ## Context
 
@@ -10,7 +10,7 @@ the handful of people [ADR 0038](0038-roles-and-project-access.md) gives
 accounts to. There is no second writer, no replica, no connection pool worth
 the name, no query that needs a planner, and nothing in the schema that is not
 a row somebody wrote from this host. The largest table is bounded activity
-([ADR 0032](0032-portta-development-model.md)).
+(ADR 0032).
 
 A database server was considered and rejected. It would charge on every axis
 an installation is measured by: a container to pull and keep running; a
@@ -22,7 +22,7 @@ to be up, reachable and migrated before the panel opens HTTP, which is the most
 common way a fresh installation never reaches its first screen. None of that
 buys anything the panel uses.
 
-[ADR 0049](0049-host-state-in-sqlite.md) puts the host daemon's state — which
+ADR 0049 puts the host daemon's state — which
 is written far harder, many times a second, by processes the panel does not
 own — in SQLite through `better-sqlite3`. The panel's model is written far
 more gently, and the same engine fits it at least as well.
@@ -69,7 +69,7 @@ the other. `packages/db/src/client.ts` sets, on every connection:
   cascades a Project delete depends on;
 - `synchronous = NORMAL`, the documented safe pairing with WAL: durable against
   a process crash, at risk only from losing power mid-checkpoint, which is the
-  same trade [ADR 0049](0049-host-state-in-sqlite.md) makes.
+  same trade ADR 0049 makes.
 
 ### The migration lock is `BEGIN IMMEDIATE`
 
@@ -178,6 +178,6 @@ for any import the root makes.
   daemon's.
 - [ADR 0013](0013-what-the-panel-persists.md)'s division stands: the panel
   persists decisions, Docker and Traefik own their own live state, and the
-  panel does not copy it in. [ADR 0049](0049-host-state-in-sqlite.md) says
+  panel does not copy it in. ADR 0049 says
   what the CLI may do with the panel's file, which is the operations on an
   installation and never a write to the model.

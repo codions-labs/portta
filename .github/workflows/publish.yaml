@@ -16,9 +16,6 @@ permissions:
 jobs:
   version:
     name: Resolve publication identity
-    # sandbox-image.yaml owns the sandbox-v* releases; without this guard
-    # publish-identity.mjs refuses the tag and this workflow fails on each one.
-    if: github.event_name != 'release' || !startsWith(github.event.release.tag_name, 'sandbox-')
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:

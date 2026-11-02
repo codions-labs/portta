@@ -23,7 +23,6 @@ function fixture(env: string): string {
     'profiles/remote.yaml',
     'profiles/public.yaml',
     'features/web.yaml',
-    'features/panel-host.yaml',
     'features/web-bind.yaml',
     'features/web-dev.yaml',
     'features/web-build.yaml',

@@ -461,33 +461,6 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
     ),
   )
 
-  // --- issues --------------------------------------------------------------
-  // The panel reads and writes issues through `gh` on this host, so this is a
-  // check about this machine rather than about the panel's configuration
-  // (docs/development/adr/0018-github-issues-through-the-gh-cli.md). It never
-  // fails: a Portta used only for environments needs neither provider, and a
-  // failure would make `portta doctor` exit 1 on a host that is fine.
-  const gh = await locate('gh')
-  if (!gh) {
-    add(
-      check(
-        'issues.gh',
-        'warn',
-        'github cli',
-        'gh is not installed, so the panel cannot read or write issues',
-        'install it from https://cli.github.com, then gh auth login',
-      ),
-    )
-  } else {
-    const authed = await runProcess('gh', ['auth', 'status'], { reject: false })
-    add(
-      authed.failed
-        ? check('issues.gh', 'warn', 'github cli', 'gh is installed but nobody is signed in', 'gh auth login')
-        : check('issues.gh', 'pass', 'github cli', `signed in (${gh})`),
-    )
-  }
-  if (env.LINEAR_API_KEY) add(check('issues.linear', 'pass', 'linear', 'LINEAR_API_KEY is set for the host daemon'))
-
   // --- databases by hostname -----------------------------------------------
   if (config.tcpEnabled) {
     add(

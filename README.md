@@ -128,7 +128,7 @@ Portta publishes its working method as agent skills, so Claude Code, Codex, Open
 npx skills add codions-labs/portta -g
 ```
 
-The skills cover branches and worktrees (`portta-method`), commits, pull requests, issues, resolving an issue end to end, authoring workflows, and adopting a Compose project through the CLI (`portta-adopt-compose`). See [the working agreement](docs/product/concepts/working-agreement.md).
+The skills cover branches and worktrees (`portta-method`), commits, pull requests, issues, resolving an issue end to end, authoring workflows, and adopting a Compose project through the CLI (`portta-adopt-compose`). See the working agreement.
 
 ## Develop Portta
 
@@ -145,8 +145,8 @@ This builds the local images, starts the gateway and the panel with hot reloadin
 - [Documentation index](docs/README.md), also served by the panel at `/docs` and by `portta docs`
 - [Portta architecture](docs/product/concepts/architecture.md), [Networking](docs/product/concepts/networking.md) and [Security](docs/product/concepts/security.md)
 - [Choose remote access](docs/product/guides/remote-development.md): Tailscale, Cloudflare Tunnel or a public host
-- [Configuration reference](docs/product/reference/configuration.md), [CLI reference](docs/product/reference/cli.md) and [MCP reference](docs/product/reference/mcp.md)
-- [Taskflow](docs/modules/taskflow/README.md)
+- [Configuration reference](docs/product/reference/configuration.md), [CLI reference](docs/product/reference/cli.md) and MCP reference
+- Taskflow
 - [Architecture decisions](docs/development/adr/README.md)
 - [Changelog](CHANGELOG.md)
 

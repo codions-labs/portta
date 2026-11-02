@@ -112,7 +112,7 @@ See [Configure TCP routing](../guides/tcp-routing.md).
 | `PORTTA_AUTH_IMAGE` | Portta release image | Image running the isolated auth process |
 | `PORTTA_RUNTIME_DOCS` | `true` | Serve this documentation at `/docs`, from the panel image. Static text with no host information in it, so a routed panel may serve it |
 | `PORTTA_RUNTIME_API_DOCS` | empty | Serve the API reference and its console at `/docs/api`. Empty means the safe default: on for loopback, off when routed |
-| `PORTTA_MCP_HTTP` | `false` | Serve the MCP tools over Streamable HTTP at `POST /api/mcp`, for an agent that has no CLI where it runs. The same tools as `portta mcp`, behind the same credential and the same agent ceiling; reachable from wherever the panel is ([MCP reference](mcp.md#reach-it-over-http), [ADR 0054](../../development/adr/0054-mcp-tools-are-shared-and-served-over-http.md)) |
+| `PORTTA_MCP_HTTP` | `false` | Serve the MCP tools over Streamable HTTP at `POST /api/mcp`, for an agent that has no CLI where it runs. The same tools as `portta mcp`, behind the same credential and the same agent ceiling; reachable from wherever the panel is (MCP reference, ADR 0054) |
 | `PORTTA_RUNTIME_TRAEFIK_API` | derived from the attachment | Override for the Traefik API endpoint behind the panel's bounded write surface ([ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md)) |
 
 The panel binds loopback by default. `PORTTA_AUTH_MODE=disabled` is accepted
@@ -201,7 +201,7 @@ in `.env`. See [Cloudflare Tunnel](../guides/cloudflare-tunnel.md) and
 
 There is nothing here for GitHub. The panel holds no forge credential: it asks
 the host daemon, and the daemon runs the operator's own `gh`, which carries its
-own authentication ([ADR 0018](../../development/adr/0018-github-issues-through-the-gh-cli.md)).
+own authentication (ADR 0018).
 Signing in is `gh auth login` on the host, not a variable.
 
 | Variable | Default | Meaning |
@@ -211,7 +211,7 @@ Signing in is `gh auth login` on the host, not a variable.
 Which provider a Project uses is a property of the Project, not of the
 installation: a repository with a GitHub remote is enough, and Linear is chosen
 on the Project along with its team key. See
-[Connect GitHub](../guides/github.md) and [Work with issues](../guides/issues.md).
+Connect GitHub and Work with issues.
 
 ## Host daemon
 
@@ -226,7 +226,7 @@ Whenever the panel is on, it is wired to the daemon: `host.docker.internal`
 mapped to the host gateway, `PORTTA_HOST_URL`, and the token mounted read-only.
 The token lives at `state/host/token`, `0600`, and is never written to `.env`.
 Issues need the daemon; without it, issue views say the provider could not be
-reached. See [Run the host daemon](../guides/host-daemon.md).
+reached. See Run the host daemon.
 
 ## Secrets
 

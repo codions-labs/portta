@@ -134,7 +134,7 @@ Whenever the panel is on, `docker/compose/features/panel-host.yaml` maps
 the daemon token read-only. On Linux the daemon must listen on the Docker bridge
 address (`PORTTA_HOST_BIND`) for the container to reach it. See
 [Host metrics](../reference/host-metrics.md) and
-[Run the host daemon](../guides/host-daemon.md).
+Run the host daemon.
 
 ## Networks
 

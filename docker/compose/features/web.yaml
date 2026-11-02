@@ -136,9 +136,6 @@ services:
       # while the panel stays on loopback.
       PORTTA_RUNTIME_DOCS: ${PORTTA_RUNTIME_DOCS:-true}
       PORTTA_RUNTIME_API_DOCS: ${PORTTA_RUNTIME_API_DOCS:-}
-      # The MCP tools over HTTP at /api/mcp, off unless the operator turned
-      # them on: the endpoint follows the panel's own exposure.
-      PORTTA_MCP_HTTP: ${PORTTA_MCP_HTTP:-false}
       # The resolved gateway configuration, so the panel and the CLI always
       # describe the same gateway.
       PORTTA_PROFILE: ${PORTTA_PROFILE:-local}
@@ -201,7 +198,6 @@ services:
       PORTTA_RUNTIME_AUTH_STORE: /app/state/auth/protections.json
       PORTTA_RUNTIME_RUNNER_DIR: /app/state/runner
       PORTTA_RUNTIME_ACCESS_DIR: /app/state/access
-      PORTTA_RUNTIME_SSH_DIR: /app/state/ssh
       PORTTA_PANEL_ADVERTISED_HOST: ${PORTTA_PANEL_ADVERTISED_HOST:-}
       TLS_ENABLED: ${TLS_ENABLED:-false}
       TLS_MODE: ${TLS_MODE:-local}
@@ -220,14 +216,12 @@ services:
       # mounted here: see docs/development/adr/0001-decoupled-infrastructure.md.
       #
       #   .env             the configuration the Settings page edits
-      #   state/git        metadata `portta repos scan` collected, read-only
       #   state/metrics    current.json + history from `portta host watch`
       #   state/environment host readiness report from the same collector
       #   state/runner     the `{ verb, project }` request the runner reads
       #   state/access     tunnel records cleaned when a project is removed
       #   state/panel      the panel's SQLite database, read-write and its own
       #   state/auth       credentials the panel manages, never served directly
-      #   state/ssh        SSH credentials the panel manages, never served directly
       #   traefik/dynamic  read-write, and the ONE place the panel configures
       #                    Traefik. It may write three generated filenames there
       #                    and refuses every other path in its own process.
@@ -235,7 +229,6 @@ services:
       - ./.env:/app/state/.env
       - ./.env.example:/app/state/.env.example:ro
       - ./.env-lock:/app/state/.env-lock
-      - ./state/git:/app/state/git:ro
       - ./state/metrics:/app/state/metrics:ro
       - ./state/environment:/app/state/environment:ro
       - ./state/runner:/app/state/runner
@@ -246,7 +239,6 @@ services:
       # container, which is how a restart loses the most recent writes.
       - ./state/panel:/app/state/panel
       - ./state/auth:/app/state/auth
-      - ./state/ssh:/app/state/ssh
       - ./config/traefik/dynamic:/app/state/traefik-dynamic
       # The Cloudflare Tunnel connector's generated config and its credential.
       # Read-write because setting the tunnel up is something the panel is asked

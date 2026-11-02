@@ -76,7 +76,7 @@ grouped as infrastructure, development and agents, plus a host security summary
 and Portta-owned SSH keys — generated or imported, tested against a forge, and
 never leaving the host unencrypted. See
 [Host environment readiness](../reference/host-readiness.md) and
-[SSH keys owned by Portta](ssh-keys.md).
+SSH keys owned by Portta.
 
 ![Authentication disabled: Settings Environment with the host readiness report grouped as infrastructure, development and agents](../../images/auth-disabled-settings-environment.png)
 
@@ -107,7 +107,7 @@ in are authenticated on the host — `gh auth login` for GitHub, `LINEAR_API_KEY
 for Linear — and the panel is a container that can hold neither credential. What
 the page does is say which of the two is reachable, name the account it is
 signed in as, and give the command that fixes the one that is not
-([Connect GitHub](github.md), [Work with issues](issues.md)).
+(Connect GitHub, Work with issues).
 
 ![Authentication disabled: Settings Integrations showing GitHub not signed in with gh auth login as the fix, and LINEAR_API_KEY not set on this host](../../images/auth-disabled-settings-integrations.png)
 

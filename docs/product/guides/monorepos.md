@@ -125,4 +125,4 @@ overrides do not inherit, their hostnames do not collide, and stopping one
 touches none of the others. The Project is what says they are the same
 product.
 
-See [Work and issues](../concepts/work-and-issues.md) for how an environment is tied to the issue it is running for, which is what makes one worktree per issue readable in the panel.
+See Work and issues for how an environment is tied to the issue it is running for, which is what makes one worktree per issue readable in the panel.

@@ -12,7 +12,7 @@ export function slugFor(repoPath: string): string | undefined {
 }
 
 /**
- * A citation in panel copy (`docs/product/guides/github.md`, `/docs/api`,
+ * A citation in panel copy (`docs/product/guides/sharing.md`, `/docs/api`,
  * `docs/product/concepts/addresses-and-access.md#the-panel`) becomes the URL the documentation
  * site actually serves.
  */

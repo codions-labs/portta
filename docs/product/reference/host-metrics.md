@@ -5,7 +5,7 @@ Desktop → a Linux VM → the panel. Anything the panel reads from `/proc`, the
 Engine's `GET /info`, or `systeminformation` inside that container is the VM,
 not the machine.
 
-So collection runs on the host, the same way [Git does](../../development/adr/0010-git-collected-on-the-host.md).
+So collection runs on the host, the same way Git does.
 The CLI talks to `systeminformation` and Docker, writes files under
 `state/metrics`, and the panel only reads them. There is no Prometheus, no
 Grafana, no privileged panel, and no extra `/proc` bind.

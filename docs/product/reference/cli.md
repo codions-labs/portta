@@ -150,7 +150,7 @@ the host, Linear through `LINEAR_API_KEY` on the host. Portta keeps only the
 reference (`github:owner/repo#113`, `linear:ENG-42`). Every verb except
 `status` requires `--project <slug>`, which decides the repository or Linear
 team. A body is `--body <text>` or `--body-file <path>` (`-` reads stdin). See
-[Work with issues](../guides/issues.md).
+Work with issues.
 
 | Command | Command-specific flags |
 |---|---|
@@ -241,10 +241,10 @@ arguments directly to the selected client. `psql` and `mysql` also accept
 | `envs report` (`env` and `environment` are aliases) | Refresh `state/environment/report.json` without changing the host. |
 | `host watch` | Start the detached collector, or run it in the foreground with `--loop`. |
 | `host status` | Whether the collector is running, and how old the last snapshot is. |
-| `host serve` | Run the host daemon in the foreground on `PORTTA_HOST_BIND:PORTTA_HOST_PORT` (default `127.0.0.1:5111`). `--detach` starts it in the background, logging to `state/host/daemon.log`, unless one already answers. Creates `state/host/token` on first start. See [Run the host daemon](../guides/host-daemon.md). |
+| `host serve` | Run the host daemon in the foreground on `PORTTA_HOST_BIND:PORTTA_HOST_PORT` (default `127.0.0.1:5111`). `--detach` starts it in the background, logging to `state/host/daemon.log`, unless one already answers. Creates `state/host/token` on first start. See Run the host daemon. |
 | `host service install` | `--env KEY=VALUE` (repeatable), `--no-auto-env`, `-y`. Installs, enables and starts the `portta-host` user service (systemd on Linux, launchd `com.portta.host` on macOS), which runs `portta host serve` from this installation. |
 | `host service uninstall\|restart\|status\|logs` | Manage that service; `logs` follows it. |
-| `flow <command>` | The Taskflow module's commands; `--port` selects the host daemon's port. See [the Taskflow CLI reference](../../modules/taskflow/cli.md). |
+| `flow <command>` | The Taskflow module's commands; `--port` selects the host daemon's port. See the Taskflow CLI reference. |
 | `share list`, `share revoke <id>`, `share gc` | Shares can only be created in the panel. |
 | `tls status\|init` | `init` runs OpenSSL in the toolbox container and enables TLS in `.env`. |
 | `tls trust\|untrust` | Print the privileged command for this operating system; never run it. |
@@ -255,7 +255,7 @@ arguments directly to the selected client. `psql` and `mysql` also accept
 | `remote access list\|close` | `close` takes an id or `--all`; the remote bridge is left for the remote host to close. |
 | `toolbox build` | Build or verify the pinned operational image. |
 | `toolbox run <command...>` | Run an explicit command in the one-shot operational container. |
-| `mcp` | `--url`, `--allow-remote`, `--actor` (default `agent`), `--docs-source local\|panel` (default `local`). Serves the panel verbs to an agent over stdio; refuses a non-loopback panel URL without the flag, because that is where a credential would be sent. See [MCP](mcp.md). |
+| `mcp` | `--url`, `--allow-remote`, `--actor` (default `agent`), `--docs-source local\|panel` (default `local`). Serves the panel verbs to an agent over stdio; refuses a non-loopback panel URL without the flag, because that is where a credential would be sent. See MCP. |
 
 Host key verification is never relaxed: `StrictHostKeyChecking` defaults to
 `accept-new`, which records a key the first time and still refuses a *changed*
@@ -314,7 +314,7 @@ The table lists the stable top-level fields of `data`:
 | `envs namespace` | `namespace`, `base`, `suffix` |
 | `projects list` | `projects[]` (`ProjectSummary` of the API) |
 | `projects show` | the API's `Project` |
-| `projects context` | the API's `DevelopmentContext`, which names its own `schema` (`development-context`) and `version` inside `data`; see [MCP reference](mcp.md#the-development-context) for the fields |
+| `projects context` | the API's `DevelopmentContext`, which names its own `schema` (`development-context`) and `version` inside `data`; see MCP reference for the fields |
 | `projects resolve` | `resolved`, `path`, `basis` (`root`, `subdirectory`, `worktree`, `remote`), `certain`, `project` (`id`, `slug`, `name`), `repository` (`id`, `name`, `path`, `remoteUrl`), `git` (`root`, `branch`, `remote`), `worktree` (`path`, `mainPath`); on failure `error` (`kind`, `message`, `hint`, `candidates[]`) with exit 1 (`unknown`, `ambiguous`), 3 (`stale`) or 4 (`unauthorized`) |
 | `projects resources` | the API's `ProjectResources` |
 | `overview` | the API's `DevelopmentOverview` |
@@ -365,4 +365,4 @@ portta docs search "TLS" --url http://127.0.0.1:8081
 
 `--url` explicitly selects the panel. Remote non-loopback URLs also require `--allow-remote`; existing Portta token/login configuration applies. Failure does not fall back to local content. JSON output includes `origin`, corpus version, revision when available and a content hash.
 
-The source is Markdown shared with `/docs`, the documentation API and the MCP tools. See [Use the Portta API](../guides/use-api.md) and [MCP reference](mcp.md).
+The source is Markdown shared with `/docs`, the documentation API and the MCP tools. See [Use the Portta API](../guides/use-api.md) and MCP reference.

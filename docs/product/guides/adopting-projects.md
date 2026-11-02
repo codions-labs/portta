@@ -42,7 +42,7 @@ portta runtime status /path/to/project
 An agent can drive this flow with the `portta-adopt-compose` skill
 (`npx skills add codions-labs/portta --skill portta-adopt-compose -g`), which
 orders these verbs and says what to ask before each pending decision; see
-[the working agreement](../concepts/working-agreement.md).
+the working agreement.
 
 `adopt` persists optional exposure intent in Portta state. A project that wants
 to version this intent may instead provide `.portta/runtime.json`; it contains
@@ -243,7 +243,7 @@ project. `portta envs analyze` reports which ones a project sets, and says
 "none (inferred from the Compose labels)" when it sets none, because that is
 the normal answer rather than a finding.
 
-See [ADR 0010](../../development/adr/0010-git-collected-on-the-host.md).
+See ADR 0010.
 
 ## Runtime manifest
 

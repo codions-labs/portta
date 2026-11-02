@@ -1,6 +1,6 @@
 # 0030. The panel may operate a project, without owning it
 
-**Status:** Accepted; see [0001](0001-decoupled-infrastructure.md), [0047](0047-host-daemon-and-panel-proxy.md)
+**Status:** Accepted; see [0001](0001-decoupled-infrastructure.md), 0047
 
 ## Context
 
@@ -133,5 +133,5 @@ label and is reported as not operable rather than offered a dead button.
 
 Work that needs the host itself rather than Compose — worktrees, terminals,
 agent runs — goes through the host daemon
-([ADR 0047](0047-host-daemon-and-panel-proxy.md)) under the same
+(ADR 0047) under the same
 operate-not-own claim.

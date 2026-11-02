@@ -7,10 +7,7 @@
 // Development runs also create the well-known checkout owner, so a fresh
 // checkout has somebody to sign in as.
 //
-// Portta seeds no work: an issue lives in GitHub or in Linear, and a
-// demonstration points at real ones rather than inventing local rows. The
-// manifest's `project` block is the only part of it read here
-// (docs/development/adr/0050-work-lives-in-an-external-provider.md).
+// The manifest's `project` block is the only part of it read here.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'

@@ -44,31 +44,11 @@
     "adopt": "Adotar um environment",
     "adoptButton": "Adotar"
   },
-  "issues": {
-    "title": "Issues",
-    "description": "Projetadas do GitHub. Cada linha diz há quanto tempo a resposta foi obtida.",
-    "filterAria": "Filtrar issues",
-    "status": "Status",
-    "state": "Estado da issue",
-    "reading": "Lendo a projeção de issues",
-    "needsDatabase": "Issues precisam do banco de dados do painel",
-    "needsDatabaseHint": "São uma projeção do GitHub, mantida localmente para responder enquanto o GitHub está inacessível."
-  },
-  "repositoriesCard": {
-    "title": "Repositórios",
-    "description": "O Git deste produto. Local primeiro; o GitHub é metadado opcional.",
-    "empty": "Nenhum repositório ainda",
-    "emptyHint": "Adicione um que o host escaneou, ou nomeie-o manualmente.",
-    "remove": "Desregistrar"
-  },
   "environmentsLink": "Ambientes neste host ({{count}})",
   "tabs": {
     "label": "Seções de {{name}}",
     "overview": "Visão geral",
-    "issues": "Issues",
-    "repositories": "Repositórios ({{count}})",
     "environments": "Environments ({{count}})",
-    "activity": "Atividade",
     "settings": "Configurações"
   },
   "pulse": {
@@ -81,7 +61,6 @@
   "overview": {
     "resources": "Recursos",
     "noMeasurement": "Nenhum environment deste projeto está sendo medido agora.",
-    "manageRepositories": "Gerenciar",
     "manageEnvironments": "Gerenciar"
   },
   "settings": {
@@ -92,15 +71,10 @@
     "archived": "Arquivado",
     "deleteTitle": "Excluir este projeto",
     "deleteDescription": "Remove o registro e o que o Portta guarda sobre ele. Nada muda no host.",
-    "deleteRemoves": "Removido: o projeto, o registro dos repositórios, as sessões e a atividade.",
-    "deleteKeeps": "Mantido: todos os containers, volumes, redes, diretórios e issues do GitHub. Os environments voltam a ficar sem projeto.",
+    "deleteRemoves": "Removido: o projeto e suas adoções.",
+    "deleteKeeps": "Mantido: todo container, volume, rede e diretório de trabalho. Os ambientes voltam a não atribuídos.",
     "typeSlug": "Digite {{slug}} para confirmar",
-    "deleteButton": "Excluir projeto",
-    "provider": "Onde o trabalho vive",
-    "providerHint": "GitHub Issues, ou Linear. Derivado significa: GitHub, quando um repositório daqui tem remote no GitHub.",
-    "providerDerived": "Derivado do repositório",
-    "linearTeam": "Time do Linear",
-    "linearTeamHint": "A chave do time a que as issues pertencem, por exemplo ENG."
+    "deleteButton": "Excluir projeto"
   },
   "actions": {
     "label": "Ambientes",

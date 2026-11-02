@@ -46,7 +46,7 @@ URLs:
 | Tab | What it holds |
 |---|---|
 | **Overview** | The active sessions, the repositories with their git state, the environments with their services and an Open / Test each, the recent activity, and the resources the project uses |
-| **Issues** | The issues this Project's work lives in, read from GitHub or Linear ([Work with issues](issues.md)) |
+| **Issues** | The issues this Project's work lives in, read from GitHub or Linear (Work with issues) |
 | **Repositories** | Each repository as a row; **Add repository** offers what the host scan discovered, or a path typed by hand |
 | **Environments** | The environments adopted, why each was adopted, and **Adopt** for one that was not |
 | **Activity** | The timeline: sessions, environments started and stopped, commits the scan noticed |
@@ -81,5 +81,5 @@ per repository.
 None of it is live. `portta repos scan` collects it on the host and the
 metrics watcher repeats it once a minute; every block says how old it is and
 carries the command that refreshes it. See
-[ADR 0010](../../development/adr/0010-git-collected-on-the-host.md) and the amendment in
-[ADR 0032](../../development/adr/0032-portta-development-model.md).
+ADR 0010 and the amendment in
+ADR 0032.

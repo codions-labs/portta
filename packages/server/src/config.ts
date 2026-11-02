@@ -90,12 +90,6 @@ export interface PanelConfig {
   /** Serve the self-contained API browser. The OpenAPI document is always served. */
   apiDocs: boolean
   /**
-   * Serve the MCP tools over Streamable HTTP at `POST /api/mcp`. Off by
-   * default: it is a second way in for agents, and it is reachable from
-   * wherever the panel is (ADR 0054).
-   */
-  mcpHttp: boolean
-  /**
    * The guides at `/docs`. Static text with no host information in it, so a
    * routed panel may serve it -- unlike the API console, which issues real
    * requests and keeps the conservative default.
@@ -125,10 +119,6 @@ export interface PanelConfig {
   webExternalPort: string
   /** Traefik's dynamic configuration directory, mounted read-write. */
   dynamicDir: string
-  /** Where `portta repos scan` writes, mounted read-only. */
-  gitDir: string
-  /** Past this age, collected Git metadata is marked stale rather than shown. */
-  gitStaleSeconds: number
   /** Where the CLI metrics collector writes current.json and history. */
   metricsDir: string
   /** Past this age, current.json is marked stale. */
@@ -139,10 +129,8 @@ export interface PanelConfig {
   environmentStaleSeconds: number
   /** Where the panel writes the runner request. Read-write, host-owned. */
   runnerDir: string
-  /** Tunnel records `portta remote` wrote. Cleaned on project removal. */
+  /** Tunnel records written by `portta access`. Cleaned on project removal. */
   accessDir: string
-  /** Portta-owned SSH key material. Never exposed by the API. */
-  sshDir: string
   /** Traefik's own API, resolved per attachment. Read-only, and opt-in. */
   traefikApi: string
   traefikApiTtlMs: number
@@ -150,13 +138,6 @@ export interface PanelConfig {
   /** Off by default: with this false the panel behaves exactly as it did. */
   /** A path, never the PEM: the panel can write .env, and must not hold a key. */
   /** Configurable from the first commit, so Enterprise Server is not a rewrite. */
-  /**
-   * The host daemon (`portta host serve`), for modules whose work needs the
-   * host. Null unless configured: no module proxy reaches anywhere by default.
-   */
-  hostUrl: string | null
-  /** The daemon's token, mounted read-only. A path, never the value. */
-  hostTokenFile: string
 }
 
 export function loadConfig(overrides: Partial<PanelConfig> = {}): PanelConfig {
@@ -221,7 +202,6 @@ export function loadConfig(overrides: Partial<PanelConfig> = {}): PanelConfig {
     gatewayVersion: installed,
     readOnly: isTrue(process.env.PORTTA_RUNTIME_READ_ONLY),
     apiDocs: false,
-    mcpHttp: isTrue(process.env.PORTTA_MCP_HTTP),
     docs: isTrue(env('PORTTA_RUNTIME_DOCS', 'true')),
     webExpose: env('PORTTA_WEB_EXPOSE', 'local'),
     authMode: env('PORTTA_AUTH_MODE', 'disabled'),
@@ -232,20 +212,15 @@ export function loadConfig(overrides: Partial<PanelConfig> = {}): PanelConfig {
     panelAdvertisedHost: optional('PORTTA_PANEL_ADVERTISED_HOST'),
     webExternalPort: env('PORTTA_WEB_PORT', '8081'),
     dynamicDir: env('PORTTA_RUNTIME_DYNAMIC_DIR', '/app/state/traefik-dynamic'),
-    gitDir: env('PORTTA_RUNTIME_GIT_DIR', '/app/state/git'),
-    gitStaleSeconds: Number(env('PORTTA_RUNTIME_GIT_STALE_SECONDS', '600')),
     metricsDir: env('PORTTA_RUNTIME_METRICS_DIR', '/app/state/metrics'),
     metricsStaleSeconds: Number(env('PORTTA_RUNTIME_METRICS_STALE_SECONDS', '30')),
     environmentDir: env('PORTTA_RUNTIME_ENVIRONMENT_DIR', '/app/state/environment'),
     environmentStaleSeconds: Number(env('PORTTA_RUNTIME_ENVIRONMENT_STALE_SECONDS', '900')),
     runnerDir: env('PORTTA_RUNTIME_RUNNER_DIR', '/app/state/runner'),
     accessDir: env('PORTTA_RUNTIME_ACCESS_DIR', '/app/state/access'),
-    sshDir: env('PORTTA_RUNTIME_SSH_DIR', '/app/state/ssh'),
     traefikApi: env('PORTTA_RUNTIME_TRAEFIK_API', defaultTraefikApi()),
     traefikApiTtlMs: Number(env('PORTTA_RUNTIME_TRAEFIK_API_TTL_MS', '7000')),
     traefikApiTimeoutMs: Number(env('PORTTA_RUNTIME_TRAEFIK_API_TIMEOUT_MS', '1500')),
-    hostUrl: optional('PORTTA_HOST_URL'),
-    hostTokenFile: env('PORTTA_RUNTIME_HOST_TOKEN_FILE', '/app/state/host/token'),
     ...overrides,
   }
   if (overrides.apiDocs === undefined) {

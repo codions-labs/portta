@@ -9,9 +9,7 @@ const output = resolve(root, 'dist')
 rmSync(output, { recursive: true, force: true })
 mkdirSync(output, { recursive: true })
 
-// Two programs from one build: the CLI, and the host daemon it starts as a
-// child (`portta host serve`), so the daemon never runs inside the CLI process.
-// Both sit in `dist/`, where each finds the other beside itself.
+// One program: the CLI.
 //
 // Workspace packages resolve through their `development` export condition, from
 // source. What stays outside the bundle is what must be found on disk at
@@ -37,10 +35,7 @@ const englishLocaleOnly = {
 
 await build({
   plugins: [englishLocaleOnly],
-  entryPoints: [
-    { in: resolve(root, 'src/cli.ts'), out: 'cli' },
-    { in: resolve(root, '../host/src/bin.ts'), out: 'host' },
-  ],
+  entryPoints: [{ in: resolve(root, 'src/cli.ts'), out: 'cli' }],
   outdir: output,
   bundle: true,
   platform: 'node',
@@ -48,12 +43,6 @@ await build({
   target: 'node24',
   conditions: ['development'],
   external: [
-    'better-sqlite3',
-    '@devcontainers/cli',
-    '@anthropic-ai/claude-agent-sdk',
-    '@agentclientprotocol/claude-agent-acp',
-    '@agentclientprotocol/codex-acp',
-    'pi-acp',
     // Not a resolution constraint like the ones above: `systeminformation` is a
     // barrel over the probes of every operating system, 709 KB for the eleven
     // calls `portta metrics` makes. It is a dependency of this package, so it
@@ -69,11 +58,9 @@ await build({
   banner: {
     js: '#!/usr/bin/env node\nimport { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);',
   },
-  // The programs share most of their graph: without splitting the whole
-  // host went into `cli.js` as well as `host.js`. Chunk names carry no
-  // directory, so every module still sees `dist/` as `import.meta.dirname` —
-  // which is how the bundles locate each other and their assets. The assertion
-  // below keeps that true.
+  // Chunk names carry no directory, so every module still sees `dist/` as
+  // `import.meta.dirname`, which is how the bundle locates its assets. The
+  // assertion below keeps that true.
   splitting: true,
   chunkNames: '[name]-[hash]',
   // Names survive minification so a stack trace from an installed CLI still
@@ -110,8 +97,7 @@ const version =
 if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:[-+][0-9A-Za-z.-]+)?$/.test(version))
   throw new Error(`invalid Portta build version: ${version}`)
 writeFileSync(resolve(runtime, 'VERSION'), `${version}\n`)
-// The images an installation builds itself: the applier and the toolbox. The
-// sandbox image is published by its own workflow and pulled, never built here.
+// The images an installation builds itself: the applier and the toolbox.
 for (const entry of [
   '.env.example',
   'docker/compose',

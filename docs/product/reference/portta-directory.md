@@ -137,5 +137,5 @@ understand instead of guessing.
 
 - [Projects, environments and services](../concepts/project-model.md)
 - [Add an existing project](../guides/adopting-projects.md)
-- [The working agreement](../concepts/working-agreement.md)
+- The working agreement
 - [ADR 0052](../../development/adr/0052-the-portta-directory-is-the-project-contract.md)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AUTH_BUILD_FILE, AUTH_DEV_FILE, composeFiles, loadGatewayConfig, PANEL_HOST_FILE } from './config.js'
+import { AUTH_BUILD_FILE, AUTH_DEV_FILE, composeFiles, loadGatewayConfig } from './config.js'
 
 describe('gateway configuration', () => {
   it('owns the safe local defaults shared by panel and CLI', () => {
@@ -27,16 +27,8 @@ describe('gateway configuration', () => {
       'docker/compose/features/web.yaml',
       'docker/compose/features/web-bind.yaml',
       'docker/compose/features/web-dev.yaml',
-      PANEL_HOST_FILE,
       AUTH_DEV_FILE,
     ])
-  })
-
-  // The panel reads issues through the daemon, so the connection comes with
-  // having a panel; Taskflow's routes ride on the same connection.
-  it('connects the panel to the host daemon whenever the panel is on', () => {
-    expect(composeFiles(loadGatewayConfig({}))).not.toContain(PANEL_HOST_FILE)
-    expect(composeFiles(loadGatewayConfig({ PORTTA_WEB: 'true' }))).toContain(PANEL_HOST_FILE)
   })
 
   it('refuses a public profile with no public domain', () => {

@@ -31,7 +31,7 @@ ssh deploy@vps.example.com 'npm install -g @codions/portta && portta setup --pro
 
 Or from your workstation, `portta remote bootstrap`, which prepares the host
 from a Git checkout of the repository; see
-[Prepare a remote host](remote-bootstrap.md). Either way, secrets are never
+Prepare a remote host. Either way, secrets are never
 copied from your machine: set `TS_AUTHKEY`, `ACME_EMAIL` and
 `CF_DNS_API_TOKEN` in the host's `.env`. Then drive it from anywhere:
 

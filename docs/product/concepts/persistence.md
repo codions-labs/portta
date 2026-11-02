@@ -39,7 +39,7 @@ Decisions, and a bounded history of the development flow:
   reference such as `github:owner/repo#113`, and why Portta believes it — a
   label, a branch, a namespace, or somebody's hand. This is the one thing about
   work the panel stores, because it is the one thing no provider knows
-  ([Work and issues](work-and-issues.md));
+  (Work and issues);
 - **Work sessions** (`work_sessions`): who worked on what, since when, and what
   came out. The issue is that same reference, not a foreign key;
 - **Activity** (`activity_events`): what happened — a session started, an
@@ -80,7 +80,7 @@ synchronisation is implemented.
 The host daemon keeps its own state — its token and, with the Taskflow module
 on, worktrees, terminal sessions, agent runs and their transcripts — under
 `$PORTTA_HOME/state/host/`, and the panel never opens those files
-([ADR 0049](../../development/adr/0049-host-state-in-sqlite.md)). Two files,
+(ADR 0049). Two files,
 two owners, two lifetimes, two backups. The panel reads the daemon's state
 through the daemon's API, the way it reads Docker through Docker's.
 

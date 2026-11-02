@@ -50,8 +50,8 @@ All notable changes to Portta are documented here. The format follows
   shows, creates, edits, closes, reopens and comments on issues;
   `portta sessions`, `portta activity` and `portta projects context` record
   and describe the work around them
-  ([ADR 0050](docs/development/adr/0050-work-lives-in-an-external-provider.md),
-  [ADR 0018](docs/development/adr/0018-github-issues-through-the-gh-cli.md)).
+  (ADR 0050,
+  ADR 0018).
 - The `.portta` directory as the project contract: `.portta/project.yaml`
   declares the project's name, main branch, worktree root, branch pattern,
   stack and instruction files, and refuses anything that names a host (a URL,
@@ -65,8 +65,8 @@ All notable changes to Portta are documented here. The format follows
   a token-protected process on the host that answers issue requests and serves
   the modules needing git, tmux or agent CLIs; the panel reaches it through an
   authorised proxy
-  ([ADR 0047](docs/development/adr/0047-host-daemon-and-panel-proxy.md)). See
-  [Run the host daemon](docs/product/guides/host-daemon.md).
+  (ADR 0047). See
+  Run the host daemon.
 - Taskflow, an official module that ships with Portta and is always on. Git
   worktrees with a full lifecycle (`add`, `open`, `close`, `archive`, `label`,
   `profile`, `merge`, `remove`, `prune`, `restore`), persistent tmux or herdr
@@ -88,7 +88,7 @@ All notable changes to Portta are documented here. The format follows
   uncommitted changes or commits that exist nowhere else, unless `--force`;
   `prune` keeps and reports such a worktree. Every worktree is created with
   relative Git links, so Git works inside a Dev Container opened on it. See
-  [Taskflow](docs/modules/taskflow/README.md).
+  Taskflow.
 - An ACP provider registry: the four adapters Taskflow launches over the
   Agent Client Protocol (`codex`, `claude-code`, `opencode`, `pi`) are the
   defaults of a registry, and `providers:` in `.portta/taskflow.yaml` (or the
@@ -96,21 +96,21 @@ All notable changes to Portta are documented here. The format follows
   builtin's command, without a code change. A Run on the ACP transport refuses
   an unknown provider before it starts, naming the available ones, and
   `portta flow workflows doctor` lists every provider with the resolved adapter
-  path ([configuration](docs/modules/taskflow/configuration.md#acp-providers)).
+  path (configuration).
 - Module endpoints through Traefik: the panel writes one
   `portta-module-<id>.yaml` per registered module, derived from the module
   manifest; a module never writes Traefik configuration itself
-  ([ADR 0048](docs/development/adr/0048-module-endpoints-through-traefik.md)).
+  (ADR 0048).
 - An MCP server, `portta mcp`, exposing the panel's verbs and the documentation
-  to agents ([MCP reference](docs/product/reference/mcp.md)).
+  to agents (MCP reference).
 - The same tools over HTTP, for an agent with no CLI where it runs: with
   `PORTTA_MCP_HTTP=true` the panel serves a stateless Streamable HTTP MCP
   endpoint at `POST /api/mcp`, authenticated with a personal API token and
   under the same agent ceiling as stdio. The tool registrations live in one
   workspace, `portta-mcp`, so a tool exists on both transports or on neither;
   `resolve_project` stays stdio-only because it reads the host
-  ([MCP reference](docs/product/reference/mcp.md#reach-it-over-http),
-  [ADR 0054](docs/development/adr/0054-mcp-tools-are-shared-and-served-over-http.md)).
+  (MCP reference,
+  ADR 0054).
 - `portta projects resolve --path <abs>` and the MCP tool `resolve_project`:
   which Project a directory belongs to, resolved from the registered root, a
   subdirectory of it, a linked worktree, or, declared as inferred, a clone with
@@ -130,7 +130,7 @@ All notable changes to Portta are documented here. The format follows
   measured against, and carries `diagnostics` for what needs doing first: a
   repository without a path, a missing or stale scan, a stopped Environment,
   a daemon that did not answer
-  ([MCP reference](docs/product/reference/mcp.md#the-development-context)).
+  (MCP reference).
 - Specification discovery, read-only: the host scan references the decision
   records (`docs/**/adr/*.md` and equivalents) and the OpenSpec and Spec Kit
   documents a repository keeps, by path, convention, kind, title and hash,
@@ -138,7 +138,7 @@ All notable changes to Portta are documented here. The format follows
   `portta repos specs`, the MCP tool `list_specifications` and per repository
   in the Development Context. A repository with none is the normal case, and
   a `specs/` tree is attributed to Spec Kit only beside its `.specify/` marker
-  ([ADR 0053](docs/development/adr/0053-portta-is-spec-aware-not-spec-owned.md)).
+  (ADR 0053).
 - Seven agent skills, `portta-method`, `portta-commit`, `portta-pull-request`,
   `portta-issue`, `portta-resolve-issue`, `portta-workflows` and
   `portta-adopt-compose`, each following
@@ -146,7 +146,7 @@ All notable changes to Portta are documented here. The format follows
   installable with the [Skills CLI](https://www.skills.sh):
   `npx skills add codions-labs/portta -g`. They state how work happens in a
   Portta project, and that no commit, pull request or issue credits an agent.
-  See [the working agreement](docs/product/concepts/working-agreement.md).
+  See the working agreement.
 - Remote hosts over SSH (`portta remote`), short-lived loopback bridges to a
   project's services (`portta access`, `portta db open`, `portta redis open`),
   private forwarders (`portta service publish`), temporary shares

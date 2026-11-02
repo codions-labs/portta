@@ -38,7 +38,7 @@ Projects Home (a relative path, never the identity). A Project does not
 disappear when nothing is running.
 
 It also records where its work lives: GitHub (derived from a repository's
-GitHub remote) or Linear with a team key. See [Work and issues](work-and-issues.md).
+GitHub remote) or Linear with a team key. See Work and issues.
 
 ## Repository
 
@@ -101,4 +101,4 @@ stores that reference in two places only:
 
 See [Manage projects](../guides/projects.md),
 [Manage environments](../guides/environments.md),
-[Work and issues](work-and-issues.md) and [Persistence](persistence.md).
+Work and issues and [Persistence](persistence.md).

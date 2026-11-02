@@ -358,7 +358,6 @@
     "users": "Usuários",
     "tokens": "Tokens de API",
     "security": "Segurança",
-    "integrations": "Integrações",
     "audit": "Auditoria"
   },
   "roleHints": {
@@ -373,12 +372,6 @@
     "tokens": "Um token pertence a uma pessoa, e este painel não tem nenhuma. Defina PORTTA_AUTH_MODE=required no host para ligar contas e tokens.",
     "security": "Não há conta a proteger: este painel não pergunta quem está perguntando. Defina PORTTA_AUTH_MODE=required no host para ligar as contas.",
     "audit": "A auditoria registra quem fez o quê, e aqui todo mundo é o operador local. Defina PORTTA_AUTH_MODE=required no host para ligar as contas."
-  },
-  "agentPermissions": {
-    "title": "O que um agente local pode fazer",
-    "description": "O teto sobre uma requisição que se anuncia com X-Portta-Actor. Ele estreita o que a pessoa por trás já tem; nunca concede nada a mais.",
-    "restoreDefault": "Restaurar o padrão",
-    "usingDefault": "Usando o padrão"
   },
   "users": {
     "title": "Usuários",
@@ -510,10 +503,6 @@
     "expires": "expira {{when}}",
     "totpUnavailable": "Este painel não conseguiu ligar o aplicativo autenticador."
   },
-  "integrations": {
-    "title": "Integrações",
-    "description": "O que o painel conversa e não é o host."
-  },
   "environment": {
     "title": "Ambiente",
     "description": "O que este host tem instalado e se cada ferramenta funciona no shell não interativo do Portta.",
@@ -537,35 +526,6 @@
       "info": "Opcional",
       "warn": "Recomendação",
       "fail": "Problema"
-    }
-  },
-  "ssh": {
-    "title": "Chaves SSH",
-    "description": "Credenciais desta instância Portta. As chaves privadas ficam no armazenamento restrito do host e nunca aparecem na API.",
-    "empty": "Nenhuma chave SSH do Portta.",
-    "emptyHint": "Gere uma chave nova ou importe uma chave privada existente sem senha.",
-    "generate": "Gerar chave",
-    "import": "Importar chave",
-    "generateTitle": "Gerar uma chave SSH",
-    "generateDescription": "ED25519 é o padrão recomendado. Chaves RSA são geradas com 4096 bits.",
-    "importTitle": "Importar uma chave SSH",
-    "importDescription": "A entrada privada é gravada diretamente no armazenamento restrito e nunca é devolvida.",
-    "name": "Nome",
-    "descriptionLabel": "Descrição",
-    "algorithm": "Algoritmo",
-    "privateKey": "Chave privada",
-    "privateKeyHint": "Chave privada OpenSSH ou PEM sem senha. Ela não será exibida novamente.",
-    "publicKey": "Mostrar chave pública",
-    "copyPublicKey": "Copiar chave pública",
-    "forge": "Forge",
-    "test": "Testar",
-    "remove": "Remover",
-    "removeTitle": "Remover {{name}}",
-    "removeImpact": "Os arquivos privado e público serão removidos permanentemente desta instância Portta.",
-    "cancel": "Cancelar",
-    "origin": {
-      "generated": "gerada",
-      "imported": "importada"
     }
   },
   "audit": {

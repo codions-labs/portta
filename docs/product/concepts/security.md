@@ -203,7 +203,7 @@ panel refuses the exchange without a `ptt_` token, and what a tool may do is
 what that token holds. On an open panel every call through it is an agent's,
 under the `agentPermissions` ceiling, whatever the request declared; the one
 tool that reads the host, `resolve_project`, is not served. See
-[ADR 0054](../../development/adr/0054-mcp-tools-are-shared-and-served-over-http.md).
+ADR 0054.
 
 ### Applying settings, and what it costs
 
@@ -393,8 +393,8 @@ host: Traefik's API on an internal address, and the host daemon on
 **It holds no forge credential, and makes no call to a forge.** Issues are read
 and written by the operator's own `gh`, or by Linear's API with a key in the
 daemon's environment — both on the host, in a process the operator started
-([ADR 0018](../../development/adr/0018-github-issues-through-the-gh-cli.md),
-[ADR 0047](../../development/adr/0047-host-daemon-and-panel-proxy.md)). A panel
+(ADR 0018,
+ADR 0047). A panel
 that is routed over a VPN therefore gains no route to the internet by being
 routed, and there is no long-lived key in `state/` for it to lose.
 
@@ -405,5 +405,5 @@ way — `0600`, never in `.env`, never in a response, never in a log. The panel
 mounts it read-only.
 
 Without a running daemon, issue views say the provider could not be reached and
-nothing else changes. See [Connect GitHub](../guides/github.md) and
-[Run the host daemon](../guides/host-daemon.md).
+nothing else changes. See Connect GitHub and
+Run the host daemon.

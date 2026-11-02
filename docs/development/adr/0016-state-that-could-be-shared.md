@@ -46,7 +46,7 @@ the same feature as showing another machine's containers.
 
 Git snapshots under `state/git/` and host metrics under `state/metrics/` are
 runtime observations collected on the host
-([ADR 0010](0010-git-collected-on-the-host.md)). They are not shareable as a
+(ADR 0010). They are not shareable as a
 source of truth; `repo_url` extracted from a Git file is a portable
 *coordinate*, which is a different column doing a different job.
 
@@ -55,13 +55,13 @@ they bind a live container name to a host-specific domain. They are not
 project decisions.
 
 An issue is not a decision and not a Docker observation, and it is not
-persisted either: [ADR 0018](0018-github-issues-through-the-gh-cli.md) reads one
+persisted either: ADR 0018 reads one
 through `gh` at request time and stores nothing. There are therefore no rows to
 share and no projection to keep in step — each instance asks the provider
 itself, with whichever account is signed in on its own host. The issue *ref*
 (`github:owner/repo#113`) that a session or an environment carries is shareable
 in the same sense a repository remote is: it names the same thing everywhere
-([ADR 0050](0050-work-lives-in-an-external-provider.md)).
+(ADR 0050).
 
 `COMPOSE_PROJECT_NAME` of a *consumer* environment is local identity, not
 shareable on its own: `storefront` on the laptop and `storefront` on the VPS

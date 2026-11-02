@@ -145,8 +145,8 @@ The panel is always wired to the daemon, so starting it is enough:
 The daemon listens on `127.0.0.1:5111` and logs to `state/host/daemon.log`.
 Without it, issue views say the provider could not be reached. On Linux the
 panel container cannot reach a daemon on loopback; see
-[Run the host daemon](../product/guides/host-daemon.md) and
-[Host daemon and module proxy](host-daemon.md).
+Run the host daemon and
+Host daemon and module proxy.
 
 ## Run with authentication enabled
 
