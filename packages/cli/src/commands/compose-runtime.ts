@@ -750,7 +750,7 @@ export async function runtimeAction(
   const tail = options.tail ? ['--tail', options.tail] : []
   const commandArgs =
     action === 'up'
-      ? [...args, 'up', '-d']
+      ? [...args, 'up', '-d', ...(plan.profile === 'remote-public' ? ['--no-start'] : [])]
       : action === 'down'
         ? [...args, 'down']
         : action === 'restart'
@@ -767,7 +767,12 @@ export async function runtimeAction(
                 ]
               : [...args, 'config']
   await runProcess('docker', commandArgs, { cwd: workspace, stdio: action === 'logs' ? 'inherit' : 'stream' })
-  if (action === 'up' && plan.profile === 'remote-public') await verifyGatedLabels(plan, workspace)
+  if (action === 'up' && plan.profile === 'remote-public') {
+    // Created, not started: Traefik routes nothing that is not running, so the
+    // labels are checked before any of it can be reached.
+    await verifyGatedLabels(plan, workspace)
+    await runProcess('docker', [...args, 'up', '-d'], { cwd: workspace, stdio: 'stream' })
+  }
 }
 
 /**
@@ -779,27 +784,41 @@ export async function runtimeAction(
  * instead of left running.
  */
 async function verifyGatedLabels(plan: RuntimePlan, workspace: string): Promise<void> {
+  const teardown = async (message: string, hint: string): Promise<never> => {
+    const down = await runProcess('docker', [...composeArgs(plan), 'down'], { cwd: workspace, reject: false })
+    throw new RefusedError(message, down.exitCode === 0 ? hint : `${hint}; the teardown also failed, check docker ps`)
+  }
+  // Anything that cannot be verified counts as a violation: this runs on a
+  // public host, where "could not check" must not mean "fine".
   const listed = await runProcess('docker', [...composeArgs(plan), 'ps', '-aq'], { cwd: workspace, reject: false })
   const ids = listed.stdout.split('\n').filter(Boolean)
-  if (ids.length === 0) return
+  if (listed.exitCode !== 0 || ids.length === 0)
+    return teardown('the created containers could not be listed, so their routing was not verified', 'try again')
   const inspected = await runProcess('docker', ['inspect', '--format', '{{json .Config.Labels}}', ...ids], {
     cwd: workspace,
     reject: false,
   })
+  const lines = inspected.stdout.split('\n').filter(Boolean)
+  if (inspected.exitCode !== 0 || lines.length !== ids.length)
+    return teardown('the created containers could not be inspected, so their routing was not verified', 'try again')
   const model: { services: Record<string, { labels?: Record<string, unknown> }> } = { services: {} }
-  for (const line of inspected.stdout.split('\n').filter(Boolean)) {
+  for (const line of lines) {
+    let labels: Record<string, string> | null
     try {
-      const labels = JSON.parse(line) as Record<string, string> | null
-      const name = labels?.['com.docker.compose.service']
-      if (name && labels) model.services[name] = { labels: { ...(model.services[name]?.labels ?? {}), ...labels } }
-    } catch {}
+      labels = JSON.parse(line) as Record<string, string> | null
+    } catch {
+      return teardown('a container label set could not be read, so its routing was not verified', 'try again')
+    }
+    const name = labels?.['com.docker.compose.service']
+    if (!name || !labels)
+      return teardown('a container has no Compose service label, so its routing was not verified', 'try again')
+    model.services[name] = { labels: { ...(model.services[name]?.labels ?? {}), ...labels } }
   }
   const routed = new Set(plan.services.filter((service) => service.route === 'http').map((service) => service.name))
   const violations = routingViolations(model, routed, plan.compose.projectName)
-  if (violations.length === 0) return
-  await runProcess('docker', [...composeArgs(plan), 'down'], { cwd: workspace, reject: false })
-  throw new RefusedError(
-    'a container carries Traefik routing that a public host cannot gate, so the project was taken down',
-    `labels: ${violations.join('; ')}`,
-  )
+  if (violations.length > 0)
+    return teardown(
+      'a container carries Traefik routing that a public host cannot gate, so the project was taken down',
+      `labels: ${violations.join('; ')}`,
+    )
 }

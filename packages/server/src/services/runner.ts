@@ -66,6 +66,8 @@ export async function runnerStatus(
     ...Object.fromEntries(saved),
     PORTTA_PROFILE: config.profile,
     PORTTA_WEB_EXPOSE: config.webExpose,
+    PORTTA_AUTH_MODE: config.authMode,
+    TLS_ENABLED: String(config.tlsEnabled),
   }
   const refusal = runnerRefusal(Object.fromEntries(saved)) ?? runnerRefusal(effective)
   const enabled = isTrue(saved.get('PORTTA_RUNNER') ?? 'false')
@@ -73,6 +75,8 @@ export async function runnerStatus(
     const { unavailableReason, reason } = whyUnavailable(saved, {
       PORTTA_PROFILE: config.profile,
       PORTTA_WEB_EXPOSE: config.webExpose,
+      PORTTA_AUTH_MODE: config.authMode,
+      TLS_ENABLED: String(config.tlsEnabled),
     })
     return {
       state: 'unavailable',
