@@ -19,7 +19,7 @@ const VIEWER = { name: 'Rita Levi', email: 'rita@example.test', password: 'anoth
 async function signIn(page: import('@playwright/test').Page, who: { email: string; password: string }) {
   await page.goto('/sign-in')
   await page.getByLabel('Email').fill(who.email)
-  await page.getByLabel('Password', { exact: true }).fill(who.password)
+  await page.getByLabel(/^Password/).fill(who.password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL(/\/overview$/, { timeout: 20_000 })
 }

@@ -124,7 +124,7 @@ try {
     await shot('setup')
     await page.getByLabel('Name').fill(owner.name)
     await page.getByLabel('Email').fill(owner.email)
-    await page.getByLabel('Password', { exact: true }).fill(owner.password)
+    await page.getByLabel(/^Password/).fill(owner.password)
     await page.getByRole('button', { name: 'Create owner' }).click()
     await page.waitForURL(/\/overview/, { timeout: 20_000 })
     await context.clearCookies()
