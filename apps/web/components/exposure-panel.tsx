@@ -13,6 +13,16 @@ import { Callout } from './shell-bits.tsx'
 import { Badge } from './ui/badge.tsx'
 import { Button } from './ui/button.tsx'
 
+/** The same canonical form the server keys its registry by: lowercase, punycode, no trailing dot or default port. */
+export function canonicalHost(host: string): string {
+  try {
+    const parsed = new URL(`http://${host.trim()}`)
+    return `${parsed.hostname.replace(/\.$/, '')}${parsed.port ? `:${parsed.port}` : ''}`
+  } catch {
+    return host.trim().toLowerCase()
+  }
+}
+
 /**
  * Who may open this service's hostname: a credential, everybody, or nobody.
  *
@@ -24,10 +34,10 @@ export function ExposurePanel({ container }: { container: ContainerSummary }) {
   const queryClient = useQueryClient()
   const mayDecide = useCan('service:protect')
   const [password, setPassword] = useState<string | null>(null)
-  const hosts = [...new Set(container.urls.map((url) => url.host.toLowerCase()))]
+  const hosts = [...new Set(container.urls.map((url) => canonicalHost(url.host)))]
   const host = hosts.length === 1 ? (hosts[0] ?? null) : null
   const query = useExposure()
-  const entry = query.data?.entries.find((candidate) => candidate.host.toLowerCase() === host) ?? null
+  const entry = query.data?.entries.find((candidate) => canonicalHost(candidate.host) === host) ?? null
   const enforced = query.data?.enforced === true
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: keys.exposure() })

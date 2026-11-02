@@ -19,7 +19,7 @@ vi.mock('@/lib/api/index', () => ({
   },
 }))
 
-const { ExposurePanel } = await import('@/components/exposure-panel')
+const { ExposurePanel, canonicalHost } = await import('@/components/exposure-panel')
 
 const container = makeContainer({
   id: 'c1',
@@ -31,6 +31,14 @@ beforeEach(() => {
   protectService.mockReset().mockResolvedValue({ ok: true, entry: null, password: 'abcde-fghij', note: '' })
   openService.mockReset().mockResolvedValue({ ok: true, entry: null, note: '' })
   closeService.mockReset().mockResolvedValue({ ok: true, entry: null, note: '' })
+})
+
+describe('the hostname the panel matches on', () => {
+  it('canonicalizes like the registry: case, trailing dot, default port and IDN', () => {
+    expect(canonicalHost('Shop-Web.Example.TEST.')).toBe('shop-web.example.test')
+    expect(canonicalHost('shop-web.example.test:80')).toBe('shop-web.example.test')
+    expect(canonicalHost('bücher.example.test')).toBe('xn--bcher-kva.example.test')
+  })
 })
 
 describe('who may open a service', () => {
