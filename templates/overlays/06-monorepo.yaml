@@ -29,13 +29,6 @@ services:
   web:
     networks: [default, portta]
     labels:
-      # Optional, and only useful because inference cannot get them right here:
-      # `portta.git.root` says where the repository actually starts when
-      # the Compose file is not at its root, and `portta.repo` gives the
-      # panel a repository link with no host-side Git at all. Delete both and
-      # everything behaves exactly as it does now.
-      # - "portta.repo=owner/monorepo"
-      # - "portta.git.root=/srv/dev/monorepo"
       - "traefik.enable=true"
       - "traefik.docker.network=${PORTTA_NETWORK:-portta}"
       - "traefik.http.services.${COMPOSE_PROJECT_NAME}-web.loadbalancer.server.port=3000"

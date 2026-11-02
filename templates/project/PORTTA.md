@@ -9,17 +9,18 @@
 Portta must be running on this machine:
 
 ```bash
-portta status      # if this fails: portta bootstrap && portta up local
+portta status      # if this fails: portta setup
 ```
 
 ## Starting
 
 ```bash
-docker compose -f compose.yaml -f compose.portta.yaml up -d
+portta adopt .            # once: records the plan outside this repository
+portta runtime up .
 ```
 
-Set `COMPOSE_FILE=compose.yaml:compose.portta.yaml` in `.env` to drop the
-`-f` flags.
+Portta keeps the generated overlay with its own state, so this repository has
+no `compose.portta.yaml` and its Compose file is never edited.
 
 ## Namespace
 
@@ -73,8 +74,8 @@ Credentials are this project's, from its own `.env`.
 ```bash
 git worktree add --relative-paths ../<project>-issue59 issue59
 cd ../<project>-issue59
-echo "COMPOSE_PROJECT_NAME=<project>-issue59" >> .env
-docker compose -f compose.yaml -f compose.portta.yaml up -d
+portta adopt .            # the branch gives it its own namespace and URL
+portta runtime up .
 # -> http://<project>-issue59-web.localhost
 ```
 

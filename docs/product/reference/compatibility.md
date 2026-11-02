@@ -10,7 +10,7 @@ because it "should" work.
 | macOS 15+ (arm64) + OrbStack | **Verified**, full suite run by hand during development |
 | Ubuntu 24.04 (amd64) + Docker Engine | Integration in PR CI; full E2E on release tags |
 | macOS + Docker Desktop | **Expected to work, not verified.** Nothing here uses an OrbStack-specific API. |
-| Debian 12 + Docker Engine | **Expected to work, not verified.** |
+| Debian 12 and 13 + Docker Engine | **Expected to work, not verified.** Debian 13 has never been run. |
 | Linux arm64 | **Expected to work, not verified.** Every pinned image publishes arm64. |
 | Windows / WSL2 | **Untested.** Loopback and `*.localhost` behave differently enough that it needs its own verification. |
 
