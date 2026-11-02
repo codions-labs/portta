@@ -3,12 +3,8 @@
   "reading": "Reading what is happening",
   "gatewayRunning": "Gateway running",
   "gatewayDown": "Gateway down",
-  "problems_one": "{{count}} problem",
-  "problems_other": "{{count}} problems",
   "attention": {
     "title": "Needs attention",
-    "description": "Unhealthy services, degraded environments, conflicts, a host under pressure, and what the gateway checks.",
-    "diagnostics": "Diagnostics",
     "none": "Nothing needs attention.",
     "count": "{{count}} to act on",
     "count_one": "{{count}} to act on",
@@ -28,6 +24,11 @@
     "none": "Nothing measured",
     "environments": "Environments"
   },
+  "access": {
+    "protected": "Protected",
+    "open": "Open",
+    "closed": "Closed"
+  },
   "reduced": {
     "needsDatabase": "The development dashboard needs the panel's database",
     "unavailable": "The development dashboard is not available on this panel",
@@ -35,7 +36,6 @@
   },
   "host": {
     "title": "This host",
-    "description": "How this machine looks right now.",
     "kind": {
       "notebook": "Notebook",
       "desktop": "Desktop",
@@ -57,7 +57,6 @@
     "cores": "{{count}} cores",
     "load": "load {{one}} {{five}} {{fifteen}}",
     "up": "up {{time}}",
-    "high": "high",
     "updated": "updated {{time}}",
     "stale": "collected {{age}}s ago",
     "collectorInactive": "Collector inactive",
@@ -71,7 +70,6 @@
       "unknown": "Unknown"
     },
     "summary": "Host",
-    "details": "Host details",
     "showDetails": "Show host details",
     "hideDetails": "Hide host details",
     "temperature": "Temp",
@@ -85,14 +83,12 @@
     "cycles": "{{count}} cycles",
     "uptime": "Uptime",
     "gpuMemory": "GPU memory",
-    "kernel": "Kernel",
     "architecture": "Architecture",
     "virtual": "Virtual machine",
     "history": "{{label}} over the last {{minutes}} minutes"
   },
   "consumption": {
     "title": "Project consumption",
-    "description": "What is using CPU and memory on this host right now.",
     "cpu": "CPU",
     "memory": "RAM",
     "containers": "{{count}} containers",

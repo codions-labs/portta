@@ -37,11 +37,10 @@
     "removeKeepTitle": "Remove this project, keep data?",
     "removeDataTitle": "Remove this project and local data?",
     "removeFromHost": "Remove {{name}} from this host.",
-    "githubUntouched": "Nothing outside this host changes: the project's repository is not touched.",
+    "githubUntouched": "Nothing outside this host changes.",
     "previewContainers": "{{count}} container(s) will be removed.",
     "previewVolumes": "Named volumes: {{names}}. Size is unknown: the panel cannot inspect volumes.",
-    "typeName": "Type {{name}} to confirm.",
-    "copyCommand": "Copy command"
+    "typeName": "Type {{name}} to confirm."
   },
   "collapsedService": "{{count}} collapsed service",
   "collapsedServices": "{{count}} collapsed services",
@@ -54,32 +53,6 @@
     "settings": "Settings"
   },
   "notFound": "No environment '{{name}}' is running",
-  "stats": {
-    "services": "Services",
-    "running": "running",
-    "unhealthy": "Unhealthy",
-    "uptime": "Uptime"
-  },
-  "environment": {
-    "title": "Environment",
-    "description": "What this Compose project is, and where it lives.",
-    "integrated": "Integrated",
-    "worktree": "Worktree",
-    "networks": "Networks"
-  },
-  "resources": {
-    "title": "Resources",
-    "description": "What this project's containers are using right now.",
-    "empty": "No running containers to measure.",
-    "cpu": "CPU",
-    "memory": "RAM"
-  },
-  "endpoints": {
-    "title": "Endpoints",
-    "description": "Every address this project answers on, grouped by service.",
-    "empty": "This project has no services",
-    "accessPage": "Access page"
-  },
   "servicesEmpty": "This project has no services",
   "servicesEmptyHint": "A project joins by adding the gateway overlay: see docs/product/guides/adopting-projects.md.",
   "containerActions": {
@@ -90,7 +63,6 @@
     "stop": "Stop",
     "restart": "Restart",
     "removeContainer": "Remove container",
-    "error": "error",
     "logsTitle": "Logs · {{name}}",
     "remove": {
       "title": "Remove this container?",
@@ -126,12 +98,7 @@
     "hint": "An alias is additional: the project keeps answering on the hostname it derives."
   },
   "backToAll": "Back to all projects",
-  "unknown": "unknown",
-  "notRouted": "not routed by the gateway",
-  "exitCode": "exit {{code}}",
-  "primary": "primary",
   "header": {
-    "repository": "Repository",
     "resources": "Resources",
     "services": "{{running}}/{{total}} services running",
     "noProject": "not adopted by any project",

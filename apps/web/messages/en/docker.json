@@ -40,7 +40,6 @@
     "aria": "Published ports",
     "hostPort": "Port",
     "container": "Bound by",
-    "conflict": "Conflict",
     "owner": "Owner",
     "conflictBadge": "conflict"
   },

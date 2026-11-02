@@ -3,16 +3,26 @@
 import { AlertTriangle, Boxes, CheckCircle2, CircleDot, ShieldCheck, XCircle } from 'lucide-react'
 import type { AttentionItem, DevelopmentOverview, HostPressure, Overview } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
+import { CopyButton, Mono } from '@/components/copy'
 import { DiagnosticText } from '@/components/diagnostic-text'
 import { ProjectRow } from '@/components/entities/project-card'
 import { ResourceUsage } from '@/components/entities/resource-usage'
 import { EnvironmentActions } from '@/components/environment-actions'
+import { canonicalHost } from '@/components/exposure-panel'
 import { HostHeader, HostReadings, HostSummarySkeleton, pressureReasons } from '@/components/host-summary'
 import { Empty, ErrorBox, Loading } from '@/components/shell-bits'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { ApiError } from '@/lib/api'
 import { fromPulse } from '@/lib/projects'
-import { useDevelopmentOverview, useEnvironments, useMetricsCurrent, useMetricsHistory, useStatus } from '@/lib/queries'
+import {
+  useDevelopmentOverview,
+  useEnvironments,
+  useExposure,
+  useMetricsCurrent,
+  useMetricsHistory,
+  useStatus,
+} from '@/lib/queries'
 import { cn } from '@/lib/utils'
 
 /**
@@ -211,6 +221,7 @@ function EnvironmentUsagePanel({ data }: { data: DevelopmentOverview }) {
   const { t } = useTranslation('overview')
   const environments = useEnvironments(true)
   const known = new Map((environments.data ?? []).map((environment) => [environment.name, environment]))
+  const exposure = useExposure()
   return (
     <Card>
       <CardHeader
@@ -226,21 +237,47 @@ function EnvironmentUsagePanel({ data }: { data: DevelopmentOverview }) {
       ) : (
         data.resources.topProjects.map((entry) => {
           const environment = known.get(entry.environment)
+          const route = environment?.urls[0]
           return (
             <div
               key={entry.environment}
-              className="group flex h-9 min-w-0 items-center gap-2 border-b border-line-subtle px-3 text-sm last:border-b-0 hover:bg-fill"
+              className="group flex min-h-9 min-w-0 items-center gap-2 border-b border-line-subtle px-3 py-1 text-sm last:border-b-0 hover:bg-fill"
             >
-              <a
-                className="min-w-0 flex-1 truncate rounded-xs font-medium underline-offset-2 hover:underline focus-ring"
-                href={
-                  entry.slug
-                    ? `/projects/${encodeURIComponent(entry.slug)}`
-                    : `/environments/${encodeURIComponent(entry.environment)}`
-                }
-              >
-                {entry.name}
-              </a>
+              <div className="min-w-0 flex-1">
+                <a
+                  className="block truncate rounded-xs font-medium underline-offset-2 hover:underline focus-ring"
+                  href={
+                    entry.slug
+                      ? `/projects/${encodeURIComponent(entry.slug)}`
+                      : `/environments/${encodeURIComponent(entry.environment)}`
+                  }
+                >
+                  {entry.name}
+                </a>
+                {route ? (
+                  <div className="flex min-w-0 items-center gap-1.5 text-2xs">
+                    <a
+                      className="min-w-0 truncate rounded-xs underline-offset-2 hover:underline focus-ring"
+                      href={route.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Mono kind="url" value={route.url} tone="subtle">
+                        {route.host}
+                      </Mono>
+                    </a>
+                    <CopyButton value={route.url} size="icon-xs" />
+                    {exposure.data?.enforced ? (
+                      <HostAccess
+                        mode={
+                          exposure.data.entries.find((item) => canonicalHost(item.host) === canonicalHost(route.host))
+                            ?.mode ?? null
+                        }
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
               <ResourceUsage
                 cpu={entry.cpuUtilisation}
                 memoryBytes={entry.memoryUsedBytes}
@@ -256,6 +293,18 @@ function EnvironmentUsagePanel({ data }: { data: DevelopmentOverview }) {
         })
       )}
     </Card>
+  )
+}
+
+/** Who may open a hostname on a public host: a credential, everybody, or nobody (no entry means closed). */
+function HostAccess({ mode }: { mode: 'protected' | 'public' | null }) {
+  const { t } = useTranslation('overview', { keyPrefix: 'access' })
+  return mode === 'protected' ? (
+    <Badge tone="ok">{t('protected')}</Badge>
+  ) : mode === 'public' ? (
+    <Badge tone="danger">{t('open')}</Badge>
+  ) : (
+    <Badge tone="warn">{t('closed')}</Badge>
   )
 }
 

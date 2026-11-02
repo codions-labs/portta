@@ -1,7 +1,6 @@
 {
   "title": "Settings",
   "description": "How Portta names projects, who can reach them, and how this panel is reached.",
-  "saved": "Saved. Traefik reads its static configuration at startup, so these values take effect once the gateway containers are recreated on the host:",
   "notWritable": "The panel cannot write {{path}}. Edit it on the host instead.",
   "sectionNotFound": "Settings section “{{group}}” does not exist",
   "chooseGroup": "Choose one of the available groups.",
@@ -31,7 +30,6 @@
     "formula": "How a hostname is formed",
     "formulaPattern": "<project>-<service>.<base>",
     "base": "Base domain",
-    "provider": "Automatic DNS",
     "examples": "A project called loja would answer on:",
     "stateOk": "usable",
     "stateLimited": "needs attention",
@@ -118,9 +116,6 @@
     "confirmDescription": "This change recreates the gateway in a configuration reachable from public networks.",
     "confirm": "Enable public access",
     "confirmWarning": "The panel, datastores, and unrouted services remain outside this access. Routed projects without protection may be reached by anyone."
-  },
-  "publicAccess": {
-    "result": "Opted-in projects will be reachable as <project>-<service>.{{domain}}."
   },
   "groups": {
     "Gateway": "Gateway",
@@ -347,8 +342,6 @@
     "panelNotOnEveryInterface": "the panel is not published on every interface; reach it over the VPN instead"
   },
   "savedShort": "Saved.",
-  "restartRequired": "Needs a restart",
-  "restartHint": "Changing this takes effect after the gateway restarts, not when it is saved.",
   "pendingHint": "Saved, but the running process still has {{value}}.",
   "sectionsLabel": "Settings sections",
   "sections": {

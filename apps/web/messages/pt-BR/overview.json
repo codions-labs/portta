@@ -3,12 +3,8 @@
   "reading": "Lendo o que está acontecendo",
   "gatewayRunning": "Gateway em execução",
   "gatewayDown": "Gateway inativo",
-  "problems_one": "{{count}} problema",
-  "problems_other": "{{count}} problemas",
   "attention": {
     "title": "Precisa de atenção",
-    "description": "Serviços unhealthy, environments degradados, conflitos, host sob pressão e o que o gateway verifica.",
-    "diagnostics": "Diagnósticos",
     "none": "Nada precisa de atenção.",
     "count": "{{count}} para agir",
     "count_one": "{{count}} para agir",
@@ -28,6 +24,11 @@
     "none": "Nada medido",
     "environments": "Ambientes"
   },
+  "access": {
+    "protected": "Protegido",
+    "open": "Aberto",
+    "closed": "Fechado"
+  },
   "reduced": {
     "needsDatabase": "O painel de desenvolvimento precisa do banco de dados do painel",
     "unavailable": "O painel de desenvolvimento não está disponível neste painel",
@@ -35,7 +36,6 @@
   },
   "host": {
     "title": "Este host",
-    "description": "Como esta máquina está agora.",
     "kind": {
       "notebook": "Notebook",
       "desktop": "Desktop",
@@ -57,7 +57,6 @@
     "cores": "{{count}} núcleos",
     "load": "load {{one}} {{five}} {{fifteen}}",
     "up": "ligado há {{time}}",
-    "high": "alto",
     "updated": "atualizado {{time}}",
     "stale": "coletado há {{age}}s",
     "collectorInactive": "Collector inativo",
@@ -71,7 +70,6 @@
       "unknown": "Desconhecido"
     },
     "summary": "Host",
-    "details": "Detalhes do host",
     "showDetails": "Mostrar detalhes do host",
     "hideDetails": "Ocultar detalhes do host",
     "temperature": "Temp",
@@ -85,14 +83,12 @@
     "cycles": "{{count}} ciclos",
     "uptime": "Tempo ativo",
     "gpuMemory": "Memória da GPU",
-    "kernel": "Kernel",
     "architecture": "Arquitetura",
     "virtual": "Máquina virtual",
     "history": "{{label}} nos últimos {{minutes}} minutos"
   },
   "consumption": {
     "title": "Consumo por projeto",
-    "description": "O que está usando CPU e memória neste host agora.",
     "cpu": "CPU",
     "memory": "RAM",
     "containers": "{{count}} containers",

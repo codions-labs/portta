@@ -1,17 +1,14 @@
 {
   "title": "Projects",
-  "description": "Products you recognise, and the environments running for them on this host.",
   "catalogDescription": "A Project is the product. An Environment is one Compose stack running for it on this host.",
   "newProject": "New project",
   "needsDatabase": "Projects need the panel's database",
   "needsDatabaseHint": "They are decisions rather than observations, so they are persisted. Start PostgreSQL and the catalog comes back; environments still list without it.",
   "catalogEmpty": "No project yet",
-  "catalogEmptyHint": "Create a product, then attach repositories and adopt the environments running for it.",
-  "repository": "{{count}} repository",
-  "repositories": "{{count}} repositories",
+  "catalogEmptyHint": "Create a product, then adopt the environments running for it.",
   "create": {
     "title": "New project",
-    "description": "A name and a slug. Repositories and environments are attached afterwards.",
+    "description": "A name and a slug. Environments are attached afterwards.",
     "create": "Create",
     "name": "Name",
     "slug": "Slug",
@@ -20,14 +17,9 @@
   },
   "searchPlaceholder": "Search project, environment, service, image",
   "searchAria": "Search projects",
-  "empty": "No environment is running",
-  "emptyHint": "An environment appears when Compose is up on this host. Adopt it onto a Project with the portta.project label or by hand.",
   "archived": "archived",
   "running": "{{running}}/{{total}} running",
   "detail": {
-    "notFound": "No project '{{slug}}'",
-    "backToAll": "Back to all projects",
-    "private": "private",
     "unhealthyCount": "{{count}} unhealthy",
     "sourceReason": {
       "label": "declared by its portta.project label",
@@ -37,7 +29,6 @@
   },
   "environments": {
     "title": "Environments",
-    "description": "Compose projects on this host that belong to this project, and why.",
     "empty": "Nothing is running for this project",
     "emptyHint": "Start an environment, label it portta.project with this slug, or link one by hand.",
     "adopt": "Adopt an environment",
@@ -51,11 +42,7 @@
     "settings": "Settings"
   },
   "pulse": {
-    "sessions": "{{count}} active",
     "unhealthy": "{{count}} unhealthy"
-  },
-  "density": {
-    "cards": "Cards"
   },
   "overview": {
     "resources": "Resources",
@@ -64,7 +51,7 @@
   },
   "settings": {
     "title": "Project",
-    "description": "What the panel keeps about this product. Nothing here touches a repository or a container.",
+    "description": "What the panel keeps about this product. Nothing here touches a container.",
     "relativePath": "Directory under Projects Home",
     "relativePathHint": "A directory of PORTTA_PROJECTS_HOME, at any depth. Files are never moved.",
     "archived": "Archived",
@@ -84,7 +71,6 @@
     "archive": "Archive",
     "unarchive": "Unarchive",
     "delete": "Delete project",
-    "openRepositories": "Repositories",
     "openEnvironments": "Environments",
     "settings": "Settings",
     "failed": "Could not act on {{name}}",
@@ -148,11 +134,7 @@
     "caption": "Projects, their state and their work",
     "name": "Project",
     "state": "State",
-    "repositories": "Repos",
     "environments": "Environments",
-    "agents": "Agents",
-    "activity": "Last activity",
-    "commit": "Last commit",
     "resources": "Resources",
     "actions": "Actions"
   },

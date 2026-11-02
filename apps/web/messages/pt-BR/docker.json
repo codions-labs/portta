@@ -40,7 +40,6 @@
     "aria": "Portas publicadas",
     "hostPort": "Porta",
     "container": "Ocupada por",
-    "conflict": "Conflito",
     "owner": "Dono",
     "conflictBadge": "conflito"
   },

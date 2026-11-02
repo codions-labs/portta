@@ -197,6 +197,12 @@ them GPU, temperature, battery and load, each with the last thirty minutes in
 its tooltip. Then **Needs attention**, **Projects** and **Using this host**. A section with
 nothing to say shrinks rather than drawing an empty card.
 
+In **Using this host**, each environment that has an address shows it under its
+name, with a copy button and, on a public host, a badge: **protected** (a login),
+**open** (everybody) or **closed** (nobody decided). It lists the environments
+the collector measured, so it stays empty until `portta host collect` is
+reporting.
+
 ### Projects
 
 A Project is the product; an environment is one Compose stack running for it.

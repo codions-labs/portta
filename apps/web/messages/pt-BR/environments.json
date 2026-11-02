@@ -37,11 +37,10 @@
     "removeKeepTitle": "Remover este projeto, manter os dados?",
     "removeDataTitle": "Remover este projeto e os dados locais?",
     "removeFromHost": "Remover {{name}} deste host.",
-    "githubUntouched": "Nada fora deste host muda: o repositório do projeto não é tocado.",
+    "githubUntouched": "Nada fora deste host muda.",
     "previewContainers": "{{count}} container(s) serão removidos.",
     "previewVolumes": "Volumes nomeados: {{names}}. O tamanho é desconhecido: o painel não inspeciona volumes.",
-    "typeName": "Digite {{name}} para confirmar.",
-    "copyCommand": "Copiar comando"
+    "typeName": "Digite {{name}} para confirmar."
   },
   "collapsedService": "{{count}} serviço recolhido",
   "collapsedServices": "{{count}} serviços recolhidos",
@@ -54,32 +53,6 @@
     "settings": "Configurações"
   },
   "notFound": "Nenhum environment '{{name}}' está em execução",
-  "stats": {
-    "services": "Serviços",
-    "running": "em execução",
-    "unhealthy": "Não saudáveis",
-    "uptime": "Tempo ativo"
-  },
-  "environment": {
-    "title": "Ambiente",
-    "description": "O que é este projeto Compose e onde ele está.",
-    "integrated": "Integrado",
-    "worktree": "Worktree",
-    "networks": "Redes"
-  },
-  "resources": {
-    "title": "Recursos",
-    "description": "O que os containers deste projeto estão usando agora.",
-    "empty": "Nenhum container em execução para medir.",
-    "cpu": "CPU",
-    "memory": "RAM"
-  },
-  "endpoints": {
-    "title": "Endpoints",
-    "description": "Todos os endereços em que este projeto responde, agrupados por serviço.",
-    "empty": "Este projeto não tem serviços",
-    "accessPage": "página de Acesso"
-  },
   "servicesEmpty": "Este projeto não tem serviços",
   "servicesEmptyHint": "Um projeto entra adicionando o overlay do gateway: veja docs/product/guides/adopting-projects.md.",
   "containerActions": {
@@ -90,7 +63,6 @@
     "stop": "Parar",
     "restart": "Reiniciar",
     "removeContainer": "Remover container",
-    "error": "erro",
     "logsTitle": "Logs · {{name}}",
     "remove": {
       "title": "Remover este container?",
@@ -126,12 +98,7 @@
     "hint": "Um alias é adicional: o projeto continua respondendo no hostname que ele deriva."
   },
   "backToAll": "Voltar para todos os projetos",
-  "unknown": "desconhecido",
-  "notRouted": "não roteado pelo gateway",
-  "exitCode": "saída {{code}}",
-  "primary": "principal",
   "header": {
-    "repository": "Repositório",
     "resources": "Recursos",
     "services": "{{running}}/{{total}} serviços em execução",
     "noProject": "não adotado por nenhum projeto",

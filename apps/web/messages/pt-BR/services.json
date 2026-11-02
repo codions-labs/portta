@@ -6,15 +6,11 @@
   "searchAria": "Buscar serviços",
   "empty": "Nenhum serviço corresponde aos filtros",
   "table": {
-    "project": "Projeto",
     "service": "Serviço",
     "state": "Estado",
     "health": "Saúde",
-    "image": "Imagem",
     "uptime": "Tempo ativo",
     "actions": "Ações",
-    "type": "Tipo",
-    "ports": "Porta",
     "access": "Acesso",
     "resources": "Recursos",
     "runtime": "Runtime",
@@ -25,7 +21,6 @@
     "tcp": "TCP"
   },
   "connection": {
-    "show": "Conectar",
     "title": "Detalhes de conexão · {{name}}"
   },
   "row": {

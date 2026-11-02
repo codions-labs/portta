@@ -1,7 +1,6 @@
 {
   "title": "Configurações",
   "description": "Como o Portta nomeia os projetos, quem pode alcançá-los e como este painel é acessado.",
-  "saved": "Salvo. O Traefik lê a configuração estática na inicialização; estes valores passam a valer quando os containers do gateway forem recriados no host:",
   "notWritable": "O painel não pode gravar {{path}}. Edite no host.",
   "sectionNotFound": "A seção de configurações “{{group}}” não existe",
   "chooseGroup": "Escolha um dos grupos disponíveis.",
@@ -31,7 +30,6 @@
     "formula": "Como um hostname é formado",
     "formulaPattern": "<projeto>-<serviço>.<base>",
     "base": "Domínio base",
-    "provider": "DNS automático",
     "examples": "Um projeto chamado loja responderia em:",
     "stateOk": "utilizável",
     "stateLimited": "requer atenção",
@@ -118,9 +116,6 @@
     "confirmDescription": "Esta alteração recria o gateway numa configuração alcançável pela rede pública.",
     "confirm": "Ativar acesso público",
     "confirmWarning": "O painel, bancos de dados e serviços sem roteamento continuam fora deste acesso. Projetos roteados sem proteção poderão ser acessados por qualquer pessoa."
-  },
-  "publicAccess": {
-    "result": "Os projetos que optarem por isso ficarão em <projeto>-<serviço>.{{domain}}."
   },
   "groups": {
     "Gateway": "Gateway",
@@ -347,8 +342,6 @@
     "panelNotOnEveryInterface": "o painel não é publicado em todas as interfaces; acesse pela VPN"
   },
   "savedShort": "Salvo.",
-  "restartRequired": "Exige reinício",
-  "restartHint": "Mudar isto passa a valer depois que o gateway reiniciar, não ao salvar.",
   "pendingHint": "Salvo, mas o processo em execução ainda usa {{value}}.",
   "sectionsLabel": "Seções de configurações",
   "sections": {

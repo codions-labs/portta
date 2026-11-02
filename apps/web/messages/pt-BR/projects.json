@@ -1,17 +1,14 @@
 {
   "title": "Projetos",
-  "description": "Produtos que você reconhece e os ambientes em execução para eles neste host.",
   "catalogDescription": "Um Project é o produto. Um Environment é um stack Compose rodando para ele neste host.",
   "newProject": "Novo projeto",
   "needsDatabase": "Projetos precisam do banco de dados do painel",
   "needsDatabaseHint": "São decisões, não observações, por isso são persistidos. Inicie o PostgreSQL e o catálogo volta; os ambientes continuam listando sem ele.",
   "catalogEmpty": "Nenhum projeto ainda",
-  "catalogEmptyHint": "Crie um produto, depois anexe repositórios e adote os ambientes em execução para ele.",
-  "repository": "{{count}} repositório",
-  "repositories": "{{count}} repositórios",
+  "catalogEmptyHint": "Crie um produto, depois adote os ambientes em execução para ele.",
   "create": {
     "title": "Novo projeto",
-    "description": "Um nome e um slug. Repositórios e ambientes são anexados depois.",
+    "description": "Um nome e um slug. Os ambientes são anexados depois.",
     "create": "Criar",
     "name": "Nome",
     "slug": "Slug",
@@ -20,14 +17,9 @@
   },
   "searchPlaceholder": "Buscar projeto, ambiente, serviço, imagem",
   "searchAria": "Buscar projetos",
-  "empty": "Nenhum ambiente em execução",
-  "emptyHint": "Um ambiente aparece quando o Compose está no ar neste host. Adote-o num Project com a label portta.project ou à mão.",
   "archived": "arquivado",
   "running": "{{running}}/{{total}} em execução",
   "detail": {
-    "notFound": "Nenhum projeto '{{slug}}'",
-    "backToAll": "Voltar para todos os projetos",
-    "private": "privado",
     "unhealthyCount": "{{count}} unhealthy",
     "sourceReason": {
       "label": "declarado pela label portta.project",
@@ -37,7 +29,6 @@
   },
   "environments": {
     "title": "Ambientes",
-    "description": "Projetos Compose neste host que pertencem a este project, e por quê.",
     "empty": "Nada está em execução para este project",
     "emptyHint": "Inicie um ambiente, rotule-o com portta.project usando este slug, ou vincule um manualmente.",
     "adopt": "Adotar um environment",
@@ -51,11 +42,7 @@
     "settings": "Configurações"
   },
   "pulse": {
-    "sessions": "{{count}} ativa(s)",
     "unhealthy": "{{count}} unhealthy"
-  },
-  "density": {
-    "cards": "Cartões"
   },
   "overview": {
     "resources": "Recursos",
@@ -64,7 +51,7 @@
   },
   "settings": {
     "title": "Projeto",
-    "description": "O que o painel guarda sobre este produto. Nada aqui toca um repositório ou um container.",
+    "description": "O que o painel guarda sobre este produto. Nada aqui toca um container.",
     "relativePath": "Diretório no Projects Home",
     "relativePathHint": "Um diretório de PORTTA_PROJECTS_HOME, em qualquer profundidade. Arquivos nunca são movidos.",
     "archived": "Arquivado",
@@ -84,7 +71,6 @@
     "archive": "Arquivar",
     "unarchive": "Desarquivar",
     "delete": "Excluir projeto",
-    "openRepositories": "Repositórios",
     "openEnvironments": "Ambientes",
     "settings": "Configurações",
     "failed": "Não foi possível agir sobre {{name}}",
@@ -148,11 +134,7 @@
     "caption": "Projetos, seu estado e seu trabalho",
     "name": "Projeto",
     "state": "Estado",
-    "repositories": "Repos",
     "environments": "Ambientes",
-    "agents": "Agentes",
-    "activity": "Última atividade",
-    "commit": "Último commit",
     "resources": "Recursos",
     "actions": "Ações"
   },
