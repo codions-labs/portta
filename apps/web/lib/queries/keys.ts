@@ -50,6 +50,7 @@ export const keys = {
   config: () => ['config'] as const,
 
   users: () => ['users'] as const,
+  authSession: () => ['auth-session'] as const,
   user: (id: string) => ['users', id] as const,
   userSessions: (id: string) => ['users', id, 'sessions'] as const,
   apiTokens: (all: boolean) => ['tokens', all ? 'all' : 'mine'] as const,

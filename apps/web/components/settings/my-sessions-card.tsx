@@ -14,6 +14,7 @@ import { Callout, Empty, SkeletonRows } from '@/components/shell-bits'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { authClient } from '@/lib/auth-client'
+import { useAuthSession } from '@/lib/queries/auth-session'
 import { useFormat } from '@/lib/use-format'
 import { SessionRows } from './session-rows'
 
@@ -27,7 +28,7 @@ const seconds = (value: string | Date): number => Math.floor(new Date(value).get
 export function MySessionsCard() {
   const { t } = useTranslation('settings')
   const { relativeTime } = useFormat()
-  const { data: session } = authClient.useSession()
+  const { data: session } = useAuthSession()
   const [rows, setRows] = useState<Row[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -51,9 +52,10 @@ export function MySessionsCard() {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: the list reloads when the session token arrives; load is a plain function of this render
   useEffect(() => {
+    if (!session) return
     void load()
-    // The current session's token is what marks a row as "this browser"; until
-    // it arrives the list is still worth showing, unmarked.
+    // Wait for this token before offering sign-out actions: the current browser
+    // must never briefly appear as another session that can be revoked.
   }, [session?.session.token])
 
   async function revoke(token: string) {
