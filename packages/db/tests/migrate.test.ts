@@ -57,6 +57,7 @@ describe('the migrations', () => {
       'instance',
       'project_environments',
       'project_members',
+      'project_tags',
       'projects',
       'service_settings',
       'sessions',

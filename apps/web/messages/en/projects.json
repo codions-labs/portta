@@ -169,7 +169,8 @@
     "all": "All",
     "problem": "With a problem {{count}}",
     "idle": "Stopped {{count}}",
-    "archived": "Archived {{count}}"
+    "archived": "Archived {{count}}",
+    "allTags": "All"
   },
   "noMatch": "No project matches these filters",
   "noMatchHint": "Widen the search, or clear the state filter.",
@@ -232,5 +233,20 @@
       "title": "No Compose yet?",
       "description": "Ask an agent with the portta-dockerize skill. Install it with:"
     }
+  },
+  "tagsAria": "Tags",
+  "group": {
+    "by": "Group by",
+    "none": "None",
+    "state": "State",
+    "without": "No {{key}}"
+  },
+  "tags": {
+    "add": "Add a tag",
+    "addShort": "tag",
+    "new": "New tag",
+    "placeholder": "New tag, like client: Acme",
+    "remove": "Remove the tag {{tag}}",
+    "failed": "Could not save the tags"
   }
 }

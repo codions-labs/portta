@@ -8,6 +8,8 @@ All notable changes to Portta are documented here. The format follows
 
 ### Added
 
+- Projects can carry tags, such as `cliente: Acme`: filter by one, and group the list by
+  a key or by state. Stored in the panel's database, with `PUT /api/projects/{slug}/tags`.
 - Host > Containers selects several containers to start, stop, restart, read the
   logs of together or remove. Removing asks you to type the count and keeps volumes,
   images and networks; Portta's own containers cannot be selected.

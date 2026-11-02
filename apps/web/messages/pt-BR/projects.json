@@ -169,7 +169,8 @@
     "all": "Todos",
     "problem": "Com problema {{count}}",
     "idle": "Parados {{count}}",
-    "archived": "Arquivados {{count}}"
+    "archived": "Arquivados {{count}}",
+    "allTags": "Todas"
   },
   "noMatch": "Nenhum projeto corresponde a estes filtros",
   "noMatchHint": "Amplie a busca ou limpe o filtro de estado.",
@@ -232,5 +233,20 @@
       "title": "Ainda não tem Compose?",
       "description": "Peça a um agente com a habilidade portta-dockerize. Instale com:"
     }
+  },
+  "tagsAria": "Tags",
+  "group": {
+    "by": "Agrupar por",
+    "none": "Nada",
+    "state": "Estado",
+    "without": "Sem {{key}}"
+  },
+  "tags": {
+    "add": "Adicionar tag",
+    "addShort": "tag",
+    "new": "Nova tag",
+    "placeholder": "Nova tag, como cliente: Acme",
+    "remove": "Remover a tag {{tag}}",
+    "failed": "Não foi possível salvar as tags"
   }
 }

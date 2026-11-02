@@ -73,6 +73,13 @@ const PatchBody = z
   .strict()
   .meta({ ref: 'PatchProjectBody' })
 
+const TagsBody = z
+  .object({
+    tags: z.array(z.object({ key: z.string().max(32).default(''), value: z.string().min(1).max(64) }).strict()).max(16),
+  })
+  .strict()
+  .meta({ ref: 'ProjectTagsBody' })
+
 const EnvironmentsBody = z
   .object({ environments: z.array(z.string().min(1).max(255)).max(128) })
   .strict()
@@ -99,7 +106,9 @@ async function assemble(db: Database, snapshot: Snapshot, config: AppDeps['confi
 }
 
 function summariesFrom(catalog: ProjectCatalog) {
-  return catalog.records.map((record) => toProjectSummary(record, catalog.environments.get(record.id) ?? []))
+  return catalog.records.map((record) =>
+    toProjectSummary(record, catalog.environments.get(record.id) ?? [], catalog.tags.get(record.id) ?? []),
+  )
 }
 
 /** A Zod failure on a stored decision is the caller's mistake, said plainly. */
@@ -191,7 +200,9 @@ export function projectRoutes(deps: AppDeps): Hono {
       if (!record) throw new HTTPException(404, { message: `no project '${slug}'` })
       authorizeScope(c, projectScope(record.id))
       const catalog = await assemble(db, await deps.cache.get(), deps.config)
-      return c.json(toProject(record, catalog.environments.get(record.id) ?? [], home()))
+      return c.json(
+        toProject(record, catalog.environments.get(record.id) ?? [], home(), catalog.tags.get(record.id) ?? []),
+      )
     },
   )
 
@@ -226,7 +237,7 @@ export function projectRoutes(deps: AppDeps): Hono {
         projectId: Number(updated.id),
         metadata: { fields: Object.keys(patch) },
       })
-      return c.json(toProjectSummary(updated, []))
+      return c.json(toProjectSummary(updated, [], (await db.projects.listTags()).get(updated.id) ?? []))
     },
   )
 
@@ -275,6 +286,40 @@ export function projectRoutes(deps: AppDeps): Hono {
   )
 
   app.put(
+    '/projects/:slug/tags',
+    documentRoute({
+      tag: 'Projects',
+      operationId: 'setProjectTags',
+      permission: 'project:update',
+      summary: 'Set the tags of a Project',
+      description:
+        'Replaces them all. A tag is a label to group and filter by, such as `cliente: Acme`; it grants and hides nothing.',
+      request: TagsBody,
+      response: ProjectSummary,
+      parameters: [slugParameter],
+      errors: [400, 403, 404, 500, 503],
+    }),
+    async (c) => {
+      const db = requireDatabase(deps.db)
+      const slug = c.req.param('slug')
+      const existing = await db.projects.find(slug)
+      if (!existing) throw new HTTPException(404, { message: `no project '${slug}'` })
+      authorizeScope(c, projectScope(existing.id))
+      const body = TagsBody.parse(await c.req.json())
+      const tags = await refusedOnValidation(() => db.projects.setTags(existing.id, body.tags))
+      await record(deps, c, {
+        action: 'project.tagged',
+        resourceType: 'project',
+        resourceId: String(existing.id),
+        resourceName: existing.slug,
+        projectId: Number(existing.id),
+        metadata: { tags: tags.length },
+      })
+      return c.json(toProjectSummary(existing, [], tags))
+    },
+  )
+
+  app.put(
     '/projects/:slug/environments',
     documentRoute({
       tag: 'Projects',
@@ -304,7 +349,9 @@ export function projectRoutes(deps: AppDeps): Hono {
       await db.projects.setEnvironments(record.id, body.environments)
 
       const catalog = await assemble(db, await deps.cache.get(true), deps.config)
-      return c.json(toProject(record, catalog.environments.get(record.id) ?? [], home()))
+      return c.json(
+        toProject(record, catalog.environments.get(record.id) ?? [], home(), catalog.tags.get(record.id) ?? []),
+      )
     },
   )
 

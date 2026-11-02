@@ -1,6 +1,6 @@
 // Projects: the product the operator recognises, and what it owns.
 
-import type { Project, ProjectSummary } from 'portta-contracts'
+import type { Project, ProjectSummary, ProjectTag } from 'portta-contracts'
 import { request } from './client.ts'
 
 export const projectsApi = {
@@ -17,6 +17,11 @@ export const projectsApi = {
     request<{ ok: boolean; removed: string; note: string }>(`/projects/${encodeURIComponent(slug)}`, {
       method: 'DELETE',
       body: '{}',
+    }),
+  setProjectTags: (slug: string, tags: ProjectTag[]) =>
+    request<ProjectSummary>(`/projects/${encodeURIComponent(slug)}/tags`, {
+      method: 'PUT',
+      body: JSON.stringify({ tags }),
     }),
   setProjectEnvironments: (slug: string, environments: string[]) =>
     request<Project>(`/projects/${encodeURIComponent(slug)}/environments`, {

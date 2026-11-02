@@ -2105,6 +2105,25 @@
         ],
         "description": "Where this Project sits relative to Projects Home"
       },
+      "ProjectTag": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "additionalProperties": false
+      },
       "ProjectSummary": {
         "type": "object",
         "properties": {
@@ -2134,6 +2153,12 @@
           },
           "location": {
             "$ref": "#/components/schemas/ProjectLocation"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectTag"
+            }
           },
           "environmentCount": {
             "type": "integer",
@@ -2192,6 +2217,7 @@
           "archived",
           "relativePath",
           "location",
+          "tags",
           "environmentCount",
           "runningEnvironmentCount",
           "environments"
@@ -2323,6 +2349,12 @@
           "location": {
             "$ref": "#/components/schemas/ProjectLocation"
           },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectTag"
+            }
+          },
           "environments": {
             "type": "array",
             "items": {
@@ -2339,6 +2371,7 @@
           "relativePath",
           "resolvedPath",
           "location",
+          "tags",
           "environments"
         ],
         "additionalProperties": false
@@ -7269,6 +7302,7 @@
               "token.revoked",
               "project.created",
               "project.updated",
+              "project.tagged",
               "project.deleted",
               "environment.started",
               "environment.stopped",
@@ -9731,6 +9765,139 @@
           }
         ],
         "x-portta-permission": "project:delete"
+      }
+    },
+    "/projects/{slug}/tags": {
+      "put": {
+        "operationId": "setProjectTags",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Set the tags of a Project",
+        "description": "Replaces them all. A tag is a label to group and filter by, such as `cliente: Acme`; it grants and hides nothing.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tags": {
+                    "maxItems": 16,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "default": "",
+                          "type": "string",
+                          "maxLength": 32
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "tags"
+                ],
+                "additionalProperties": false,
+                "ref": "ProjectTagsBody"
+              }
+            }
+          }
+        },
+        "x-portta-permission": "project:update"
       }
     },
     "/projects/{slug}/environments": {

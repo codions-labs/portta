@@ -4,8 +4,12 @@ import { affectedBy, availableActions } from '@/components/entities/project-acti
 import {
   DEFAULT_PROJECT_FILTERS,
   defaultProjectOrder,
+  groupProjects,
   matchesProjectFilters,
+  parseTag,
   projectState,
+  tagCounts,
+  tagKeys,
   toListItem,
   toListItems,
 } from '@/lib/projects'
@@ -20,6 +24,7 @@ function summary(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
     archived: false,
     relativePath: null,
     location: 'external',
+    tags: [],
     environmentCount: 2,
     runningEnvironmentCount: 1,
     environments: [
@@ -134,5 +139,53 @@ describe('what a project can be asked to do', () => {
   it('counts what a stop would interrupt, and what a start would bring up', () => {
     expect(affectedBy(target, 'stop')).toEqual({ environments: ['produto'], containers: 4 })
     expect(affectedBy(target, 'start')).toEqual({ environments: ['produto-pr-12'], containers: 3 })
+  })
+})
+
+describe('tags on the project list', () => {
+  const acme = { key: 'cliente', value: 'Acme' }
+  const globex = { key: 'cliente', value: 'Globex' }
+  const a = toListItem(summary({ slug: 'a', name: 'A', tags: [acme, { key: '', value: 'loja' }] }), undefined)
+  const b = toListItem(summary({ slug: 'b', name: 'B', tags: [globex] }), undefined)
+  const c = toListItem(summary({ slug: 'c', name: 'C', tags: [] }), undefined)
+
+  it('reads what somebody typed as a key and a value, at the first colon only', () => {
+    expect(parseTag('Cliente: Acme')).toEqual(acme)
+    expect(parseTag('loja')).toEqual({ key: '', value: 'loja' })
+    expect(parseTag('url: http://x')).toEqual({ key: 'url', value: 'http://x' })
+    expect(parseTag('  ')).toBeNull()
+    expect(parseTag('cliente:')).toBeNull()
+  })
+
+  it('filters by one tag, and finds a project by its tag in the search', () => {
+    expect(
+      [a, b, c].filter((item) => matchesProjectFilters(item, { ...DEFAULT_PROJECT_FILTERS, tag: 'cliente: Acme' })),
+    ).toEqual([a])
+    expect(matchesProjectFilters(b, { ...DEFAULT_PROJECT_FILTERS, search: 'globex' })).toBe(true)
+    expect(matchesProjectFilters(c, { ...DEFAULT_PROJECT_FILTERS, search: 'globex' })).toBe(false)
+  })
+
+  it('counts the tags in use, most used first, and offers their keys to group by', () => {
+    expect(tagCounts([a, b, c]).map((entry) => entry.label)).toEqual(['cliente: Acme', 'cliente: Globex', 'loja'])
+    expect(tagKeys([a, b, c])).toEqual(['cliente'])
+  })
+
+  it('groups by a key, with the projects that have none last, and by state', () => {
+    const labels = { state: (state: string) => state, without: (key: string) => `Sem ${key}` }
+    expect(
+      groupProjects([a, b, c], 'tag:cliente', labels).map((band) => [band.title, band.items.map((i) => i.slug)]),
+    ).toEqual([
+      ['Acme', ['a']],
+      ['Globex', ['b']],
+      ['Sem cliente', ['c']],
+    ])
+    expect(groupProjects([a, b, c], 'none', labels)).toHaveLength(1)
+    expect(groupProjects([a], 'state', labels)[0]?.title).toBe('running')
+  })
+
+  it('puts a project with two values under each of them', () => {
+    const both = toListItem(summary({ slug: 'd', tags: [acme, globex] }), undefined)
+    const bands = groupProjects([both], 'tag:cliente', { state: String, without: String })
+    expect(bands.map((band) => band.title)).toEqual(['Acme', 'Globex'])
   })
 })

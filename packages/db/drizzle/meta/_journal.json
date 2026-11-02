@@ -8,6 +8,13 @@
       "when": 1793636644939,
       "tag": "0000_current",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793653810324,
+      "tag": "0001_careful_ricochet",
+      "breakpoints": true
     }
   ]
 }

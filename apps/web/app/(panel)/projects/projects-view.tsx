@@ -30,17 +30,22 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog } from '@/components/ui/dialog'
 import { Field, Input } from '@/components/ui/field'
+import { Segmented } from '@/components/ui/segmented'
 import { ColumnsMenu, useTableArrangement } from '@/components/ui/table-arrangement'
 import { ApiError, api } from '@/lib/api'
 import { useCan } from '@/lib/permissions'
 import {
   DEFAULT_PROJECT_FILTERS,
   defaultProjectOrder,
+  groupProjects,
   matchesProjectFilters,
   type ProjectFilters,
+  type ProjectGrouping,
   type ProjectView,
   projectState,
   resolveProjectView,
+  tagCounts,
+  tagKeys,
   toListItems,
 } from '@/lib/projects'
 import { keys, useDevelopmentOverview, useEnvironments, useExposure, useProjects } from '@/lib/queries'
@@ -58,6 +63,7 @@ export function ProjectsView({
   const { t } = useTranslation('projects')
   const [filters, setFilters] = useState<ProjectFilters>(DEFAULT_PROJECT_FILTERS)
   const [creating, setCreating] = useState(startCreating)
+  const [grouping, setGrouping] = useState<ProjectGrouping>('none')
   // Cards until the browser has read its storage: the server cannot know the
   // preference, and a first render that disagrees with its HTML is thrown
   // away and rebuilt, which costs more than the re-render nobody sees.
@@ -82,6 +88,19 @@ export function ProjectsView({
     [catalog.data, overview.data],
   )
   const shown = useMemo(() => items.filter((item) => matchesProjectFilters(item, filters)), [items, filters])
+  const tags = useMemo(() => tagCounts(items), [items])
+  const keysInUse = useMemo(() => tagKeys(items), [items])
+  // A grouping by a key nobody uses any more is no grouping.
+  const effective: ProjectGrouping =
+    grouping.startsWith('tag:') && !keysInUse.includes(grouping.slice(4)) ? 'none' : grouping
+  const bands = useMemo(
+    () =>
+      groupProjects(shown, effective, {
+        state: (state) => t(`state.${state}`),
+        without: (key) => t('group.without', { key }),
+      }),
+    [shown, effective, t],
+  )
   const known = useMemo(
     () =>
       new Map((environments.data ?? []).map((environment): [string, Environment] => [environment.name, environment])),
@@ -143,6 +162,34 @@ export function ProjectsView({
     </>
   )
 
+  const tagChips =
+    tags.length > 0 ? (
+      <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label={t('tagsAria')}>
+        <FilterChip active={filters.tag === null} onClick={() => set('tag', null)}>
+          {t('filters.allTags')}
+        </FilterChip>
+        {tags.map((tag) => (
+          <FilterChip key={tag.label} active={filters.tag === tag.label} onClick={() => set('tag', tag.label)}>
+            {tag.label} {tag.count}
+          </FilterChip>
+        ))}
+        <span className="ml-2 text-xs font-semibold text-muted">{t('group.by')}</span>
+        <Segmented
+          label={t('group.by')}
+          value={effective}
+          onChange={setGrouping}
+          options={[
+            { value: 'none', label: t('group.none') },
+            ...keysInUse.map((key) => ({
+              value: `tag:${key}` as const,
+              label: key.charAt(0).toUpperCase() + key.slice(1),
+            })),
+            { value: 'state', label: t('group.state') },
+          ]}
+        />
+      </div>
+    ) : null
+
   const emptyState =
     items.length === 0 ? (
       <Empty
@@ -200,6 +247,7 @@ export function ProjectsView({
 
       <section className="mb-6">
         {chrome}
+        {tagChips}
         {catalog.isPending ? (
           <Card>
             <SkeletonRows rows={4} />
@@ -215,8 +263,18 @@ export function ProjectsView({
         ) : (
           <div className="space-y-4">
             {shown.length === 0 && (unowned.length === 0 || filters.state !== 'all') ? <Card>{emptyState}</Card> : null}
-            {shown.map((item) => (
-              <ProjectGroup key={item.slug} item={item} environments={known} exposure={exposure.data} />
+            {bands.map((band) => (
+              <section key={band.id} className="space-y-4" aria-label={band.title ?? undefined}>
+                {band.title ? (
+                  <h2 className="flex items-baseline gap-2 pt-1 text-sm font-semibold text-ink">
+                    {band.title}
+                    <span className="text-xs font-normal text-subtle tabular-nums">{band.items.length}</span>
+                  </h2>
+                ) : null}
+                {band.items.map((item) => (
+                  <ProjectGroup key={item.slug} item={item} environments={known} exposure={exposure.data} />
+                ))}
+              </section>
             ))}
             {filters.state === 'all' && unowned.length > 0 ? (
               <UnownedGroup environments={unowned} projects={catalog.data ?? []} exposure={exposure.data} />

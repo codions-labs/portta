@@ -376,6 +376,13 @@ export const ProjectEnvironment = named(
 )
 export type ProjectEnvironment = z.infer<typeof ProjectEnvironment>
 
+/** A label to find a Project by: `{ key: 'cliente', value: 'Acme' }`, or a bare `{ key: '', value: 'loja' }`. */
+export const ProjectTag = named(
+  z.object({ key: z.string().max(32), value: z.string().min(1).max(64) }).strict(),
+  'ProjectTag',
+)
+export type ProjectTag = z.infer<typeof ProjectTag>
+
 export const ProjectSummary = named(
   z
     .object({
@@ -386,6 +393,7 @@ export const ProjectSummary = named(
       archived: z.boolean(),
       relativePath: z.string().nullable(),
       location: ProjectLocation,
+      tags: z.array(ProjectTag),
       environmentCount: z.number().int(),
       runningEnvironmentCount: z.number().int(),
       /**
@@ -422,6 +430,7 @@ export const Project = named(
       relativePath: z.string().nullable(),
       resolvedPath: z.string().nullable(),
       location: ProjectLocation,
+      tags: z.array(ProjectTag),
       environments: z.array(ProjectEnvironment),
     })
     .strict(),

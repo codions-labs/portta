@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { EnvironmentRow } from '@/components/entities/environment-row'
 import { ProjectActionsMenu, ProjectPrimaryAction } from '@/components/entities/project-actions'
 import { ResourceUsage } from '@/components/entities/resource-usage'
+import { ProjectTags } from '@/components/projects/project-tags'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -44,6 +45,9 @@ export function ProjectGroup({
             {item.name}
           </Link>
           <Badge tone={projectStateTone(state)}>{t(`state.${state}`)}</Badge>
+          {item.environments.length > 0 || item.tags.length > 0 || item.resources === null ? (
+            <ProjectTags slug={item.slug} tags={item.tags} />
+          ) : null}
           {item.resources ? (
             <ResourceUsage
               cpu={item.resources.cpuUtilisation}
