@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { renderAliases, setProtection, writeProtectionStore } from 'portta-core'
+import { parseAliases, renderAliases, setProtection, writeProtectionStore } from 'portta-core'
 import { describe, expect, it } from 'vitest'
 import { syncForwardAuth } from './web.js'
 
@@ -53,6 +53,8 @@ describe('syncForwardAuth', () => {
     )
 
     syncForwardAuth(root, 'remote-public')
-    expect(readFileSync(file, 'utf8')).not.toContain('store.example.test`')
+    const rendered = readFileSync(file, 'utf8')
+    expect(rendered).not.toContain('Host(`store.example.test`)')
+    expect(parseAliases(rendered)).toEqual([ALIAS])
   })
 })

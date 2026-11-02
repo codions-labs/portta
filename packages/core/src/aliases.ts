@@ -41,8 +41,9 @@ export function aliasRouterName(project: string, service: string): string {
  * On a public host (`forwardAuth`) every alias passes through ForwardAuth, so a
  * hostname nobody decided about is closed, exactly like the project's own.
  */
-export function renderAliases(aliases: StoredAlias[], forwardAuth = false): string {
-  const lines = [...HEADER, `${ALIASES_MARKER}${JSON.stringify(aliases)}`, '']
+export function renderAliases(aliases: StoredAlias[], forwardAuth = false, suspended: StoredAlias[] = []): string {
+  // A suspended alias stays in the stored state, so it returns when its conflict is gone, but has no router.
+  const lines = [...HEADER, `${ALIASES_MARKER}${JSON.stringify([...aliases, ...suspended])}`, '']
   if (aliases.length === 0) {
     lines.push('# No alias is set. A project is reached on the hostname it derives.')
     return `${lines.join('\n')}\n`
