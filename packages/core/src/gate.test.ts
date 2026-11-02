@@ -40,4 +40,22 @@ describe('containers that would route with no login gate', () => {
       ]),
     ).toEqual([])
   })
+
+  it('counts a restarting, paused or created container, and reads labels case-insensitively', () => {
+    const open = { 'Traefik.Enable': 'TRUE' }
+    expect(
+      ungatedContainers([
+        container('a-1', open, 'restarting'),
+        container('b-1', open, 'paused'),
+        container('c-1', open, 'created'),
+        container('d-1', open, 'exited'),
+      ]),
+    ).toEqual(['a-1', 'b-1', 'c-1'])
+    const labels = {
+      'traefik.enable': 'true',
+      'Traefik.HTTP.Routers.shop.Rule': 'Host(`x`)',
+      'traefik.http.routers.shop.middlewares': 'Portta-Forward-Auth@file',
+    }
+    expect(ungatedContainers([container('shop-1', labels)])).toEqual([])
+  })
 })

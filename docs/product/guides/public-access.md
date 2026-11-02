@@ -24,7 +24,7 @@ what a project started before the host went public does: it would be open to the
 internet the moment the profile changes. Stop it with
 `portta runtime down <path>`, enable public access, then `portta adopt` and
 `portta runtime up` it again so it is planned behind the gate. `portta doctor`
-reports the same state as a failure, and `portta up` warns about it.
+reports the same state as a failure. `portta up` on the public profile refuses to start the gateway while such a service exists (a stopped one counts only if it would come back on its own), and only warns when the gateway is already serving, so a restart never takes the host down.
 
 Then it asks a single confirmation naming that domain:
 

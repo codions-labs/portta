@@ -225,11 +225,24 @@ export async function upCommand(
   if (context.config.tcpEnabled) await ensureNetwork(context.config.accessNetwork)
   ensureAuthState(context.root, context.config.profile)
   if (context.config.profile === 'remote-public') {
-    const ungated = ungatedContainers(await inspectContainers(false))
-    if (ungated.length > 0)
-      output.warning(
-        `routed with no login gate, so open to the internet: ${ungated.join(', ')}. Run portta runtime down <path>, then adopt and up it again.`,
+    const present = await inspectContainers(true)
+    const ungated = ungatedContainers(present)
+    const serving = present.some(
+      (item) =>
+        item.state === 'running' &&
+        item.labels['portta.managed'] === 'true' &&
+        item.labels['portta.component'] === 'traefik',
+    )
+    const advice = 'run portta runtime down <path>, then portta adopt and portta runtime up it again'
+    // Starting the gateway is what would open them. Once it already serves, a restart
+    // changes nothing, so it only warns and leaves the host reachable for the fix.
+    if (ungated.length > 0 && !serving)
+      throw new RefusedError(
+        `these services route with no login gate, so starting a public gateway would open them: ${ungated.join(', ')}`,
+        advice,
       )
+    if (ungated.length > 0)
+      output.warning(`routed with no login gate, so open to the internet: ${ungated.join(', ')}. ${advice}`)
   }
   output.progress(builds ? 'starting components, building local images' : 'starting components')
   const wait = !options.attach

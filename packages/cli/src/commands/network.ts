@@ -101,7 +101,7 @@ export async function publicEnable(command: Command): Promise<void> {
     throw new RefusedError('public access cannot be enabled while TCP entrypoints are active')
   // Fail closed: a project already routing here has no gate, so it would be open
   // the moment the host is public. It has to be stopped and planned again first.
-  const ungated = ungatedContainers(await inspectContainers(false))
+  const ungated = ungatedContainers(await inspectContainers(true))
   if (ungated.length > 0)
     throw new RefusedError(
       `these running services route with no login gate, so they would be open on a public host: ${ungated.join(', ')}`,
