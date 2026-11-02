@@ -142,6 +142,7 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 - [0051. Authentication is optional inside a network that already authenticates](development/adr/0051-authentication-is-optional-inside-a-trusted-network.md)
 - [0052. The .portta directory is the project's contract, and it never describes a host](development/adr/0052-the-portta-directory-is-the-project-contract.md)
 - [0055. Portta routes and protects; agents do the work](development/adr/0055-portta-routes-and-protects-agents-do-the-work.md) — Why Portta routes and protects projects and leaves the AI work to agents.
+- [0056. The collector reads where a project's code stands, and only reads](development/adr/0056-the-collector-reads-where-the-code-stands.md) — Why the host collector reads where a project's code stands, and only reads.
 - [Architecture decision records](development/adr/README.md)
 
 ## Repository-only instructions
