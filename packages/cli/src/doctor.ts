@@ -9,7 +9,7 @@
 // here is the gathering: one `docker inspect` over every container, a handful
 // of network lookups, and the host probes in `host.ts`.
 //
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   authStoreVerdict,
@@ -34,7 +34,9 @@ import {
   loopbackDomainVerdict,
   meetsMinimum,
   panelAuthVerdicts,
+  protectionForHost,
   publishesSensitivePort,
+  readProtectionStore,
   routesFor,
   traefikServiceNames,
 } from 'portta-core'
@@ -460,6 +462,44 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
       'portta logs portta-auth',
     ),
   )
+
+  // --- a public host ---------------------------------------------------------
+  // Everything on a public host passes through ForwardAuth and a hostname with
+  // no decision is closed, so a stopped auth service closes every project and a
+  // routed service with no record is simply unreachable.
+  if (config.profile === 'remote-public') {
+    if (!auth || auth.state !== 'running')
+      add(
+        check(
+          'public.auth',
+          'fail',
+          'public host',
+          'portta-auth is not running, so every routed hostname is closed',
+          'portta up   then portta logs portta-auth',
+        ),
+      )
+    if (isTrue(env.PORTTA_RUNNER_PUBLIC))
+      add(
+        check(
+          'public.runner',
+          'warn',
+          'public host',
+          'PORTTA_RUNNER_PUBLIC is on: a signed-in panel session can start, stop and remove projects',
+          'remove PORTTA_RUNNER_PUBLIC from .env to operate projects on the host only',
+        ),
+      )
+    const undecided = undecidedHosts(root)
+    if (undecided.length > 0)
+      add(
+        check(
+          'public.exposure',
+          'warn',
+          'public host',
+          `routed with no decision, so closed: ${undecided.join(', ')}`,
+          'portta adopt <path> --protect <service>  or  --public <service>, or portta protect host|open <host>',
+        ),
+      )
+  }
 
   // --- databases by hostname -----------------------------------------------
   if (config.tcpEnabled) {
@@ -1029,4 +1069,27 @@ async function resolveIpv4(hostname: string): Promise<string[]> {
   } catch {
     return []
   }
+}
+
+/** Hostnames in the persisted Runtime Plans that the ForwardAuth registry has no record for. */
+function undecidedHosts(root: string): string[] {
+  const directory = join(root, 'runtime', 'compose')
+  if (!existsSync(directory)) return []
+  let registry: ReturnType<typeof readProtectionStore>
+  try {
+    registry = readProtectionStore(join(root, 'state/auth/protections.json'))
+  } catch {
+    return []
+  }
+  const hosts: string[] = []
+  for (const id of readdirSync(directory)) {
+    try {
+      const plan = JSON.parse(readFileSync(join(directory, id, 'plan.json'), 'utf8')) as {
+        services?: Array<{ host?: string | null }>
+      }
+      for (const service of plan.services ?? [])
+        if (service.host && !protectionForHost(registry, service.host)) hosts.push(service.host)
+    } catch {}
+  }
+  return hosts
 }

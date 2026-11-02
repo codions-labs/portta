@@ -46,6 +46,11 @@ describe('GET /api/runner', () => {
     expect(body.reason).toContain('exposed publicly')
   })
 
+  it('refuses a runner that already exists once the settings no longer allow it', async () => {
+    const body = await status([...GATEWAY, RUNNER], 'PORTTA_RUNNER=true\nPORTTA_PROFILE=remote-public\n')
+    expect(body).toMatchObject({ available: false, unavailableReason: 'refused' })
+  })
+
   it('is idle when the container exists and has never run', async () => {
     const body = await status([...GATEWAY, RUNNER], 'PORTTA_RUNNER=true\n')
     expect(body).toMatchObject({ state: 'idle', available: true, reason: null })

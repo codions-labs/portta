@@ -54,8 +54,11 @@ export async function runnerStatus(
   const saved = parseEnv(readEnvFile(config.envFile))
   const prepareCommand = `./bin/portta up ${config.profile}`
 
+  // The refusal is checked on every read, not only when the container is
+  // missing: a runner prepared before the settings changed must not stay usable.
   const container = runnerOf(snapshot)
-  if (!container) {
+  const refusal = runnerRefusal(Object.fromEntries(saved))
+  if (!container || refusal !== null) {
     const { unavailableReason, reason } = whyUnavailable(saved)
     return {
       state: 'unavailable',
