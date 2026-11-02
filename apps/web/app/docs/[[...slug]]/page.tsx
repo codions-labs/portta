@@ -48,14 +48,13 @@ function DocsHome() {
         'remote-development',
         'authentication',
         'database-access',
-        'issues',
         'troubleshooting',
       ],
     },
     {
       title: 'Reference',
       description: 'Look up commands, settings and contracts.',
-      slugs: ['configuration', 'cli', 'api', 'mcp', 'compatibility'],
+      slugs: ['configuration', 'cli', 'api', 'compatibility'],
     },
     {
       title: 'Understand Portta',

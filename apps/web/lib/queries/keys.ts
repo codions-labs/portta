@@ -46,12 +46,6 @@ export const keys = {
   environmentReport: () => ['environment', 'report'] as const,
   hostSecurityReport: () => ['environment', 'security'] as const,
 
-  // The filters are part of the key: a filtered list is a different answer
-  // from the provider, not a subset of one the panel already holds.
-  issues: (project: string, filters: Record<string, string | undefined> = {}) => ['issues', project, filters] as const,
-  issue: (project: string, ref: string) => ['issues', project, 'one', ref] as const,
-  issueRunContext: (project: string, ref: string) => ['issues', project, 'run-context', ref] as const,
-  issueVocabulary: (project: string) => ['issues', project, 'vocabulary'] as const,
   config: () => ['config'] as const,
 
   users: () => ['users'] as const,
