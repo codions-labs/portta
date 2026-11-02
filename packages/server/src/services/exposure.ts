@@ -162,11 +162,7 @@ export function openService(
   return { entry: viewOf(protectionForHost(next, host)!), action: 'protection.opened' }
 }
 
-export function closeService(
-  config: PanelConfig,
-  container: ContainerSummary,
-  containers: readonly ContainerSummary[] = [],
-): ExposureChange {
+export function closeService(config: PanelConfig, container: ContainerSummary): ExposureChange {
   // Removing a decision is always allowed for its owner: a duplicate hostname
   // elsewhere must not keep a site open that its owner wants closed.
   const host = hostOf(container)

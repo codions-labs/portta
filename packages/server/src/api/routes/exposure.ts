@@ -129,7 +129,7 @@ export function exposureRoutes(deps: AppDeps): Hono {
       const snapshot = await deps.cache.get()
       const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
-      const change = closeService(deps.config, container, snapshot.containers)
+      const change = closeService(deps.config, container)
       await record(deps, c, {
         action: change.action,
         resourceType: 'service',
