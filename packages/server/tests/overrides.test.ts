@@ -160,6 +160,30 @@ describe('a hostname alias', () => {
     expect(existsSync(join(instance.dynamicDir, GENERATED_FILES.aliases))).toBe(false)
   })
 
+  it('keeps a suspended alias without a router when the panel writes another alias', async () => {
+    const dir = scratch()
+    const authStore = join(dir, 'protections.json')
+    const instance = await app(dir, {}, { profile: 'remote-public', tlsEnabled: true, authStore })
+    expect((await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'shop' })).status).toBe(200)
+    // Somebody later decides shop.localhost for another project.
+    writeProtectionStore(
+      authStore,
+      setProtection(readProtectionStore(authStore), {
+        scope: 'host:shop.localhost',
+        host: 'shop.localhost',
+        entryPoints: ['websecure'],
+        mode: 'public',
+        label: 'shop',
+        project: 'other',
+        service: 'web',
+      }),
+    )
+    const another = await put(instance, '/api/environments/alpha/services/api/alias', { alias: 'api' })
+    const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
+    if (another.status === 200) expect(written).toContain('Host(`api.localhost`)')
+    expect(written).not.toContain('Host(`shop.localhost`)')
+  })
+
   it('targets the container name, never the Compose service alias', async () => {
     const instance = await app()
     await put(instance, '/api/environments/alpha/services/api/alias', { alias: 'shop-api' })

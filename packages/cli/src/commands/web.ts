@@ -10,11 +10,9 @@ import {
   patchEnvFile,
   porttaImages,
   prepareEnvFile,
-  protectionForHost,
   readProtectionStore,
-  renderAliases,
+  renderAliasesForStore,
   renderAuthDynamic,
-  type StoredAlias,
   writeEnvFile,
   writeProtectionStore,
 } from 'portta-core'
@@ -62,20 +60,7 @@ export function syncForwardAuth(root: string, profile: string): void {
     const publicHost = profile === 'remote-public'
     // An alias whose hostname carries a decision made for another service would
     // inherit it, so on a public host it is left out until the conflict is gone.
-    const conflicts = (alias: StoredAlias): boolean => {
-      const decided = protectionForHost(store, alias.host)
-      return decided !== null && (decided.service !== alias.service || decided.project !== alias.project)
-    }
-    const stored = parseAliases(readFileSync(aliasFile, 'utf8'))
-    const suspended = publicHost ? stored.filter(conflicts) : []
-    writeEnvFile(
-      aliasFile,
-      renderAliases(
-        stored.filter((alias) => !suspended.includes(alias)),
-        publicHost,
-        suspended,
-      ),
-    )
+    writeEnvFile(aliasFile, renderAliasesForStore(parseAliases(readFileSync(aliasFile, 'utf8')), store, publicHost))
   }
 }
 

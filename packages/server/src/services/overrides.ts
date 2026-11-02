@@ -10,7 +10,13 @@
 // Nothing here writes a byte inside a project. See ADR 0001 and ADR 0011.
 
 import type { ContainerSummary, Environment, EnvironmentOverrides, ServiceOverrides } from 'portta-contracts'
-import { parseAliases, protectionForHost, readProtectionStore, renderAliases, type StoredAlias } from 'portta-core'
+import {
+  parseAliases,
+  protectionForHost,
+  readProtectionStore,
+  renderAliasesForStore,
+  type StoredAlias,
+} from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import type { Database } from '../db/index.ts'
 import { ENVIRONMENT_KEYS, SERVICE_KEYS } from '../db/keys.ts'
@@ -290,7 +296,11 @@ export function loadAliases(config: PanelConfig): StoredAlias[] {
 }
 
 export function saveAliases(config: PanelConfig, aliases: StoredAlias[]): void {
-  writeGenerated(config.dynamicDir, GENERATED_FILES.aliases, renderAliases(aliases, config.profile === 'remote-public'))
+  writeGenerated(
+    config.dynamicDir,
+    GENERATED_FILES.aliases,
+    renderAliasesForStore(aliases, readProtectionStore(config.authStore), config.profile === 'remote-public'),
+  )
 }
 
 /** Sorted so a rewrite of unchanged state produces an unchanged file. */

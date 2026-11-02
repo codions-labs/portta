@@ -1,4 +1,5 @@
 import { FORWARD_AUTH_MIDDLEWARE, quoteDynamicValue } from './dynamic.ts'
+import { type ProtectionStore, protectionForHost } from './protections.ts'
 
 /**
  * A hostname alias is a nickname, never a rename.
@@ -68,6 +69,26 @@ export function renderAliases(aliases: StoredAlias[], forwardAuth = false, suspe
 
   lines.push('')
   return lines.join('\n')
+}
+
+/**
+ * The file every writer renders, so none can undo a suspension.
+ *
+ * On a public host an alias whose hostname carries a decision made for another
+ * service would inherit it, so it keeps its stored state but has no router until
+ * the conflict is gone.
+ */
+export function renderAliasesForStore(aliases: StoredAlias[], store: ProtectionStore, publicHost: boolean): string {
+  const conflicts = (alias: StoredAlias): boolean => {
+    const decided = protectionForHost(store, alias.host)
+    return decided !== null && (decided.service !== alias.service || decided.project !== alias.project)
+  }
+  const suspended = publicHost ? aliases.filter(conflicts) : []
+  return renderAliases(
+    aliases.filter((alias) => !suspended.includes(alias)),
+    publicHost,
+    suspended,
+  )
 }
 
 /** Reads the state back out of the file the panel itself wrote. */
