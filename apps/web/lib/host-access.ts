@@ -25,9 +25,10 @@ export function hostAccess(
   exposure: ExposureView | undefined,
 ): HostMode {
   const wanted = canonicalHost(host)
-  const container = environment.services.find((candidate) =>
+  // Replicas answer on the same name, and one without the gate opens all of it.
+  const claimants = environment.services.filter((candidate) =>
     candidate.urls.some((url) => canonicalHost(url.host) === wanted),
   )
-  if (container && !hasForwardAuth(container.labels)) return 'unprotected'
+  if (claimants.some((candidate) => !hasForwardAuth(candidate.labels))) return 'unprotected'
   return exposure?.entries.find((entry) => canonicalHost(entry.host) === wanted)?.mode ?? 'closed'
 }

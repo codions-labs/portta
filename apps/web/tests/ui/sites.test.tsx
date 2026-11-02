@@ -80,6 +80,26 @@ describe('Sites', () => {
     expect(row('open.example.test').getByText('Open, no login')).toBeInTheDocument()
   })
 
+  it('calls an address open when any replica behind it lacks the gate', async () => {
+    environments.mockResolvedValue([
+      makeEnvironment({
+        name: 'shop',
+        services: [
+          makeContainer({ id: 'one', name: 'shop-web-1', labels: GATED, urls: [route('shop.example.test')] }),
+          makeContainer({ id: 'two', name: 'shop-web-2', labels: UNGATED, urls: [route('shop.example.test')] }),
+        ],
+      }),
+    ])
+    renderWithQuery(<SitesView />)
+    const rows = await screen.findAllByRole('link', { name: 'shop.example.test' })
+    for (const link of rows) {
+      const line = link.closest('li')
+      if (!line) throw new Error('no row')
+      expect(within(line).getByText('Open, no login')).toBeInTheDocument()
+    }
+    expect(rows).toHaveLength(2)
+  })
+
   it('says nothing about access until the registry answers', async () => {
     exposure.mockReturnValue(new Promise(() => {}))
     renderWithQuery(<SitesView />)

@@ -55,7 +55,10 @@ const INTERESTING_EXACT: string[] = [
 export function relevantLabels(labels: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {}
   for (const [key, value] of Object.entries(labels ?? {})) {
-    if (INTERESTING_EXACT.includes(key) || INTERESTING_PREFIXES.some((p) => key.startsWith(p))) {
+    // Traefik reads its labels in any case, so a router spelled in capitals is
+    // still a router, and whoever decides about the gate has to see it.
+    const lower = key.toLowerCase()
+    if (INTERESTING_EXACT.includes(key) || INTERESTING_PREFIXES.some((p) => lower.startsWith(p))) {
       out[key] = value
     }
   }
