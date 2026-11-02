@@ -3892,6 +3892,105 @@
         ],
         "additionalProperties": false
       },
+      "ExposureEntry": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "protected",
+              "public"
+            ]
+          },
+          "user": {
+            "description": "The login name of a protected host. Never a password or a hash.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "project": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "service": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "host",
+          "mode",
+          "user",
+          "project",
+          "service",
+          "label"
+        ],
+        "additionalProperties": false
+      },
+      "ExposureView": {
+        "type": "object",
+        "properties": {
+          "enforced": {
+            "type": "boolean",
+            "description": "True on a public host: a hostname with no entry is closed. Elsewhere protection is optional."
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExposureEntry"
+            }
+          }
+        },
+        "required": [
+          "enforced",
+          "entries"
+        ],
+        "additionalProperties": false
+      },
+      "ExposureResult": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true
+          },
+          "entry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExposureEntry"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null once the entry was removed"
+          },
+          "password": {
+            "description": "Shown once, when a credential was generated. Only its hash is stored.",
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "entry",
+          "note"
+        ],
+        "additionalProperties": false
+      },
       "DoctorResponse": {
         "type": "object",
         "properties": {
@@ -7158,6 +7257,10 @@
               "container.destroyed",
               "access.bridge_opened",
               "access.bridge_closed",
+              "protection.created",
+              "protection.rotated",
+              "protection.opened",
+              "protection.removed",
               "share.created",
               "share.revoked",
               "gateway.applied",
@@ -11871,6 +11974,309 @@
           }
         ],
         "x-portta-permission": "access:manage"
+      }
+    },
+    "/exposure": {
+      "get": {
+        "operationId": "listExposure",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Who may open each service hostname",
+        "description": "The ForwardAuth registry, without credentials. On a public host a hostname with no entry is closed.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposureView"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "access:read"
+      }
+    },
+    "/services/{id}/exposure": {
+      "put": {
+        "operationId": "protectService",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Ask for a credential to open a service",
+        "description": "Generates a password, shown once; only its hash is stored. Calling it again replaces the password. Takes effect on the next request.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Docker container id, not a Compose service name.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposureResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[A-Za-z0-9._-]+$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-portta-permission": "service:protect"
+      },
+      "delete": {
+        "operationId": "closeService",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Remove the decision for a service hostname",
+        "description": "On a public host the hostname is closed afterwards.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Docker container id, not a Compose service name.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposureResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "service:protect"
+      }
+    },
+    "/services/{id}/exposure/open": {
+      "post": {
+        "operationId": "openService",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Let everybody open a service, with no login",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Docker container id, not a Compose service name.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposureResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "service:protect"
       }
     },
     "/gateway": {

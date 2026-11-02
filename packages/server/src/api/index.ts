@@ -16,6 +16,7 @@ import { AUDITED_AUTH_PATHS, auditAuthExchange } from '../services/audit-auth.ts
 import { DockerAccessDenied } from '../services/docker/allowlist.ts'
 import { DockerApiError } from '../services/docker/client.ts'
 import { DynamicWriteRefused } from '../services/dynamic.ts'
+import { ExposureRefused } from '../services/exposure.ts'
 import { OverrideRefused } from '../services/overrides.ts'
 import { ValidationError } from '../services/settings.ts'
 import { ShareRefused } from '../services/shares.ts'
@@ -29,6 +30,7 @@ import { databaseRoutes } from './routes/database.ts'
 import { developmentRoutes } from './routes/development.ts'
 import { dockerRoutes } from './routes/docker.ts'
 import { environmentRoutes } from './routes/environments.ts'
+import { exposureRoutes } from './routes/exposure.ts'
 import { gatewayRoutes } from './routes/gateway.ts'
 import { hostRoutes } from './routes/host.ts'
 import { networkRoutes } from './routes/network.ts'
@@ -174,6 +176,7 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', tunnelRoutes(deps))
   api.route('/', accessRoutes(deps))
   api.route('/', shareRoutes(deps))
+  api.route('/', exposureRoutes(deps))
   api.route('/', gatewayRoutes(deps))
   api.route('/', hostRoutes(deps))
   api.route('/', configRoutes(deps))
@@ -223,6 +226,7 @@ const handleError: ErrorHandler = (error, c) => {
     error instanceof ActionRefused ||
     error instanceof AccessError ||
     error instanceof ShareRefused ||
+    error instanceof ExposureRefused ||
     error instanceof OverrideRefused ||
     error instanceof DynamicWriteRefused
   ) {

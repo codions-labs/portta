@@ -506,6 +506,47 @@ export const Share = named(
 )
 export type Share = z.infer<typeof Share>
 
+export const ExposureEntry = named(
+  z
+    .object({
+      host: z.string(),
+      mode: z.enum(['protected', 'public']),
+      user: z.string().nullable().describe('The login name of a protected host. Never a password or a hash.'),
+      project: z.string().nullable(),
+      service: z.string().nullable(),
+      label: z.string(),
+    })
+    .strict(),
+  'ExposureEntry',
+)
+export type ExposureEntry = z.infer<typeof ExposureEntry>
+
+export const ExposureView = named(
+  z
+    .object({
+      enforced: z
+        .boolean()
+        .describe('True on a public host: a hostname with no entry is closed. Elsewhere protection is optional.'),
+      entries: z.array(ExposureEntry),
+    })
+    .strict(),
+  'ExposureView',
+)
+export type ExposureView = z.infer<typeof ExposureView>
+
+export const ExposureResult = named(
+  z
+    .object({
+      ok: z.literal(true),
+      entry: ExposureEntry.nullable().describe('Null once the entry was removed'),
+      password: z.string().optional().describe('Shown once, when a credential was generated. Only its hash is stored.'),
+      note: z.string(),
+    })
+    .strict(),
+  'ExposureResult',
+)
+export type ExposureResult = z.infer<typeof ExposureResult>
+
 export const ShareView = named(
   z
     .object({

@@ -17,7 +17,7 @@ export const statements = {
   ...defaultStatements,
   project: ['read', 'create', 'update', 'delete', 'members'],
   environment: ['read', 'operate', 'destroy', 'settings'],
-  service: ['read', 'operate'],
+  service: ['read', 'operate', 'protect'],
   container: ['read', 'operate', 'destroy', 'console'],
   logs: ['read'],
   metrics: ['read'],
