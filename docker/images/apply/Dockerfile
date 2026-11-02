@@ -22,7 +22,7 @@
 # the compose CLI reaches that daemon, which is why --network none is no
 # obstacle -- and why this image needs no toolchain of its own.
 # ============================================================================
-FROM alpine:3.24.1
+FROM alpine:3.24.3
 
 ARG PORTTA_VERSION
 
