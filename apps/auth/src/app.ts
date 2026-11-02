@@ -161,6 +161,9 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     const protection = findProtection(c)
     const host = forwardedHost(c)
     if (!protection || !host || protection.host !== host) return c.body(null, 401)
+    // Decided per hostname, in the record and nowhere else: a public host is
+    // let through at once, and there is nothing to send a browser to.
+    if (protection.mode === 'public') return c.body(null, 200)
 
     const session = readSession(getCookie(c, SESSION_COOKIE) ?? '', config.secret)
     const second = Math.floor(now() / 1000)
@@ -184,13 +187,15 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
 
   app.get('/__portta/auth/login', (c) => {
     const protection = findProtection(c)
-    return protection ? renderLogin(c, protection) : c.text('Protected destination not found.', 404)
+    return protection && protection.mode === 'protected'
+      ? renderLogin(c, protection)
+      : c.text('Protected destination not found.', 404)
   })
 
   app.post('/__portta/auth/login', async (c) => {
     const protection = findProtection(c)
     const host = forwardedHost(c)
-    if (!protection || !host) return c.text('Protected destination not found.', 404)
+    if (!protection || protection.mode !== 'protected' || !host) return c.text('Protected destination not found.', 404)
     if (!originAllowed(c, host)) return c.text('Origin refused.', 403)
     const address = clientAddress(c)
     const key = `${protection.scope}\u0000${address}`
@@ -204,7 +209,7 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     }
     const user = typeof body.user === 'string' ? body.user : ''
     const password = typeof body.password === 'string' ? body.password : ''
-    if (user !== protection.user || !(await verifyPassword(password, protection.hash))) {
+    if (user !== protection.user || !protection.hash || !(await verifyPassword(password, protection.hash))) {
       const result = await limiter.failure(key)
       if (!result.allowed) c.header('Retry-After', String(result.retryAfter))
       log({ event: 'login', scope: protection.scope, address, outcome: result.allowed ? 'refused' : 'locked' })

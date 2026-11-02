@@ -5,6 +5,7 @@ import {
   emptyProtectionStore,
   hashPassword,
   readProtectionStore,
+  removeProtection,
   setProtection,
   writeProtectionStore,
 } from 'portta-core'
@@ -30,6 +31,7 @@ function setup(options: { now?: () => number; limiter?: LoginLimiter; logs?: Rec
       scope: 'share:a7f3',
       host: 'demo.example.com',
       entryPoints: ['websecure'],
+      mode: 'protected',
       user: 'reviewer',
       hash: passwordHash,
       label: 'Storefront',
@@ -66,6 +68,58 @@ const forwarded = {
 describe('ForwardAuth app', () => {
   beforeEach(() => {
     /* each test receives an isolated store and limiter */
+  })
+
+  describe('what a hostname is decided to be', () => {
+    const openHeaders = { ...forwarded, 'x-forwarded-host': 'api.example.com', accept: 'application/json' }
+
+    function withPublicHost() {
+      const instance = setup()
+      writeProtectionStore(
+        instance.storePath,
+        setProtection(readProtectionStore(instance.storePath), {
+          scope: 'host:api.example.com',
+          host: 'api.example.com',
+          entryPoints: ['websecure'],
+          mode: 'public',
+          label: 'api',
+        }),
+      )
+      return instance
+    }
+
+    it('asks a protected host for its credential', async () => {
+      const { app } = withPublicHost()
+      const response = await app.request('/verify', { headers: { ...forwarded, accept: 'application/json' } })
+      expect(response.status).toBe(401)
+    })
+
+    it('lets a public host through at once, with no login and no session', async () => {
+      const { app } = withPublicHost()
+      expect((await app.request('/verify', { headers: openHeaders })).status).toBe(200)
+      expect((await app.request('/verify', { method: 'POST', headers: openHeaders })).status).toBe(200)
+    })
+
+    it('refuses a host nobody decided about, so forgetting leaves it closed', async () => {
+      const { app } = withPublicHost()
+      const response = await app.request('/verify', {
+        headers: { ...openHeaders, 'x-forwarded-host': 'undecided.example.com' },
+      })
+      expect(response.status).toBe(401)
+    })
+
+    it('has no login page for a public host', async () => {
+      const { app } = withPublicHost()
+      const response = await app.request('/__portta/auth/login', { headers: { 'x-forwarded-host': 'api.example.com' } })
+      expect(response.status).toBe(404)
+    })
+
+    it('closes a host again the moment its record is removed', async () => {
+      const { app, storePath } = withPublicHost()
+      expect((await app.request('/verify', { headers: openHeaders })).status).toBe(200)
+      writeProtectionStore(storePath, removeProtection(readProtectionStore(storePath), 'host:api.example.com'))
+      expect((await app.request('/verify', { headers: openHeaders })).status).toBe(401)
+    })
   })
 
   it('keeps non-browser clients on a plain 401 without a challenge', async () => {
@@ -135,6 +189,7 @@ describe('ForwardAuth app', () => {
         scope: 'panel',
         host: 'panel.example.com',
         entryPoints: ['websecure'],
+        mode: 'protected',
         user: 'reviewer',
         hash: passwordHash,
         label: 'Panel',

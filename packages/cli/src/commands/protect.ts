@@ -88,6 +88,7 @@ export async function protectHost(
     scope,
     host,
     entryPoints: [entryPoint],
+    mode: 'protected',
     user,
     hash: await hashPassword(password),
     label: options.label ?? options.service ?? host,
@@ -134,7 +135,7 @@ export async function protectStatus(hostInput: string | undefined, command: Comm
   else if (!protections.length) output.progress('no matching protected hosts')
   else
     for (const record of protections)
-      output.line(`${record!.host}\t${record!.user}\t${record!.scope}\tepoch ${record!.epoch}`)
+      output.line(`${record!.host}\t${record!.user ?? '-'}\t${record!.scope}\tepoch ${record!.epoch}`)
 }
 
 /**

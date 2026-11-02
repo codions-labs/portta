@@ -15,6 +15,7 @@ import {
 } from './protections.ts'
 
 const record = {
+  mode: 'protected' as const,
   scope: 'project:demo.example.com',
   host: 'Demo.Example.com.',
   entryPoints: ['websecure'],
@@ -65,5 +66,33 @@ describe('protection store', () => {
         }),
       ),
     ).toThrow('duplicate protection host')
+  })
+
+  it('stores a public host with no credential, and refuses one that carries a credential', () => {
+    const open = {
+      scope: 'host:api.example.com',
+      host: 'api.example.com',
+      entryPoints: ['websecure'],
+      mode: 'public' as const,
+      label: 'api',
+    }
+    const store = setProtection(emptyProtectionStore(), open)
+    expect(protectionForHost(store, 'api.example.com')).toMatchObject({ mode: 'public' })
+    expect(JSON.stringify(store)).not.toContain('hash')
+    expect(() => setProtection(emptyProtectionStore(), { ...open, user: 'x', hash: 'y' })).toThrow('no credential')
+    expect(() =>
+      parseProtectionStore(JSON.stringify({ version: 1, protections: [{ ...open, epoch: 1, hash: 'h' }] })),
+    ).toThrow('no credential')
+  })
+
+  it('refuses a protected host without a credential, and a record without a mode', () => {
+    const { hash: _hash, ...missing } = record
+    expect(() => parseProtectionStore(JSON.stringify({ version: 1, protections: [{ ...missing, epoch: 1 }] }))).toThrow(
+      'invalid hash',
+    )
+    const { mode: _mode, ...noMode } = record
+    expect(() => parseProtectionStore(JSON.stringify({ version: 1, protections: [{ ...noMode, epoch: 1 }] }))).toThrow(
+      'invalid mode',
+    )
   })
 })

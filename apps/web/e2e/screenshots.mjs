@@ -14,12 +14,6 @@
 // sees is what `just dev --demo` produces. Every file is written flat into
 // docs/images/, prefixed with the authentication mode it shows, because the
 // panel serves documentation images by file name only.
-//
-// Keep what the host daemon can read out of the shot. Start it with a `gh`
-// configuration nobody is signed in to, or "Assigned to you" lists the
-// operator's own GitHub issues:
-//
-//   GH_CONFIG_DIR="$(mktemp -d)" ./bin/portta host serve --detach
 
 import { mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -83,8 +77,6 @@ if (mode === 'auth-disabled') {
     ['overview', '/overview'],
     ['projects', '/projects'],
     ['project-overview', '/projects/demo-shop'],
-    ['project-repositories', '/projects/demo-shop/repositories'],
-    ['project-issues', '/projects/demo-shop/issues'],
     ['environments', '/environments'],
     ['environment', '/environments/demo-shop'],
     ['environment-logs', '/environments/demo-shop/logs'],
@@ -95,7 +87,6 @@ if (mode === 'auth-disabled') {
     ['gateway', '/gateway'],
     ['settings-general', '/settings/general'],
     ['settings-environment', '/settings/environment'],
-    ['settings-integrations', '/settings/integrations'],
     ['settings-users', '/settings/users'],
     ['docs', '/docs'],
   ]
@@ -112,7 +103,6 @@ if (mode === 'auth-disabled') {
   await page.getByText('Cards', { exact: true }).first().click()
 
   await dialog('/projects', /new project/i, 'dialog-new-project')
-  await dialog('/projects/demo-shop/repositories', /add repository/i, 'dialog-add-repository')
 
   await go('/overview')
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+k' : 'Control+k')

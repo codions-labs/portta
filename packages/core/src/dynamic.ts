@@ -47,7 +47,8 @@ export function renderAuthDynamic(store: ProtectionStore): string {
     'http:',
     '  routers:',
   ]
-  for (const protection of store.protections) {
+  // A public host has no login page, so it has no login router either.
+  for (const protection of store.protections.filter((item) => item.mode === 'protected')) {
     const name = `portta-auth-login-${dynamicName(protection.scope)}`
     lines.push(`    ${name}:`)
     lines.push(

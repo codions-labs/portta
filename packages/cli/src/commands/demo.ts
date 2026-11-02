@@ -67,24 +67,17 @@ export function demoComposeArgs(stack: DemoStack, action: 'up' | 'down'): string
   return ['compose', ...files, 'down', '-v']
 }
 
-export interface DemoRepository {
-  name: string
-  role: string | null
-  relativePath: string
-}
-
 export interface DemoProject {
   slug: string
   name: string
   description: string | null
   relativePath: string
-  repositories: DemoRepository[]
 }
 
 /**
  * The Project an example repository declares in `.portta/portta.example.json`.
  *
- * Only `project` and the repositories' names, roles and places are read. A
+ * Only `project` is read. A
  * manifest without a Project, or one that is not JSON, is an example that
  * simply has none, never a reason to stop the demo.
  */
@@ -92,27 +85,14 @@ export function readDemoProject(stackDir: string): DemoProject | null {
   const path = join(stackDir, PORTTA_DIRECTORY, MANIFEST_FILE)
   if (!existsSync(path)) return null
   try {
-    const manifest = JSON.parse(readFileSync(path, 'utf8')) as {
-      project?: Record<string, unknown>
-      repositories?: unknown
-    }
+    const manifest = JSON.parse(readFileSync(path, 'utf8')) as { project?: Record<string, unknown> }
     const project = manifest.project
     if (typeof project?.slug !== 'string' || typeof project.name !== 'string') return null
-    const repositories = (
-      Array.isArray(manifest.repositories) ? (manifest.repositories as Record<string, unknown>[]) : []
-    )
-      .filter((repository) => typeof repository?.name === 'string' && typeof repository.relativePath === 'string')
-      .map((repository) => ({
-        name: repository.name as string,
-        role: typeof repository.role === 'string' ? repository.role : null,
-        relativePath: repository.relativePath as string,
-      }))
     return {
       slug: project.slug,
       name: project.name,
       description: typeof project.description === 'string' ? project.description : null,
       relativePath: typeof project.relativePath === 'string' ? project.relativePath : basename(stackDir),
-      repositories,
     }
   } catch {
     return null
@@ -120,13 +100,11 @@ export function readDemoProject(stackDir: string): DemoProject | null {
 }
 
 /**
- * Create the Project of every started example the panel does not have yet,
- * with its repositories.
+ * Create the Project of every started example the panel does not have yet.
  *
- * A 409 is the second run finding the first one's Project or repository, which
- * is success. The Project carries the example's path, and that is what places
- * the running environment under it; a repository's place under Projects Home is
- * what joins it to the host's Git scan.
+ * A 409 is the second run finding the first one's Project, which is success.
+ * The Project carries the example's path, and that is what places the running
+ * environment under it.
  */
 export async function registerDemoProjects(command: Command, stacks: DemoStack[], token?: string): Promise<void> {
   const projects = stacks
@@ -134,25 +112,13 @@ export async function registerDemoProjects(command: Command, stacks: DemoStack[]
     .filter((project): project is DemoProject => project !== null)
   if (projects.length === 0) return
   const { client, output } = clientFor(command, { actor: undefined, actorKind: 'human', ...(token ? { token } : {}) })
-  for (const { repositories, ...project } of projects) {
+  for (const project of projects) {
     const created = await client.answer('POST', '/projects', project)
     if (created.ok) output.progress(`registered Project ${project.name} (${project.slug})`)
     else if (created.status === 409) output.progress(`Project ${project.slug} already registered`)
     else {
       output.warning(`could not register Project ${project.slug}: the panel answered ${created.status}`)
       output.hint(`portta projects create --slug ${project.slug} --path ${project.relativePath}`)
-      continue
-    }
-    for (const repository of repositories) {
-      const added = await client.answer(
-        'POST',
-        `/projects/${encodeURIComponent(project.slug)}/repositories`,
-        repository,
-      )
-      if (!added.ok && added.status !== 409)
-        output.warning(
-          `could not register repository ${repository.name} on ${project.slug}: the panel answered ${added.status}`,
-        )
     }
   }
 }
