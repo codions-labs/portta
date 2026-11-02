@@ -18,8 +18,8 @@ description; the slug is also what an environment's `portta.project` label must
 say to be adopted automatically. A Project may be tied to a directory under
 Projects Home at any depth; when two Projects contain a Compose directory, the
 deepest one wins. A Project needs the panel's database and the
-page says so when it is unavailable. `Environments on this host` opens the list
-of every Compose project Docker is running, adopted or not.
+page says so when it is unavailable. `All environments` lists every Compose
+project Docker is running, adopted or not.
 
 Both views are places to act, not only to look. A card carries the one action
 its state allows (start what is stopped, stop what is running) and a menu

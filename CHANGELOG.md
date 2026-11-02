@@ -6,6 +6,15 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The panel has a new look: a slate canvas, white cards, navy for the main action
+  and blue for links, in Manrope, Inter and IBM Plex Mono, with larger controls.
+- The rail follows tasks instead of layers: Home, Projects, Access, Host and
+  Settings. Services and the list of environments are views of Projects;
+  containers, network, gateway and host health are sections of Host. The old
+  addresses redirect. On a phone the rail is a bar under the content.
+
 ## [0.2.0] - Unreleased
 
 Portta now does one thing: many Docker projects on one host, each at

@@ -18,7 +18,7 @@ describe('which Settings sections somebody has', () => {
 
   it('hides everything about accounts when the panel signs nobody in', () => {
     const ids = visibleSections({ permissions: OWNER, signsPeopleIn: false }).map((section) => section.id)
-    expect(ids).toEqual(['general', 'environment'])
+    expect(ids).toEqual(['general'])
   })
 })
 

@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
 import { DiagnosticText } from '@/components/diagnostic-text'
 import { LogViewer } from '@/components/logs'
-import { Callout, Empty, ErrorBox, KeyValue, Loading, PageHeader } from '@/components/shell-bits'
+import { Callout, Empty, ErrorBox, KeyValue, Loading } from '@/components/shell-bits'
 import { StateBadge } from '@/components/status'
 import { Badge, StatusIndicator } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -52,22 +52,19 @@ export function GatewayView() {
 
   return (
     <>
-      <PageHeader
-        title={t('title')}
-        description={t('description')}
-        actions={
-          <>
-            <Button disabled={doctor.isPending} onClick={() => doctor.mutate()}>
-              <Stethoscope />
-              {doctor.isPending ? t('checking') : t('runDiagnostics')}
-            </Button>
-            <Button variant="primary" disabled={restart.isPending} onClick={() => restart.mutate(['traefik'])}>
-              <RotateCw className={restart.isPending ? 'animate-spin' : undefined} />
-              {t('restartTraefik')}
-            </Button>
-          </>
-        }
-      />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-subtle">{t('description')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" disabled={doctor.isPending} onClick={() => doctor.mutate()}>
+            <Stethoscope />
+            {doctor.isPending ? t('checking') : t('runDiagnostics')}
+          </Button>
+          <Button size="sm" disabled={restart.isPending} onClick={() => restart.mutate(['traefik'])}>
+            <RotateCw className={restart.isPending ? 'animate-spin' : undefined} />
+            {t('restartTraefik')}
+          </Button>
+        </div>
+      </div>
 
       {error ? (
         <div className="mb-4">

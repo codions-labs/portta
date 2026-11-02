@@ -6,7 +6,7 @@
     "offline": "Can't reach the panel. Live updates are paused.",
     "reconnecting": "Reconnecting…"
   },
-  "docker": "Docker",
+  "docker": "Containers",
   "documentation": "Documentation",
   "expandSidebar": "Expand sidebar",
   "gateway": "Gateway",
@@ -18,14 +18,15 @@
     "offline": "offline"
   },
   "network": "Network",
-  "overview": "Overview",
+  "overview": "Home",
   "projects": "Projects",
   "sections": "Sections",
   "services": "Services",
   "settings": "Settings",
   "toggleTheme": "Toggle theme",
   "groups": {
-    "infrastructure": "Infrastructure"
+    "infrastructure": "Infrastructure",
+    "work": "Work"
   },
   "environments": "Environments",
   "commandPalette": "Command menu",
@@ -45,5 +46,19 @@
   },
   "shortcuts": {
     "sidebar": "Toggle the sidebar"
-  }
+  },
+  "host": "Host",
+  "settingsShort": "Settings",
+  "hostSections": {
+    "health": "Health",
+    "containers": "Containers",
+    "network": "Network",
+    "gateway": "Gateway"
+  },
+  "projectSections": {
+    "projects": "By project",
+    "services": "By service",
+    "environments": "All environments"
+  },
+  "hostDescription": "The machine these projects run on: its health, containers, network and gateway."
 }

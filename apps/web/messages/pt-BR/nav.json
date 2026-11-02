@@ -6,7 +6,7 @@
     "offline": "Sem conexão com o painel. As atualizações ao vivo estão pausadas.",
     "reconnecting": "Reconectando…"
   },
-  "docker": "Docker",
+  "docker": "Contêineres",
   "documentation": "Documentação",
   "expandSidebar": "Expandir barra lateral",
   "gateway": "Gateway",
@@ -18,14 +18,15 @@
     "offline": "offline"
   },
   "network": "Rede",
-  "overview": "Visão geral",
+  "overview": "Início",
   "projects": "Projetos",
   "sections": "Seções",
   "services": "Serviços",
   "settings": "Configurações",
   "toggleTheme": "Alternar tema",
   "groups": {
-    "infrastructure": "Infraestrutura"
+    "infrastructure": "Infraestrutura",
+    "work": "Trabalho"
   },
   "environments": "Ambientes",
   "commandPalette": "Menu de comandos",
@@ -45,5 +46,19 @@
   },
   "shortcuts": {
     "sidebar": "Mostrar ou ocultar a barra lateral"
-  }
+  },
+  "host": "Host",
+  "settingsShort": "Ajustes",
+  "hostSections": {
+    "health": "Saúde",
+    "containers": "Contêineres",
+    "network": "Rede",
+    "gateway": "Gateway"
+  },
+  "projectSections": {
+    "projects": "Por projeto",
+    "services": "Por serviço",
+    "environments": "Todos os ambientes"
+  },
+  "hostDescription": "A máquina onde estes projetos rodam: saúde, contêineres, rede e gateway."
 }

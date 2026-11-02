@@ -98,11 +98,11 @@ function Dashboard({ data }: { data: DevelopmentOverview }) {
       <div className="space-y-4">
         <AttentionBand data={data} />
 
-        <div className="grid items-start gap-4 xl:grid-cols-5">
-          <div className="min-w-0 xl:col-span-3">
+        <div className="grid items-start gap-4 xl:grid-cols-2">
+          <div className="min-w-0">
             <ProjectsPanel data={data} />
           </div>
-          <div className="min-w-0 xl:col-span-2">
+          <div className="min-w-0">
             <EnvironmentUsagePanel data={data} />
           </div>
         </div>

@@ -32,7 +32,7 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
-const { DockerView: DockerPage } = await import('../../app/(panel)/docker/docker-view.tsx')
+const { DockerView: DockerPage } = await import('../../app/(panel)/host/containers/docker-view.tsx')
 
 beforeEach(() => {
   containers.mockReset().mockResolvedValue({ containers: CONTAINERS, total: CONTAINERS.length })

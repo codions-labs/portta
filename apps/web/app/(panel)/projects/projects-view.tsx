@@ -8,7 +8,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LayoutGrid, Plus, Table2 } from 'lucide-react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { DevelopmentOverview, ProjectSummary } from 'portta-contracts'
 import { slug as slugify } from 'portta-core/browser'
@@ -44,7 +43,7 @@ import {
   resolveProjectView,
   toListItems,
 } from '@/lib/projects'
-import { keys, useDevelopmentOverview, useEnvironments, useProjects } from '@/lib/queries'
+import { keys, useDevelopmentOverview, useProjects } from '@/lib/queries'
 
 const VIEW_STORAGE = 'portta-projects-view'
 
@@ -73,7 +72,6 @@ export function ProjectsView({
   }, [])
   const catalog = useProjects(initialProjects)
   const overview = useDevelopmentOverview(initialOverview)
-  const runtimes = useEnvironments(true)
   const mayCreate = useCan('project:create')
 
   const catalogUnavailable = catalog.error instanceof ApiError && catalog.error.status === 503
@@ -214,12 +212,6 @@ export function ProjectsView({
           </div>
         )}
       </section>
-
-      <p className="text-sm">
-        <Link className="text-accent underline-offset-2 hover:underline" href="/environments">
-          {t('environmentsLink', { count: runtimes.data?.length ?? 0 })}
-        </Link>
-      </p>
 
       {creating ? <CreateProjectDialog open onOpenChange={setCreating} /> : null}
     </>

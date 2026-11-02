@@ -11,7 +11,7 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
-const { EnvironmentView } = await import('../../app/(panel)/settings/environment/environment-view.tsx')
+const { HostHealthView: EnvironmentView } = await import('../../app/(panel)/host/health-view.tsx')
 
 beforeEach(() =>
   environmentReport.mockReset().mockResolvedValue({

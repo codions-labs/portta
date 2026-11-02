@@ -2,10 +2,10 @@
 
 ## Environments
 
-`/environments` lists them — **Environments on this host** on the Projects page
-opens it — and `/environments/<name>` is one, with `logs` and
-`settings` as routes beside it. The rail shows Docker, Network and Gateway only
-to somebody who holds `docker:read` or `gateway:read` — a navigation entry that
+**All environments** on the Projects page lists them, at
+`/projects?view=environments`, and `/environments/<name>` is one, with `logs` and
+`settings` as routes beside it. The rail shows Host, and each of its sections, only
+to somebody who holds what that section needs — a navigation entry that
 would answer 404 is a worse answer than no entry. Starting, stopping and
 restarting need `environment:operate`; rebuilding, removing and forgetting need
 `environment:destroy`; the overrides form needs `environment:settings`. Reading
@@ -16,7 +16,7 @@ change none of it.
 
 **Authentication disabled**: every environment on this host.
 
-`/environments` lists every Compose project on this host, adopted or not,
+**All environments** lists every Compose project on this host, adopted or not,
 each as a table of its services. `/environments/<name>` is one environment:
 
 ![Authentication disabled: the demo-shop environment, its seven services as one table with an Open / Test menu, resources and actions per row](../../images/auth-disabled-environment.png)

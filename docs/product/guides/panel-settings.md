@@ -63,13 +63,13 @@ tailnet. Changing
 `PORTTA_DASHBOARD` needs the gateway recreated; the apply bar at the bottom
 is how that happens.
 
-**Environment** shows the host environment readiness report (`portta envs report`),
-grouped as infrastructure, development and agents, plus a host security summary.
+**Health**, in Host rather than in Settings, shows the host environment readiness
+report (`portta envs report`), grouped as infrastructure, development and agents, plus a host security summary.
 See [Host environment readiness](../reference/host-readiness.md).
 
-![Authentication disabled: Settings Environment with the host readiness report grouped as infrastructure, development and agents](../../images/auth-disabled-settings-environment.png)
+![Authentication disabled: Host Health with the host readiness report grouped as infrastructure, development and agents](../../images/auth-disabled-settings-environment.png)
 
-**Authentication disabled**: Settings, Environment.
+**Authentication disabled**: Host, Health.
 
 **Users** lists who can sign in with their role, whether the account is usable,
 and the Projects it reaches. Creating one hands over the first password on the

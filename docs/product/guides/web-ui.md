@@ -176,9 +176,10 @@ See [Authentication](authentication.md) and
 
 ## The pages
 
-The sidebar lists Overview and Projects, then an **Infrastructure** group
-(Services, Docker, Network, Access, Gateway), then Settings. Environments are
-reached from Projects (**Environments on this host**). An entry the current
+The sidebar follows the tasks of a day: Home, Projects and Access, then an
+**Infrastructure** group with Host and Settings. Services and every environment
+on the host are views of Projects; containers, network and gateway are sections
+of Host. On a phone the same entries are a bar under the content. An entry the current
 person may not open is not listed. Every page is a route,
 so a link, a bookmark and the back button all work.
 
@@ -207,8 +208,8 @@ reporting.
 
 A Project is the product; an environment is one Compose stack running for it.
 The page shows every Project as a card or as a table, with a search, a state
-filter and archived Projects on request; **Environments on this host** opens
-`/environments`. **New project** asks for a name, a slug and a description, and
+filter and archived Projects on request. **By service** and **All environments**,
+beside **By project**, read the same catalogue another way. **New project** asks for a name, a slug and a description, and
 the slug is what an environment's `portta.project` label must say to be adopted
 automatically. Opening a Project shows its state, an **Open / Test** menu for
 its primary environment, and its Overview, Environments and Settings tabs. See
@@ -216,7 +217,7 @@ its primary environment, and its Overview, Environments and Settings tabs. See
 
 ### Environments
 
-`/environments` lists every Compose project Docker runs, adopted or not.
+`/projects?view=environments` lists every Compose project Docker runs, adopted or not.
 `/environments/<name>` is one environment: its services with their addresses,
 resources and logs, **Open / Test**,
 Start, Stop, Restart, Rebuild and the two named removals, a **Logs** tab that
@@ -226,8 +227,8 @@ and the hostname alias. See [Manage environments](environments.md) and the
 
 ### Services and Docker
 
-**Services** is every service of every integrated project as one filterable
-list, with its addresses. **Docker** is every container on the host, separated
+**By service**, in Projects, is every service of every integrated project as one
+filterable list, with its addresses. **Containers**, in Host, is every container on the host, separated
 into Portta, integrated projects, external Compose projects and standalone
 containers, with the networks and published ports. See
 [Manage services](services.md).
@@ -250,6 +251,8 @@ the next request and recreates nothing. See
 
 ### Network
 
+A section of Host, at `/host/network`.
+
 ![Authentication disabled: the Network page with domains, TLS, VPN and DNS settings, every routed hostname and the Docker networks with their roles](../../images/auth-disabled-network.png)
 
 **Authentication disabled**: the Network page.
@@ -259,6 +262,8 @@ provider, every routed hostname with its target port, and the Docker networks
 with their role: shared, control, access, or a project's own.
 
 ### Access
+
+The bridges of databases and other TCP services.
 
 ![Authentication disabled: the Access page with no open bridge and the TCP services of each project, each with its gateway address and an Open local access button](../../images/auth-disabled-access.png)
 
@@ -282,7 +287,7 @@ lists persistent forwarders created with
 
 ### Gateway
 
-Component states, versions, the profile, the checks the panel can make from
+A section of Host, at `/host/gateway`. Component states, versions, the profile, the checks the panel can make from
 inside its container, and logs for Traefik, the socket proxy and Tailscale.
 **Restart Traefik** restarts the container in place. See
 [Configure the panel](panel-settings.md#gateway).
@@ -290,8 +295,9 @@ inside its container, and logs for Traefik, the socket proxy and Tailscale.
 ### Settings
 
 **General** (Projects, project addresses, project access, TLS, DNS, the panel
-and Traefik) is listed to whoever holds `settings:read`, and **Environment**
-(host readiness and security findings) to whoever holds `metrics:read`.
+and Traefik) is listed to whoever holds `settings:read`. Host readiness and
+security findings are the **Health** section of Host, for whoever holds
+`metrics:read`.
 **Users**, **API tokens**, **Security** and **Audit** appear with
 authentication enabled; with it disabled a bookmark into one of them says the
 panel does not sign people in. Every section is described in

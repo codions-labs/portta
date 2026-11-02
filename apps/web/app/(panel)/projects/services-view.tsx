@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ServiceTable } from '@/components/entities/service-table'
+import { ProjectsSections } from '@/components/projects/projects-sections'
 import { ErrorBox, Loading, PageHeader, ToolbarSearch, ToolbarSelect, ViewToolbar } from '@/components/shell-bits'
 import { Card } from '@/components/ui/card'
 import { useServices } from '@/lib/queries'
@@ -12,6 +13,7 @@ import { serviceFromContainer } from '@/lib/services'
 
 export function ServicesView() {
   const { t } = useTranslation('services')
+  const { t: tn } = useTranslation('nav')
   const { t: tc } = useTranslation('common')
   const [search, setSearch] = useState('')
   const [state, setState] = useState('all')
@@ -41,7 +43,8 @@ export function ServicesView() {
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader title={tn('projects')} description={t('description')} />
+      <ProjectsSections active="services" />
       <ViewToolbar>
         <ToolbarSearch
           value={search}

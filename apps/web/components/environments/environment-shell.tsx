@@ -53,7 +53,7 @@ export function EnvironmentShell({ name, children }: { name: string; children: R
           <Empty
             title={t('notFound', { name })}
             hint={
-              <Link className="rounded-xs text-accent hover:underline focus-ring" href="/environments">
+              <Link className="rounded-xs text-link hover:underline focus-ring" href="/projects?view=environments">
                 {t('backToAll')}
               </Link>
             }

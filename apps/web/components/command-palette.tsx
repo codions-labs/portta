@@ -14,6 +14,7 @@ import {
   PanelLeft,
   PlugZap,
   Search,
+  Server,
   Settings,
   Sun,
 } from 'lucide-react'
@@ -44,16 +45,17 @@ interface Command {
 
 const SECTIONS: {
   path: string
-  key: 'overview' | 'projects' | 'services' | 'docker' | 'network' | 'access' | 'gateway' | 'settings'
+  key: 'overview' | 'projects' | 'services' | 'access' | 'host' | 'docker' | 'network' | 'gateway' | 'settings'
   icon: ComponentType<{ className?: string }>
 }[] = [
   { path: '/overview', key: 'overview', icon: LayoutDashboard },
   { path: '/projects', key: 'projects', icon: Boxes },
-  { path: '/services', key: 'services', icon: Container },
-  { path: '/docker', key: 'docker', icon: Activity },
-  { path: '/network', key: 'network', icon: Network },
+  { path: '/projects?view=services', key: 'services', icon: Container },
   { path: '/access', key: 'access', icon: PlugZap },
-  { path: '/gateway', key: 'gateway', icon: Globe },
+  { path: '/host', key: 'host', icon: Server },
+  { path: '/host/containers', key: 'docker', icon: Activity },
+  { path: '/host/network', key: 'network', icon: Network },
+  { path: '/host/gateway', key: 'gateway', icon: Globe },
   { path: '/settings', key: 'settings', icon: Settings },
 ]
 

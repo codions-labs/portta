@@ -1,5 +1,5 @@
 {
-  "title": "Docker",
+  "title": "Contêineres",
   "description": "Todos os containers desta máquina, com ou sem conhecimento do gateway.",
   "filterOwnership": "Filtrar por propriedade",
   "filterState": "Filtrar por estado",

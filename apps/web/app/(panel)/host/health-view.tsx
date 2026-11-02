@@ -4,11 +4,12 @@ import { AlertTriangle, CheckCircle2, CircleHelp, XCircle } from 'lucide-react'
 import type { Diagnostic } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
+import { HostReadings } from '@/components/host-summary'
 import { LearnMore } from '@/components/settings/learn-more'
-import { Empty, ErrorBox, Loading, PageHeader, SectionHeader } from '@/components/shell-bits'
+import { Empty, ErrorBox, Loading, SectionHeader } from '@/components/shell-bits'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { useEnvironmentReport, useHostSecurityReport } from '@/lib/queries'
+import { useEnvironmentReport, useHostSecurityReport, useMetricsCurrent, useMetricsHistory } from '@/lib/queries'
 import { useFormat } from '@/lib/use-format'
 
 const CATEGORIES = ['infrastructure', 'development', 'agents'] as const
@@ -27,18 +28,21 @@ function StatusIcon({ status }: { status: Diagnostic['status'] }) {
   return <CircleHelp className="size-4 text-info" />
 }
 
-export function EnvironmentView() {
+export function HostHealthView() {
   const { t } = useTranslation('settings')
   const { relativeTime } = useFormat()
   const query = useEnvironmentReport()
   const security = useHostSecurityReport()
+  const metrics = useMetricsCurrent()
+  const history = useMetricsHistory('30m')
   if (query.isPending || security.isPending) return <Loading />
   if (query.error || security.error) return <ErrorBox error={query.error ?? security.error} />
   const report = query.data
 
   return (
     <>
-      <PageHeader title={t('environment.title')} description={t('environment.description')} />
+      {metrics.data?.host ? <HostReadings data={metrics.data} history={history.data} className="mb-4" /> : null}
+      <p className="mb-4 text-sm text-subtle">{t('environment.description')}</p>
       {!report || report.collectedAt === null ? (
         <Empty title={t('environment.neverCollected')} hint={t('environment.runCommand')} />
       ) : (

@@ -3,8 +3,11 @@ import { redirect } from 'next/navigation'
 import { developmentOverview, readProjects } from 'portta-server'
 import { serverTranslation } from '@/lib/i18n/server'
 import { serverDeps } from '@/lib/server/deps'
+import { pageNeeds, panelIsReadOnly } from '@/lib/server/page-data'
 import { requirePrincipal } from '@/lib/server/principal'
+import { EnvironmentsView } from '../environments/environments-view'
 import { ProjectsView } from './projects-view'
+import { ServicesView } from './services-view'
 
 // A catalogue of what is running on a host, read on every request.
 export const dynamic = 'force-dynamic'
@@ -14,7 +17,17 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t('title') }
 }
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const { view } = await searchParams
+  if (view === 'services') {
+    await pageNeeds('service:read')
+    return <ServicesView />
+  }
+  if (view === 'environments') {
+    await pageNeeds('environment:read')
+    return <EnvironmentsView readOnly={panelIsReadOnly()} />
+  }
+
   const deps = serverDeps()
   const principal = await requirePrincipal()
   if (!principal) redirect('/sign-in')

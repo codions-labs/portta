@@ -43,7 +43,7 @@ export function EnvironmentHeader({
         { label: tn('environments'), href: `/projects/${encodeURIComponent(owner.slug)}/environments` },
         { label: shown },
       ]
-    : [{ label: tn('environments'), href: '/environments' }, { label: shown }]
+    : [{ label: tn('environments'), href: '/projects?view=environments' }, { label: shown }]
 
   return (
     <PageHeader
@@ -94,7 +94,7 @@ export function EnvironmentHeader({
             <EnvironmentActions
               project={environment}
               mayForget={mayDestroy}
-              onForgotten={() => router.push('/environments')}
+              onForgotten={() => router.push('/projects?view=environments')}
             />
           ) : null}
           {remembered || !mayDestroy ? null : <EnvironmentOperations project={environment} />}

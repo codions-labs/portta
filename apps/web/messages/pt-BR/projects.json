@@ -34,7 +34,6 @@
     "adopt": "Adotar um environment",
     "adoptButton": "Adotar"
   },
-  "environmentsLink": "Ambientes neste host ({{count}})",
   "tabs": {
     "label": "Seções de {{name}}",
     "overview": "Visão geral",

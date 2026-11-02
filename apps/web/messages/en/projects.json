@@ -34,7 +34,6 @@
     "adopt": "Adopt an environment",
     "adoptButton": "Adopt"
   },
-  "environmentsLink": "Environments on this host ({{count}})",
   "tabs": {
     "label": "{{name}} sections",
     "overview": "Overview",

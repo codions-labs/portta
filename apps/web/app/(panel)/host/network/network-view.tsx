@@ -3,7 +3,7 @@
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
 import { EndpointList } from '@/components/entities/endpoint-list'
-import { Empty, ErrorBox, KeyValue, Loading, NoValue, PageHeader } from '@/components/shell-bits'
+import { Empty, ErrorBox, KeyValue, Loading, NoValue } from '@/components/shell-bits'
 import { StateBadge } from '@/components/status'
 import { Badge, StatusIndicator } from '@/components/ui/badge'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
@@ -31,7 +31,7 @@ export function NetworkView() {
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <p className="mb-4 text-sm text-subtle">{t('description')}</p>
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
         <Card>

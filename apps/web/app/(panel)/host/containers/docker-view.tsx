@@ -11,7 +11,6 @@ import {
   ErrorBox,
   KeyValue,
   Loading,
-  PageHeader,
   StatTile,
   ToolbarSearch,
   ToolbarSelect,
@@ -66,7 +65,7 @@ export function DockerView() {
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <p className="mb-4 text-sm text-subtle">{t('description')}</p>
       <ViewToolbar>
         <ToolbarSearch
           value={search}

@@ -22,7 +22,9 @@ may open its hostname (**Protect with a password**, **Open to everybody**,
 [Run a public host](public-host.md) and [Share a service](sharing.md).
 
 
-## Docker
+## Containers
+
+The Containers section of Host, at `/host/containers`.
 
 Every container on the host, in four clearly separated sections:
 

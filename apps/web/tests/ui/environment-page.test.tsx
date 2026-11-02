@@ -224,7 +224,7 @@ describe('Environment page', () => {
       await screen.findByRole('dialog', { name: 'Forget this environment?' })
       await userEvent.click(screen.getAllByRole('button', { name: 'Forget' }).at(-1)!)
       await waitFor(() => expect(forgetEnvironment).toHaveBeenCalledWith('alpha'))
-      await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/environments'))
+      await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/projects?view=environments'))
     })
   })
 })
