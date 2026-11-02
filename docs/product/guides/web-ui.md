@@ -189,6 +189,12 @@ so a link, a bookmark and the back button all work.
 
 **Authentication disabled**: the Overview on the demo host.
 
+**Add project** (`/projects/new`, for whoever may create projects) is the page every
+"Add project" button opens: a folder on this host, an environment Docker already runs,
+an empty project, or the terminal. The panel never opens a project's folder, so for a
+folder it writes the `portta envs analyze` and `portta adopt` commands for the path you
+type, and the plan is read in the terminal.
+
 Until there is a first project, whoever may create one sees where to start instead:
 a project with Compose, containers already running, or an agent, beside what this
 host still needs. It says only what the panel can read, so teaching your agents never

@@ -208,7 +208,7 @@ export function FirstUse({ onDismiss, attention }: { onDismiss: () => void; atte
           <p className="text-2xs font-semibold tracking-[0.14em] text-subtle uppercase">{t('start')}</p>
           <StartOption
             primary
-            href="/projects?new=1"
+            href="/projects/new"
             icon={FolderOpen}
             title={t('options.compose.title')}
             help={t('options.compose.help')}

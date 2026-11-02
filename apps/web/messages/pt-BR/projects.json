@@ -196,5 +196,41 @@
     "stopTitle": "Parar {{name}}?",
     "stopImpact_one": "Isso interrompe {{count}} serviço.",
     "stopImpact_other": "Isso interrompe {{count}} serviços."
+  },
+  "add": {
+    "title": "Adicionar",
+    "crumb": "Projetos",
+    "heading": "Como você quer começar?",
+    "description": "O Portta lê o seu Compose e cria o resto ao lado dele. Nada no seu repositório é alterado.",
+    "copy": "Copiar comando",
+    "folder": {
+      "title": "De uma pasta deste host",
+      "description": "O painel não abre as pastas dos seus projetos: o Compose é lido pelo terminal, com o mesmo plano que você revisa aqui depois.",
+      "label": "Caminho da pasta",
+      "analyze": "Veja o que será feito, sem alterar nada:",
+      "adopt": "Depois adote:"
+    },
+    "running": {
+      "title": "Já está rodando",
+      "description": "Adote um ambiente que o Docker já roda neste host.",
+      "none": "Nenhum ambiente sem projeto.",
+      "services_one": "{{count}} serviço, sem projeto",
+      "services_other": "{{count}} serviços, sem projeto",
+      "adopt_one": "Adotar {{count}}",
+      "adopt_other": "Adotar {{count}}"
+    },
+    "empty": {
+      "title": "Só registrar o nome",
+      "description": "Crie o projeto agora e ligue os ambientes depois, por etiqueta ou caminho.",
+      "create": "Criar projeto vazio"
+    },
+    "terminal": {
+      "title": "Pelo terminal",
+      "hint": "O projeto aparece aqui assim que subir."
+    },
+    "agent": {
+      "title": "Ainda não tem Compose?",
+      "description": "Peça a um agente com a habilidade portta-dockerize. Instale com:"
+    }
   }
 }

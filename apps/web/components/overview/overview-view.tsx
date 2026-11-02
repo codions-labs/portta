@@ -121,7 +121,7 @@ function Dashboard({ data }: { data: DevelopmentOverview }) {
         actions={
           mayCreate ? (
             <Button asChild variant="primary">
-              <Link href="/projects?new=1">
+              <Link href="/projects/new">
                 <Plus />
                 {t('addProject')}
               </Link>

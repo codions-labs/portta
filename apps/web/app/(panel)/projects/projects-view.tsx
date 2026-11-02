@@ -230,7 +230,7 @@ export function ProjectsView({
   )
 }
 
-function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { t } = useTranslation('projects')
   const queryClient = useQueryClient()
   const router = useRouter()

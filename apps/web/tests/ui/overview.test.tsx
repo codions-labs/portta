@@ -162,10 +162,7 @@ describe('the first use of a host', () => {
   it('says where to start until there is a project', async () => {
     renderWithQuery(<Overview />)
     expect(await screen.findByRole('heading', { name: 'Your host is ready' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /I have a project with Compose/ })).toHaveAttribute(
-      'href',
-      '/projects?new=1',
-    )
+    expect(screen.getByRole('link', { name: /I have a project with Compose/ })).toHaveAttribute('href', '/projects/new')
   })
 
   it('offers what is already running only when something is', async () => {

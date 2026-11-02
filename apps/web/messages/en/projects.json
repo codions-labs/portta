@@ -196,5 +196,41 @@
     "stopTitle": "Stop {{name}}?",
     "stopImpact_one": "This interrupts {{count}} service.",
     "stopImpact_other": "This interrupts {{count}} services."
+  },
+  "add": {
+    "title": "Add",
+    "crumb": "Projects",
+    "heading": "How do you want to start?",
+    "description": "Portta reads your Compose and creates the rest beside it. Nothing in your repository is changed.",
+    "copy": "Copy command",
+    "folder": {
+      "title": "From a folder on this host",
+      "description": "The panel does not open your projects' folders: the terminal reads the Compose, with the same plan you review here afterwards.",
+      "label": "Folder path",
+      "analyze": "See what would be done, changing nothing:",
+      "adopt": "Then adopt:"
+    },
+    "running": {
+      "title": "Already running",
+      "description": "Adopt an environment Docker already runs on this host.",
+      "none": "No environment without a project.",
+      "services_one": "{{count}} service, no project",
+      "services_other": "{{count}} services, no project",
+      "adopt_one": "Adopt {{count}}",
+      "adopt_other": "Adopt {{count}}"
+    },
+    "empty": {
+      "title": "Just register the name",
+      "description": "Create the project now and attach environments later, by label or path.",
+      "create": "Create an empty project"
+    },
+    "terminal": {
+      "title": "From the terminal",
+      "hint": "The project appears here as soon as it is up."
+    },
+    "agent": {
+      "title": "No Compose yet?",
+      "description": "Ask an agent with the portta-dockerize skill. Install it with:"
+    }
   }
 }
