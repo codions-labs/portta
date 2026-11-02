@@ -15,6 +15,7 @@ import {
   parseEnv,
   parseProjectConfig,
   projectsFor,
+  traefikEnabled,
 } from 'portta-core'
 import { z } from 'portta-core/zod'
 import { parse as parseYaml } from 'yaml'
@@ -115,7 +116,7 @@ export async function servicesCommand(options: { project?: string }, command: Co
       kind: classify(container.image, container.name),
       ports: container.ports,
       networks: container.networks,
-      routed: container.labels['traefik.enable'] === 'true',
+      routed: traefikEnabled(container.labels),
     }))
     .sort((a, b) => `${a.project}/${a.service}`.localeCompare(`${b.project}/${b.service}`))
   const output = new Output(global)

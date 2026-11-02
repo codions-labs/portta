@@ -1,4 +1,5 @@
 import { slug } from './namespace.ts'
+import { httpRoutes, isTcpOnly, traefikEnabled } from './traefik-rules.ts'
 
 export interface ContainerRecord {
   id: string
@@ -30,8 +31,6 @@ export interface RouteRecord {
   state: string
 }
 
-const HOST_RULE = /Host\(`([^`]+)`\)/
-
 export function routesFor(
   containers: ContainerRecord[],
   domain: string,
@@ -39,19 +38,16 @@ export function routesFor(
 ): RouteRecord[] {
   return containers
     .flatMap((container) => {
-      if (container.labels['traefik.enable'] !== 'true') return []
+      if (!traefikEnabled(container.labels) || isTcpOnly(container.labels)) return []
       const labelEntries = Object.entries(container.labels)
-      const hasHttp = labelEntries.some(([key]) => key.startsWith('traefik.http.'))
-      const hasTcp = labelEntries.some(([key]) => key.startsWith('traefik.tcp.routers.'))
-      if (hasTcp && !hasHttp) return []
       const project = container.labels['com.docker.compose.project'] || null
       const service = container.labels['com.docker.compose.service'] || null
-      const rule = labelEntries.find(([key]) => /^traefik\.http\.routers\..*\.rule$/.test(key))?.[1]
-      const explicit = rule ? HOST_RULE.exec(rule)?.[1] : undefined
+      const routes = httpRoutes(container.labels)
+      const explicit = routes.hosts[0]
       // An explicit rule that names no host has no hostname to list, and the
       // derived one would be fiction: nothing answers there. The panel's public
       // entrypoint is exactly this shape (PathPrefix on its own entrypoint).
-      if (rule && !explicit) return []
+      if (!routes.usesDefaultRule && !explicit) return []
       const hostname =
         explicit ||
         (project

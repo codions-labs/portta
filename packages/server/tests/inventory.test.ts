@@ -111,6 +111,41 @@ describe('URLs', () => {
     expect(urls.map((url) => url.host)).toEqual(['api.alpha.test', 'alt.alpha.test'])
   })
 
+  it.each([
+    ['double quotes', { 'traefik.enable': 'true', 'traefik.http.routers.a.rule': 'Host("api.alpha.test")' }],
+    ['True', { 'traefik.enable': 'True', 'traefik.http.routers.a.rule': 'Host(`api.alpha.test`)' }],
+    ['1', { 'traefik.enable': '1', 'traefik.http.routers.a.rule': 'Host(`api.alpha.test`)' }],
+    ['keys in capitals', { 'TRAEFIK.ENABLE': 'true', 'TRAEFIK.HTTP.ROUTERS.A.RULE': 'Host(`api.alpha.test`)' }],
+    ['the matcher in lowercase', { 'traefik.enable': 'true', 'traefik.http.routers.a.rule': 'host(`api.alpha.test`)' }],
+  ])('reads a rule written with %s, as Traefik does', (_name, labels) => {
+    expect(urlsFor(labels, 'alpha-api-1', config).map((url) => url.host)).toEqual(['api.alpha.test'])
+  })
+
+  it('invents no address for a rule that names no host', () => {
+    const labels = {
+      'traefik.enable': 'true',
+      'com.docker.compose.project': 'alpha',
+      'com.docker.compose.service': 'api',
+    }
+    expect(urlsFor({ ...labels, 'traefik.http.routers.a.rule': 'PathPrefix(`/`)' }, 'x', config)).toEqual([])
+    expect(urlsFor({ ...labels, 'traefik.http.routers.a.rule': 'HostRegexp(`.+`)' }, 'x', config)).toEqual([])
+  })
+
+  it('lists the derived address beside a named one when a router has no rule', () => {
+    const urls = urlsFor(
+      {
+        'traefik.enable': 'true',
+        'com.docker.compose.project': 'alpha',
+        'com.docker.compose.service': 'api',
+        'traefik.http.routers.a.rule': 'Host(`api.alpha.test`)',
+        'traefik.http.routers.b.middlewares': 'x@file',
+      },
+      'x',
+      config,
+    )
+    expect(urls.map((url) => url.host)).toEqual(['api.alpha.test', 'alpha-api.localhost'])
+  })
+
   it('gives no URL to a service that did not opt in', () => {
     expect(urlsFor({ 'com.docker.compose.project': 'alpha' }, 'x', config)).toEqual([])
   })

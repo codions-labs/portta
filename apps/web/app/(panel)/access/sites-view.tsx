@@ -15,7 +15,7 @@ import { ScopeBadge } from '@/components/status'
 import { Badge, StatusDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { canonicalHost, hostAccess } from '@/lib/host-access'
+import { canonicalHost, hostAccess, unknownOpenRouters } from '@/lib/host-access'
 import { useCan } from '@/lib/permissions'
 import { useEnvironments, useExposure, useShares } from '@/lib/queries'
 import { useFormat } from '@/lib/use-format'
@@ -172,6 +172,9 @@ export function SitesView() {
       (needle === '' || `${site.host} ${site.environment.name} ${site.service}`.toLowerCase().includes(needle)),
   )
   const count = (decision: Decision) => sites.filter((site) => site.decision === decision).length
+  const unknown = enforced
+    ? (environments.data ?? []).filter((item) => item.presence === 'live').flatMap(unknownOpenRouters)
+    : []
 
   return (
     <>
@@ -209,6 +212,15 @@ export function SitesView() {
           </>
         ) : null}
       </ViewToolbar>
+
+      {unknown.length > 0 ? (
+        <Callout tone="danger" className="mb-4" title={t('unknownRouters', { count: unknown.length })}>
+          <Mono kind="text" tone="ink">
+            {unknown.join(', ')}
+          </Mono>
+          <p className="mt-1">{t('unknownRoutersHint')}</p>
+        </Callout>
+      ) : null}
 
       <Card>
         {shown.length === 0 ? (

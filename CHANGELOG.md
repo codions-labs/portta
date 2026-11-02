@@ -34,6 +34,13 @@ All notable changes to Portta are documented here. The format follows
   containers, network, gateway and host health are sections of Host. The old
   addresses redirect. On a phone the rail is a bar under the content.
 
+### Fixed
+
+- The panel reads Traefik labels the way Traefik does: keys in any case, every boolean
+  `traefik.enable` accepts, `Host` in double quotes or with several values, and a rule
+  as an expression. A router with a regexp, a wildcard or no `Host` no longer gets an
+  invented address; on a public host, if it has no login, Access and Home name it.
+
 ## [0.2.0] - Unreleased
 
 Portta now does one thing: many Docker projects on one host, each at

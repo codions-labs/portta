@@ -5,7 +5,7 @@
 // registry holds, so the two have to be read together wherever this is shown.
 
 import type { Environment, ExposureView } from 'portta-contracts'
-import { hasForwardAuth } from 'portta-core/browser'
+import { hasForwardAuth, opensUnknownHosts } from 'portta-core/browser'
 
 export type HostMode = 'protected' | 'public' | 'closed' | 'unprotected'
 
@@ -19,6 +19,16 @@ export function canonicalHost(host: string): string {
   }
 }
 
+/**
+ * Containers that answer with no login on names nobody can list. Portta's own are
+ * left out: the panel's public entrypoint is a bare PathPrefix on a port of its own.
+ */
+export function unknownOpenRouters(environment: Pick<Environment, 'services'>): string[] {
+  return environment.services
+    .filter((candidate) => candidate.labels['portta.managed'] !== 'true' && opensUnknownHosts(candidate.labels))
+    .map((candidate) => candidate.name)
+}
+
 export function hostAccess(
   environment: Pick<Environment, 'services'>,
   host: string,
@@ -30,5 +40,7 @@ export function hostAccess(
     candidate.urls.some((url) => canonicalHost(url.host) === wanted),
   )
   if (claimants.some((candidate) => !hasForwardAuth(candidate.labels))) return 'unprotected'
+  // Which router wins depends on rule length, so this address cannot be called safe.
+  if (unknownOpenRouters(environment).length > 0) return 'unprotected'
   return exposure?.entries.find((entry) => canonicalHost(entry.host) === wanted)?.mode ?? 'closed'
 }

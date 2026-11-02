@@ -11,19 +11,20 @@
 
 import type { ContainerSummary, Environment, EnvironmentOverrides, ServiceOverrides } from 'portta-contracts'
 import {
+  isTcpOnly,
   parseAliases,
   protectionForHost,
   readProtectionStore,
   renderAliasesForStore,
   type StoredAlias,
+  traefikEnabled,
 } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import type { Database } from '../db/index.ts'
 import { ENVIRONMENT_KEYS, SERVICE_KEYS } from '../db/keys.ts'
 import { GENERATED_FILES, readGenerated, writeGenerated } from './dynamic.ts'
 import type { Snapshot } from './inventory.ts'
-import { hostsFromRules, isTcpOnly } from './inventory.ts'
-import { LABELS } from './labels.ts'
+import { hostsFromRules } from './inventory.ts'
 
 const HOSTNAME = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/
 
@@ -272,7 +273,7 @@ export function planAlias(
     )
   }
 
-  if (service.labels[LABELS.traefikEnable] !== 'true') {
+  if (!traefikEnabled(service.labels)) {
     throw new OverrideRefused(`${request.service} has not enabled Traefik, so the gateway does not route it`)
   }
 

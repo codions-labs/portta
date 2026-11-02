@@ -271,6 +271,14 @@ may open it on the row: **Password** generates a login and shows the password on
 **Everybody** asks first and removes the login, **Closed** answers nobody. The
 decision applies on the next request. A temporary link is one click from the row.
 
+The panel reads a router's labels the way Traefik does, so an address is never
+called protected only because the registry says so. On a public host, a route
+without the login gate reads **Open, no login**, with no decision to take until the
+gate is there. A router that has no gate and no single address to list, such as a
+`HostRegexp`, a wildcard or a rule with no `Host`, may answer any name on the host
+depending on rule length: Access and Home name it, and the addresses of its
+environment read as open too.
+
 ![Authentication disabled: the Access page with no open bridge and the TCP services of each project, each with its gateway address and an Open local access button](../../images/auth-disabled-access.png)
 
 **Authentication disabled**: the Access page.

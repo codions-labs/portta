@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import type { DevelopmentOverview } from 'portta-contracts'
 import { api } from '../api/index.ts'
-import { type HostMode, hostAccess } from '../host-access.ts'
+import { type HostMode, hostAccess, unknownOpenRouters } from '../host-access.ts'
 import { useCan } from '../permissions.ts'
 import { useEnvironments } from './environments.ts'
 import { useExposure } from './infra.ts'
@@ -50,5 +50,14 @@ export function useClosedHosts(): string[] {
 
 /** Routed around the login: these answer everybody, whatever the registry says. */
 export function useUnprotectedHosts(): string[] {
-  return useHostsIn('unprotected')
+  const hosts = useHostsIn('unprotected')
+  const mayRead = useCan('access:read')
+  const exposure = useExposure(mayRead)
+  const environments = useEnvironments(true)
+  if (!exposure.data?.enforced) return []
+  // A router with no address to list still answers, so it is named instead.
+  const routers = (environments.data ?? [])
+    .filter((environment) => environment.presence === 'live')
+    .flatMap(unknownOpenRouters)
+  return [...hosts, ...routers]
 }

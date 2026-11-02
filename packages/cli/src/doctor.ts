@@ -38,6 +38,7 @@ import {
   publishesSensitivePort,
   readProtectionStore,
   routesFor,
+  traefikEnabled,
   traefikServiceNames,
   ungatedContainers,
 } from 'portta-core'
@@ -789,7 +790,7 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
       : check('routes.collision', 'pass', 'hostname collisions', 'none'),
   )
 
-  const routable = running.filter((container) => container.labels['traefik.enable'] === 'true')
+  const routable = running.filter((container) => traefikEnabled(container.labels))
   const uninterpolated = routable
     .filter((container) => hasUninterpolatedLabel(container.labels))
     .map((container) => container.name)
