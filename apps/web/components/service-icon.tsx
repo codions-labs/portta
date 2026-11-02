@@ -5,15 +5,15 @@ import { cn } from '../lib/utils.ts'
 
 type IconProps = SVGProps<SVGSVGElement>
 
-function brand(path: string) {
-  return function BrandIcon({ className, ...props }: IconProps) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" className={className} {...props}>
-        <path fill="currentColor" d={path} />
-      </svg>
-    )
-  }
+function BrandIcon({ path, className, ...props }: IconProps & { path: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" className={className} {...props}>
+      <path fill="currentColor" d={path} />
+    </svg>
+  )
 }
+
+const brand = (path: string) => (props: IconProps) => <BrandIcon path={path} {...props} />
 
 // The generic mark, also used for any technology the panel has no icon for.
 const DOCKER_PATH =
