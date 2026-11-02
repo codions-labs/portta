@@ -124,7 +124,8 @@ export function resolveProjectView(requested: string | null | undefined): Projec
 
 export interface ProjectFilters {
   search: string
-  state: ProjectState | 'all'
+  /** `problem` is both ways a project can be in trouble: unhealthy and partial. */
+  state: ProjectState | 'all' | 'problem'
   includeArchived: boolean
 }
 
@@ -132,7 +133,9 @@ export const DEFAULT_PROJECT_FILTERS: ProjectFilters = { search: '', state: 'all
 
 export function matchesProjectFilters(item: ProjectListItem, filters: ProjectFilters): boolean {
   if (item.archived && !filters.includeArchived && filters.state !== 'archived') return false
-  if (filters.state !== 'all' && projectState(item) !== filters.state) return false
+  if (filters.state === 'problem') {
+    if (!['unhealthy', 'partial'].includes(projectState(item))) return false
+  } else if (filters.state !== 'all' && projectState(item) !== filters.state) return false
   const needle = filters.search.trim().toLowerCase()
   if (needle === '') return true
   const haystack = [

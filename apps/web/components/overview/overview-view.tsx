@@ -1,22 +1,13 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  Activity,
-  AlertTriangle,
-  CheckCircle2,
-  CircleDot,
-  ExternalLink,
-  Layers,
-  Plus,
-  ShieldCheck,
-  XCircle,
-} from 'lucide-react'
+import { Activity, AlertTriangle, CheckCircle2, CircleDot, Layers, Plus, ShieldCheck, XCircle } from 'lucide-react'
 import Link from 'next/link'
-import type { AttentionItem, DevelopmentOverview, Environment, HostPressure, Overview } from 'portta-contracts'
+import type { AttentionItem, DevelopmentOverview, HostPressure, Overview } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
-import { CopyButton, Mono } from '@/components/copy'
+import { Mono } from '@/components/copy'
 import { DiagnosticText } from '@/components/diagnostic-text'
+import { HostAccess, primaryRoute, RouteLine } from '@/components/entities/environment-row'
 import { canonicalHost } from '@/components/exposure-panel'
 import { HostHeader, HostReadings, HostSummarySkeleton, pressureReasons } from '@/components/host-summary'
 import { Empty, ErrorBox, Loading, MetricCard, PageHeader } from '@/components/shell-bits'
@@ -247,7 +238,7 @@ function NeedsYouRow({
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line px-5 py-3 first:border-t-0">
       <StatusDot tone={tone} label={title} />
-      <div className="min-w-0 flex-[1_1_20rem]">
+      <div className="min-w-0 flex-[1_1_14rem]">
         <div className="text-base font-semibold text-ink">{title}</div>
         {detail ? <div className="truncate text-xs text-subtle">{detail}</div> : null}
       </div>
@@ -327,17 +318,6 @@ function NeedsYou({ data, closed }: { data: DevelopmentOverview; closed: string[
   )
 }
 
-/** The address an environment is opened at: its primary service, else `web`, else the first it has. */
-function primaryRoute(environment: Environment) {
-  const prefix = (service: string) => `${environment.name}-${service}.`
-  const primary = environment.overrides?.primaryService
-  return (
-    (primary ? environment.urls.find((route) => route.host.startsWith(prefix(primary))) : undefined) ??
-    environment.urls.find((route) => route.host.startsWith(prefix('web'))) ??
-    environment.urls[0]
-  )
-}
-
 /** Where a day usually starts: every running environment, its address and who may open it. */
 function QuickOpen() {
   const { t } = useTranslation('overview')
@@ -399,29 +379,7 @@ function QuickOpen() {
                 </Link>
                 <div className="flex min-w-0 flex-[2_1_15rem] items-center gap-1">
                   {route ? (
-                    <>
-                      <a
-                        className="min-w-0 flex-1 truncate rounded-xs underline-offset-2 hover:underline focus-ring"
-                        href={route.url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <Mono kind="url" value={route.url}>
-                          {route.host}
-                        </Mono>
-                      </a>
-                      <CopyButton value={route.url} />
-                      <a
-                        className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-subtle transition-colors duration-100 hover:bg-fill hover:text-ink focus-ring [&_svg]:size-4"
-                        href={route.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={t('quick.open')}
-                        title={t('quick.open')}
-                      >
-                        <ExternalLink />
-                      </a>
-                    </>
+                    <RouteLine route={route} />
                   ) : (
                     <span className="truncate text-sm text-subtle">{t('quick.noAddress')}</span>
                   )}
@@ -513,18 +471,6 @@ function OpenNow() {
         </ul>
       )}
     </Card>
-  )
-}
-
-/** Who may open a hostname on a public host: a credential, everybody, or nobody (no entry means closed). */
-function HostAccess({ mode }: { mode: 'protected' | 'public' | null }) {
-  const { t } = useTranslation('overview', { keyPrefix: 'access' })
-  return mode === 'protected' ? (
-    <Badge tone="ok">{t('protected')}</Badge>
-  ) : mode === 'public' ? (
-    <Badge tone="info">{t('open')}</Badge>
-  ) : (
-    <Badge tone="warn">{t('closed')}</Badge>
   )
 }
 

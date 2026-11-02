@@ -84,6 +84,33 @@ export function ViewToolbar({
   )
 }
 
+/** A filter that is on or off, with what it counts in its own label. */
+export function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        'flex h-8.5 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors duration-100 focus-ring',
+        active
+          ? 'border-accent bg-accent text-accent-fg'
+          : 'border-line bg-surface text-muted hover:bg-surface-2 hover:text-ink',
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
 /**
  * The controls a toolbar is made of, at the toolbar's one size (28px) and
  * one set of widths, so a search box is the same search box on every page.

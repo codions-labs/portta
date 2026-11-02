@@ -44,8 +44,7 @@ export function ServicesView() {
   return (
     <>
       <PageHeader title={tn('projects')} description={t('description')} />
-      <ProjectsSections active="services" />
-      <ViewToolbar>
+      <ViewToolbar trailing={<ProjectsSections active="services" />}>
         <ToolbarSearch
           value={search}
           onChange={(event) => setSearch(event.target.value)}

@@ -1,7 +1,7 @@
 {
   "title": "Projects",
-  "catalogDescription": "A Project is the product. An Environment is one Compose stack running for it on this host.",
-  "newProject": "New project",
+  "catalogDescription": "Each project with its environments, the main address and what you can do with them.",
+  "newProject": "Add project",
   "needsDatabase": "Projects need the panel's database",
   "needsDatabaseHint": "They are decisions rather than observations, so they are persisted. Start PostgreSQL and the catalog comes back; environments still list without it.",
   "catalogEmpty": "No project yet",
@@ -15,7 +15,7 @@
     "slugHint": "Also what an environment's portta.project label must say to be adopted automatically.",
     "descriptionLabel": "Description"
   },
-  "searchPlaceholder": "Search project, environment, service, image",
+  "searchPlaceholder": "Search project or environment",
   "searchAria": "Search projects",
   "archived": "archived",
   "running": "{{running}}/{{total}} running",
@@ -46,7 +46,21 @@
   "overview": {
     "resources": "Resources",
     "noMeasurement": "No environment of this project is measured right now.",
-    "manageEnvironments": "Manage"
+    "manageEnvironments": "Manage",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "services": "Services",
+    "uptime": "Up for",
+    "ofLimit": "of {{limit}}",
+    "ofServices": "of {{total}} running",
+    "byService": "Usage by service",
+    "service": "Service",
+    "period": "Period",
+    "window": {
+      "15m": "15 min",
+      "30m": "30 min",
+      "1h": "1 h"
+    }
   },
   "settings": {
     "title": "Project",
@@ -151,8 +165,36 @@
   "filters": {
     "state": "State",
     "anyState": "Any state",
-    "showArchived": "Show archived"
+    "showArchived": "Show archived",
+    "all": "All",
+    "problem": "With a problem {{count}}",
+    "idle": "Stopped {{count}}",
+    "archived": "Archived {{count}}"
   },
   "noMatch": "No project matches these filters",
-  "noMatchHint": "Widen the search, or clear the state filter."
+  "noMatchHint": "Widen the search, or clear the state filter.",
+  "list": {
+    "openProject": "Open project",
+    "restartAll": "Restart all",
+    "more": "More",
+    "openSite": "Open site",
+    "unowned": "No project",
+    "unownedHint": "Runs on this host and no project adopted it",
+    "adoptInto": "Adopt into"
+  },
+  "row": {
+    "services": "{{running}}/{{total}} services",
+    "remembered": "Remembered, no containers",
+    "noAddress": "No HTTP address",
+    "problem": "Has a problem",
+    "state": "State",
+    "seeProblem": "See problem",
+    "howToStart": "How to start",
+    "open": "Open environment",
+    "logs": "View logs",
+    "menuFor": "More actions for {{name}}",
+    "stopTitle": "Stop {{name}}?",
+    "stopImpact_one": "This interrupts {{count}} service.",
+    "stopImpact_other": "This interrupts {{count}} services."
+  }
 }

@@ -70,6 +70,6 @@ test.describe('what each role can reach', () => {
     // 4. The viewer: the panel does not offer what it would then refuse.
     await signIn(page, PEOPLE.viewer.email, PASSWORD)
     await page.goto('/projects')
-    await expect(page.getByRole('button', { name: 'New project' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Add project' })).toHaveCount(0)
   })
 })

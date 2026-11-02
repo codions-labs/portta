@@ -10,8 +10,11 @@ All notable changes to Portta are documented here. The format follows
 
 - The panel has a new look: a slate canvas, white cards, navy for the main action
   and blue for links, in Manrope, Inter and IBM Plex Mono, with larger controls.
+- Home opens with what needs a person, with the action on the row, then every
+  running environment and what is still open. Projects lists each product with its
+  environments and next action, and a Project's page shows what it uses by service.
 - The rail follows tasks instead of layers: Home, Projects, Access, Host and
-  Settings. Services and the list of environments are views of Projects;
+  Settings. Services are a view of Projects, environments are listed under theirs;
   containers, network, gateway and host health are sections of Host. The old
   addresses redirect. On a phone the rail is a bar under the content.
 

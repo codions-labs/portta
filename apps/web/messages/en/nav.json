@@ -56,9 +56,10 @@
     "gateway": "Gateway"
   },
   "projectSections": {
+    "label": "View",
     "projects": "By project",
-    "services": "By service",
-    "environments": "All environments"
+    "table": "Table",
+    "services": "By service"
   },
   "hostDescription": "The machine these projects run on: its health, containers, network and gateway."
 }

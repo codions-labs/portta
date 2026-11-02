@@ -1,7 +1,7 @@
 {
   "title": "Projetos",
-  "catalogDescription": "Um Project é o produto. Um Environment é um stack Compose rodando para ele neste host.",
-  "newProject": "Novo projeto",
+  "catalogDescription": "Cada projeto com seus ambientes, o endereço principal e o que dá para fazer com eles.",
+  "newProject": "Adicionar projeto",
   "needsDatabase": "Projetos precisam do banco de dados do painel",
   "needsDatabaseHint": "São decisões, não observações, por isso são persistidos. Inicie o PostgreSQL e o catálogo volta; os ambientes continuam listando sem ele.",
   "catalogEmpty": "Nenhum projeto ainda",
@@ -15,12 +15,12 @@
     "slugHint": "Também o que a label portta.project de um ambiente deve dizer para ser adotado automaticamente.",
     "descriptionLabel": "Descrição"
   },
-  "searchPlaceholder": "Buscar projeto, ambiente, serviço, imagem",
+  "searchPlaceholder": "Buscar projeto ou ambiente",
   "searchAria": "Buscar projetos",
   "archived": "arquivado",
   "running": "{{running}}/{{total}} em execução",
   "detail": {
-    "unhealthyCount": "{{count}} unhealthy",
+    "unhealthyCount": "{{count}} com problema",
     "sourceReason": {
       "label": "declarado pela label portta.project",
       "manual": "vinculado manualmente",
@@ -37,16 +37,30 @@
   "tabs": {
     "label": "Seções de {{name}}",
     "overview": "Visão geral",
-    "environments": "Environments ({{count}})",
+    "environments": "Ambientes ({{count}})",
     "settings": "Configurações"
   },
   "pulse": {
-    "unhealthy": "{{count}} unhealthy"
+    "unhealthy": "{{count}} com problema"
   },
   "overview": {
     "resources": "Recursos",
     "noMeasurement": "Nenhum environment deste projeto está sendo medido agora.",
-    "manageEnvironments": "Gerenciar"
+    "manageEnvironments": "Gerenciar",
+    "cpu": "CPU",
+    "memory": "Memória",
+    "services": "Serviços",
+    "uptime": "Ativo há",
+    "ofLimit": "de {{limit}}",
+    "ofServices": "de {{total}} no ar",
+    "byService": "Uso por serviço",
+    "service": "Serviço",
+    "period": "Período",
+    "window": {
+      "15m": "15 min",
+      "30m": "30 min",
+      "1h": "1 h"
+    }
   },
   "settings": {
     "title": "Projeto",
@@ -151,8 +165,36 @@
   "filters": {
     "state": "Estado",
     "anyState": "Qualquer estado",
-    "showArchived": "Mostrar arquivados"
+    "showArchived": "Mostrar arquivados",
+    "all": "Todos",
+    "problem": "Com problema {{count}}",
+    "idle": "Parados {{count}}",
+    "archived": "Arquivados {{count}}"
   },
   "noMatch": "Nenhum projeto corresponde a estes filtros",
-  "noMatchHint": "Amplie a busca ou limpe o filtro de estado."
+  "noMatchHint": "Amplie a busca ou limpe o filtro de estado.",
+  "list": {
+    "openProject": "Abrir projeto",
+    "restartAll": "Reiniciar tudo",
+    "more": "Mais",
+    "openSite": "Abrir site",
+    "unowned": "Sem projeto",
+    "unownedHint": "Roda neste host e nenhum projeto adotou",
+    "adoptInto": "Adotar em"
+  },
+  "row": {
+    "services": "{{running}}/{{total}} serviços",
+    "remembered": "Lembrado, sem contêineres",
+    "noAddress": "Sem endereço HTTP",
+    "problem": "Com problema",
+    "state": "Estado",
+    "seeProblem": "Ver problema",
+    "howToStart": "Como iniciar",
+    "open": "Abrir ambiente",
+    "logs": "Ver logs",
+    "menuFor": "Mais ações de {{name}}",
+    "stopTitle": "Parar {{name}}?",
+    "stopImpact_one": "Isso interrompe {{count}} serviço.",
+    "stopImpact_other": "Isso interrompe {{count}} serviços."
+  }
 }

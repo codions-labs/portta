@@ -72,7 +72,7 @@ const idle = summary({
 
 beforeEach(() => {
   projects.mockReset().mockResolvedValue([summary()])
-  environments.mockReset().mockResolvedValue([{ name: 'alpha' }, { name: 'beta' }])
+  environments.mockReset().mockResolvedValue([])
   developmentOverview.mockReset().mockResolvedValue(makeOverview({ projects: [makePulse()] }))
   environmentAction.mockReset().mockResolvedValue({ ok: true })
   patchProject.mockReset().mockResolvedValue({})
@@ -131,6 +131,6 @@ describe('what a role is shown', () => {
   it('offers no way to create a Project to somebody who may not', async () => {
     renderWithQuery(view(), undefined, principal({ role: 'developer', permissions: ['project:read'] }))
     await screen.findByRole('link', { name: 'Meu Produto' })
-    expect(screen.queryByRole('button', { name: 'New project' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add project' })).not.toBeInTheDocument()
   })
 })

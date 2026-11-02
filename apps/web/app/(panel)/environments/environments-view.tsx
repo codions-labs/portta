@@ -6,7 +6,6 @@ import type { Environment } from 'portta-contracts'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EnvironmentCard } from '@/components/entities/environment-card'
-import { ProjectsSections } from '@/components/projects/projects-sections'
 import {
   Empty,
   ErrorBox,
@@ -62,7 +61,6 @@ export function EnvironmentsView({ readOnly = false }: { readOnly?: boolean }) {
   return (
     <>
       <PageHeader title={tn('projects')} description={t('description')} />
-      <ProjectsSections active="environments" />
       <ViewToolbar>
         <ToolbarSearch
           value={search}

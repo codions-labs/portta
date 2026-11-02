@@ -177,8 +177,8 @@ See [Authentication](authentication.md) and
 ## The pages
 
 The sidebar follows the tasks of a day: Home, Projects and Access, then an
-**Infrastructure** group with Host and Settings. Services and every environment
-on the host are views of Projects; containers, network and gateway are sections
+**Infrastructure** group with Host and Settings. Services are a view of Projects,
+and an environment no Project adopted is listed there under **No project**; containers, network and gateway are sections
 of Host. On a phone the same entries are a bar under the content. An entry the current
 person may not open is not listed. Every page is a route,
 so a link, a bookmark and the back button all work.
@@ -207,17 +207,22 @@ reporting.
 ### Projects
 
 A Project is the product; an environment is one Compose stack running for it.
-The page shows every Project as a card or as a table, with a search, a state
-filter and archived Projects on request. **By service** and **All environments**,
-beside **By project**, read the same catalogue another way. **New project** asks for a name, a slug and a description, and
-the slug is what an environment's `portta.project` label must say to be adopted
-automatically. Opening a Project shows its state, an **Open / Test** menu for
-its primary environment, and its Overview, Environments and Settings tabs. See
+The page lists each Project with its environments: the main address with copy and
+open, who may open it on a public host, and the next action, so most things are
+done from here. A search and filters narrow it, **Table** selects several Projects
+to act on at once, and **By service** reads the same catalogue service by service.
+**No project** holds what the host runs and no Project adopted, with **Adopt into**
+beside it. **Add project** asks for a name, a slug and a description, and the slug
+is what an environment's `portta.project` label must say to be adopted
+automatically.
+
+Opening a Project shows what it uses, environment by environment and service by
+service, with the last hour of CPU and memory, **Open site** for its primary
+environment, **Restart all**, and its Overview, Environments and Settings tabs. See
 [Manage projects](projects.md).
 
 ### Environments
 
-`/projects?view=environments` lists every Compose project Docker runs, adopted or not.
 `/environments/<name>` is one environment: its services with their addresses,
 resources and logs, **Open / Test**,
 Start, Stop, Restart, Rebuild and the two named removals, a **Logs** tab that

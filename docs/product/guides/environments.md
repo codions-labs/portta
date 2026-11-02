@@ -2,8 +2,8 @@
 
 ## Environments
 
-**All environments** on the Projects page lists them, at
-`/projects?view=environments`, and `/environments/<name>` is one, with `logs` and
+The Projects page lists them under the Project that adopted them, or under **No
+project**, and `/environments/<name>` is one, with `logs` and
 `settings` as routes beside it. The rail shows Host, and each of its sections, only
 to somebody who holds what that section needs — a navigation entry that
 would answer 404 is a worse answer than no entry. Starting, stopping and
@@ -16,8 +16,7 @@ change none of it.
 
 **Authentication disabled**: every environment on this host.
 
-**All environments** lists every Compose project on this host, adopted or not,
-each as a table of its services. `/environments/<name>` is one environment:
+`/environments/<name>` is one environment:
 
 ![Authentication disabled: the demo-shop environment, its seven services as one table with an Open / Test menu, resources and actions per row](../../images/auth-disabled-environment.png)
 

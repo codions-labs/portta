@@ -43,7 +43,7 @@ export function EnvironmentHeader({
         { label: tn('environments'), href: `/projects/${encodeURIComponent(owner.slug)}/environments` },
         { label: shown },
       ]
-    : [{ label: tn('environments'), href: '/projects?view=environments' }, { label: shown }]
+    : [{ label: tn('environments'), href: '/projects' }, { label: shown }]
 
   return (
     <PageHeader

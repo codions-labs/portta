@@ -43,7 +43,6 @@ const VIEWPORTS = [
 const TARGETS = [
   { name: 'overview', route: '/overview', ready: 'Demo Shop' },
   { name: 'projects', route: '/projects', ready: 'Demo Shop' },
-  { name: 'environments', route: '/projects?view=environments' },
   { name: 'services', route: '/projects?view=services' },
   { name: 'access', route: '/access' },
   { name: 'host', route: '/host' },

@@ -56,9 +56,10 @@
     "gateway": "Gateway"
   },
   "projectSections": {
+    "label": "Visualização",
     "projects": "Por projeto",
-    "services": "Por serviço",
-    "environments": "Todos os ambientes"
+    "table": "Tabela",
+    "services": "Por serviço"
   },
   "hostDescription": "A máquina onde estes projetos rodam: saúde, contêineres, rede e gateway."
 }

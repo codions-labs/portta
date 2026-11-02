@@ -12,16 +12,16 @@ disabled.
 
 **Authentication disabled**: Projects as cards.
 
-The products you recognise, as cards or as a table: running environments,
-health and resources. **New project** creates one from a name, a slug and a
+The products you recognise, each with its environments, or as a table: running
+environments, health and resources. **New project** creates one from a name, a slug and a
 description; the slug is also what an environment's `portta.project` label must
 say to be adopted automatically. A Project may be tied to a directory under
 Projects Home at any depth; when two Projects contain a Compose directory, the
 deepest one wins. A Project needs the panel's database and the
-page says so when it is unavailable. `All environments` lists every Compose
-project Docker is running, adopted or not.
+page says so when it is unavailable. What Docker is running and no Project adopted
+is listed under **No project**.
 
-Both views are places to act, not only to look. A card carries the one action
+Both views are places to act, not only to look. A Project carries the one action
 its state allows (start what is stopped, stop what is running) and a menu
 with the rest: environments, settings, archive, delete. An action that could
 not change anything is not offered.
