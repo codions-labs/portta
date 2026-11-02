@@ -1,14 +1,15 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { readProtectionStore } from 'portta-core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ root: '', runProcess: vi.fn() }))
+const mocks = vi.hoisted(() => ({ root: '', profile: 'local', runProcess: vi.fn() }))
 vi.mock('../context.js', () => ({
   gatewayContext: () => ({
     root: mocks.root,
     env: {},
-    config: { network: 'portta' },
+    config: { network: 'portta', profile: mocks.profile, domain: 'apps.example.test', tlsEnabled: true },
     composeFiles: [],
     version: 'test',
   }),
@@ -19,6 +20,7 @@ import { adoptComposeRuntime, initComposeRuntime, prepareComposeRuntime, runtime
 
 const roots: string[] = []
 afterEach(() => {
+  mocks.profile = 'local'
   vi.restoreAllMocks()
   mocks.runProcess.mockReset()
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
@@ -700,5 +702,109 @@ describe('Compose runtime', () => {
     await runtimeAction('up', { path: workspace }, command)
 
     expect(mocks.runProcess.mock.calls.filter(([, args]) => args.includes('config')).length).toBe(2)
+  })
+})
+
+describe('who may open a routed hostname on a public host', () => {
+  const model = {
+    services: {
+      web: { ports: [{ target: 3000, published: '80' }] },
+      api: { ports: [{ target: 4000, published: '81' }] },
+    },
+  }
+
+  function arrange() {
+    const workspace = temp()
+    mocks.root = join(temp(), 'gateway')
+    mocks.profile = 'remote-public'
+    writeFileSync(join(workspace, 'compose.yaml'), 'services: {}\n')
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version')
+        ? result('2.24.4')
+        : args.includes('branch')
+          ? result('')
+          : args.includes('config') && args.some((arg: string) => arg.endsWith('.tmp'))
+            ? result({ services: { web: {}, api: {} } })
+            : result(model),
+    )
+    return workspace
+  }
+  const registry = () => readProtectionStore(join(mocks.root, 'state/auth/protections.json'))
+  const overlayOf = (plan: { compose: { generatedOverlay: string } }) =>
+    readFileSync(plan.compose.generatedOverlay, 'utf8')
+
+  it('asks for a decision per routed service, and writes nothing while it is missing', async () => {
+    const workspace = arrange()
+    const plan = await prepareComposeRuntime({ path: workspace, dryRun: true }, command)
+    expect(plan.outcome).toBe('not_supported')
+    expect(plan.pending.filter((entry) => entry.code === 'public_exposure').map((entry) => entry.service)).toEqual([
+      'web',
+      'api',
+    ])
+    await expect(prepareComposeRuntime({ path: workspace }, command)).rejects.toThrow(/not ready/)
+    expect(existsSync(join(mocks.root, 'state/auth/protections.json'))).toBe(false)
+  })
+
+  it('puts every routed service behind ForwardAuth without naming a second router', async () => {
+    const workspace = arrange()
+    const plan = await prepareComposeRuntime({ path: workspace, protect: ['web'], public: ['api'] }, command)
+    const overlay = overlayOf(plan)
+    for (const service of ['web', 'api']) {
+      const router = `${plan.compose.projectName}-${service}`
+      expect(overlay).toContain(`traefik.http.routers.${router}.middlewares=portta-forward-auth@file`)
+      expect(overlay).toContain(`traefik.http.routers.${router}.service=${router}`)
+      expect(overlay).not.toContain(`traefik.http.routers.${router}.rule`)
+    }
+  })
+
+  it('records the decision by hostname, keeps only a hash, and never writes the password to the plan', async () => {
+    const workspace = arrange()
+    const plan = await prepareComposeRuntime({ path: workspace, protect: ['web'], public: ['api'] }, command)
+    const [first, second] = plan.services
+    const records = registry().protections
+    const web = records.find((record) => record.host === first?.host)
+    const api = records.find((record) => record.host === second?.host)
+    expect(web).toMatchObject({ mode: 'protected', user: 'reviewer' })
+    expect(web?.hash).toMatch(/^\$portta\$scrypt/)
+    expect(api).toMatchObject({ mode: 'public' })
+    expect(api).not.toHaveProperty('hash')
+    const stored = readFileSync(join(mocks.root, 'runtime/compose', plan.id, 'plan.json'), 'utf8')
+    expect(stored).not.toMatch(/password/i)
+  })
+
+  it('does not ask again once the registry holds a decision', async () => {
+    const workspace = arrange()
+    await prepareComposeRuntime({ path: workspace, protect: ['web'], public: ['api'] }, command)
+    const again = await prepareComposeRuntime({ path: workspace }, command)
+    expect(again.outcome).toBe('isolated')
+    expect(again.pending).toEqual([])
+  })
+
+  it('refuses a service that is not routed, and both flags on one service', async () => {
+    const workspace = arrange()
+    await expect(prepareComposeRuntime({ path: workspace, protect: ['nope'] }, command)).rejects.toThrow(
+      /no routed service/,
+    )
+    await expect(
+      prepareComposeRuntime({ path: workspace, protect: ['web'], public: ['web'] }, command),
+    ).rejects.toThrow(/both/)
+  })
+
+  it('leaves the overlay and the question alone outside a public host', async () => {
+    const workspace = arrange()
+    mocks.profile = 'local'
+    const plan = await prepareComposeRuntime({ path: workspace }, command)
+    expect(plan.outcome).toBe('isolated')
+    expect(plan.pending.some((entry) => entry.code === 'public_exposure')).toBe(false)
+    expect(overlayOf(plan)).not.toContain('portta-forward-auth')
+    await expect(prepareComposeRuntime({ path: workspace, protect: ['web'] }, command)).rejects.toThrow(/public host/)
+  })
+
+  it('regenerates a plan made for another profile, so the question is asked on the way up', async () => {
+    const workspace = arrange()
+    mocks.profile = 'local'
+    await prepareComposeRuntime({ path: workspace }, command)
+    mocks.profile = 'remote-public'
+    await expect(runtimeAction('up', { path: workspace }, command)).rejects.toThrow(/not ready/)
   })
 })

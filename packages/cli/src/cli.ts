@@ -70,7 +70,7 @@ import {
   projectShow,
   servicesCommand,
 } from './commands/projects.js'
-import { protectHost, protectStatus, unprotectHost } from './commands/protect.js'
+import { openHost, protectHost, protectStatus, unprotectHost } from './commands/protect.js'
 import { projectsResolve } from './commands/resolve.js'
 import { setupCommand } from './commands/setup.js'
 import { shareGc, shareList, shareRevoke } from './commands/share.js'
@@ -239,6 +239,18 @@ describe(
   )
   .option('--allow-shared-networks', 'confirm that fixed or external networks may be shared')
   .option('--allow-shared-volumes', 'confirm that fixed or external volumes may be shared')
+  .option(
+    '--protect <service>',
+    'public host: ask for a generated credential to open this service; repeatable',
+    (value, previous: string[]) => previous.concat(value),
+    [],
+  )
+  .option(
+    '--public <service>',
+    'public host: let everybody open this service, with no login; repeatable',
+    (value, previous: string[]) => previous.concat(value),
+    [],
+  )
   .action(async (path, options, command) => {
     await adoptComposeRuntime(
       {
@@ -250,6 +262,8 @@ describe(
         removeContainerName: options.removeContainerName,
         allowSharedNetworks: options.allowSharedNetworks,
         allowSharedVolumes: options.allowSharedVolumes,
+        protect: options.protect,
+        public: options.public,
       },
       command,
     )
@@ -461,8 +475,11 @@ describe(panelOptions(authToken.command('create'), false), 'Create a token; its 
   .action(authTokenCreate)
 describe(panelOptions(authToken.command('revoke <id>')), 'Revoke a token').action(authTokenRevoke)
 
-const protect = describe(program.command('protect'), 'ForwardAuth protection for project hostnames and shares')
-describe(protect.command('status [host]', { isDefault: true }), 'List protected hosts without credentials').action(
+const protect = describe(
+  program.command('protect'),
+  'Who may open a project hostname: a credential, everybody, or nobody',
+)
+describe(protect.command('status [host]', { isDefault: true }), 'List host decisions without credentials').action(
   (host, _options, command) => protectStatus(host, command),
 )
 describe(protect.command('host <host>'), 'Create or rotate a hostname credential')
@@ -473,9 +490,16 @@ describe(protect.command('host <host>'), 'Create or rotate a hostname credential
   .option('--project <name>')
   .option('--service <name>')
   .action(protectHost)
-describe(protect.command('remove <host>'), 'Remove a hostname credential without changing project labels').action(
-  (host, _options, command) => unprotectHost(host, command),
-)
+describe(protect.command('open <host>'), 'Let everybody open a hostname, with no login')
+  .option('--entrypoint <name>')
+  .option('--label <text>')
+  .option('--project <name>')
+  .option('--service <name>')
+  .action(openHost)
+describe(
+  protect.command('remove <host>'),
+  'Remove the decision for a hostname; on a public host it is closed afterwards',
+).action((host, _options, command) => unprotectHost(host, command))
 
 const users = describe(program.command('users'), 'The accounts this panel signs in')
 describe(panelOptions(users.command('list', { isDefault: true }).alias('ls')), 'List every account').action(usersList)

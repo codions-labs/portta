@@ -1,48 +1,29 @@
-// Protecting a project hostname or a share, through the ForwardAuth service.
+// Deciding who may open a project hostname, through the ForwardAuth service.
 //
 // Its own group, and its own file, because it is not the panel's
 // authentication: the panel signs people in itself. This puts a credential in
-// front of an application Portta routes but does not own, and the consumer
-// project opts into it with a Traefik label of its own.
+// front of an application Portta routes but does not own, or opens it to
+// everybody. On a public host every routed service already passes through the
+// ForwardAuth middleware, so the decision is only a record and changing it
+// needs no recreate.
 
-import { randomBytes } from 'node:crypto'
-import { chmodSync, mkdirSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { readFileSync } from 'node:fs'
 import type { Command } from 'commander'
-import {
-  hashPassword,
-  normalizeProtectionHost,
-  protectionForHost,
-  readProtectionStore,
-  removeProtection,
-  renderAuthDynamic,
-  setProtection,
-  writeEnvFile,
-  writeProtectionStore,
-} from 'portta-core'
+import { normalizeProtectionHost, protectionForHost, readProtectionStore } from 'portta-core'
 import { gatewayContext } from '../context.js'
 import { UsageError } from '../errors.js'
 import { Output } from '../output.js'
+import { closedStore, exposurePaths, generatePassword, openStore, protectedStore, saveExposure } from './exposure.js'
 
 function globals(command: Command) {
   return command.optsWithGlobals() as { json?: boolean; quiet?: boolean; verbose?: boolean; profile?: string }
 }
 
-function paths(command: Command): { store: string; dynamic: string } {
-  const root = gatewayContext({ profile: globals(command).profile }).root
-  return {
-    store: join(root, 'state/auth/protections.json'),
-    dynamic: join(root, 'config/traefik/dynamic/portta-auth.yaml'),
-  }
-}
-
-function save(command: Command, store: ReturnType<typeof readProtectionStore>): void {
-  const target = paths(command)
-  mkdirSync(dirname(target.store), { recursive: true, mode: 0o700 })
-  chmodSync(dirname(target.store), 0o700)
-  mkdirSync(dirname(target.dynamic), { recursive: true })
-  writeProtectionStore(target.store, store)
-  writeEnvFile(target.dynamic, renderAuthDynamic(store))
+function entryPointFor(command: Command, requested?: string): string {
+  const entryPoint =
+    requested ?? (gatewayContext({ profile: globals(command).profile }).config.tlsEnabled ? 'websecure' : 'web')
+  if (!/^[A-Za-z0-9_-]+$/.test(entryPoint)) throw new UsageError(`invalid entrypoint: ${entryPoint}`)
+  return entryPoint
 }
 
 function publicRecord(record: ReturnType<typeof protectionForHost>) {
@@ -66,36 +47,22 @@ export async function protectHost(
   const host = normalizeProtectionHost(hostInput)
   const user = options.user ?? 'reviewer'
   if (!/^[A-Za-z0-9._-]{1,64}$/.test(user)) throw new UsageError(`invalid username: ${user}`)
-  const entryPoint =
-    options.entrypoint ??
-    (gatewayContext({ profile: globals(command).profile }).config.tlsEnabled ? 'websecure' : 'web')
-  if (!/^[A-Za-z0-9_-]+$/.test(entryPoint)) throw new UsageError(`invalid entrypoint: ${entryPoint}`)
+  const entryPoint = entryPointFor(command, options.entrypoint)
   const generated = options.passwordStdin !== true
-  const password = generated
-    ? randomBytes(20)
-        .toString('base64url')
-        .slice(0, 20)
-        .match(/.{1,5}/g)!
-        .join('-')
-    : readFileSync(0, 'utf8').trim()
+  const password = generated ? generatePassword() : readFileSync(0, 'utf8').trim()
   if (!password) throw new UsageError('no password on stdin')
 
-  const target = paths(command)
-  const existing = readProtectionStore(target.store)
-  const previous = protectionForHost(existing, host)
-  const scope = previous?.scope ?? `host:${host}`
-  const next = setProtection(existing, {
-    scope,
+  const root = gatewayContext({ profile: globals(command).profile }).root
+  const next = await protectedStore(readProtectionStore(exposurePaths(root).store), {
     host,
-    entryPoints: [entryPoint],
-    mode: 'protected',
+    entryPoint,
     user,
-    hash: await hashPassword(password),
-    label: options.label ?? options.service ?? host,
+    password,
+    ...(options.label ? { label: options.label } : {}),
     ...(options.project ? { project: options.project } : {}),
     ...(options.service ? { service: options.service } : {}),
   })
-  save(command, next)
+  saveExposure(root, next)
   const output = new Output(globals(command))
   const result = {
     protection: publicRecord(protectionForHost(next, host)),
@@ -110,39 +77,53 @@ export async function protectHost(
       output.line(`password: ${password}`)
       output.warning('this is the only time the generated password is shown')
     }
-    output.hint('add this middleware to the project router: portta-forward-auth@file')
+    output.hint('on a public host this takes effect at once; elsewhere add portta-forward-auth@file to the router')
+  }
+}
+
+export async function openHost(
+  hostInput: string,
+  options: { entrypoint?: string; label?: string; project?: string; service?: string },
+  command: Command,
+): Promise<void> {
+  const host = normalizeProtectionHost(hostInput)
+  const root = gatewayContext({ profile: globals(command).profile }).root
+  const next = openStore(readProtectionStore(exposurePaths(root).store), {
+    host,
+    entryPoint: entryPointFor(command, options.entrypoint),
+    ...(options.label ? { label: options.label } : {}),
+    ...(options.project ? { project: options.project } : {}),
+    ...(options.service ? { service: options.service } : {}),
+  })
+  saveExposure(root, next)
+  const output = new Output(globals(command))
+  if (output.json) output.data({ protection: publicRecord(protectionForHost(next, host)) })
+  else {
+    output.line(`open to everybody: ${host}`)
+    output.warning('no login is asked for this host; `portta protect host` puts one back')
   }
 }
 
 export async function unprotectHost(hostInput: string, command: Command): Promise<void> {
   const host = normalizeProtectionHost(hostInput)
-  const target = paths(command)
-  const current = readProtectionStore(target.store)
-  const record = protectionForHost(current, host)
-  if (!record) throw new UsageError(`host is not protected: ${host}`)
-  save(command, removeProtection(current, record.scope))
-  new Output(globals(command)).progress(`unprotected ${host}; project labels were not touched`)
+  const root = gatewayContext({ profile: globals(command).profile }).root
+  const next = closedStore(readProtectionStore(exposurePaths(root).store), host)
+  if (!next) throw new UsageError(`host has no protection record: ${host}`)
+  saveExposure(root, next)
+  new Output(globals(command)).progress(`removed the record for ${host}; on a public host it is now closed`)
 }
 
 export async function protectStatus(hostInput: string | undefined, command: Command): Promise<void> {
-  const store = readProtectionStore(paths(command).store)
+  const root = gatewayContext({ profile: globals(command).profile }).root
+  const store = readProtectionStore(exposurePaths(root).store)
   const records = hostInput
     ? [protectionForHost(store, normalizeProtectionHost(hostInput))].filter((record) => record !== null)
     : store.protections
   const protections = records.map(publicRecord)
   const output = new Output(globals(command))
   if (output.json) output.data({ protections })
-  else if (!protections.length) output.progress('no matching protected hosts')
+  else if (!protections.length) output.progress('no matching hosts')
   else
     for (const record of protections)
-      output.line(`${record!.host}\t${record!.user ?? '-'}\t${record!.scope}\tepoch ${record!.epoch}`)
+      output.line(`${record!.host}\t${record!.mode}\t${record!.user ?? '-'}\t${record!.scope}\tepoch ${record!.epoch}`)
 }
-
-/**
- * Create the owner, from the host that runs the panel.
- *
- * The same endpoint the `/setup` page posts to, so there is one way for a first
- * user to exist. It is here because a panel bound to loopback on a server has no
- * browser to open it in, and because a provisioning script needs a way that does
- * not involve one.
- */
