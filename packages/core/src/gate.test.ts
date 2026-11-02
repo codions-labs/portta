@@ -131,13 +131,37 @@ describe('openCatchAllContainers', () => {
     ])
   })
 
-  it("leaves out Portta's own, what is stopped, and what names its address", () => {
+  it('leaves out what is stopped, what names its address, and the panel on its own entrypoint', () => {
     expect(
       openCatchAllContainers([
-        { state: 'running', labels: { ...wide, 'portta.managed': 'true' } },
         { state: 'exited', labels: wide },
         { state: 'running', labels: { 'traefik.enable': 'true', 'traefik.http.routers.w.rule': 'Host(`a.test`)' } },
+        {
+          state: 'running',
+          labels: {
+            'portta.managed': 'true',
+            'traefik.enable': 'true',
+            'traefik.http.routers.portta-panel.rule': 'PathPrefix(`/`)',
+            'traefik.http.routers.portta-panel.entrypoints': 'panel',
+          },
+        },
       ]),
     ).toEqual([])
+  })
+
+  it('does not take a label as an excuse', () => {
+    expect(openCatchAllContainers([{ state: 'running', labels: { ...wide, 'portta.managed': 'true' } }])).toHaveLength(
+      1,
+    )
+  })
+
+  it.each(['panel', 'somewhere-else'])('counts somebody else on the %s entrypoint', (entrypoint) => {
+    const labels = { ...wide, 'traefik.http.routers.w.entrypoints': entrypoint }
+    expect(openCatchAllContainers([{ state: 'running', labels }])).toHaveLength(1)
+  })
+
+  it('counts a router that also listens on a public entrypoint', () => {
+    const labels = { ...wide, 'traefik.http.routers.w.entrypoints': 'panel, websecure' }
+    expect(openCatchAllContainers([{ state: 'running', labels }])).toHaveLength(1)
   })
 })

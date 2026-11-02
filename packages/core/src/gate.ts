@@ -33,18 +33,12 @@ export function ungatedContainers(containers: ContainerRecord[]): string[] {
  *
  * A router like that can win any address on the host, depending on rule length,
  * so this is read across every container, whichever project it belongs to or
- * none. The same exclusions apply: the panel's own public entrypoint is a bare
- * PathPrefix, on a port of its own.
+ * none, and no label exempts one: what the labels route is what counts.
  */
 export function openCatchAllContainers<T extends Pick<ContainerRecord, 'state' | 'labels'>>(
   containers: readonly T[],
 ): T[] {
-  return containers.filter(
-    (container) =>
-      !STOPPED.has(container.state) &&
-      container.labels['portta.managed'] !== 'true' &&
-      opensUnknownHosts(container.labels),
-  )
+  return containers.filter((container) => !STOPPED.has(container.state) && opensUnknownHosts(container.labels))
 }
 
 /**
