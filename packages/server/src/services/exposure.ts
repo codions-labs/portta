@@ -7,18 +7,17 @@
 import type { ContainerSummary, ExposureEntry } from 'portta-contracts'
 import {
   generatePassword,
+  hasForwardAuth,
   hashPassword,
   normalizeProtectionHost,
   type ProtectionRecord,
   protectionForHost,
   readProtectionStore,
   removeProtection,
-  renderAuthDynamic,
   setProtection,
-  writeProtectionStore,
 } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
-import { GENERATED_FILES, writeGenerated } from './dynamic.ts'
+import { saveProtectionState } from './protection-state.ts'
 
 export class ExposureRefused extends Error {
   status = 400
@@ -101,9 +100,17 @@ export function guard(previous: ProtectionRecord | null, container: ContainerSum
     )
 }
 
-function save(config: PanelConfig, store: ReturnType<typeof readProtectionStore>): void {
-  writeProtectionStore(config.authStore, store)
-  writeGenerated(config.dynamicDir, GENERATED_FILES.auth, renderAuthDynamic(store))
+/** No await may split this read/modify/write section: concurrent requests run it serially. */
+function mutateStore<T>(
+  config: PanelConfig,
+  change: (store: ReturnType<typeof readProtectionStore>) => {
+    store: ReturnType<typeof readProtectionStore>
+    result: T
+  },
+): T {
+  const next = change(readProtectionStore(config.authStore))
+  saveProtectionState(config, next.store)
+  return next.result
 }
 
 export function listExposure(config: PanelConfig): ExposureEntry[] {
@@ -132,28 +139,47 @@ export async function protectService(
   if (config.profile !== 'local' && !config.tlsEnabled)
     throw new ExposureRefused('a password cannot be asked for over plain HTTP', 'turn TLS on first')
   const host = hostOf(container, containers)
-  const store = readProtectionStore(config.authStore)
-  const previous = protectionForHost(store, host)
-  guard(previous, container, options.unscoped)
+  const replicas = containers.filter(
+    (other) =>
+      container.environment !== null &&
+      container.service !== null &&
+      other.environment === container.environment &&
+      other.service === container.service,
+  )
+  if ([container, ...replicas].some((target) => !hasForwardAuth(target.labels)))
+    throw new ExposureRefused(
+      'this service does not enforce password protection',
+      're-adopt it on a public profile, or attach portta-forward-auth@file to every HTTP router first',
+    )
+  guard(protectionForHost(readProtectionStore(config.authStore), host), container, options.unscoped)
   const password = generatePassword()
-  const next = setProtection(store, {
-    scope: previous?.scope ?? `host:${host}`,
-    host,
-    entryPoints: [entryPointOf(config)],
-    mode: 'protected',
-    user: options.user ?? previous?.user ?? 'reviewer',
-    hash: await hashPassword(password),
-    label: container.service ?? container.name,
-    ...(container.environment ? { project: container.environment } : {}),
-    ...(container.service ? { service: container.service } : {}),
+  const hash = await hashPassword(password)
+  // Hashing yields to other requests. Read and guard again only after it ends;
+  // a close or ownership change that succeeded meanwhile must stay effective.
+  return mutateStore<ExposureChange>(config, (store) => {
+    const previous = protectionForHost(store, host)
+    guard(previous, container, options.unscoped)
+    const next = setProtection(store, {
+      scope: previous?.scope ?? `host:${host}`,
+      host,
+      entryPoints: [entryPointOf(config)],
+      mode: 'protected',
+      user: options.user ?? previous?.user ?? 'reviewer',
+      hash,
+      label: container.service ?? container.name,
+      ...(container.environment ? { project: container.environment } : {}),
+      ...(container.service ? { service: container.service } : {}),
+    })
+    const record = protectionForHost(next, host)!
+    return {
+      store: next,
+      result: {
+        entry: viewOf(record),
+        password,
+        action: previous?.mode === 'protected' ? 'protection.rotated' : 'protection.created',
+      },
+    }
   })
-  save(config, next)
-  const record = protectionForHost(next, host)!
-  return {
-    entry: viewOf(record),
-    password,
-    action: previous?.mode === 'protected' ? 'protection.rotated' : 'protection.created',
-  }
 }
 
 export function openService(
@@ -163,30 +189,30 @@ export function openService(
   unscoped = false,
 ): ExposureChange {
   const host = hostOf(container, containers)
-  const store = readProtectionStore(config.authStore)
-  const previous = protectionForHost(store, host)
-  guard(previous, container, unscoped)
-  const next = setProtection(store, {
-    scope: previous?.scope ?? `host:${host}`,
-    host,
-    entryPoints: [entryPointOf(config)],
-    mode: 'public',
-    label: container.service ?? container.name,
-    ...(container.environment ? { project: container.environment } : {}),
-    ...(container.service ? { service: container.service } : {}),
+  return mutateStore<ExposureChange>(config, (store) => {
+    const previous = protectionForHost(store, host)
+    guard(previous, container, unscoped)
+    const next = setProtection(store, {
+      scope: previous?.scope ?? `host:${host}`,
+      host,
+      entryPoints: [entryPointOf(config)],
+      mode: 'public',
+      label: container.service ?? container.name,
+      ...(container.environment ? { project: container.environment } : {}),
+      ...(container.service ? { service: container.service } : {}),
+    })
+    return { store: next, result: { entry: viewOf(protectionForHost(next, host)!), action: 'protection.opened' } }
   })
-  save(config, next)
-  return { entry: viewOf(protectionForHost(next, host)!), action: 'protection.opened' }
 }
 
 export function closeService(config: PanelConfig, container: ContainerSummary, unscoped = false): ExposureChange {
   // Removing a decision is always allowed for its owner: a duplicate hostname
   // elsewhere must not keep a site open that its owner wants closed.
   const host = hostOf(container)
-  const store = readProtectionStore(config.authStore)
-  const record = protectionForHost(store, host)
-  if (!record) throw new ExposureRefused(`${host} has no decision to remove`, 'it is already closed or never decided')
-  guard(record, container, unscoped)
-  save(config, removeProtection(store, record.scope))
-  return { entry: null, action: 'protection.removed' }
+  return mutateStore<ExposureChange>(config, (store) => {
+    const record = protectionForHost(store, host)
+    if (!record) throw new ExposureRefused(`${host} has no decision to remove`, 'it is already closed or never decided')
+    guard(record, container, unscoped)
+    return { store: removeProtection(store, record.scope), result: { entry: null, action: 'protection.removed' } }
+  })
 }

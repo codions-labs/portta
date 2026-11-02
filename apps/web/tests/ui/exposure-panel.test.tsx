@@ -23,6 +23,11 @@ const { ExposurePanel, canonicalHost } = await import('@/components/exposure-pan
 
 const container = makeContainer({
   id: 'c1',
+  labels: {
+    'traefik.enable': 'true',
+    'traefik.http.routers.web.rule': 'Host(`shop-web.example.test`)',
+    'traefik.http.routers.web.middlewares': 'portta-forward-auth@file',
+  },
   urls: [{ url: 'https://shop-web.example.test', host: 'shop-web.example.test', scope: 'public', scheme: 'https' }],
 })
 
@@ -42,6 +47,28 @@ describe('the hostname the panel matches on', () => {
 })
 
 describe('who may open a service', () => {
+  it('does not present stored credentials as protection when its router does not enforce them', async () => {
+    exposure.mockResolvedValue({
+      enforced: false,
+      entries: [
+        {
+          host: 'shop-web.example.test',
+          mode: 'protected',
+          user: 'reviewer',
+          project: null,
+          service: null,
+          label: 'web',
+        },
+      ],
+    })
+    renderWithQuery(<ExposurePanel container={{ ...container, labels: { 'traefik.enable': 'true' } }} />)
+    expect(await screen.findByText('no login')).toBeInTheDocument()
+    expect(screen.queryByText('protected')).toBeNull()
+    expect(await screen.findByRole('button', { name: 'New password' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Open to everybody' })).toBeNull()
+    expect(protectService).not.toHaveBeenCalled()
+  })
+
   it('says a hostname nobody decided about is closed, and protects it with a password shown once', async () => {
     renderWithQuery(<ExposurePanel container={container} />)
     expect(await screen.findByText('closed')).toBeInTheDocument()

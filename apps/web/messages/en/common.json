@@ -186,7 +186,7 @@
     "user": "login: {{user}}",
     "hintDecided": "Changes apply on the next request. Nothing is recreated.",
     "hintClosed": "Nobody decided about this hostname, so it is closed.",
-    "hintUnprotected": "This host does not require a decision. Protect it to ask for a login.",
+    "hintUnprotected": "This service does not enforce a login. Re-adopt it on a public host before protecting it.",
     "protect": "Protect with a password",
     "newPassword": "New password",
     "makeOpen": "Open to everybody",

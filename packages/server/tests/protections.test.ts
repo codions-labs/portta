@@ -1,17 +1,33 @@
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { permissionsOf } from 'portta-auth-core'
-import { readProtectionStore, verifyPassword } from 'portta-core'
+import { parseAliases, readProtectionStore, renderAliases, verifyPassword } from 'portta-core'
 import { describe, expect, it } from 'vitest'
+import { closeService, openService, protectService } from '../src/services/exposure.ts'
 import { GATEWAY, PROJECT_A } from './fixtures.ts'
 import { del, makeApp, post } from './helpers.ts'
+
+const gatedProjects = PROJECT_A.map((container) => ({
+  ...container,
+  labels: {
+    ...container.labels,
+    ...(container.labels?.['traefik.enable'] === 'true'
+      ? {
+          [`traefik.http.routers.alpha-${container.labels['com.docker.compose.service']}.rule`]:
+            container.labels['traefik.http.routers.alpha-api.rule'] ?? 'Host(`alpha-web.localhost`)',
+          [`traefik.http.routers.alpha-${container.labels['com.docker.compose.service']}.middlewares`]:
+            'portta-forward-auth@file',
+        }
+      : {}),
+  },
+}))
 
 function panel() {
   const dir = mkdtempSync(join(tmpdir(), 'portta-exposure-'))
   const authStore = join(dir, 'protections.json')
   const instance = makeApp(
-    { containers: [...GATEWAY, ...PROJECT_A] },
+    { containers: [...GATEWAY, ...gatedProjects] },
     { authStore, dynamicDir: dir, profile: 'remote-public', tlsEnabled: true },
   )
   return { ...instance, authStore, dir }
@@ -93,6 +109,82 @@ describe('who may open a service, from the panel', () => {
       { authStore: join(dir, 'p.json'), dynamicDir: dir, profile: 'remote-public', tlsEnabled: false },
     )
     expect((await put(app, '/api/services/a-web/exposure')).status).toBe(400)
+  })
+
+  it.each(['local', 'remote-private', 'remote-public'])(
+    'refuses credentials without router enforcement on %s',
+    async (profile) => {
+      const dir = mkdtempSync(join(tmpdir(), 'portta-exposure-'))
+      const authStore = join(dir, 'protections.json')
+      const { app } = makeApp(
+        { containers: [...GATEWAY, ...PROJECT_A] },
+        { authStore, dynamicDir: dir, profile, tlsEnabled: true },
+      )
+      const response = await put(app, '/api/services/a-web/exposure')
+      expect(response.status).toBe(400)
+      expect((await response.json()).error).toContain('does not enforce')
+      expect(readProtectionStore(authStore).protections).toEqual([])
+    },
+  )
+
+  it('does not restore a closed service when another password finishes hashing', async () => {
+    const { config, cache, authStore } = panel()
+    const { containers } = await cache.get()
+    const web = containers.find((container) => container.id === 'a-web')!
+    const api = containers.find((container) => container.id === 'a-api')!
+    openService(config, web, containers, true)
+    const protection = protectService(config, api, { unscoped: true }, containers)
+    closeService(config, web, true)
+    await protection
+    expect(readProtectionStore(authStore).protections.map((record) => record.service)).toEqual(['api'])
+  })
+
+  it('keeps concurrent protection changes and rechecks ownership after hashing', async () => {
+    const { config, cache, authStore } = panel()
+    const { containers } = await cache.get()
+    const web = containers.find((container) => container.id === 'a-web')!
+    const api = containers.find((container) => container.id === 'a-api')!
+    await Promise.all([
+      protectService(config, web, { unscoped: true }, containers),
+      protectService(config, api, { unscoped: true }, containers),
+    ])
+    expect(readProtectionStore(authStore).protections).toHaveLength(2)
+
+    closeService(config, web, true)
+    const pending = protectService(config, web, { unscoped: true }, containers)
+    const refused = expect(pending).rejects.toThrow('belongs to someone-else')
+    openService(config, { ...web, environment: 'someone-else' }, [], true)
+    await refused
+    expect(readProtectionStore(authStore).protections.find((record) => record.service === 'web')?.project).toBe(
+      'someone-else',
+    )
+  })
+
+  it('suspends an alias before a newly decided service can authorize its old target', async () => {
+    const { app, dir } = panel()
+    const alias = {
+      project: 'old-project',
+      service: 'web',
+      container: 'old-project-web-1',
+      host: 'alpha-web.localhost',
+      port: 80,
+      entryPoint: 'websecure',
+    }
+    const file = join(dir, 'portta-aliases.yaml')
+    writeFileSync(file, renderAliases([alias], true))
+    expect((await post(app, '/api/services/a-web/exposure/open')).status).toBe(200)
+    const rendered = readFileSync(file, 'utf8')
+    expect(rendered).not.toContain('Host(`alpha-web.localhost`)')
+    expect(parseAliases(rendered)).toEqual([alias])
+    expect((await del(app, '/api/services/a-web/exposure')).status).toBe(200)
+    expect(readFileSync(file, 'utf8')).toContain('Host(`alpha-web.localhost`)')
+  })
+
+  it('keeps a hostname closed when its alias routing state cannot be read', async () => {
+    const { app, dir, authStore } = panel()
+    mkdirSync(join(dir, 'portta-aliases.yaml'))
+    expect((await post(app, '/api/services/a-web/exposure/open')).status).toBe(500)
+    expect(readProtectionStore(authStore).protections).toEqual([])
   })
 
   it('does not take over a decision that belongs to another project', async () => {

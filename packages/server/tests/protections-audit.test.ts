@@ -19,7 +19,23 @@ describe('exposure changes are audited', () => {
     const panel = makeProtectedApp(
       seeded.database,
       { authStore: join(dir, 'protections.json'), dynamicDir: dir, profile: 'remote-public', tlsEnabled: true },
-      { containers: [...GATEWAY, ...PROJECT_A] },
+      {
+        containers: [
+          ...GATEWAY,
+          ...PROJECT_A.map((container) =>
+            container.id === 'a-web'
+              ? {
+                  ...container,
+                  labels: {
+                    ...container.labels,
+                    'traefik.http.routers.alpha-web.rule': 'Host(`alpha-web.localhost`)',
+                    'traefik.http.routers.alpha-web.middlewares': 'portta-forward-auth@file',
+                  },
+                }
+              : container,
+          ),
+        ],
+      },
     )
     const security = resolveSecurityMode({
       PORTTA_AUTH_MODE: 'required',

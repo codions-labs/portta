@@ -186,7 +186,7 @@
     "user": "login: {{user}}",
     "hintDecided": "A mudança vale na próxima requisição. Nada é recriado.",
     "hintClosed": "Ninguém decidiu sobre este endereço, então ele está fechado.",
-    "hintUnprotected": "Este host não exige uma decisão. Proteja para pedir login.",
+    "hintUnprotected": "Este serviço não exige login. Adote-o novamente em um host público antes de protegê-lo.",
     "protect": "Proteger com senha",
     "newPassword": "Nova senha",
     "makeOpen": "Abrir para todos",

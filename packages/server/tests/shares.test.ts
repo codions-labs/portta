@@ -5,8 +5,17 @@ import type { ContainerSummary, ShareView } from 'portta-contracts'
 import { readProtectionStore } from 'portta-core'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { PanelConfig } from '../src/config.ts'
+import { closeService, openService } from '../src/services/exposure.ts'
 import { buildSnapshot } from '../src/services/inventory.ts'
-import { createShare, listShares, loadShares, revokeShare, ShareRefused, shareHost } from '../src/services/shares.ts'
+import {
+  createShare,
+  listShares,
+  loadShares,
+  regenerateShare,
+  revokeShare,
+  ShareRefused,
+  shareHost,
+} from '../src/services/shares.ts'
 import { EXTERNAL, FULL_HOST, GATEWAY, PROJECT_A } from './fixtures.ts'
 import { del, fakeDocker, makeApp, post, testConfig } from './helpers.ts'
 
@@ -99,6 +108,32 @@ describe('a share is an additional hostname, and nothing about the project chang
     const emptied = readFileSync(join(dir, 'portta-shares.yaml'), 'utf8')
     expect(emptied).not.toMatch(/^http:/m)
     expect(emptied).toContain('not a deny rule')
+  })
+
+  it('keeps concurrent shares without restoring an unrelated closed hostname', async () => {
+    const { config, snapshot, container } = await world(PUBLIC)
+    openService(config, container('a-web'), [], true)
+    const pending = Promise.all([
+      createShare(config, snapshot, container('a-web'), { mode: 'protected' }),
+      createShare(config, snapshot, container('a-api'), { mode: 'protected' }),
+    ])
+    closeService(config, container('a-web'), true)
+    await pending
+    expect(loadShares(config)).toHaveLength(2)
+    const records = readProtectionStore(config.authStore).protections
+    expect(records).toHaveLength(2)
+    expect(records.every((record) => record.scope.startsWith('share:'))).toBe(true)
+  })
+
+  it('does not restore a credential for a share revoked while its password was hashing', async () => {
+    const { config, snapshot, container } = await world(PUBLIC)
+    const created = await createShare(config, snapshot, container('a-web'), { mode: 'protected' })
+    const pending = regenerateShare(config, snapshot, created.share.id)
+    const refused = expect(pending).rejects.toThrow('changed while its password was being generated')
+    revokeShare(config, created.share.id)
+    await refused
+    expect(readProtectionStore(config.authStore).protections).toEqual([])
+    expect(loadShares(config)).toEqual([])
   })
 })
 

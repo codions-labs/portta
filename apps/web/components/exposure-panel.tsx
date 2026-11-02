@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Lock, LockOpen, ShieldOff } from 'lucide-react'
 import type { ContainerSummary } from 'portta-contracts'
+import { hasForwardAuth } from 'portta-core/browser'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api/index.ts'
@@ -38,7 +39,7 @@ export function ExposurePanel({ container }: { container: ContainerSummary }) {
   const host = hosts.length === 1 ? (hosts[0] ?? null) : null
   const query = useExposure()
   const entry = query.data?.entries.find((candidate) => canonicalHost(candidate.host) === host) ?? null
-  const enforced = query.data?.enforced === true
+  const enforced = hasForwardAuth(container.labels)
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: keys.exposure() })
   const protect = useMutation({
@@ -70,28 +71,28 @@ export function ExposurePanel({ container }: { container: ContainerSummary }) {
   return (
     <div className="space-y-2 text-xs">
       <div className="flex flex-wrap items-center gap-2">
-        {entry?.mode === 'protected' ? (
+        {!enforced ? (
+          <Badge>{t('unprotected')}</Badge>
+        ) : entry?.mode === 'protected' ? (
           <Badge tone="ok">{t('protected')}</Badge>
         ) : entry?.mode === 'public' ? (
           <Badge tone="danger">{t('open')}</Badge>
-        ) : enforced ? (
-          <Badge tone="warn">{t('closed')}</Badge>
         ) : (
-          <Badge>{t('unprotected')}</Badge>
+          <Badge tone="warn">{t('closed')}</Badge>
         )}
         <Mono kind="text" tone="subtle">
           {host}
         </Mono>
-        {entry?.user ? <span className="text-subtle">{t('user', { user: entry.user })}</span> : null}
+        {enforced && entry?.user ? <span className="text-subtle">{t('user', { user: entry.user })}</span> : null}
       </div>
-      <p className="text-subtle">{entry ? t('hintDecided') : enforced ? t('hintClosed') : t('hintUnprotected')}</p>
+      <p className="text-subtle">{!enforced ? t('hintUnprotected') : entry ? t('hintDecided') : t('hintClosed')}</p>
       {mayDecide ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" disabled={busy} onClick={() => protect.mutate()}>
+          <Button size="sm" disabled={busy || !enforced} onClick={() => protect.mutate()}>
             <Lock />
             {entry?.mode === 'protected' ? t('newPassword') : t('protect')}
           </Button>
-          {entry?.mode !== 'public' ? (
+          {enforced && entry?.mode !== 'public' ? (
             <Button size="sm" variant="ghost" disabled={busy} onClick={() => open.mutate()}>
               <LockOpen />
               {t('makeOpen')}
@@ -105,7 +106,7 @@ export function ExposurePanel({ container }: { container: ContainerSummary }) {
           ) : null}
         </div>
       ) : null}
-      {password ? (
+      {enforced && password ? (
         <Callout
           tone="warn"
           title={
