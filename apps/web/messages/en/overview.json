@@ -16,6 +16,9 @@
     "restart": "Restart",
     "details": "View details",
     "decide": "Decide",
+    "review": "Review",
+    "unprotectedSites_one": "{{count}} site answers everybody, with no login",
+    "unprotectedSites_other": "{{count}} sites answer everybody, with no login",
     "closedSites_one": "{{count}} site is closed because nobody decided",
     "closedSites_other": "{{count}} sites are closed because nobody decided"
   },
@@ -34,7 +37,8 @@
   "access": {
     "protected": "Protected",
     "open": "Open",
-    "closed": "Closed"
+    "closed": "Closed",
+    "unprotected": "No login"
   },
   "reduced": {
     "needsDatabase": "The development dashboard needs the panel's database",

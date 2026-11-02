@@ -8,13 +8,13 @@ import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
 import { DiagnosticText } from '@/components/diagnostic-text'
 import { HostAccess, primaryRoute, RouteLine } from '@/components/entities/environment-row'
-import { canonicalHost } from '@/components/exposure-panel'
 import { HostHeader, HostReadings, HostSummarySkeleton, pressureReasons } from '@/components/host-summary'
 import { Empty, ErrorBox, Loading, MetricCard, PageHeader } from '@/components/shell-bits'
 import { Badge, StatusDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { ApiError, api } from '@/lib/api'
+import { hostAccess } from '@/lib/host-access'
 import { useCan } from '@/lib/permissions'
 import {
   useAccess,
@@ -27,6 +27,7 @@ import {
   useMetricsHistory,
   useShares,
   useStatus,
+  useUnprotectedHosts,
 } from '@/lib/queries'
 import { useFormat } from '@/lib/use-format'
 
@@ -93,8 +94,9 @@ function Dashboard({ data }: { data: DevelopmentOverview }) {
   const { t } = useTranslation('overview')
   const mayCreate = useCan('project:create')
   const closed = useClosedHosts()
+  const unprotected = useUnprotectedHosts()
   const { runtime } = data
-  const needsYou = data.attention.length + (closed.length > 0 ? 1 : 0)
+  const needsYou = data.attention.length + (closed.length > 0 ? 1 : 0) + (unprotected.length > 0 ? 1 : 0)
 
   return (
     <>
@@ -140,7 +142,7 @@ function Dashboard({ data }: { data: DevelopmentOverview }) {
           <HostUseCard data={data} />
         </section>
 
-        <NeedsYou data={data} closed={closed} />
+        <NeedsYou data={data} closed={closed} unprotected={unprotected} />
 
         <div className="flex flex-wrap items-start gap-6">
           <div className="min-w-0 flex-[999_1_32rem]">
@@ -247,12 +249,20 @@ function NeedsYouRow({
   )
 }
 
-function NeedsYou({ data, closed }: { data: DevelopmentOverview; closed: string[] }) {
+function NeedsYou({
+  data,
+  closed,
+  unprotected,
+}: {
+  data: DevelopmentOverview
+  closed: string[]
+  unprotected: string[]
+}) {
   const { t } = useTranslation('overview')
   const text = useAttentionText(data)
   const mayOperate = useCan('environment:operate')
   const items = data.attention
-  const count = items.length + (closed.length > 0 ? 1 : 0)
+  const count = items.length + (closed.length > 0 ? 1 : 0) + (unprotected.length > 0 ? 1 : 0)
 
   if (count === 0) {
     return (
@@ -302,6 +312,17 @@ function NeedsYou({ data, closed }: { data: DevelopmentOverview; closed: string[
             </NeedsYouRow>
           )
         })}
+        {unprotected.length > 0 ? (
+          <NeedsYouRow
+            tone="danger"
+            title={t('attention.unprotectedSites', { count: unprotected.length })}
+            detail={unprotected.join(', ')}
+          >
+            <Button asChild size="sm">
+              <Link href="/access">{t('attention.review')}</Link>
+            </Button>
+          </NeedsYouRow>
+        ) : null}
         {closed.length > 0 ? (
           <NeedsYouRow
             tone="warn"
@@ -349,9 +370,6 @@ function QuickOpen() {
           {mayOpen.map((environment) => {
             const route = primaryRoute(environment)
             const owner = owners.get(environment.name)
-            const mode = route
-              ? exposure.data?.entries.find((item) => canonicalHost(item.host) === canonicalHost(route.host))?.mode
-              : undefined
             return (
               <li
                 key={environment.name}
@@ -384,7 +402,9 @@ function QuickOpen() {
                     <span className="truncate text-sm text-subtle">{t('quick.noAddress')}</span>
                   )}
                 </div>
-                {route && exposure.data?.enforced ? <HostAccess mode={mode ?? null} /> : null}
+                {route && exposure.data?.enforced ? (
+                  <HostAccess mode={hostAccess(environment, route.host, exposure.data)} />
+                ) : null}
               </li>
             )
           })}

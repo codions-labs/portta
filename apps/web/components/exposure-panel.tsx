@@ -7,6 +7,7 @@ import { hasForwardAuth } from 'portta-core/browser'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api/index.ts'
+import { canonicalHost } from '../lib/host-access.ts'
 import { useCan } from '../lib/permissions.ts'
 import { keys, useExposure } from '../lib/queries/index.ts'
 import { cn } from '../lib/utils.ts'
@@ -16,16 +17,6 @@ import { Badge } from './ui/badge.tsx'
 import { Button } from './ui/button.tsx'
 import { ConfirmDialog } from './ui/confirm-dialog.tsx'
 import { Segmented } from './ui/segmented.tsx'
-
-/** The same canonical form the server keys its registry by: lowercase, punycode, no trailing dot or default port. */
-export function canonicalHost(host: string): string {
-  try {
-    const parsed = new URL(`http://${host.trim()}`)
-    return `${parsed.hostname.replace(/\.$/, '')}${parsed.port ? `:${parsed.port}` : ''}`
-  } catch {
-    return host.trim().toLowerCase()
-  }
-}
 
 /** Deciding who may open one service's hostname, wherever the decision is offered. */
 export function useExposureDecision(container: ContainerSummary) {

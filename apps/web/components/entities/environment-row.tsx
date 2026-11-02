@@ -11,13 +11,13 @@ import type { Environment, ExposureView, RouteUrl } from 'portta-contracts'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CopyButton, Mono } from '@/components/copy'
-import { canonicalHost } from '@/components/exposure-panel'
 import { Badge, StatusDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '@/components/ui/menu'
 import { useToast } from '@/components/ui/toast'
 import { api } from '@/lib/api'
+import { type HostMode, hostAccess } from '@/lib/host-access'
 import { navigate } from '@/lib/navigation'
 import { useCan } from '@/lib/permissions'
 import { useFormat } from '@/lib/use-format'
@@ -33,13 +33,15 @@ export function primaryRoute(environment: Pick<Environment, 'name' | 'urls' | 'o
   )
 }
 
-/** Who may open a hostname on a public host: a credential, everybody, or nobody (no entry means closed). */
-export function HostAccess({ mode }: { mode: 'protected' | 'public' | null }) {
+/** Who may open a hostname on a public host: a credential, everybody, nobody, or everybody with nothing asking. */
+export function HostAccess({ mode }: { mode: HostMode }) {
   const { t } = useTranslation('overview', { keyPrefix: 'access' })
   return mode === 'protected' ? (
     <Badge tone="ok">{t('protected')}</Badge>
   ) : mode === 'public' ? (
     <Badge tone="info">{t('open')}</Badge>
+  ) : mode === 'unprotected' ? (
+    <Badge tone="danger">{t('unprotected')}</Badge>
   ) : (
     <Badge tone="warn">{t('closed')}</Badge>
   )
@@ -174,9 +176,6 @@ export function EnvironmentRow({
   const { uptime } = useFormat()
   const route = primaryRoute(environment)
   const remembered = environment.presence === 'remembered'
-  const mode = route
-    ? exposure?.entries.find((entry) => canonicalHost(entry.host) === canonicalHost(route.host))?.mode
-    : undefined
   const tone = environment.unhealthyCount > 0 ? 'danger' : environment.runningCount > 0 ? 'ok' : 'neutral'
 
   return (
@@ -211,7 +210,9 @@ export function EnvironmentRow({
           </span>
         )}
       </div>
-      <div className="w-20 shrink-0">{route && exposure?.enforced ? <HostAccess mode={mode ?? null} /> : null}</div>
+      <div className="w-20 shrink-0">
+        {route && exposure?.enforced ? <HostAccess mode={hostAccess(environment, route.host, exposure)} /> : null}
+      </div>
       {extraAction}
       <RowActions environment={environment} />
     </li>

@@ -82,6 +82,7 @@
       "protected": "With a password",
       "public": "Open to everybody",
       "closed": "Closed",
+      "unprotected": "Open, no login",
       "none": "No login"
     },
     "linkProtected": "With a password, expires {{time}}",
@@ -93,6 +94,7 @@
     "shownOnce": "It appears only now. Give it to whoever needs access.",
     "filters": {
       "all": "All {{count}}",
+      "unprotected": "No login, open {{count}}",
       "closed": "Closed {{count}}",
       "protected": "With a password {{count}}",
       "public": "Open to everybody {{count}}"

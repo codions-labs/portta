@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { makeEnvironment, makeOverview } from './fixtures.ts'
+import { makeContainer, makeEnvironment, makeOverview } from './fixtures.ts'
 import { renderWithQuery } from './render.tsx'
 
 class ApiError extends Error {
@@ -114,6 +114,20 @@ describe('who may open an environment on a public host', () => {
     arrange(true, [])
     renderWithQuery(<Overview />)
     expect(await screen.findByText('Closed')).toBeInTheDocument()
+  })
+
+  it('names a route without the gate instead of calling it closed', async () => {
+    arrange(true, [])
+    environments.mockResolvedValue([
+      makeEnvironment({
+        name: 'produto',
+        urls: [route],
+        services: [makeContainer({ id: 'open', service: 'web', urls: [route], labels: { 'traefik.enable': 'true' } })],
+      }),
+    ])
+    renderWithQuery(<Overview />)
+    expect((await screen.findAllByText('1 site answers everybody, with no login')).length).toBeGreaterThan(0)
+    expect(screen.queryByText('Closed')).not.toBeInTheDocument()
   })
 
   it('shows the address but no badge on a private host', async () => {

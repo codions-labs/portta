@@ -16,6 +16,9 @@
     "restart": "Reiniciar",
     "details": "Ver detalhes",
     "decide": "Decidir",
+    "review": "Revisar",
+    "unprotectedSites_one": "{{count}} site responde a qualquer pessoa, sem login",
+    "unprotectedSites_other": "{{count}} sites respondem a qualquer pessoa, sem login",
     "closedSites_one": "{{count}} site está fechado porque ninguém decidiu",
     "closedSites_other": "{{count}} sites estão fechados porque ninguém decidiu"
   },
@@ -34,7 +37,8 @@
   "access": {
     "protected": "Protegido",
     "open": "Aberto",
-    "closed": "Fechado"
+    "closed": "Fechado",
+    "unprotected": "Sem login"
   },
   "reduced": {
     "needsDatabase": "O painel de desenvolvimento precisa do banco de dados do painel",

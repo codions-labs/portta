@@ -9,17 +9,18 @@ import type { ContainerSummary, Environment } from 'portta-contracts'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CopyButton, Mono } from '@/components/copy'
-import { canonicalHost, ExposureChoice, useExposureDecision } from '@/components/exposure-panel'
+import { ExposureChoice, useExposureDecision } from '@/components/exposure-panel'
 import { Callout, Empty, ErrorBox, FilterChip, Loading, ToolbarSearch, ViewToolbar } from '@/components/shell-bits'
 import { ScopeBadge } from '@/components/status'
 import { Badge, StatusDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { canonicalHost, hostAccess } from '@/lib/host-access'
 import { useCan } from '@/lib/permissions'
 import { useEnvironments, useExposure, useShares } from '@/lib/queries'
 import { useFormat } from '@/lib/use-format'
 
-type Decision = 'protected' | 'public' | 'closed' | 'none'
+type Decision = 'protected' | 'public' | 'closed' | 'unprotected' | 'none'
 
 interface Site {
   environment: Environment
@@ -67,6 +68,8 @@ function SiteRow({ site, mayDecide, enforced }: { site: Site; mayDecide: boolean
         <div className="flex w-64 shrink-0 items-center">
           {!enforced ? (
             <Badge>{t('noLogin')}</Badge>
+          ) : site.decision === 'unprotected' ? (
+            <Badge tone="danger">{t('decision.unprotected')}</Badge>
           ) : site.hosts > 1 || !mayDecide ? (
             <Badge tone={site.decision === 'protected' ? 'ok' : site.decision === 'public' ? 'info' : 'warn'}>
               {t(`decision.${site.decision}`)}
@@ -150,7 +153,7 @@ export function SitesView() {
               url: route.url,
               scope: route.scope,
               hosts: hosts.size,
-              decision: !exposure.data?.enforced ? 'none' : (entry?.mode ?? 'closed'),
+              decision: !exposure.data?.enforced ? 'none' : hostAccess(environment, route.host, exposure.data),
               user: entry?.user ?? null,
             }
           }),
@@ -158,8 +161,9 @@ export function SitesView() {
       .sort((a, b) => a.host.localeCompare(b.host))
   }, [environments.data, exposure.data])
 
-  if (environments.isPending) return <Loading />
-  if (environments.error) return <ErrorBox error={environments.error} />
+  // Without the registry nothing here can be said about who may open what.
+  if (environments.isPending || exposure.isPending) return <Loading />
+  if (environments.error || exposure.error) return <ErrorBox error={environments.error ?? exposure.error} />
 
   const needle = search.trim().toLowerCase()
   const shown = sites.filter(
@@ -186,6 +190,12 @@ export function SitesView() {
         </FilterChip>
         {enforced ? (
           <>
+            {count('unprotected') > 0 ? (
+              <FilterChip active={filter === 'unprotected'} onClick={() => setFilter('unprotected')}>
+                <StatusDot tone="danger" label={t('decision.unprotected')} />
+                {t('filters.unprotected', { count: count('unprotected') })}
+              </FilterChip>
+            ) : null}
             <FilterChip active={filter === 'closed'} onClick={() => setFilter('closed')}>
               {count('closed') > 0 ? <StatusDot tone="warn" label={t('decision.closed')} /> : null}
               {t('filters.closed', { count: count('closed') })}

@@ -5,7 +5,7 @@
 
 import { ChevronRight, ScrollText, TerminalSquare } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import type { ContainerSummary, Service } from 'portta-contracts'
+import type { ContainerSummary, Environment, Service } from 'portta-contracts'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
@@ -14,12 +14,12 @@ import { ResourceUsage } from '@/components/entities/resource-usage'
 import { ServiceDetails, ServiceDrawer } from '@/components/entities/service-drawer'
 import type { ServiceSection } from '@/components/entities/service-row'
 import { EnvironmentLogs } from '@/components/environment-logs'
-import { canonicalHost } from '@/components/exposure-panel'
 import { ServiceIcon } from '@/components/service-icon'
 import { Empty, Loading } from '@/components/shell-bits'
 import { StatusDot } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { hostAccess } from '@/lib/host-access'
 import { useCan } from '@/lib/permissions'
 import { useEnvironment, useEnvironmentServices, useExposure } from '@/lib/queries'
 import { serviceRowsFor } from '@/lib/services'
@@ -50,6 +50,7 @@ function routeOf(url: string): { url: string; host: string } | undefined {
 }
 
 function ServiceLine({
+  environment,
   service,
   compact,
   selected,
@@ -57,6 +58,7 @@ function ServiceLine({
   onOpen,
   onLogs,
 }: {
+  environment: Pick<Environment, 'services'>
   service: Service
   /** Beside an open service there is only room for the name and the address. */
   compact: boolean
@@ -76,9 +78,6 @@ function ServiceLine({
   const primary = service.access.primary
   const http = service.access.kind === 'http'
   const route = primary && http ? routeOf(primary.url) : undefined
-  const mode = route
-    ? exposure.data?.entries.find((entry) => canonicalHost(entry.host) === canonicalHost(route.host))?.mode
-    : undefined
 
   return (
     <li
@@ -127,7 +126,9 @@ function ServiceLine({
             ) : null}
           </div>
           <div className="w-20 shrink-0">
-            {route && exposure.data?.enforced ? <HostAccess mode={mode ?? null} /> : null}
+            {route && exposure.data?.enforced ? (
+              <HostAccess mode={hostAccess(environment, route.host, exposure.data)} />
+            ) : null}
           </div>
           <div className="hidden w-36 shrink-0 text-xs text-subtle lg:block">
             {service.resources ? (
@@ -214,6 +215,7 @@ export function EnvironmentOverview({ name }: { name: string }) {
         {rows.map((row) => (
           <ServiceLine
             key={row.containerId}
+            environment={environment}
             service={row}
             compact={compact}
             selected={row.name === selectedName}

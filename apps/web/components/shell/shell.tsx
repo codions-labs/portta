@@ -24,7 +24,13 @@ import { Tooltip } from '@/components/ui/tooltip'
 import { type Locale, useLocale } from '@/lib/i18n/use-locale'
 import { useLive } from '@/lib/live'
 import { usePrincipal } from '@/lib/principal'
-import { useClosedHosts, useDevelopmentOverview, useMetricsCurrent, useStatus } from '@/lib/queries'
+import {
+  useClosedHosts,
+  useDevelopmentOverview,
+  useMetricsCurrent,
+  useStatus,
+  useUnprotectedHosts,
+} from '@/lib/queries'
 import { useShortcut } from '@/lib/shortcuts'
 import { type Theme, useThemeChoice } from '@/lib/theme'
 import { cn } from '@/lib/utils'
@@ -127,10 +133,12 @@ export function Shell({ children }: { children: ReactNode }) {
   const metrics = useMetricsCurrent()
   const overview = useDevelopmentOverview()
   const closedHosts = useClosedHosts()
+  const unprotectedHosts = useUnprotectedHosts()
 
   const active = activeHref(pathname)
   const gateway = status.data?.gateway
-  const attention = (overview.data?.attention.length ?? 0) + (closedHosts.length > 0 ? 1 : 0)
+  const attention =
+    (overview.data?.attention.length ?? 0) + (closedHosts.length > 0 ? 1 : 0) + (unprotectedHosts.length > 0 ? 1 : 0)
 
   const gatewayTitle = gateway?.up ? t('gatewayUp') : t('gatewayDown')
   const hostname = metrics.data?.host?.hostname ?? metrics.data?.instance.hostname ?? null

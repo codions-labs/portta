@@ -82,6 +82,7 @@
       "protected": "Com senha",
       "public": "Aberto a todos",
       "closed": "Fechado",
+      "unprotected": "Aberto, sem login",
       "none": "Sem login"
     },
     "linkProtected": "Com senha, expira {{time}}",
@@ -93,6 +94,7 @@
     "shownOnce": "Ela aparece só agora. Entregue a quem precisa de acesso.",
     "filters": {
       "all": "Todos {{count}}",
+      "unprotected": "Sem login {{count}}",
       "closed": "Fechados {{count}}",
       "protected": "Com senha {{count}}",
       "public": "Abertos a todos {{count}}"

@@ -19,7 +19,8 @@ vi.mock('@/lib/api/index', () => ({
   },
 }))
 
-const { ExposurePanel, canonicalHost } = await import('@/components/exposure-panel')
+const { ExposurePanel } = await import('@/components/exposure-panel')
+const { canonicalHost } = await import('@/lib/host-access')
 
 const container = makeContainer({
   id: 'c1',
