@@ -61,20 +61,23 @@ describe('containers that would route with no login gate', () => {
 })
 
 describe('a gateway that already answers the network', () => {
-  const traefik = (ip: string | null, state = 'running'): ContainerRecord => ({
+  const traefik = (ip: string | null, state = 'running', privatePort = 443): ContainerRecord => ({
     ...container('portta-traefik-1', { 'portta.managed': 'true', 'portta.component': 'traefik' }, state),
-    ports: [{ ip: ip ?? '', privatePort: 443, publicPort: ip ? 443 : null, type: 'tcp' }],
+    ports: [{ ip: ip ?? '', privatePort, publicPort: ip === null ? null : privatePort, type: 'tcp' }],
   })
 
-  it('is one that publishes on an address other than loopback', () => {
+  it('is one that publishes its HTTP or HTTPS port on every interface', () => {
     expect(gatewayAlreadyPublic([traefik('0.0.0.0')])).toBe(true)
-    expect(gatewayAlreadyPublic([traefik('203.0.113.10')])).toBe(true)
+    expect(gatewayAlreadyPublic([traefik('::', 'running', 80)])).toBe(true)
   })
 
-  it('is not one bound to loopback, stopped, or publishing nothing', () => {
+  it('is not one bound to loopback or to one address, stopped, publishing another port, or nothing', () => {
     expect(gatewayAlreadyPublic([traefik('127.0.0.1')])).toBe(false)
     expect(gatewayAlreadyPublic([traefik('::1')])).toBe(false)
+    expect(gatewayAlreadyPublic([traefik('100.64.0.7')])).toBe(false)
+    expect(gatewayAlreadyPublic([traefik('203.0.113.10')])).toBe(false)
     expect(gatewayAlreadyPublic([traefik('0.0.0.0', 'exited')])).toBe(false)
+    expect(gatewayAlreadyPublic([traefik('0.0.0.0', 'running', 8080)])).toBe(false)
     expect(gatewayAlreadyPublic([traefik(null)])).toBe(false)
     expect(gatewayAlreadyPublic([])).toBe(false)
   })

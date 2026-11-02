@@ -1,3 +1,4 @@
+import { isWildcardAddress } from './diagnostics.ts'
 import type { ContainerRecord } from './inventory.ts'
 
 const GATE = 'portta-forward-auth@file'
@@ -46,13 +47,13 @@ export function ungatedContainers(containers: ContainerRecord[]): string[] {
     .sort()
 }
 
-const LOOPBACK = new Set(['127.0.0.1', '::1', 'localhost'])
-
 /**
- * Whether this gateway's Traefik already answers on an address other than
- * loopback. Only then is a restart harmless to the services it routes: a
- * gateway bound to loopback, as the local profile is, would start answering the
- * network the moment the profile became public.
+ * Whether this gateway's Traefik already answers every interface on its HTTP or
+ * HTTPS port. Only then is a restart harmless to the services it routes. A
+ * gateway bound to loopback, as the local profile is, or to one specific
+ * address, such as a tailnet's, would answer the whole network the moment the
+ * profile became public, so those do not count: failing closed means asking
+ * for the fix rather than guessing the address is already public.
  */
 export function gatewayAlreadyPublic(containers: ContainerRecord[]): boolean {
   return containers.some(
@@ -60,6 +61,11 @@ export function gatewayAlreadyPublic(containers: ContainerRecord[]): boolean {
       container.state === 'running' &&
       container.labels['portta.managed'] === 'true' &&
       container.labels['portta.component'] === 'traefik' &&
-      container.ports.some((port) => port.publicPort !== null && !LOOPBACK.has(port.ip)),
+      container.ports.some(
+        (port) =>
+          port.publicPort !== null &&
+          (port.privatePort === 80 || port.privatePort === 443) &&
+          (port.ip === '' || isWildcardAddress(port.ip)),
+      ),
   )
 }
