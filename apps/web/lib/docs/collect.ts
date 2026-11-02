@@ -126,7 +126,7 @@ export function renderDocumentation(corpus: DocumentationCorpus): DocsBundle {
       }
       for (const child of token.children ?? []) {
         if (child.type === 'link_open') {
-          const link = rewriteLink(child.attrGet('href') ?? '', page.source, corpus)
+          const link = rewriteLink(String(child.attrGet('href') ?? ''), page.source, corpus)
           child.attrSet('href', link.href)
           if (link.external) {
             child.attrSet('rel', 'noreferrer')
@@ -134,7 +134,7 @@ export function renderDocumentation(corpus: DocumentationCorpus): DocsBundle {
           }
         }
         if (child.type === 'image') {
-          child.attrSet('src', imageUrl(child.attrGet('src') ?? '', page.source))
+          child.attrSet('src', imageUrl(String(child.attrGet('src') ?? ''), page.source))
           child.attrSet('loading', 'lazy')
         }
         if (child.type === 'html_inline') child.content = rewriteHtmlBlock(child.content, page.source, corpus)

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "bf4c1ba8-3bd5-4e2a-9240-64677b360f07",
+  "id": "669a8f60-2226-4463-8f8b-f4f615bc3f10",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "project_members": {
@@ -275,13 +275,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "issuer": {
-          "name": "issuer",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "account_id": {
           "name": "account_id",
           "type": "text",
@@ -369,14 +362,6 @@
             "user_id"
           ],
           "isUnique": false
-        },
-        "accounts_issuer_account_id_idx": {
-          "name": "accounts_issuer_account_id_idx",
-          "columns": [
-            "issuer",
-            "account_id"
-          ],
-          "isUnique": true
         }
       },
       "foreignKeys": {

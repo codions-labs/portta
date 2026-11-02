@@ -215,8 +215,8 @@ export function validateDocumentation(
     const { tokens } = parseDocumentation(markdown)
     for (const token of tokens) {
       for (const child of token.children ?? []) {
-        if (child.type === 'link_open') check(child.attrGet('href') ?? '', source, false)
-        if (child.type === 'image') check(child.attrGet('src') ?? '', source, true)
+        if (child.type === 'link_open') check(String(child.attrGet('href') ?? ''), source, false)
+        if (child.type === 'image') check(String(child.attrGet('src') ?? ''), source, true)
       }
       for (const html of [token, ...(token.children ?? [])].filter(
         (item) => item.type === 'html_block' || item.type === 'html_inline',

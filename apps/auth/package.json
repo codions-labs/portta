@@ -19,8 +19,8 @@
     "build:ui": "vite build"
   },
   "dependencies": {
-    "@hono/node-server": "2.1.1",
-    "hono": "4.13.5",
+    "@hono/node-server": "2.1.6",
+    "hono": "4.13.16",
     "portta-core": "0.1.0"
   },
   "devDependencies": {
@@ -33,7 +33,7 @@
     "@vitejs/plugin-react": "6.1.1",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
-    "concurrently": "9.2.1",
+    "concurrently": "9.2.5",
     "i18next": "^26.4.1",
     "lucide-react": "1.38.0",
     "react": "19.2.8",
@@ -42,7 +42,7 @@
     "tailwind-merge": "3.6.0",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
-    "vite": "8.2.2",
-    "vitest": "4.1.11"
+    "vite": "8.3.5",
+    "vitest": "4.1.12"
   }
 }

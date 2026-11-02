@@ -89,15 +89,6 @@ export const accounts = sqliteTable(
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    /**
-     * Who vouches for this identity.
-     *
-     * Better Auth 1.7 scopes an account by issuer as well as by id, so two
-     * providers can name the same account without colliding. Portta configures
-     * one provider and nothing else, but the column is required and the library
-     * queries it: leaving it out makes every sign-in fail at the adapter.
-     */
-    issuer: text('issuer').notNull(),
     accountId: text('account_id').notNull(),
     /** `credential` for a password. No social provider is configured. */
     providerId: text('provider_id').notNull(),
@@ -112,10 +103,7 @@ export const accounts = sqliteTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (table) => [
-    index('accounts_user_idx').on(table.userId),
-    uniqueIndex('accounts_issuer_account_id_idx').on(table.issuer, table.accountId),
-  ],
+  (table) => [index('accounts_user_idx').on(table.userId)],
 )
 
 export const verifications = sqliteTable('verifications', {

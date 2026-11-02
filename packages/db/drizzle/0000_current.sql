@@ -35,7 +35,6 @@ CREATE INDEX `audit_log_project_at_idx` ON `audit_log` (`project_id`,`at`);--> s
 CREATE TABLE `accounts` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
-	`issuer` text NOT NULL,
 	`account_id` text NOT NULL,
 	`provider_id` text NOT NULL,
 	`access_token` text,
@@ -51,7 +50,6 @@ CREATE TABLE `accounts` (
 );
 --> statement-breakpoint
 CREATE INDEX `accounts_user_idx` ON `accounts` (`user_id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `accounts_issuer_account_id_idx` ON `accounts` (`issuer`,`account_id`);--> statement-breakpoint
 CREATE TABLE `api_keys` (
 	`id` text PRIMARY KEY NOT NULL,
 	`config_id` text DEFAULT 'default' NOT NULL,
