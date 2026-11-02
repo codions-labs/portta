@@ -34,14 +34,14 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
-    "drizzle-orm": "0.45.2",
+    "drizzle-orm": "0.45.4",
     "nanoid": "5.1.16",
     "portta-core": "0.1.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "24.13.3",
-    "drizzle-kit": "0.31.10",
+    "drizzle-kit": "0.31.11",
     "typescript": "7.0.2",
     "vitest": "4.1.12"
   }
