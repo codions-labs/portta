@@ -88,7 +88,7 @@ done
 | Directory | Expected `scope` | The text says |
 |---|---|---|
 | `lib` | `out-of-scope` | no web service, no action needed, publish no ports |
-| `shop` | `needs-adoption` | a Compose file with no Runtime Plan, run `portta adopt --dry-run --json` |
+| `shop` | `needs-adoption` | a Compose file with no Runtime Plan, run `portta adopt <discovered-project-root> --dry-run --json` |
 | `blog` | `needs-dockerizing` | looks like a web service, follow `portta-dockerize`, ask before writing |
 | `shop-adopted` | `compliant` | the URLs, `portta runtime up` |
 | `shop-feature` | `needs-adoption` | and a line about `portta envs namespace` |

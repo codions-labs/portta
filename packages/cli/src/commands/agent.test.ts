@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -122,12 +123,35 @@ describe('portta agent context: the scope decides, and the first matching row wi
   })
 
   it('needs-adoption: a Compose file with no plan lists the ports it would publish', async () => {
-    const found = await context(project('shop', { 'compose.yaml': COMPOSE }))
+    const directory = project('shop', { 'compose.yaml': COMPOSE })
+    const found = await context(directory)
     expect(found.project.scope).toBe('needs-adoption')
     expect(found.project.compose).toBe('compose.yaml')
     expect(found.project.publishedPorts).toEqual(['0.0.0.0:18000->8000/tcp'])
     expect(found.skills).toEqual(['portta-adopt-compose'])
-    expect(found.next).toMatch(/portta adopt --dry-run --json/)
+    expect(found.next).toContain(`portta adopt ${directory} --dry-run --json`)
+  })
+
+  it('adoption and repair commands resolve the Compose root from nested paths and quote shell characters', async () => {
+    const directory = project("shop's $(false) space", { 'compose.yaml': COMPOSE, 'src/app/.keep': '' })
+    const nested = join(directory, 'src/app')
+    for (const repair of [false, true]) {
+      if (repair) {
+        adopt(directory)
+        writeFileSync(join(directory, 'compose.yaml'), `${COMPOSE}  cache:\n    image: redis\n`)
+      }
+      const found = await context(nested)
+      expect(found.project.scope).toBe(repair ? 'non-compliant' : 'needs-adoption')
+      const next = found.next.match(/Run (portta adopt .* --dry-run --json) and/)?.[1]
+      const hook = renderHook(found).match(/Run `(portta adopt .* --dry-run --json)` and/)?.[1]
+      expect(next).toBeDefined()
+      expect(hook).toBe(next)
+      // Capture the shell's actual argv without invoking Portta or Docker.
+      const args = execFileSync('/bin/sh', ['-c', `portta() { printf '%s\\n' "$@"; }\n${next}`], {
+        encoding: 'utf8',
+      })
+      expect(args.trimEnd().split('\n')).toEqual(['adopt', directory, '--dry-run', '--json'])
+    }
   })
 
   it('needs-dockerizing: a Dockerfile, or a dev script, and no Compose file', async () => {
