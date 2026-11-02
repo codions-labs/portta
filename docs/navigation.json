@@ -586,6 +586,11 @@
           "description": "Why Portta routes and protects projects and leaves the AI work to agents."
         },
         {
+          "source": "docs/development/adr/0056-the-collector-reads-where-the-code-stands.md",
+          "slug": "adr/0056-the-collector-reads-where-the-code-stands",
+          "description": "Why the host collector reads where a project's code stands, and only reads."
+        },
+        {
           "source": "docs/development/adr/README.md",
           "slug": "adr",
           "description": "Architecture decision records."

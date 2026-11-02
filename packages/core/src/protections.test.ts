@@ -95,4 +95,15 @@ describe('protection store', () => {
       'invalid mode',
     )
   })
+
+  it('keeps a protected host with no username, and still refuses one with no hash', () => {
+    const { user: _user, ...passwordOnly } = record
+    const parsed = parseProtectionStore(JSON.stringify({ version: 1, protections: [{ ...passwordOnly, epoch: 1 }] }))
+    expect(parsed.protections[0]).not.toHaveProperty('user')
+    expect(parsed.protections[0]?.hash).toBeTruthy()
+    const { hash: _hash, ...noHash } = passwordOnly
+    expect(() => parseProtectionStore(JSON.stringify({ version: 1, protections: [{ ...noHash, epoch: 1 }] }))).toThrow(
+      'invalid hash',
+    )
+  })
 })

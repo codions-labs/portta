@@ -1,7 +1,7 @@
 {
   "title": "Projetos",
-  "catalogDescription": "Um Project é o produto. Um Environment é um stack Compose rodando para ele neste host.",
-  "newProject": "Novo projeto",
+  "catalogDescription": "Cada projeto com seus ambientes, o endereço principal e o que dá para fazer com eles.",
+  "newProject": "Adicionar projeto",
   "needsDatabase": "Projetos precisam do banco de dados do painel",
   "needsDatabaseHint": "São decisões, não observações, por isso são persistidos. Inicie o PostgreSQL e o catálogo volta; os ambientes continuam listando sem ele.",
   "catalogEmpty": "Nenhum projeto ainda",
@@ -15,12 +15,12 @@
     "slugHint": "Também o que a label portta.project de um ambiente deve dizer para ser adotado automaticamente.",
     "descriptionLabel": "Descrição"
   },
-  "searchPlaceholder": "Buscar projeto, ambiente, serviço, imagem",
+  "searchPlaceholder": "Buscar projeto ou ambiente",
   "searchAria": "Buscar projetos",
   "archived": "arquivado",
   "running": "{{running}}/{{total}} em execução",
   "detail": {
-    "unhealthyCount": "{{count}} unhealthy",
+    "unhealthyCount": "{{count}} com problema",
     "sourceReason": {
       "label": "declarado pela label portta.project",
       "manual": "vinculado manualmente",
@@ -34,20 +34,37 @@
     "adopt": "Adotar um environment",
     "adoptButton": "Adotar"
   },
-  "environmentsLink": "Ambientes neste host ({{count}})",
   "tabs": {
     "label": "Seções de {{name}}",
     "overview": "Visão geral",
-    "environments": "Environments ({{count}})",
+    "environments": "Ambientes ({{count}})",
     "settings": "Configurações"
   },
   "pulse": {
-    "unhealthy": "{{count}} unhealthy"
+    "unhealthy": "{{count}} com problema"
   },
   "overview": {
     "resources": "Recursos",
     "noMeasurement": "Nenhum environment deste projeto está sendo medido agora.",
-    "manageEnvironments": "Gerenciar"
+    "manageEnvironments": "Gerenciar",
+    "cpu": "CPU",
+    "memory": "Memória",
+    "services": "Serviços",
+    "uptime": "Ativo há",
+    "ofLimit": "de {{limit}}",
+    "ofServices": "de {{total}} no ar",
+    "byService": "Uso por serviço",
+    "service": "Serviço",
+    "period": "Período",
+    "window": {
+      "15m": "15 min",
+      "30m": "30 min",
+      "1h": "1 h"
+    },
+    "gpu": "Memória de GPU",
+    "ofGpu": "de {{total}}",
+    "disk": "Disco",
+    "diskHint": "volumes e contêineres"
   },
   "settings": {
     "title": "Projeto",
@@ -56,7 +73,7 @@
     "relativePathHint": "Um diretório de PORTTA_PROJECTS_HOME, em qualquer profundidade. Arquivos nunca são movidos.",
     "archived": "Arquivado",
     "deleteTitle": "Excluir este projeto",
-    "deleteDescription": "Remove o registro e o que o Portta guarda sobre ele. Nada muda no host.",
+    "deleteDescription": "Remove o registro e o que o Portta guarda sobre ele. Nada muda no servidor.",
     "deleteRemoves": "Removido: o projeto e suas adoções.",
     "deleteKeeps": "Mantido: todo container, volume, rede e diretório de trabalho. Os ambientes voltam a não atribuídos.",
     "typeSlug": "Digite {{slug}} para confirmar",
@@ -122,7 +139,7 @@
       "restartTitle_other": "Reiniciar {{count}} projetos?",
       "restartImpact": "Isso reinicia {{count}} contêineres; cada um fica brevemente inacessível.",
       "archiveTitle": "Arquivar {{count}} projetos?",
-      "archiveImpact": "Eles saem da lista padrão. Nada no host muda, e podem ser desarquivados a qualquer momento."
+      "archiveImpact": "Eles saem da lista padrão. Nada no servidor muda, e podem ser desarquivados a qualquer momento."
     }
   },
   "views": {
@@ -152,8 +169,88 @@
   "filters": {
     "state": "Estado",
     "anyState": "Qualquer estado",
-    "showArchived": "Mostrar arquivados"
+    "showArchived": "Mostrar arquivados",
+    "all": "Todos",
+    "problem": "Com problema {{count}}",
+    "idle": "Parados {{count}}",
+    "archived": "Arquivados {{count}}",
+    "allTags": "Todas"
   },
   "noMatch": "Nenhum projeto corresponde a estes filtros",
-  "noMatchHint": "Amplie a busca ou limpe o filtro de estado."
+  "noMatchHint": "Amplie a busca ou limpe o filtro de estado.",
+  "list": {
+    "openProject": "Abrir projeto",
+    "restartAll": "Reiniciar tudo",
+    "more": "Mais",
+    "openSite": "Abrir site",
+    "unowned": "Sem projeto",
+    "unownedHint": "Roda neste servidor e nenhum projeto adotou",
+    "adoptInto": "Adotar em"
+  },
+  "row": {
+    "services": "{{running}}/{{total}} serviços",
+    "remembered": "Lembrado, sem contêineres",
+    "noAddress": "Sem endereço HTTP",
+    "problem": "Com problema",
+    "state": "Estado",
+    "seeProblem": "Ver problema",
+    "howToStart": "Como iniciar",
+    "open": "Abrir ambiente",
+    "logs": "Ver logs",
+    "menuFor": "Mais ações de {{name}}",
+    "stopTitle": "Parar {{name}}?",
+    "stopImpact_one": "Isso interrompe {{count}} serviço.",
+    "stopImpact_other": "Isso interrompe {{count}} serviços."
+  },
+  "add": {
+    "title": "Adicionar",
+    "crumb": "Projetos",
+    "heading": "Como você quer começar?",
+    "description": "O Portta lê o seu Compose e cria o resto ao lado dele. Nada no seu repositório é alterado.",
+    "copy": "Copiar comando",
+    "folder": {
+      "title": "De uma pasta deste servidor",
+      "description": "O painel não abre as pastas dos seus projetos: o Compose é lido pelo terminal, com o mesmo plano que você revisa aqui depois.",
+      "label": "Caminho da pasta",
+      "analyze": "Veja o que será feito, sem alterar nada:",
+      "adopt": "Depois adote:"
+    },
+    "running": {
+      "title": "Já está rodando",
+      "description": "Adote um ambiente que o Docker já roda neste servidor.",
+      "none": "Nenhum ambiente sem projeto.",
+      "services_one": "{{count}} serviço, sem projeto",
+      "services_other": "{{count}} serviços, sem projeto",
+      "adopt_one": "Adotar {{count}}",
+      "adopt_other": "Adotar {{count}}"
+    },
+    "empty": {
+      "title": "Só registrar o nome",
+      "description": "Crie o projeto agora e ligue os ambientes depois, por etiqueta ou caminho.",
+      "create": "Criar projeto vazio"
+    },
+    "terminal": {
+      "title": "Pelo terminal",
+      "hint": "O projeto aparece aqui assim que subir."
+    },
+    "agent": {
+      "title": "Ainda não tem Compose?",
+      "description": "Peça a um agente com a habilidade portta-dockerize. Instale com:"
+    }
+  },
+  "tagsAria": "Tags",
+  "group": {
+    "by": "Agrupar por",
+    "none": "Nada",
+    "state": "Estado",
+    "without": "Sem {{key}}"
+  },
+  "tags": {
+    "add": "Adicionar tag",
+    "addShort": "tag",
+    "new": "Nova tag",
+    "placeholder": "Nova tag, como cliente: Acme",
+    "remove": "Remover a tag {{tag}}",
+    "failed": "Não foi possível salvar as tags"
+  }
 }

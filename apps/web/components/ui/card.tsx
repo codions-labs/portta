@@ -2,11 +2,16 @@ import type { HTMLAttributes, ReactNode } from 'react'
 import { cn } from '../../lib/utils.ts'
 
 /**
- * A bounded surface. A hairline and nothing else: the card is the same colour
- * as the page it sits on, and its edge is what separates the two.
+ * A bounded surface: white on the slate canvas, a hairline around it and a
+ * shadow you only just see.
  */
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('overflow-hidden rounded-lg border border-line bg-surface', className)} {...props} />
+  return (
+    <div
+      className={cn('overflow-hidden rounded-xl border border-line bg-surface shadow-raised', className)}
+      {...props}
+    />
+  )
 }
 
 export function CardHeader({
@@ -26,15 +31,15 @@ export function CardHeader({
   className?: string
 }) {
   return (
-    <div className={cn('flex min-h-9 items-center justify-between gap-3 border-b border-line px-3 py-1.5', className)}>
+    <div className={cn('flex min-h-12 items-center justify-between gap-3 border-b border-line px-5 py-2.5', className)}>
       <div className="flex min-w-0 items-center gap-2">
         {icon ? <span className="shrink-0 text-subtle [&_svg]:size-4">{icon}</span> : null}
         <div className="min-w-0">
-          <h2 className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium text-ink">
+          <h2 className="flex min-w-0 flex-wrap items-center gap-2 text-lg font-semibold text-ink">
             {title}
             {meta}
           </h2>
-          {description ? <p className="text-xs text-subtle">{description}</p> : null}
+          {description ? <p className="text-sm text-subtle">{description}</p> : null}
         </div>
       </div>
       {actions ? <div className="flex shrink-0 items-center gap-1">{actions}</div> : null}
@@ -43,7 +48,7 @@ export function CardHeader({
 }
 
 export function CardBody({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('px-3 py-2.5', className)} {...props} />
+  return <div className={cn('px-5 py-4', className)} {...props} />
 }
 
 /**
@@ -68,7 +73,7 @@ export function CardSection({
 }) {
   return (
     <div className={className}>
-      <div className="flex h-8 items-center gap-2 border-t border-line bg-surface-2/60 px-3 text-xs font-medium text-muted first:border-t-0">
+      <div className="flex h-9 items-center gap-2 border-t border-line bg-surface-2/60 px-5 text-xs font-medium text-muted first:border-t-0">
         {icon ? <span className="shrink-0 text-subtle [&_svg]:size-3.5">{icon}</span> : null}
         <span className="min-w-0 truncate">{label}</span>
         {count !== undefined && count !== null ? <span className="text-subtle tabular-nums">{count}</span> : null}

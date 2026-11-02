@@ -14,6 +14,7 @@ export function SettingsGroup({
   onChange,
   title,
   after,
+  footer,
 }: {
   name: string
   fields: ConfigFieldView[]
@@ -21,6 +22,7 @@ export function SettingsGroup({
   onChange: (key: string, value: string | null) => void
   title?: string
   after?: ReactNode
+  footer?: ReactNode
 }) {
   const { t } = useTranslation('settings')
 
@@ -38,6 +40,7 @@ export function SettingsGroup({
         ))}
         {after}
       </CardBody>
+      {footer}
     </Card>
   )
 }

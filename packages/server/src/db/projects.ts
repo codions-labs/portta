@@ -4,7 +4,7 @@
 import { asc, eq, inArray } from 'drizzle-orm'
 import { parseRelativeProjectPath } from 'portta-core'
 import { z } from 'portta-core/zod'
-import { type Db, environments, projectEnvironments, projects } from 'portta-db'
+import { type Db, environments, projectEnvironments, projects, projectTags } from 'portta-db'
 
 export interface ProjectRecord {
   id: string
@@ -16,6 +16,11 @@ export interface ProjectRecord {
   relativePath: string | null
   createdAt: Date
   updatedAt: Date
+}
+
+export interface ProjectTagRow {
+  key: string
+  value: string
 }
 
 export interface ProjectEnvironmentRow {
@@ -60,6 +65,23 @@ const UpdateProject = z
     relativePath: RelativePath.nullable().optional(),
   })
   .strict()
+
+/** `cliente: Acme` or `loja`. Keys are lowercase words; values keep the case somebody typed. */
+const Tag = z
+  .object({
+    key: z
+      .string()
+      .max(32)
+      .transform((key) => key.trim().toLowerCase())
+      .refine((key) => !key.includes(':'), 'a key cannot contain a colon'),
+    value: z
+      .string()
+      .transform((value) => value.trim())
+      .pipe(z.string().min(1).max(64)),
+  })
+  .strict()
+
+const MAX_TAGS = 16
 
 type Row = typeof projects.$inferSelect
 
@@ -168,5 +190,29 @@ export class ProjectsRepository {
           .run()
       }
     })
+  }
+
+  /** Every Project's tags, by project id, in the order they were written. */
+  async listTags(): Promise<Map<string, ProjectTagRow[]>> {
+    const rows = await this.db.select().from(projectTags).orderBy(asc(projectTags.id))
+    const byProject = new Map<string, ProjectTagRow[]>()
+    for (const row of rows) {
+      const list = byProject.get(String(row.projectId)) ?? []
+      list.push({ key: row.key, value: row.value })
+      byProject.set(String(row.projectId), list)
+    }
+    return byProject
+  }
+
+  /** Replace this Project's tags. The same tag twice is one, and what is kept is what was sent. */
+  async setTags(projectId: string, tags: unknown): Promise<ProjectTagRow[]> {
+    const parsed = z.array(Tag).max(MAX_TAGS).parse(tags)
+    const unique = [...new Map(parsed.map((tag) => [`${tag.key}\u0000${tag.value}`, tag])).values()]
+    const id = Number(projectId)
+    this.db.transaction((tx) => {
+      tx.delete(projectTags).where(eq(projectTags.projectId, id)).run()
+      for (const tag of unique) tx.insert(projectTags).values({ projectId: id, key: tag.key, value: tag.value }).run()
+    })
+    return unique
   }
 }

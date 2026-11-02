@@ -457,7 +457,7 @@ export function ApiReference() {
       <p className="mt-2 max-w-2xl text-sm text-muted">{spec.info.description}</p>
       <p className="mt-1 text-xs text-subtle">
         Version {spec.info.version} · generated from this panel ·{' '}
-        <a className="underline hover:text-accent" href="/api/openapi.json">
+        <a className="underline hover:text-link" href="/api/openapi.json">
           the raw document
         </a>
       </p>

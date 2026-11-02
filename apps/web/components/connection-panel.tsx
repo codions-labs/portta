@@ -9,7 +9,7 @@ import { CopyButton, Mono } from './copy.tsx'
 import { ScopeBadge } from './status.tsx'
 import { Button } from './ui/button.tsx'
 
-function MaskedSecret({
+export function MaskedSecret({
   value,
   revealLabel,
   hideLabel,

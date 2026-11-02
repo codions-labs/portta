@@ -1,33 +1,44 @@
 {
-  "title": "Visão geral",
+  "title": "Início",
   "reading": "Lendo o que está acontecendo",
   "gatewayRunning": "Gateway em execução",
   "gatewayDown": "Gateway inativo",
   "attention": {
-    "title": "Precisa de atenção",
-    "none": "Nada precisa de atenção.",
+    "title": "Precisa de você",
+    "none": "Nada precisa de você.",
     "count": "{{count}} para agir",
     "count_one": "{{count}} para agir",
     "count_other": "{{count}} para agir",
-    "hostPressure": "Host sob pressão: {{reasons}}",
-    "serviceUnhealthy": "{{environment}}/{{service}} não está saudável"
+    "hostPressure": "Servidor sob pressão: {{reasons}}",
+    "serviceUnhealthy": "{{environment}}/{{service}} não está saudável",
+    "unhealthyDetail": "A verificação de saúde está falhando",
+    "logs": "Ver logs",
+    "restart": "Reiniciar",
+    "details": "Ver detalhes",
+    "decide": "Decidir",
+    "review": "Revisar",
+    "unprotectedSites_one": "{{count}} site responde a qualquer pessoa, sem login",
+    "unprotectedSites_other": "{{count}} sites respondem a qualquer pessoa, sem login",
+    "closedSites_one": "{{count}} site está fechado porque ninguém decidiu",
+    "closedSites_other": "{{count}} sites estão fechados porque ninguém decidiu"
   },
   "projects": {
     "title": "Projetos",
     "all": "Todos os projetos",
     "empty": "Nenhum projeto ainda",
-    "emptyHint": "Crie um em Projetos; os environments deste host continuam listados de qualquer forma."
+    "emptyHint": "Crie um em Projetos; os environments deste servidor continuam listados de qualquer forma."
   },
   "resources": {
-    "top": "Usando este host",
-    "topDescription": "Environments por memória. Pare um daqui quando o host estiver sob pressão.",
+    "top": "Usando este servidor",
+    "topDescription": "Environments por memória. Pare um daqui quando o servidor estiver sob pressão.",
     "none": "Nada medido",
     "environments": "Ambientes"
   },
   "access": {
     "protected": "Protegido",
     "open": "Aberto",
-    "closed": "Fechado"
+    "closed": "Fechado",
+    "unprotected": "Sem login"
   },
   "reduced": {
     "needsDatabase": "O painel de desenvolvimento precisa do banco de dados do painel",
@@ -35,7 +46,7 @@
     "hint": "O status do próprio gateway e seus problemas continuam aqui."
   },
   "host": {
-    "title": "Este host",
+    "title": "Este servidor",
     "kind": {
       "notebook": "Notebook",
       "desktop": "Desktop",
@@ -61,7 +72,7 @@
     "stale": "coletado há {{age}}s",
     "collectorInactive": "Collector inativo",
     "unavailable": "Não disponível",
-    "unavailableHint": "O collector do host não está gravando snapshots. Suba o gateway com portta up.",
+    "unavailableHint": "O collector do servidor não está gravando snapshots. Suba o gateway com portta up.",
     "runtime": {
       "label": "Ambiente",
       "orbstack": "OrbStack",
@@ -69,9 +80,9 @@
       "docker-engine": "Docker Engine",
       "unknown": "Desconhecido"
     },
-    "summary": "Host",
-    "showDetails": "Mostrar detalhes do host",
-    "hideDetails": "Ocultar detalhes do host",
+    "summary": "Servidor",
+    "showDetails": "Mostrar detalhes do servidor",
+    "hideDetails": "Ocultar detalhes do servidor",
     "temperature": "Temp",
     "battery": "Bateria",
     "loadLabel": "Carga",
@@ -95,15 +106,15 @@
     "open": "Abrir"
   },
   "pressure": {
-    "label": "Host",
+    "label": "Servidor",
     "normal": "Normal",
     "watch": "Atenção",
     "pressured": "Sob pressão",
     "critical": "Crítico",
     "unmeasured": "Não medido",
     "because": "Porque: {{reasons}}",
-    "normalHint": "Todos os recursos que este host reporta estão em faixa confortável.",
-    "unmeasuredHint": "Sem snapshot recente, então o estado do host é desconhecido.",
+    "normalHint": "Todos os recursos que este servidor reporta estão em faixa confortável.",
+    "unmeasuredHint": "Sem snapshot recente, então o estado do servidor é desconhecido.",
     "reason": {
       "cpu": "CPU em {{value}}",
       "memory": "RAM em {{value}}",
@@ -117,5 +128,104 @@
   },
   "gateway": {
     "label": "Gateway"
+  },
+  "addProject": "Adicionar projeto",
+  "summary": {
+    "running_one": "{{count}} ambiente no ar neste servidor.",
+    "running_other": "{{count}} ambientes no ar neste servidor.",
+    "needsYou_one": "{{count}} coisa precisa de você.",
+    "needsYou_other": "{{count}} coisas precisam de você.",
+    "allGood": "Nada precisa de você."
+  },
+  "metric": {
+    "label": "Resumo deste servidor",
+    "environments": "Ambientes",
+    "ofRunning": "de {{total}} no ar",
+    "services": "Serviços",
+    "ofHealthy": "de {{total}} saudáveis",
+    "sites": "Sites",
+    "live": "no ar",
+    "undecided_one": "{{count}} sem decisão",
+    "undecided_other": "{{count}} sem decisão",
+    "hostUse": "Uso do servidor",
+    "cpu": "CPU",
+    "memory": "Memória",
+    "disk": "Disco"
+  },
+  "quick": {
+    "title": "Abrir rápido",
+    "empty": "Nada rodando ainda",
+    "noProject": "Sem projeto",
+    "noAddress": "Sem endereço",
+    "open": "Abrir em nova aba",
+    "problem": "Com problema",
+    "healthy": "Saudável"
+  },
+  "open": {
+    "title": "Abertos agora",
+    "all": "Ver tudo",
+    "none": "Nenhuma ponte ou link temporário aberto.",
+    "bridge": "Ponte local",
+    "noExpiry": "Sem prazo",
+    "expiresAt": "Expira sozinha",
+    "close": "Fechar",
+    "protectedLink": "Link temporário com senha",
+    "publicLink": "Link temporário público",
+    "expiresIn": "Expira em {{time}}",
+    "revoke": "Revogar"
+  },
+  "firstUse": {
+    "title": "Seu servidor está pronto",
+    "titleDown": "O gateway não está no ar",
+    "description": "O gateway está no ar e nenhuma porta dos seus projetos será publicada. Falta trazer o primeiro projeto.",
+    "descriptionDown": "Sem ele nenhum site responde. Rode portta up neste servidor e volte aqui.",
+    "start": "Por onde começar",
+    "options": {
+      "compose": {
+        "title": "Tenho um projeto com Compose",
+        "help": "Dê um nome ao projeto e adote a pasta dele. Você revisa o plano antes de subir."
+      },
+      "running": {
+        "title": "Já tenho contêineres rodando",
+        "help_one": "{{count}} ambiente do Docker ainda não pertence a nenhum projeto.",
+        "help_other": "{{count}} ambientes do Docker ainda não pertencem a nenhum projeto."
+      },
+      "agent": {
+        "title": "Quero que um agente prepare tudo",
+        "help": "Instale com o comando em Preparar este servidor. O agente coloca o projeto em Docker e o adota aqui."
+      }
+    },
+    "dismiss": "Ver o painel mesmo assim",
+    "steps": {
+      "title": "Preparar este servidor",
+      "progress": "{{done}} de {{total}}",
+      "done": "Concluído",
+      "pending": "Pendente",
+      "gateway": {
+        "title": "Gateway no ar",
+        "up": "Respondendo neste servidor.",
+        "down": "Não está respondendo."
+      },
+      "domain": {
+        "title": "Domínio e certificado",
+        "local": "localhost, só nesta máquina. Não precisa de certificado.",
+        "secured": "{{domain}} com certificado.",
+        "plain": "{{domain}} ainda sem certificado. Ative em Configurações."
+      },
+      "project": {
+        "title": "Adicionar o primeiro projeto",
+        "detail": "Escolha por onde começar."
+      },
+      "account": {
+        "title": "Proteger sua conta",
+        "detail": "Ative a verificação em duas etapas em Configurações.",
+        "done": "Verificação em duas etapas ativa."
+      },
+      "agents": {
+        "title": "Ensinar seus agentes",
+        "detail": "Claude Code, Codex, OpenCode e Pi passam a conhecer este servidor.",
+        "copy": "Copiar comando"
+      }
+    }
   }
 }

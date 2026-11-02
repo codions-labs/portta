@@ -1,6 +1,7 @@
 import { type Context, Hono } from 'hono'
 import { authorizeScope, principalOf } from 'portta-auth-core/hono'
 import { ExposureResult, ExposureView } from 'portta-contracts'
+import { openCatchAllContainers } from 'portta-core'
 import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { adoptions, projectOfEnvironment, visible } from '../../services/access-control.ts'
@@ -16,7 +17,9 @@ const protectBody = z
       .min(1)
       .max(64)
       .regex(/^[A-Za-z0-9._-]+$/)
-      .optional(),
+      .nullable()
+      .optional()
+      .describe('A login name to ask for beside the password. null asks for the password alone.'),
   })
   .strict()
 
@@ -43,8 +46,18 @@ export function exposureRoutes(deps: AppDeps): Hono {
       // Scoped like the shares list: a record names its project, and a record
       // with none is for somebody who sees everything.
       const owners = await adoptions(deps.db)
+      const enforced = deps.config.profile === 'remote-public'
+      const open = enforced ? openCatchAllContainers((await deps.cache.get()).containers) : []
       return c.json({
-        enforced: deps.config.profile === 'remote-public',
+        enforced,
+        // Everybody learns that addresses cannot be trusted; only who sees a
+        // project learns the name of what is running in it.
+        openRouters: {
+          count: open.length,
+          names: visible(principalOf(c), open, (container) =>
+            container.environment ? (owners.get(container.environment) ?? null) : null,
+          ).map((container) => container.name),
+        },
         entries: visible(principalOf(c), listExposure(deps.config), (entry) =>
           entry.project ? (owners.get(entry.project) ?? null) : null,
         ),

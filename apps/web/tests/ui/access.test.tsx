@@ -110,7 +110,7 @@ beforeEach(() => {
 describe('the Access page', () => {
   it('opens a bridge for a service that has none', async () => {
     renderWithQuery(<Access />)
-    const buttons = await screen.findAllByRole('button', { name: /Open local access/ })
+    const buttons = await screen.findAllByRole('button', { name: /Connect to/ })
     await userEvent.click(buttons[0] as HTMLElement)
     await waitFor(() => expect(openBridge).toHaveBeenCalledWith({ project: 'alpha', service: 'postgres' }))
   })
@@ -118,7 +118,7 @@ describe('the Access page', () => {
   it('closes an open bridge', async () => {
     renderWithQuery(<Access />)
     await screen.findByText('127.0.0.1:55431')
-    await userEvent.click(screen.getByRole('button', { name: 'Close' }))
+    await userEvent.click(screen.getByRole('button', { name: /^Close/ }))
     await waitFor(() => expect(closeBridge).toHaveBeenCalledWith('ab12cd'))
   })
 
@@ -129,7 +129,7 @@ describe('the Access page', () => {
       }),
     )
     renderWithQuery(<Access />)
-    const buttons = await screen.findAllByRole('button', { name: /Open local access/ })
+    const buttons = await screen.findAllByRole('button', { name: /Connect to/ })
     await userEvent.click(buttons[0] as HTMLElement)
 
     expect(await screen.findByText('the bridge image is not on this host')).toBeInTheDocument()
@@ -143,7 +143,7 @@ describe('the Access page', () => {
       services: [{ ...view.services[0]!, state: 'exited' as const }],
     })
     renderWithQuery(<Access />)
-    const button = await screen.findByRole('button', { name: /Open local access/ })
+    const button = await screen.findByRole('button', { name: /Connect to/ })
     expect(button).toBeDisabled()
   })
 })

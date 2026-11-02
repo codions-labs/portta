@@ -1,6 +1,6 @@
 {
   "title": "Access",
-  "description": "Databases, caches and other TCP services: by hostname where the protocol allows it, and by a bridge opened on demand everywhere else.",
+  "description": "Databases and other TCP services stay private. Connect opens a bridge on this machine only, on a free port.",
   "bridges": {
     "title": "Open bridges",
     "description": "Each bridge binds 127.0.0.1 on a port the kernel picks, so nothing has to give up 5432.",
@@ -69,5 +69,61 @@
     "port": "Port",
     "status": "Status",
     "networks": "Networks"
+  },
+  "sites": {
+    "tab": "Sites",
+    "title": "Sites",
+    "description": "Who may open each address on this server. A decision applies on the next request; nothing restarts.",
+    "search": "Search address or project",
+    "moreHosts_one": "{{count}} more address",
+    "moreHosts_other": "{{count}} more addresses",
+    "noLogin": "No login",
+    "decision": {
+      "protected": "With a password",
+      "public": "Open to everybody",
+      "closed": "Closed",
+      "unprotected": "Open, no login",
+      "none": "No login"
+    },
+    "linkProtected": "With a password, expires {{time}}",
+    "linkPublic": "Public, expires {{time}}",
+    "noLink": "No temporary link",
+    "createLink": "Create a temporary link for {{host}}",
+    "details": "Details of {{name}}",
+    "nowAsks": "{{host}} now asks for a password:",
+    "shownOnce": "It appears only now. Give it to whoever needs access.",
+    "unknownRouters_one": "{{count}} service answers with no login on addresses the panel cannot list",
+    "unknownRouters_other": "{{count}} services answer with no login on addresses the panel cannot list",
+    "unknownRoutersHint": "Their routing rule does not name one address: a regexp, a wildcard or no Host at all. Every address on this server reads as open because this router may answer it. Give it the login gate or a Host rule.",
+    "filters": {
+      "all": "All {{count}}",
+      "unprotected": "No login, open {{count}}",
+      "closed": "Closed {{count}}",
+      "protected": "With a password {{count}}",
+      "public": "Open to everybody {{count}}"
+    },
+    "empty": "Nothing is routed yet",
+    "noMatch": "No site matches these filters",
+    "footPublic": "Domain, TLS and VPN are in Settings.",
+    "footLocal": "On this profile addresses answer only where the gateway can be reached, so there is no decision to take. Domain, TLS and VPN are in Settings."
+  },
+  "tcp": {
+    "tab": "Databases and TCP",
+    "all": "All {{count}}",
+    "connected": "Connected {{count}}",
+    "bridge": "Local bridge",
+    "fixed": "Fixed address",
+    "connectionText": "Connection text",
+    "copyBridge": "Copy host and port",
+    "noExpiry": "No expiry",
+    "expires": "Expires {{time}}",
+    "passwordFromProject": "The password comes from your project; Portta could not read it here.",
+    "notOptedIn": "Not enabled for this project: add the TCP overlay to get one.",
+    "routingOff": "Hostname routing is off on this server (PORTTA_TCP=false).",
+    "private": "Private",
+    "connect": "Connect",
+    "connectTo": "Connect to {{name}}",
+    "closeBridge": "Close bridge",
+    "orphans": "Their service is gone, but they still hold a port."
   }
 }

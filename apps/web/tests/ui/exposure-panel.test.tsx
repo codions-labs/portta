@@ -19,7 +19,8 @@ vi.mock('@/lib/api/index', () => ({
   },
 }))
 
-const { ExposurePanel, canonicalHost } = await import('@/components/exposure-panel')
+const { ExposurePanel } = await import('@/components/exposure-panel')
+const { canonicalHost } = await import('@/lib/host-access')
 
 const container = makeContainer({
   id: 'c1',
@@ -32,7 +33,7 @@ const container = makeContainer({
 })
 
 beforeEach(() => {
-  exposure.mockReset().mockResolvedValue({ enforced: true, entries: [] })
+  exposure.mockReset().mockResolvedValue({ enforced: true, entries: [], openRouters: { count: 0, names: [] } })
   protectService.mockReset().mockResolvedValue({ ok: true, entry: null, password: 'abcde-fghij', note: '' })
   openService.mockReset().mockResolvedValue({ ok: true, entry: null, note: '' })
   closeService.mockReset().mockResolvedValue({ ok: true, entry: null, note: '' })
@@ -50,6 +51,7 @@ describe('who may open a service', () => {
   it('does not present stored credentials as protection when its router does not enforce them', async () => {
     exposure.mockResolvedValue({
       enforced: false,
+      openRouters: { count: 0, names: [] },
       entries: [
         {
           host: 'shop-web.example.test',
@@ -71,15 +73,24 @@ describe('who may open a service', () => {
 
   it('says a hostname nobody decided about is closed, and protects it with a password shown once', async () => {
     renderWithQuery(<ExposurePanel container={container} />)
-    expect(await screen.findByText('closed')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Protect with a password' }))
+    await waitFor(() => expect(screen.getByRole('radio', { name: /Nobody/ })).toBeChecked())
+    await userEvent.click(screen.getByRole('radio', { name: /Whoever has the password/ }))
     expect(await screen.findByText('abcde-fghij')).toBeInTheDocument()
-    expect(protectService).toHaveBeenCalledWith('c1')
+    expect(protectService).toHaveBeenCalledWith('c1', {})
+  })
+
+  it('asks for the password alone when told to, before the password exists', async () => {
+    renderWithQuery(<ExposurePanel container={container} />)
+    await waitFor(() => expect(screen.getByRole('radio', { name: /Nobody/ })).toBeChecked())
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Ask for the password alone, with no username' }))
+    await userEvent.click(screen.getByRole('radio', { name: /Whoever has the password/ }))
+    await waitFor(() => expect(protectService).toHaveBeenCalledWith('c1', { user: null }))
   })
 
   it('shows a protected host and offers a new password, opening and closing', async () => {
     exposure.mockResolvedValue({
       enforced: true,
+      openRouters: { count: 0, names: [] },
       entries: [
         {
           host: 'shop-web.example.test',
@@ -92,16 +103,20 @@ describe('who may open a service', () => {
       ],
     })
     renderWithQuery(<ExposurePanel container={container} />)
-    expect(await screen.findByText('protected')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Open to everybody' }))
+    await waitFor(() => expect(screen.getByRole('radio', { name: /Whoever has the password/ })).toBeChecked())
+    expect(screen.getByRole('button', { name: 'New password' })).toBeEnabled()
+    await userEvent.click(screen.getByRole('radio', { name: /Anybody/ }))
+    // Opening to everybody asks first.
+    expect(openService).not.toHaveBeenCalled()
+    await userEvent.click(await screen.findByRole('button', { name: 'Open to everybody' }))
     await waitFor(() => expect(openService).toHaveBeenCalledWith('c1'))
-    await userEvent.click(screen.getByRole('button', { name: 'Close it' }))
+    await userEvent.click(screen.getByRole('radio', { name: /Nobody/ }))
     await waitFor(() => expect(closeService).toHaveBeenCalledWith('c1'))
   })
 
   it('offers no control to somebody who may not decide', async () => {
     renderWithQuery(<ExposurePanel container={container} />, undefined, principal({ permissions: ['service:read'] }))
     expect(await screen.findByText('closed')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Protect with a password' })).toBeNull()
+    expect(screen.queryByRole('radio', { name: /Whoever has the password/ })).toBeNull()
   })
 })

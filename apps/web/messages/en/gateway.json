@@ -1,46 +1,26 @@
 {
   "title": "Gateway",
-  "description": "The gateway's own components: status, diagnostics and logs.",
   "checking": "Checking…",
   "runDiagnostics": "Run diagnostics",
   "restartTraefik": "Restart Traefik",
   "restarted": "Restarted {{components}}. {{note}}:",
-  "components": {
-    "title": "Components",
-    "traefik": "Traefik",
-    "socketProxy": "Socket proxy",
-    "persistence": "Persistence",
-    "tailscale": "Tailscale",
-    "notRunning": "not running",
-    "sharedNetwork": "Shared network",
-    "attached": "{{count}} attached",
-    "missing": "missing",
-    "routedServices": "Routed services"
-  },
-  "versions": {
-    "title": "Versions and profile",
-    "gateway": "Gateway",
-    "panel": "Panel",
-    "profile": "Profile",
-    "domain": "Domain",
-    "traefikDashboard": "Traefik dashboard",
-    "thisPanel": "This panel",
-    "loopbackOnly": "loopback only",
-    "routedForwardAuth": "routed, behind Portta login",
-    "routedNoCredential": "routed with no credential",
-    "readOnly": "read-only"
-  },
   "diagnostics": {
     "title": "Diagnostics",
     "summary": "{{failures}} failure(s), {{warnings}} warning(s) · {{time}}",
     "description": "Checks the panel can make from inside its container.",
     "notRun": "Not run yet",
-    "notRunHint": "For host-level checks (PATH, listening sockets, DNS, certificate files) run portta doctor.",
-    "deeperChecks": "deeper, host-level checks:"
+    "notRunHint": "For server-level checks (PATH, listening sockets, DNS, certificate files) run portta doctor.",
+    "deeperChecks": "deeper, server-level checks:"
   },
   "logs": {
     "title": "Logs",
-    "componentAria": "Gateway component"
+    "componentAria": "Gateway component",
+    "sources": {
+      "traefik": "traefik",
+      "socket-proxy": "socket proxy",
+      "tailscale": "tailscale",
+      "db": "database"
+    }
   },
   "apply": {
     "title": "Apply saved settings",
@@ -50,11 +30,11 @@
     "barApplying": "Applying saved settings…",
     "barAction": "Apply",
     "barReview": "Review",
-    "barManual": "Apply them on the host with:",
+    "barManual": "Apply them on the server with:",
     "unavailable": {
-      "disabled": "Set PORTTA_APPLY=true in the host's .env, then run the command once.",
-      "refused": "This host refuses to apply from the panel: {{reason}}.",
-      "notPrepared": "PORTTA_APPLY is already on; the applier is not prepared yet. Run the command once on the host."
+      "disabled": "Set PORTTA_APPLY=true in the server's .env, then run the command once.",
+      "refused": "This server refuses to apply from the panel: {{reason}}.",
+      "notPrepared": "PORTTA_APPLY is already on; the applier is not prepared yet. Run the command once on the server."
     },
     "confirmTitle": "Apply saved settings?",
     "confirmDescription": "Portta recreates its own containers so these saved values take effect.",
@@ -62,7 +42,7 @@
     "confirmProjects": "Your projects are not touched. Only Portta's own containers are recreated, and the shared network stays as it is.",
     "confirmMoves": "A pending setting changes where this panel answers, so this tab will not reconnect on its own.",
     "confirmKeepTab": "Keep this tab open while it runs.",
-    "confirmBuild": "This host builds its own images, so the apply includes a Docker build. The first one can take several minutes.",
+    "confirmBuild": "This server builds its own images, so the apply includes a Docker build. The first one can take several minutes.",
     "confirmReference": "These saved values are a new reference. Recreating the gateway is not needed.",
     "confirm": "Apply",
     "discard": "Discard",
@@ -91,22 +71,37 @@
     "reload": "Reload the panel",
     "reloadWhy": "This page still shows what the previous process answered with.",
     "failedExit": "The applier exited with code {{code}}. Nothing was rolled back.",
-    "failedHint": "Run it on the host to see the whole output:",
+    "failedHint": "Run it on the server to see the whole output:",
     "showOutput": "Show output",
-    "timeoutBody": "The panel has not answered for {{time}}. It may still be starting. Reload the page, or finish it on the host:"
+    "timeoutBody": "The panel has not answered for {{time}}. It may still be starting. Reload the page, or finish it on the server:"
   },
-  "overviewCard": {
-    "title": "Gateway",
-    "profile": "Profile",
-    "domain": "Domain",
-    "listening": "Listening",
-    "tls": "TLS",
-    "tlsEnabled": "enabled ({{mode}})",
+  "actionFailed": "That did not work",
+  "restartConfirm": {
+    "title": "Restart Traefik?",
+    "impact": "Every site on this server goes down for a few seconds while it comes back.",
+    "confirm": "Restart"
+  },
+  "parts": {
+    "traefik": "Traefik",
+    "socketProxy": "Socket proxy",
+    "auth": "Authentication",
     "tailscale": "Tailscale",
-    "tailscaleRunning": "running",
-    "tailscaleEnabledNotRunning": "enabled, not running",
-    "publicAccess": "Public access",
+    "notRunning": "not running"
+  },
+  "details": {
+    "title": "Gateway details",
+    "listening": "Listening on",
     "sharedNetwork": "Shared network",
-    "attached": "{{name}} · {{count}} attached"
+    "attached": "{{name}}, {{count}} attached",
+    "missing": "{{name}} is missing",
+    "routedServices": "Routed services",
+    "persistence": "Persistence",
+    "publicAccess": "Public access",
+    "traefikDashboard": "Traefik dashboard",
+    "thisPanel": "This panel",
+    "loopbackOnly": "Only on this machine",
+    "routedForwardAuth": "Routed, asks for a login",
+    "routedNoCredential": "Routed, no credential",
+    "readOnly": "Read only"
   }
 }

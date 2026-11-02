@@ -2,6 +2,9 @@
 // systeminformation and Docker; the panel only reads the JSON. Nothing here
 // opens a path or imports the library — fixtures stay kernel-free.
 
+import type { DockerStorage } from './docker-storage.ts'
+import type { GpuMemory } from './gpu-usage.ts'
+
 export const METRICS_VERSION = 1
 export const COLLECT_INTERVAL_MS = 5_000
 export const HISTORY_INTERVAL_MS = 15_000
@@ -86,6 +89,10 @@ export interface HostMetrics {
   release: string | null
   kernel: string | null
   uptimeSeconds: number | null
+  /** The IANA zone the server's clock is set to (America/Sao_Paulo), as the collector's own process resolves it. */
+  timezone?: string | null
+  /** Minutes east of UTC at collection time, so the zone's offset on that day, daylight saving included. */
+  utcOffsetMinutes?: number | null
   cpu: HostCpuInfo
   memoryTotalBytes: number | null
   memoryUsedBytes: number | null
@@ -98,6 +105,8 @@ export interface HostMetrics {
   load: HostLoad | null
   storage: HostStorageInfo | null
   gpu: HostGpuInfo[]
+  /** Memory used and present on the GPUs, summed; read from nvidia-smi, so absent on other GPUs. */
+  gpuMemory?: GpuMemory | null
   /** CPU package temperature in Celsius, where the platform reports one. */
   temperatureCelsius: number | null
   battery: HostBatteryInfo | null
@@ -122,6 +131,10 @@ export interface ProjectResourceMetrics {
   id: string
   name: string
   composeProject: string
+  /** Portta's own containers, so a reading can tell the gateway and panel from the projects it serves. */
+  own?: true
+  /** What its containers hold of the GPU's memory; absent where that is not read. */
+  gpuMemoryBytes?: number | null
   cpuUtilisation: number | null
   memoryUsedBytes: number | null
   containerCount: number
@@ -137,6 +150,8 @@ export interface MetricsSnapshot {
   host: HostMetrics
   runtime: { name: RuntimeName } | null
   projects: ProjectResourceMetrics[]
+  /** What each project keeps on the Docker disk; absent from an older collector. */
+  dockerStorage?: DockerStorage | null
 }
 
 export interface MetricsHistoryPoint {
@@ -204,6 +219,8 @@ export function emptyHost(): HostMetrics {
     release: null,
     kernel: null,
     uptimeSeconds: null,
+    timezone: null,
+    utcOffsetMinutes: null,
     cpu: {
       manufacturer: null,
       brand: null,
@@ -278,17 +295,22 @@ export function filesystemForPath(path: string, mounts: RawMount[]): HostStorage
   const totalBytes = asFiniteNumber(chosen.mount.size)
   if (totalBytes === null || totalBytes <= 0) return null
   const availableBytes = asFiniteNumber(chosen.mount.available)
-  const usedBytes =
-    asFiniteNumber(chosen.mount.used) ?? (availableBytes !== null ? Math.max(0, totalBytes - availableBytes) : null)
+  const filesystem = asNonEmptyString(chosen.mount.fs) ?? asNonEmptyString(chosen.mount.type)
+  // APFS volumes share one container: the system volume reports a few GB used of a disk whose
+  // free space is the whole container's, so what is in use is what is not free.
+  const shared = /apfs/i.test(`${chosen.mount.fs ?? ''} ${chosen.mount.type ?? ''}`) && availableBytes !== null
+  const usedBytes = shared
+    ? Math.max(0, totalBytes - availableBytes)
+    : (asFiniteNumber(chosen.mount.used) ?? (availableBytes !== null ? Math.max(0, totalBytes - availableBytes) : null))
   const usedPercent =
-    asFiniteNumber(chosen.mount.use) !== null
+    !shared && asFiniteNumber(chosen.mount.use) !== null
       ? percentToUnit(asFiniteNumber(chosen.mount.use))
       : ratio(usedBytes, totalBytes)
   if (usedBytes === null || availableBytes === null || usedPercent === null) return null
   return {
     path,
     mount: chosen.mountPath,
-    filesystem: asNonEmptyString(chosen.mount.fs) ?? asNonEmptyString(chosen.mount.type),
+    filesystem,
     totalBytes,
     usedBytes,
     availableBytes,
@@ -436,6 +458,7 @@ export function normalizeHost(input: {
   loadavg?: unknown
   graphics?: unknown
   time?: unknown
+  timezone?: { name: string | null; offsetMinutes: number | null }
   cpuTemperature?: unknown
   battery?: unknown
   chassis?: unknown
@@ -487,6 +510,8 @@ export function normalizeHost(input: {
     release: asNonEmptyString(os?.codename) ?? asNonEmptyString(os?.release),
     kernel: asNonEmptyString(os?.kernel),
     uptimeSeconds: asFiniteNumber(time?.uptime),
+    timezone: asNonEmptyString(input.timezone?.name),
+    utcOffsetMinutes: asFiniteNumber(input.timezone?.offsetMinutes),
     cpu: {
       manufacturer: asNonEmptyString(cpu?.manufacturer),
       brand: asNonEmptyString(cpu?.brand),

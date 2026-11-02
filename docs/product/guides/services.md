@@ -16,13 +16,15 @@ derived hostname, exactly as it does inside Traefik.
 
 Opening a service shows its drawer: summary, access, runtime, logs, console and
 labels. For a routed service it also has a **Share with a client** section: who
-may open its hostname (**Protect with a password**, **Open to everybody**,
-**Close it**) and a temporary link that expires by itself. Deciding needs the
+may open its hostname (**Whoever has the password**, **Anybody**,
+**Nobody**) and a temporary link that expires by itself. Deciding needs the
 `service:protect` permission, held by the owner and administrators. See
 [Run a public host](public-host.md) and [Share a service](sharing.md).
 
 
-## Docker
+## Containers
+
+The Containers section of Host, at `/host/containers`.
 
 Every container on the host, in four clearly separated sections:
 

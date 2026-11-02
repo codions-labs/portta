@@ -44,6 +44,19 @@ const config: NextConfig = {
   // Only the end-to-end build turns this off, because CI typechecks on its
   // own; the image build still refuses a type error.
   typescript: { ignoreBuildErrors: process.env.PORTTA_SKIP_TYPECHECK === '1' },
+  // Where the pages moved when the rail started following tasks. A bookmark and
+  // a link somebody pasted keep working; a temporary redirect, because nothing
+  // here promises these paths won't move again before 1.0.
+  async redirects() {
+    return [
+      { source: '/services', destination: '/projects?view=services', permanent: false },
+      { source: '/environments', destination: '/projects?view=environments', permanent: false },
+      { source: '/docker', destination: '/host/containers', permanent: false },
+      { source: '/network', destination: '/host/network', permanent: false },
+      { source: '/gateway', destination: '/host/gateway', permanent: false },
+      { source: '/settings/environment', destination: '/host', permanent: false },
+    ]
+  },
   async headers() {
     return [
       {

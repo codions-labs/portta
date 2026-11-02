@@ -75,48 +75,43 @@ export function EnvironmentActions({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-1">
-        <Button
-          size="sm"
-          disabled={!canStart || act.isPending}
-          title={canStart ? t('start') : (project.startable.reason ?? t('startDisabled'))}
-          onClick={() => act.mutate('start')}
-        >
-          <Play className="size-3.5" />
-          {t('start')}
-        </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Start is only worth a place while something is stopped. */}
+        {remembered || project.runningCount < project.serviceCount || project.serviceCount === 0 ? (
+          <Button
+            disabled={!canStart || act.isPending}
+            title={canStart ? t('start') : (project.startable.reason ?? t('startDisabled'))}
+            onClick={() => act.mutate('start')}
+          >
+            <Play />
+            {t('start')}
+          </Button>
+        ) : null}
         {remembered ? (
           mayForget ? (
             <Button
-              size="sm"
               variant="ghost"
               disabled={forget.isPending}
               title={t('forget')}
               onClick={() => setConfirmForget(true)}
             >
-              <EyeOff className="size-3.5" />
+              <EyeOff />
               {t('forget')}
             </Button>
           ) : null
         ) : (
           <>
+            <Button disabled={!canRestart || act.isPending} title={t('restart')} onClick={() => act.mutate('restart')}>
+              <RotateCw className={act.isPending ? 'animate-spin' : undefined} />
+              {t('restart')}
+            </Button>
             <Button
-              size="sm"
               disabled={!canStop || act.isPending}
               title={canStop ? t('stop') : t('stopDisabled')}
               onClick={() => setConfirmStop(true)}
             >
-              <Square className="size-3.5" />
+              <Square />
               {t('stop')}
-            </Button>
-            <Button
-              size="sm"
-              disabled={!canRestart || act.isPending}
-              title={t('restart')}
-              onClick={() => act.mutate('restart')}
-            >
-              <RotateCw className={act.isPending ? 'animate-spin' : undefined} />
-              {t('restart')}
             </Button>
           </>
         )}

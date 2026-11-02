@@ -4,8 +4,8 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/index.ts'
 import { keys } from './keys.ts'
 
-export function useEnvironments(all = true) {
-  return useQuery({ queryKey: keys.environments(), queryFn: () => api.environments(all) })
+export function useEnvironments(all = true, enabled = true) {
+  return useQuery({ queryKey: keys.environments(), queryFn: () => api.environments(all), enabled })
 }
 
 export function useEnvironment(name: string) {

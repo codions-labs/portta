@@ -36,7 +36,7 @@ export function TwoFactorForm() {
 
   return (
     <form onSubmit={submit} className="grid gap-4">
-      <Field label={t('code')} required>
+      <Field label={backup ? t('backupCodeLabel') : t('code')} required>
         {(id) => (
           <Input
             id={id}
@@ -45,13 +45,19 @@ export function TwoFactorForm() {
             inputMode={backup ? 'text' : 'numeric'}
             autoComplete="one-time-code"
             mono
+            maxLength={backup ? undefined : 6}
+            placeholder={backup ? undefined : '000000'}
+            className={backup ? undefined : 'h-14 text-center text-2xl tracking-[0.3em]'}
             required
             autoFocus
           />
         )}
       </Field>
       {error ? (
-        <p role="alert" className="text-xs text-danger">
+        <p
+          role="alert"
+          className="rounded-lg border border-danger/30 bg-danger/6 px-3 py-2 text-sm font-medium text-danger"
+        >
           {error}
         </p>
       ) : null}
@@ -60,14 +66,15 @@ export function TwoFactorForm() {
       </Button>
       <Button
         type="button"
-        variant="link"
-        size="sm"
+        variant="ghost"
+        size="md"
+        className="w-full"
         onClick={() => {
           setBackup(!backup)
           setCode('')
         }}
       >
-        {t('backupCode')}
+        {backup ? t('useAuthenticator') : t('backupCode')}
       </Button>
     </form>
   )

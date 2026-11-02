@@ -13,45 +13,18 @@ export function DiagnosticText({
   part: 'title' | 'detail' | 'fix'
   className?: string
 }) {
-  const { t } = useTranslation('diagnostics')
-  const id = diagnostic.id
-  const params = { ...diagnostic.params, defaultValue: diagnostic[part] }
-
-  // Try status-specific key first (e.g. diagnostics.docker.fail.detail)
-  const statusKey = `${id}.${diagnostic.status}.${part}`
-  const flatKey = `${id}.${part}`
-
-  const fromStatus = t(statusKey, params)
-  if (fromStatus !== statusKey) {
-    return (
-      <div className={className}>
-        <DocText>{fromStatus}</DocText>
-      </div>
-    )
-  }
-
-  const fromFlat = t(flatKey, params)
-  if (fromFlat !== flatKey) {
-    return (
-      <div className={className}>
-        <DocText>{fromFlat}</DocText>
-      </div>
-    )
-  }
-
-  // Nested pass/warn/fail structure
-  const nested = t(`${id}.${part}`, params)
-  if (nested !== `${id}.${part}`) {
-    return (
-      <div className={className}>
-        <DocText>{nested}</DocText>
-      </div>
-    )
-  }
+  const { t, i18n } = useTranslation('diagnostics')
+  const key = [`${diagnostic.id}.${diagnostic.status}.${part}`, `${diagnostic.id}.${part}`].find((candidate) =>
+    i18n.exists(candidate, { ns: 'diagnostics' }),
+  )
+  const translated = key ? (t(key as never, (diagnostic.params ?? {}) as never) as unknown as string) : null
+  // Not every check sends the values its sentence needs, and its own wording is
+  // better than a placeholder on the screen.
+  const text = translated && !translated.includes('{{') ? translated : diagnostic[part]
 
   return (
     <div className={className}>
-      <DocText>{diagnostic[part]}</DocText>
+      <DocText>{text}</DocText>
     </div>
   )
 }

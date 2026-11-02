@@ -6,7 +6,7 @@
     "offline": "Sem conexão com o painel. As atualizações ao vivo estão pausadas.",
     "reconnecting": "Reconectando…"
   },
-  "docker": "Docker",
+  "docker": "Contêineres",
   "documentation": "Documentação",
   "expandSidebar": "Expandir barra lateral",
   "gateway": "Gateway",
@@ -18,24 +18,26 @@
     "offline": "offline"
   },
   "network": "Rede",
-  "overview": "Visão geral",
+  "overview": "Início",
   "projects": "Projetos",
   "sections": "Seções",
   "services": "Serviços",
   "settings": "Configurações",
   "toggleTheme": "Alternar tema",
   "groups": {
-    "infrastructure": "Infraestrutura"
+    "infrastructure": "Infraestrutura",
+    "work": "Trabalho"
   },
   "environments": "Ambientes",
-  "commandPalette": "Menu de comandos",
+  "commandPalette": "Buscar ou executar",
   "commandPlaceholder": "Digite um comando ou busque…",
   "commandNoResults": "Nada corresponde",
   "commandGroups": {
     "navigate": "Ir para",
     "projects": "Projetos",
     "actions": "Ações",
-    "preferences": "Preferências"
+    "preferences": "Preferências",
+    "found": "Também encontrado"
   },
   "theme": {
     "label": "Tema",
@@ -45,5 +47,55 @@
   },
   "shortcuts": {
     "sidebar": "Mostrar ou ocultar a barra lateral"
+  },
+  "host": "Servidor",
+  "settingsShort": "Ajustes",
+  "hostSections": {
+    "health": "Saúde",
+    "containers": "Contêineres",
+    "network": "Rede",
+    "gateway": "Gateway"
+  },
+  "projectSections": {
+    "label": "Visualização",
+    "projects": "Por projeto",
+    "table": "Tabela",
+    "services": "Por serviço"
+  },
+  "commandKinds": {
+    "service": "Serviço",
+    "project": "Projeto",
+    "page": "Página",
+    "filter": "Filtro",
+    "action": "Ação",
+    "preference": "Preferência"
+  },
+  "commandFilters": {
+    "closedSites": "Sites sem decisão"
+  },
+  "commandActions": {
+    "copyFailed": "Não foi possível copiar o endereço",
+    "connect": "Conectar",
+    "openSite": "Abrir site",
+    "copyAddress": "Copiar endereço",
+    "logs": "Ver logs",
+    "share": "Criar link temporário",
+    "restart": "Reiniciar",
+    "console": "Abrir console",
+    "details": "Ver serviço",
+    "restarted": "{{name}} reiniciando",
+    "failed": "Não foi possível reiniciar {{name}}"
+  },
+  "commandPreview": {
+    "aria": "Como está {{name}}",
+    "address": "Endereço",
+    "access": "Quem pode abrir",
+    "login": "login {{user}}",
+    "usage": "Uso"
+  },
+  "commandFooter": {
+    "navigate": "navegar",
+    "run": "executar",
+    "close": "fechar"
   }
 }

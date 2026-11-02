@@ -42,13 +42,20 @@ export async function readProject(deps: AppDeps, principal: Principal, slug: str
     throw error
   }
   const catalog = await loadProjectCatalog(db, await deps.cache.get(), deps.config)
-  return toProject(record, catalog.environments.get(record.id) ?? [], deps.config.projectsHome)
+  return toProject(
+    record,
+    catalog.environments.get(record.id) ?? [],
+    deps.config.projectsHome,
+    catalog.tags.get(record.id) ?? [],
+  )
 }
 
 /** Every Project this principal can open. */
 export async function readProjects(deps: AppDeps, principal: Principal): Promise<ProjectSummary[]> {
   const db = requireDatabase(deps.db)
   const catalog = await loadProjectCatalog(db, await deps.cache.get(), deps.config)
-  const summaries = catalog.records.map((record) => toProjectSummary(record, catalog.environments.get(record.id) ?? []))
+  const summaries = catalog.records.map((record) =>
+    toProjectSummary(record, catalog.environments.get(record.id) ?? [], catalog.tags.get(record.id) ?? []),
+  )
   return visible(principal, summaries, (summary) => projectScope(summary.id))
 }

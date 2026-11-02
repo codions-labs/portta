@@ -6,7 +6,7 @@
     "offline": "Can't reach the panel. Live updates are paused.",
     "reconnecting": "Reconnecting…"
   },
-  "docker": "Docker",
+  "docker": "Containers",
   "documentation": "Documentation",
   "expandSidebar": "Expand sidebar",
   "gateway": "Gateway",
@@ -18,24 +18,26 @@
     "offline": "offline"
   },
   "network": "Network",
-  "overview": "Overview",
+  "overview": "Home",
   "projects": "Projects",
   "sections": "Sections",
   "services": "Services",
   "settings": "Settings",
   "toggleTheme": "Toggle theme",
   "groups": {
-    "infrastructure": "Infrastructure"
+    "infrastructure": "Infrastructure",
+    "work": "Work"
   },
   "environments": "Environments",
-  "commandPalette": "Command menu",
+  "commandPalette": "Search or run",
   "commandPlaceholder": "Type a command or search…",
   "commandNoResults": "Nothing matches",
   "commandGroups": {
     "navigate": "Go to",
     "projects": "Projects",
     "actions": "Actions",
-    "preferences": "Preferences"
+    "preferences": "Preferences",
+    "found": "Also found"
   },
   "theme": {
     "label": "Theme",
@@ -45,5 +47,55 @@
   },
   "shortcuts": {
     "sidebar": "Toggle the sidebar"
+  },
+  "host": "Server",
+  "settingsShort": "Settings",
+  "hostSections": {
+    "health": "Health",
+    "containers": "Containers",
+    "network": "Network",
+    "gateway": "Gateway"
+  },
+  "projectSections": {
+    "label": "View",
+    "projects": "By project",
+    "table": "Table",
+    "services": "By service"
+  },
+  "commandKinds": {
+    "service": "Service",
+    "project": "Project",
+    "page": "Page",
+    "filter": "Filter",
+    "action": "Action",
+    "preference": "Preference"
+  },
+  "commandFilters": {
+    "closedSites": "Sites with no decision"
+  },
+  "commandActions": {
+    "copyFailed": "Could not copy the address",
+    "connect": "Connect",
+    "openSite": "Open site",
+    "copyAddress": "Copy address",
+    "logs": "View logs",
+    "share": "Create temporary link",
+    "restart": "Restart",
+    "console": "Open console",
+    "details": "View service",
+    "restarted": "{{name}} restarting",
+    "failed": "Could not restart {{name}}"
+  },
+  "commandPreview": {
+    "aria": "How {{name}} is doing",
+    "address": "Address",
+    "access": "Who may open it",
+    "login": "login {{user}}",
+    "usage": "Usage"
+  },
+  "commandFooter": {
+    "navigate": "navigate",
+    "run": "run",
+    "close": "close"
   }
 }

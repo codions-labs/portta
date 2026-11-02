@@ -1,12 +1,13 @@
 'use client'
 
-import { AlertTriangle, CheckCircle2, Info, Loader2, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronDown, Info, Loader2, XCircle } from 'lucide-react'
 import type { ComponentType, HTMLAttributes, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { translateApiError, translateApiHint } from '@/lib/i18n/translate-error.ts'
 import { type Tone, toneBorder, toneText, toneWash } from '../lib/tone.ts'
 import { cn } from '../lib/utils.ts'
 import { DocText } from './doc-text.tsx'
+import { Sparkline } from './sparkline.tsx'
 import { Breadcrumb, type BreadcrumbItem } from './ui/breadcrumb.tsx'
 import { Checkbox, type CheckboxProps, Input, type InputProps, Select, type SelectProps } from './ui/field.tsx'
 
@@ -23,8 +24,11 @@ export function PageHeader({
   /** A compact status strip that belongs to the page, under the title. */
   meta,
   icon,
+  badge,
 }: {
   title: string
+  /** The page's verdict in a word, beside its name. */
+  badge?: ReactNode
   description?: ReactNode
   /** Page verbs: the one primary action, `md`. Never a filter, never a view switcher. */
   actions?: ReactNode
@@ -34,20 +38,23 @@ export function PageHeader({
   icon?: ReactNode
 }) {
   return (
-    <header className="mb-4">
+    <header className="mb-6 border-b border-line pb-6">
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
         <div className="min-w-0">
           {breadcrumb && breadcrumb.length >= 2 ? <Breadcrumb items={breadcrumb} className="-ml-1 mb-1" /> : null}
-          <h1 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-ink">
-            {icon ? <span className="shrink-0 text-subtle [&_svg]:size-4">{icon}</span> : null}
-            <span className="truncate">{title}</span>
-          </h1>
-          {description ? <p className="mt-0.5 max-w-3xl text-sm text-subtle">{description}</p> : null}
+          <div className="flex min-w-0 items-center gap-3">
+            <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold text-ink md:text-4xl">
+              {icon ? <span className="shrink-0 text-subtle [&_svg]:size-4">{icon}</span> : null}
+              <span className="truncate">{title}</span>
+            </h1>
+            {badge ? <span className="shrink-0">{badge}</span> : null}
+          </div>
+          {description ? <p className="mt-1.5 max-w-3xl text-base text-subtle">{description}</p> : null}
           {meta ? (
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted">{meta}</div>
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted">{meta}</div>
           ) : null}
         </div>
-        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
     </header>
   )
@@ -81,6 +88,33 @@ export function ViewToolbar({
       {children}
       {trailing ? <div className="ml-auto flex items-center gap-2">{trailing}</div> : null}
     </Toolbar>
+  )
+}
+
+/** A filter that is on or off, with what it counts in its own label. */
+export function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        'flex h-8.5 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors duration-100 focus-ring',
+        active
+          ? 'border-accent bg-accent text-accent-fg'
+          : 'border-line bg-surface text-muted hover:bg-surface-2 hover:text-ink',
+      )}
+    >
+      {children}
+    </button>
   )
 }
 
@@ -221,7 +255,7 @@ export function Callout({
     <div
       role={role ?? (tone === 'danger' ? 'alert' : undefined)}
       className={cn(
-        'flex items-start gap-2.5 rounded-md border px-3 py-2 text-sm',
+        'flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm',
         toneBorder[tone],
         toneWash[tone],
         className,
@@ -324,12 +358,45 @@ export function StatTile({
 }) {
   const color = tone ? toneText[tone] : 'text-ink'
   return (
-    <div role="group" aria-label={label} className="rounded-lg border border-line bg-surface px-3 py-2">
+    <div role="group" aria-label={label} className="rounded-xl border border-line bg-surface px-5 py-4 shadow-raised">
       <Eyebrow>{label}</Eyebrow>
-      <div data-slot="value" className={cn('mt-1 text-xl leading-none font-semibold tabular-nums', color)}>
+      <div
+        data-slot="value"
+        className={cn('mt-2 font-heading text-3xl leading-none font-semibold tabular-nums', color)}
+      >
         {value}
       </div>
-      {hint ? <div className="mt-1 text-xs text-subtle">{hint}</div> : null}
+      {hint ? <div className="mt-1.5 text-xs text-subtle">{hint}</div> : null}
+    </div>
+  )
+}
+
+/** A number a page opens with: what it counts, a round icon, the value and its context beside it. */
+export function MetricCard({
+  label,
+  icon,
+  value,
+  unit,
+}: {
+  label: string
+  icon?: ReactNode
+  value: ReactNode
+  unit?: ReactNode
+}) {
+  return (
+    <div role="group" aria-label={label} className="rounded-xl border border-line bg-surface px-5 py-4 shadow-raised">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium tracking-[0.12em] text-subtle uppercase">{label}</span>
+        {icon ? (
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink [&_svg]:size-4">
+            {icon}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 font-heading text-4xl font-semibold tabular-nums">
+        {value}
+        {unit ? <span className="font-sans text-lg font-medium tracking-normal text-subtle">{unit}</span> : null}
+      </div>
     </div>
   )
 }
@@ -340,5 +407,57 @@ export function KeyValue({ label, children }: { label: string; children: ReactNo
       <dt className="w-36 shrink-0 text-xs text-subtle">{label}</dt>
       <dd className="min-w-0 text-sm text-ink">{children}</dd>
     </div>
+  )
+}
+
+/** One measurement: what it reads now and, when there is history, how it got here. */
+export function ReadingCard({
+  label,
+  value,
+  unit,
+  points = [],
+  max,
+  footnote,
+  detail,
+  tone,
+  children,
+}: {
+  label: string
+  value: string
+  unit?: string
+  points?: ReadonlyArray<number | null>
+  max?: number
+  footnote?: string
+  /** What the number is a share of, under it. */
+  detail?: string
+  tone?: string
+  /** Drawn between the number and its history, such as a bar that splits it. */
+  children?: ReactNode
+}) {
+  return (
+    <div role="group" aria-label={label} className="rounded-xl border border-line bg-surface px-5 py-4 shadow-raised">
+      <div className="text-xs font-medium tracking-[0.12em] text-subtle uppercase">{label}</div>
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 font-heading text-3xl font-semibold tabular-nums">
+        <span className={tone}>{value}</span>
+        {unit ? <span className="font-sans text-sm font-medium tracking-normal text-subtle">{unit}</span> : null}
+      </div>
+      {detail ? <div className="mt-0.5 text-sm text-muted">{detail}</div> : null}
+      {children}
+      {points.length > 1 ? <Sparkline values={points} max={max} label={label} className="mt-2 h-8 w-full" /> : null}
+      {footnote ? <div className="mt-1.5 text-xs text-subtle">{footnote}</div> : null}
+    </div>
+  )
+}
+
+/** What most people never need, one click away instead of on the page. */
+export function Disclosure({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <details className="group overflow-hidden rounded-xl border border-line bg-surface shadow-raised">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 text-sm font-medium text-muted hover:text-ink focus-ring [&::-webkit-details-marker]:hidden">
+        {title}
+        <ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+      </summary>
+      <div className="border-t border-line px-5 py-3">{children}</div>
+    </details>
   )
 }

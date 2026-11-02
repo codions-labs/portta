@@ -46,6 +46,7 @@ const detail: Project = {
   relativePath: null,
   resolvedPath: null,
   location: 'external',
+  tags: [],
   environments: [
     {
       environment: 'alpha',

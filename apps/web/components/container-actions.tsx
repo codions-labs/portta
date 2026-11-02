@@ -21,9 +21,15 @@ import { useToast } from './ui/toast.tsx'
 export function ContainerActions({
   container,
   onShowDetails,
+  inPanel = false,
+  logsInMenu = false,
 }: {
   container: ContainerSummary
   onShowDetails?: () => void
+  /** On a list with one control per row, logs are a line of the menu. */
+  logsInMenu?: boolean
+  /** Beside a service's own Logs button: the restart it is opened for, in place of the logs icon. */
+  inPanel?: boolean
 }) {
   const { t } = useTranslation('environments', { keyPrefix: 'containerActions' })
   const queryClient = useQueryClient()
@@ -54,15 +60,23 @@ export function ContainerActions({
   return (
     <>
       <div className="flex items-center justify-end gap-1">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          title={t('logs')}
-          aria-label={t('logs')}
-          onClick={() => setShowLogs(true)}
-        >
-          <ScrollText />
-        </Button>
+        {inPanel ? (
+          running ? (
+            <Button size="sm" disabled={act.isPending} onClick={() => act.mutate('restart')}>
+              {t('restart')}
+            </Button>
+          ) : null
+        ) : logsInMenu ? null : (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('logs')}
+            aria-label={t('logs')}
+            onClick={() => setShowLogs(true)}
+          >
+            <ScrollText />
+          </Button>
+        )}
         <Menu>
           <MenuTrigger asChild>
             <Button variant="ghost" size="icon-sm" aria-label={t('actionsFor', { name: container.name })}>
@@ -75,6 +89,11 @@ export function ContainerActions({
                 <MenuItem onSelect={onShowDetails}>{t('details')}</MenuItem>
                 <MenuSeparator />
               </>
+            ) : null}
+            {logsInMenu ? (
+              <MenuItem onSelect={() => setShowLogs(true)}>
+                <ScrollText className="size-3.5" /> {t('logs')}
+              </MenuItem>
             ) : null}
             <MenuItem disabled={running || isGateway || act.isPending} onSelect={() => act.mutate('start')}>
               <Play className="size-3.5" /> {t('start')}

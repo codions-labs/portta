@@ -36,6 +36,7 @@ export async function protectHost(
   hostInput: string,
   options: {
     user?: string
+    passwordOnly?: boolean
     passwordStdin?: boolean
     entrypoint?: string
     label?: string
@@ -45,8 +46,11 @@ export async function protectHost(
   command: Command,
 ): Promise<void> {
   const host = normalizeProtectionHost(hostInput)
-  const user = options.user ?? 'reviewer'
-  if (!/^[A-Za-z0-9._-]{1,64}$/.test(user)) throw new UsageError(`invalid username: ${user}`)
+  if (options.passwordOnly === true && options.user !== undefined) {
+    throw new UsageError('--password-only and --user ask for opposite things: pick one')
+  }
+  const user = options.passwordOnly === true ? null : (options.user ?? 'reviewer')
+  if (user !== null && !/^[A-Za-z0-9._-]{1,64}$/.test(user)) throw new UsageError(`invalid username: ${user}`)
   const entryPoint = entryPointFor(command, options.entrypoint)
   const generated = options.passwordStdin !== true
   const password = generated ? generatePassword() : readFileSync(0, 'utf8').trim()
@@ -73,7 +77,7 @@ export async function protectHost(
   if (output.json) output.data(result)
   else {
     output.line(`protected: ${host}`)
-    output.line(`user: ${user}`)
+    output.line(user === null ? 'password only: no username is asked for' : `user: ${user}`)
     if (generated) {
       output.line(`password: ${password}`)
       output.warning('this is the only time the generated password is shown')

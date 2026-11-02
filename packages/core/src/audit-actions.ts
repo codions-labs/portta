@@ -29,6 +29,7 @@ export const AUDIT_ACTIONS = [
   'token.revoked',
   'project.created',
   'project.updated',
+  'project.tagged',
   'project.deleted',
   'environment.started',
   'environment.stopped',

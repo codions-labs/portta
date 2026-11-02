@@ -1,7 +1,7 @@
 @keyframes auth-rise {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
@@ -15,70 +15,109 @@
   }
 }
 
+/* The page for somebody who was sent a link: slate, three soft glows, and room to explain. */
 .auth-stage {
   position: relative;
-  display: grid;
+  display: flex;
   min-height: 100%;
-  grid-template-columns: minmax(0, 1fr) minmax(24rem, 34rem);
-  gap: clamp(3rem, 8vw, 9rem);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
   overflow: hidden;
-  padding: clamp(2rem, 6vw, 6rem);
-  background:
-    radial-gradient(circle at 12% 18%, color-mix(in oklch, var(--portta-accent) 15%, transparent), transparent 28rem),
-    linear-gradient(125deg, var(--portta-bg) 0 58%, var(--portta-surface-2) 58% 100%);
+  padding: clamp(1.25rem, 5vw, 3.5rem) 1.25rem;
+  background: linear-gradient(180deg, var(--portta-bg), var(--portta-bg), var(--portta-surface-2));
 }
-
-.auth-grid {
+.auth-glow {
   position: absolute;
-  inset: 0;
-  opacity: 0.22;
+  border-radius: 999px;
+  filter: blur(64px);
   pointer-events: none;
-  background-image:
-    linear-gradient(var(--portta-border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--portta-border) 1px, transparent 1px);
-  background-size: 3rem 3rem;
-  mask-image: linear-gradient(90deg, black, transparent 72%);
+}
+.auth-glow-a {
+  top: -6rem;
+  left: 40%;
+  width: 18rem;
+  height: 18rem;
+  background: color-mix(in oklch, var(--portta-link) 15%, transparent);
+}
+.auth-glow-b {
+  top: 33%;
+  right: -4rem;
+  width: 16rem;
+  height: 16rem;
+  background: color-mix(in oklch, var(--portta-ok) 12%, transparent);
+}
+.auth-glow-c {
+  bottom: -5rem;
+  left: -4rem;
+  width: 18rem;
+  height: 18rem;
+  background: color-mix(in oklch, var(--portta-warn) 12%, transparent);
 }
 
-.auth-intro,
-.auth-card {
+/* Intro, reasons, card: two columns with the card on the right, one on a phone. */
+.auth-layout {
   position: relative;
   z-index: 1;
+  display: grid;
+  width: 100%;
+  max-width: 68rem;
+  grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
+  grid-template-areas:
+    "intro card"
+    "why card";
+  align-items: center;
+  column-gap: clamp(2rem, 5vw, 4rem);
+  row-gap: 1.75rem;
+  animation: auth-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-
 .auth-intro {
-  align-self: center;
-  max-width: 42rem;
-  animation: auth-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  grid-area: intro;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.1rem;
+}
+.auth-why {
+  grid-area: why;
+  min-width: 0;
+}
+.auth-card {
+  grid-area: card;
+  min-width: 0;
+  border: 1px solid var(--portta-border);
+  border-radius: 0.75rem;
+  background: var(--portta-surface);
+  box-shadow: var(--portta-shadow-raised);
 }
 
 .auth-brand {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: clamp(4rem, 11vh, 8rem);
-  font: 700 0.72rem / 1 var(--font-mono);
-  letter-spacing: 0.24em;
+  font: 700 1.25rem / 1 var(--font-heading);
+  letter-spacing: -0.02em;
 }
-
 .portta-mark {
   position: relative;
-  width: 1.8rem;
-  height: 1.8rem;
+  width: 2rem;
+  height: 2rem;
 }
 .portta-mark-door {
   position: absolute;
-  inset: 0.1rem 0.28rem 0.1rem 0.1rem;
+  inset: 0.15rem 0.35rem 0.15rem 0.15rem;
   border: 2px solid var(--portta-text);
   border-right: 0;
 }
 .portta-mark-path {
   position: absolute;
-  width: 1rem;
+  width: 1.1rem;
   height: 2px;
   right: 0;
-  top: 0.86rem;
-  background: var(--portta-accent);
+  top: 0.95rem;
+  background: var(--portta-link);
 }
 .portta-mark-path::after {
   content: "";
@@ -87,113 +126,112 @@
   top: -0.22rem;
   width: 0.45rem;
   height: 0.45rem;
-  border-top: 2px solid var(--portta-accent);
-  border-right: 2px solid var(--portta-accent);
+  border-top: 2px solid var(--portta-link);
+  border-right: 2px solid var(--portta-link);
   transform: rotate(45deg);
 }
 
 .auth-kicker {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  color: var(--portta-accent);
-  font: 600 0.72rem / 1.2 var(--font-mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  background: color-mix(in oklch, var(--portta-link) 12%, transparent);
+  color: var(--portta-link);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.auth-kicker-warn {
+  background: color-mix(in oklch, var(--portta-warn) 14%, transparent);
+  color: var(--portta-warn);
+}
+.auth-kicker svg {
+  width: 0.9rem;
+  height: 0.9rem;
 }
 .auth-intro h1 {
-  max-width: 12ch;
-  margin: 1.1rem 0 1.4rem;
-  font-size: clamp(2.8rem, 6vw, 5.8rem);
-  font-weight: 650;
-  line-height: 0.92;
-  letter-spacing: -0.065em;
+  max-width: 16ch;
+  font: 600 clamp(2rem, 4.4vw, 2.9rem) / 1.12 var(--font-heading);
+  letter-spacing: -0.025em;
 }
 .auth-intro > p {
   max-width: 34rem;
   color: var(--portta-muted);
-  font-size: clamp(1rem, 1.5vw, 1.2rem);
-  line-height: 1.65;
+  font-size: 1.05rem;
+  line-height: 1.6;
 }
-.auth-seal {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  margin-top: 3rem;
+
+.auth-eyebrow,
+.auth-meta dt {
   color: var(--portta-subtle);
-  font: 0.68rem / 1.3 var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
-.auth-seal span:first-child {
+.auth-why .auth-eyebrow {
+  margin-bottom: 0.7rem;
+}
+.auth-why-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+}
+.auth-why-icon {
   display: grid;
-  place-items: center;
   width: 2rem;
   height: 2rem;
-  border: 1px solid var(--portta-border-strong);
-  border-radius: 50%;
-  color: var(--portta-accent);
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--portta-surface-3);
+  color: var(--portta-text);
+}
+.auth-why-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+.auth-why-row b {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.auth-why-row small {
+  display: block;
+  color: var(--portta-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
-.auth-card {
-  align-self: center;
-  display: grid;
-  grid-template-columns: 2.4rem 1fr;
-  min-height: 38rem;
-  overflow: hidden;
-  border: 1px solid var(--portta-border-strong);
-  background: color-mix(in oklch, var(--portta-surface) 94%, transparent);
-  box-shadow: 0 2rem 7rem color-mix(in oklch, var(--portta-text) 14%, transparent);
-  animation: auth-rise 0.6s 0.12s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  backdrop-filter: blur(18px);
-}
-
-.auth-card-rail {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 0.65rem;
-  background: var(--portta-text);
-  color: var(--portta-bg);
-  font: 0.62rem / 1 var(--font-mono);
-  letter-spacing: 0.14em;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-}
 .auth-card-body {
   display: flex;
   flex-direction: column;
-  padding: clamp(2rem, 5vw, 3.6rem);
+  gap: 1rem;
+  padding: 1.5rem;
 }
 .auth-destination {
   display: grid;
-  grid-template-columns: 3.7rem 1fr;
-  gap: 1.1rem;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: 0.9rem;
   align-items: center;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid var(--portta-border);
 }
 .auth-service-icon {
   display: grid;
   place-items: center;
-  width: 3.7rem;
-  height: 3.7rem;
-  border: 1px solid var(--portta-border-strong);
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--portta-border);
+  border-radius: 0.75rem;
   background: var(--portta-surface-2);
-  color: var(--portta-accent);
+  color: var(--portta-text);
 }
-.auth-eyebrow,
-.auth-meta dt {
-  color: var(--portta-subtle);
-  font: 0.65rem / 1.2 var(--font-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.auth-destination h2 {
-  margin-top: 0.3rem;
-  font-size: 1.35rem;
-  font-weight: 650;
-  letter-spacing: -0.025em;
+.auth-destination h2,
+.auth-card-body > h2 {
+  margin-top: 0.15rem;
+  font: 600 1.35rem / 1.2 var(--font-heading);
+  letter-spacing: -0.02em;
 }
 .auth-host {
   margin-top: 0.2rem;
@@ -205,67 +243,90 @@
 }
 .auth-meta {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  padding: 1.25rem 0;
-  border-bottom: 1px solid var(--portta-border);
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.85rem;
+  padding: 0.85rem 0;
+  border-block: 1px solid var(--portta-border);
 }
 .auth-meta dd {
-  margin-top: 0.3rem;
+  margin-top: 0.25rem;
   overflow: hidden;
-  font: 0.78rem / 1.4 var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.auth-hint {
+  color: var(--portta-muted);
+  font-size: 0.9rem;
+}
 .auth-form {
   display: grid;
-  gap: 1.25rem;
-  margin-top: 2rem;
+  gap: 1rem;
 }
 .auth-field {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 .auth-field label {
-  font-size: 0.78rem;
-  font-weight: 650;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 .auth-field input {
-  height: 2.8rem;
-  border-radius: 0;
-  padding-inline: 0.85rem;
-  background: var(--portta-bg);
+  height: 2.5rem;
+  padding-inline: 0.8rem;
+  font-size: 0.9rem;
 }
 .auth-password {
   position: relative;
 }
 .auth-password input {
   width: 100%;
-  padding-right: 3rem;
+  padding-right: 2.9rem;
 }
 .auth-password button {
   position: absolute;
-  right: 0.35rem;
-  top: 0.35rem;
+  right: 0.25rem;
+  top: 0.25rem;
   display: grid;
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 2rem;
+  height: 2rem;
   place-items: center;
-  color: var(--portta-muted);
+  border-radius: 0.4rem;
+  color: var(--portta-subtle);
 }
-.auth-footer svg {
-  width: 0.85rem;
-  height: 0.85rem;
-}
-.auth-password button svg {
-  width: 1rem;
-  height: 1rem;
+.auth-password button:hover {
+  background: var(--portta-surface-2);
+  color: var(--portta-text);
 }
 .auth-error {
-  border-left: 2px solid var(--portta-danger);
-  padding: 0.15rem 0 0.15rem 0.8rem;
+  border: 1px solid color-mix(in oklch, var(--portta-danger) 30%, transparent);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: color-mix(in oklch, var(--portta-danger) 7%, transparent);
   color: var(--portta-danger);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.auth-callout {
+  display: flex;
+  gap: 0.6rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--portta-surface-2);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.auth-callout svg {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.2rem;
+  flex: none;
+  color: var(--portta-warn);
+}
+.auth-help {
+  color: var(--portta-subtle);
+  font-size: 0.8rem;
 }
 .auth-submit {
   display: inline-flex;
@@ -273,19 +334,9 @@
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  height: 2.9rem;
-  margin-top: 0.25rem;
-  border-radius: 0;
-  background: var(--portta-accent);
-  color: var(--portta-accent-fg);
-  font-size: 0.875rem;
-  font-weight: 650;
-}
-.auth-submit:hover {
-  opacity: 0.9;
-}
-.auth-submit:disabled {
-  opacity: 0.5;
+  height: 2.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 .auth-spinner {
   width: 0.9rem;
@@ -296,49 +347,42 @@
   animation: auth-spin 0.6s linear infinite;
 }
 .auth-footer {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  margin-top: auto;
-  padding-top: 2rem;
+  gap: 0.4rem;
   color: var(--portta-subtle);
-  font: 0.65rem / 1.2 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+.auth-footer svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.auth-password button svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 @media (max-width: 860px) {
-  .auth-stage {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-    padding: 1.25rem;
-    background: var(--portta-bg);
-  }
-  .auth-intro {
-    align-self: end;
-    padding-top: 2rem;
-  }
-  .auth-brand {
-    margin-bottom: 3rem;
+  .auth-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "intro"
+      "card"
+      "why";
+    justify-items: stretch;
+    row-gap: 1.5rem;
   }
   .auth-intro h1 {
-    max-width: 14ch;
-    font-size: clamp(2.5rem, 13vw, 4.2rem);
-  }
-  .auth-intro > p,
-  .auth-seal {
-    display: none;
-  }
-  .auth-card {
-    align-self: start;
-    min-height: 34rem;
+    max-width: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-intro,
-  .auth-card {
+  .auth-layout {
     animation: none;
   }
 }

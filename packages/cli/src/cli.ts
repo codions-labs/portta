@@ -526,6 +526,7 @@ describe(protect.command('status [host]', { isDefault: true }), 'List host decis
 )
 describe(protect.command('host <host>'), 'Create or rotate a hostname credential')
   .option('--user <name>')
+  .option('--password-only', 'ask for the password alone, with no username')
   .option('--password-stdin')
   .option('--entrypoint <name>')
   .option('--label <text>')

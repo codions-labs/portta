@@ -20,6 +20,7 @@ import {
   panelSubdomain,
 } from './access.ts'
 import { GroupIntro, LearnMore } from './learn-more.tsx'
+import { OptionCard } from './option-card.tsx'
 import { SettingsSection } from './settings-group.tsx'
 import { fieldByKey } from './values.ts'
 import { PANEL_SECTIONS } from './visibility.ts'
@@ -157,22 +158,14 @@ export function PanelSettings({
           <fieldset className="grid gap-2">
             <legend className="sr-only">{t('panel.access')}</legend>
             {(['local', 'tailscale', 'public', 'hostname'] as const).map((option) => (
-              <label
+              <OptionCard
                 key={option}
-                className="flex cursor-pointer items-start gap-2 rounded-md border border-line px-2.5 py-2 text-sm hover:bg-fill"
-              >
-                <input
-                  type="radio"
-                  name="panel-access"
-                  className="mt-0.5"
-                  checked={kind === option}
-                  onChange={() => setAccess(option, option === 'hostname' ? 'subdomain' : hostnameKind)}
-                />
-                <span>
-                  <span className="block font-medium text-ink">{t(`panel.kinds.${option}`)}</span>
-                  <span className="block text-xs text-subtle">{t(`panel.kindHelp.${option}`)}</span>
-                </span>
-              </label>
+                name="panel-access"
+                checked={kind === option}
+                onSelect={() => setAccess(option, option === 'hostname' ? 'subdomain' : hostnameKind)}
+                title={t(`panel.kinds.${option}`)}
+                help={t(`panel.kindHelp.${option}`)}
+              />
             ))}
           </fieldset>
 
@@ -244,10 +237,10 @@ export function PanelSettings({
                 </Field>
               )}
               <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                <Link className="rounded-xs text-accent hover:underline focus-ring" href="/settings/general/dns">
+                <Link className="rounded-xs text-link hover:underline focus-ring" href="/settings/general/dns">
                   {t('configureDns')}
                 </Link>
-                <Link className="rounded-xs text-accent hover:underline focus-ring" href="/settings/general/tls">
+                <Link className="rounded-xs text-link hover:underline focus-ring" href="/settings/general/tls">
                   {t('configureTls')}
                 </Link>
                 <LearnMore citation="docs/product/concepts/addresses-and-access.md#custom-panel-domain" />

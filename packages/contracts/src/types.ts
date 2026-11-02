@@ -376,6 +376,13 @@ export const ProjectEnvironment = named(
 )
 export type ProjectEnvironment = z.infer<typeof ProjectEnvironment>
 
+/** A label to find a Project by: `{ key: 'cliente', value: 'Acme' }`, or a bare `{ key: '', value: 'loja' }`. */
+export const ProjectTag = named(
+  z.object({ key: z.string().max(32), value: z.string().min(1).max(64) }).strict(),
+  'ProjectTag',
+)
+export type ProjectTag = z.infer<typeof ProjectTag>
+
 export const ProjectSummary = named(
   z
     .object({
@@ -386,6 +393,7 @@ export const ProjectSummary = named(
       archived: z.boolean(),
       relativePath: z.string().nullable(),
       location: ProjectLocation,
+      tags: z.array(ProjectTag),
       environmentCount: z.number().int(),
       runningEnvironmentCount: z.number().int(),
       /**
@@ -422,6 +430,7 @@ export const Project = named(
       relativePath: z.string().nullable(),
       resolvedPath: z.string().nullable(),
       location: ProjectLocation,
+      tags: z.array(ProjectTag),
       environments: z.array(ProjectEnvironment),
     })
     .strict(),
@@ -528,6 +537,15 @@ export const ExposureView = named(
         .boolean()
         .describe('True on a public host: a hostname with no entry is closed. Elsewhere protection is optional.'),
       entries: z.array(ExposureEntry),
+      openRouters: z
+        .object({
+          count: z.number().int(),
+          names: z.array(z.string()).describe('Only those this caller may see; count is the whole host.'),
+        })
+        .strict()
+        .describe(
+          'Containers answering with no login on names that cannot be listed. Any of them means no address on this host can be called protected.',
+        ),
     })
     .strict(),
   'ExposureView',
@@ -813,6 +831,10 @@ export const HostMetrics = named(
       release: nullableString,
       kernel: nullableString,
       uptimeSeconds: nullableNumber,
+      timezone: nullableString
+        .optional()
+        .describe('The IANA zone the server clock is set to; absent in readings from an older collector'),
+      utcOffsetMinutes: nullableNumber.optional().describe('Minutes east of UTC when the reading was taken'),
       cpu: HostCpuInfo,
       memoryTotalBytes: nullableNumber,
       memoryUsedBytes: nullableNumber,
@@ -825,6 +847,12 @@ export const HostMetrics = named(
       load: HostLoad.nullable(),
       storage: HostStorageInfo.nullable(),
       gpu: z.array(HostGpuInfo),
+      gpuMemory: z
+        .object({ usedBytes: z.number(), totalBytes: z.number() })
+        .strict()
+        .nullable()
+        .optional()
+        .describe('Memory used and present on the GPUs, from nvidia-smi; absent on other GPUs'),
       temperatureCelsius: nullableNumber.describe('CPU package temperature in Celsius, where the platform reports one'),
       battery: HostBatteryInfo.nullable().describe('Absent on a host with no battery'),
     })
@@ -854,18 +882,65 @@ export const ContainerResourceMetrics = named(
 )
 export type ContainerResourceMetrics = z.infer<typeof ContainerResourceMetrics>
 
+/**
+ * Where a project's code stands, read on the host from its working directory.
+ *
+ * Read-only and local: nothing here asks a remote anything, so `ahead` and `behind`
+ * are against the remote-tracking branch as it was last fetched, not against GitHub now.
+ */
+export const GitState = named(
+  z
+    .object({
+      path: z.string().describe('The working directory it was read from'),
+      branch: z.string().nullable().describe('Null when HEAD is detached or the repository has no commit yet'),
+      detached: z.boolean(),
+      upstream: z.string().nullable(),
+      ahead: z.number().int().nullable().describe('Commits not yet pushed; null without an upstream'),
+      behind: z.number().int().nullable().describe('Commits not yet pulled, as last fetched; null without an upstream'),
+      head: z
+        .object({
+          sha: z.string(),
+          subject: z.string(),
+          author: z.string(),
+          at: unixSeconds,
+        })
+        .strict()
+        .nullable(),
+      changed: z.number().int().describe('Tracked files with changes not committed'),
+      untracked: z.number().int(),
+      files: z
+        .array(
+          z
+            .object({
+              path: z.string(),
+              status: z.enum(['M', 'A', 'D', 'U']).describe('Modified, added, deleted or new (untracked)'),
+            })
+            .strict(),
+        )
+        .describe('The first of them: changed + untracked can be longer'),
+      lastChangeAt: unixSeconds.nullable().describe('The newest of the last commit and the files not committed'),
+      collectedAt: unixSeconds,
+    })
+    .strict(),
+  'GitState',
+)
+export type GitState = z.infer<typeof GitState>
+
 export const ProjectResourceMetrics = named(
   z
     .object({
       id: z.string(),
       name: z.string(),
       composeProject: z.string(),
+      own: z.literal(true).optional().describe("Set on Portta's own containers (gateway, panel, proxies)"),
       cpuUtilisation: nullableNumber,
       memoryUsedBytes: nullableNumber,
+      gpuMemoryBytes: nullableNumber.optional().describe("What its containers hold of the GPU's memory"),
       containerCount: z.number().int(),
       networkRxBytes: nullableNumber,
       networkTxBytes: nullableNumber,
       containers: z.array(ContainerResourceMetrics),
+      git: GitState.nullable().optional(),
     })
     .strict(),
   'ProjectResourceMetrics',
@@ -894,6 +969,26 @@ export const RuntimeHint = named(
 )
 export type RuntimeHint = z.infer<typeof RuntimeHint>
 
+export const DockerStorageInfo = named(
+  z
+    .object({
+      collectedAt: unixSeconds,
+      projects: z.array(
+        z
+          .object({
+            composeProject: z.string(),
+            volumeBytes: z.number().describe("The project's named volumes"),
+            layerBytes: z.number().describe('The writable layer of its containers'),
+          })
+          .strict(),
+      ),
+    })
+    .strict()
+    .describe('What each Compose project keeps on the Docker disk. Images are shared and are not counted here'),
+  'DockerStorageInfo',
+)
+export type DockerStorageInfo = z.infer<typeof DockerStorageInfo>
+
 export const MetricsCurrent = named(
   z
     .object({
@@ -906,6 +1001,7 @@ export const MetricsCurrent = named(
       host: HostMetrics.nullable(),
       runtime: RuntimeHint.nullable(),
       projects: z.array(ProjectResourceMetrics),
+      dockerStorage: DockerStorageInfo.nullable().optional(),
     })
     .strict(),
   'MetricsCurrent',

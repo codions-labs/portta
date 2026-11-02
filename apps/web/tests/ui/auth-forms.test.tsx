@@ -48,8 +48,8 @@ async function fillSetup() {
   const user = userEvent.setup({ delay: null })
   await user.type(screen.getByLabelText(/name/i), 'Ada Lovelace')
   await user.type(screen.getByLabelText(/email/i), 'ada@example.com')
-  await user.type(screen.getByLabelText(/password/i), 'a-long-enough-password')
-  await user.click(screen.getByRole('button', { name: /create owner/i }))
+  await user.type(screen.getByLabelText(/^password/i), 'a-long-enough-password')
+  await user.click(screen.getByRole('button', { name: /create account/i }))
 }
 
 describe('the setup form', () => {
@@ -89,7 +89,7 @@ describe('the sign-in form', () => {
     renderWithQuery(<SignInForm />, 'en')
     const user = userEvent.setup({ delay: null })
     await user.type(screen.getByLabelText(/email/i), 'ada@example.com')
-    await user.type(screen.getByLabelText(/password/i), 'a-long-enough-password')
+    await user.type(screen.getByLabelText(/^password/i), 'a-long-enough-password')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => expect(push).toHaveBeenCalledWith('/two-factor'))
@@ -102,10 +102,31 @@ describe('the sign-in form', () => {
     renderWithQuery(<SignInForm />, 'en')
     const user = userEvent.setup({ delay: null })
     await user.type(screen.getByLabelText(/email/i), 'ada@example.com')
-    await user.type(screen.getByLabelText(/password/i), 'wrong-password-here')
+    await user.type(screen.getByLabelText(/^password/i), 'wrong-password-here')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/do not match an account here/i)
     expect(push).not.toHaveBeenCalled()
+  })
+})
+
+describe('the password field', () => {
+  it('can be looked at, and goes back to hidden', async () => {
+    renderWithQuery(<SignInForm />)
+    const user = userEvent.setup({ delay: null })
+    const field = screen.getByLabelText(/^password/i)
+    expect(field).toHaveAttribute('type', 'password')
+    await user.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(field).toHaveAttribute('type', 'text')
+    await user.click(screen.getByRole('button', { name: 'Hide password' }))
+    expect(field).toHaveAttribute('type', 'password')
+  })
+
+  it('says how far the owner password is from long enough', async () => {
+    renderWithQuery(<SetupForm />)
+    const user = userEvent.setup({ delay: null })
+    expect(screen.getByText('At least 10 characters. 10 to go.')).toBeInTheDocument()
+    await user.type(screen.getByLabelText(/^password/i), 'abcdefghij')
+    expect(screen.getByText('Long enough.')).toBeInTheDocument()
   })
 })

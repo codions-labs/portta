@@ -16,7 +16,15 @@ import type {
   RouteUrl,
   UrlScope,
 } from 'portta-contracts'
-import { composeFilesFromLabel, projectOperable, serviceKind, slug } from 'portta-core'
+import {
+  composeFilesFromLabel,
+  httpRoutes,
+  isTcpOnly,
+  projectOperable,
+  serviceKind,
+  slug,
+  traefikEnabled,
+} from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import { schemeFor } from '../config.ts'
 import { projectStartable } from './actions.ts'
@@ -77,20 +85,9 @@ function basename(path: string | null): string | null {
 const COMPLETED_JOB = /(^|[-_])(migrat(?:e|or|ion|ions)|init|seed|setup|bootstrap|job)([-_]|$)/i
 const WORKER_SERVICE = /(^|[-_])(worker|queue|scheduler|cron|consumer|beat|horizon|celery|sidekiq|resque)([-_]|$)/i
 
-/** Every Host(`...`) a router rule names, in label order. */
+/** Every name a router rule can be listed under, the way Traefik reads it. */
 export function hostsFromRules(labels: Record<string, string>): string[] {
-  const hosts: string[] = []
-  const keys = Object.keys(labels)
-    .filter((key) => key.startsWith('traefik.http.routers.') && key.endsWith('.rule'))
-    .sort()
-  for (const key of keys) {
-    const rule = labels[key] ?? ''
-    for (const match of rule.matchAll(/Host\(`([^`]+)`\)/g)) {
-      const host = match[1]
-      if (host && !hosts.includes(host)) hosts.push(host)
-    }
-  }
-  return hosts
+  return httpRoutes(labels).hosts
 }
 
 export function scopeForHost(host: string, config: PanelConfig): UrlScope {
@@ -109,29 +106,23 @@ export function scopeForHost(host: string, config: PanelConfig): UrlScope {
 }
 
 /**
- * Mirrors portta_discover_http: an explicit Host() rule wins, otherwise Traefik's
- * default rule derives the hostname from the Compose labels.
+ * An explicit Host() rule wins, and a router with no rule gets Traefik's default,
+ * derived from the Compose labels. A rule that names no host has no address to
+ * list: the derived one would be fiction, because nothing answers there.
  */
-/** A container carries TCP router labels and no HTTP ones. */
-export function isTcpOnly(labels: Record<string, string>): boolean {
-  const keys = Object.keys(labels)
-  return (
-    keys.some((key) => key.startsWith('traefik.tcp.routers.')) && !keys.some((key) => key.startsWith('traefik.http.'))
-  )
-}
-
 export function urlsFor(labels: Record<string, string>, containerName: string, config: PanelConfig): RouteUrl[] {
-  if (labels[LABELS.traefikEnable] !== 'true') return []
+  if (!traefikEnabled(labels)) return []
   // A datastore routed by hostname opted into the gateway, but it is not
   // reached with a browser and has no URL. See docs/product/guides/tcp-routing.md.
   if (isTcpOnly(labels)) return []
   const scheme = schemeFor(config)
-  let hosts = hostsFromRules(labels)
-  if (hosts.length === 0) {
+  const routes = httpRoutes(labels)
+  const hosts = [...routes.hosts]
+  if (routes.usesDefaultRule) {
     const project = labels[LABELS.composeProject]
     const service = labels[LABELS.composeService]
     const label = project ? `${slug(project)}-${slug(service ?? '')}` : slug(containerName)
-    hosts = [`${label}.${config.domain}`]
+    hosts.push(`${label}.${config.domain}`)
   }
   return hosts.map((host) => ({
     host,
@@ -186,7 +177,7 @@ function exposedPorts(inspect: DockerContainerInspect | null): number[] {
 function classify(labels: Record<string, string>, onGatewayNetwork: boolean, project: string | null): Ownership {
   if (labels[LABELS.managed] === 'true') return 'gateway'
   if (project === null) return 'standalone'
-  if (onGatewayNetwork || labels[LABELS.traefikEnable] === 'true') return 'integrated'
+  if (onGatewayNetwork || traefikEnabled(labels)) return 'integrated'
   return 'external'
 }
 
@@ -247,7 +238,7 @@ export function summarise(
     group: declaredProject,
     networks,
     onGatewayNetwork,
-    traefikEnabled: labels[LABELS.traefikEnable] === 'true',
+    traefikEnabled: traefikEnabled(labels),
     ports,
     exposedPorts: exposed,
     // Opting a database into hostname routing also sets traefik.enable, so

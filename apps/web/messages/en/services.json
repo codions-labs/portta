@@ -74,7 +74,11 @@
     "container": "Container",
     "environmentLink": "Open environment",
     "noEndpoint": "No address to reach this service on",
-    "measuredAt": "measured {{time}}"
+    "measuredAt": "measured {{time}}",
+    "addresses": "Addresses",
+    "whoMayOpen": "Who may open",
+    "openSite": "Open site",
+    "technical": "Technical details"
   },
   "console": {
     "terminalLabel": "Interactive console for {{service}}",

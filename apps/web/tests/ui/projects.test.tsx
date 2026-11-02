@@ -19,6 +19,7 @@ const developmentOverview = vi.fn()
 const environmentAction = vi.fn()
 const patchProject = vi.fn()
 const deleteProject = vi.fn()
+const setProjectTags = vi.fn()
 
 vi.mock('@/lib/api', () => ({
   ApiError,
@@ -29,6 +30,7 @@ vi.mock('@/lib/api', () => ({
     environmentAction: (...args: unknown[]) => environmentAction(...args),
     patchProject: (...args: unknown[]) => patchProject(...args),
     deleteProject: (...args: unknown[]) => deleteProject(...args),
+    setProjectTags: (...args: unknown[]) => setProjectTags(...args),
   },
 }))
 
@@ -53,6 +55,7 @@ function summary(overrides: Record<string, unknown> = {}) {
     archived: false,
     relativePath: null,
     location: 'external',
+    tags: [],
     repositoryCount: 2,
     environmentCount: 1,
     runningEnvironmentCount: 1,
@@ -72,13 +75,61 @@ const idle = summary({
 
 beforeEach(() => {
   projects.mockReset().mockResolvedValue([summary()])
-  environments.mockReset().mockResolvedValue([{ name: 'alpha' }, { name: 'beta' }])
+  environments.mockReset().mockResolvedValue([])
   developmentOverview.mockReset().mockResolvedValue(makeOverview({ projects: [makePulse()] }))
   environmentAction.mockReset().mockResolvedValue({ ok: true })
   patchProject.mockReset().mockResolvedValue({})
   deleteProject.mockReset().mockResolvedValue({ ok: true, removed: 'produto', note: 'the grouping only' })
+  setProjectTags.mockReset().mockResolvedValue({})
   localStorage.clear()
   navigation.push.mockReset()
+})
+
+describe('tags on the Projects page', () => {
+  const acme = { key: 'cliente', value: 'Acme' }
+  const globex = { key: 'cliente', value: 'Globex' }
+
+  beforeEach(() => {
+    projects.mockResolvedValue([summary({ tags: [acme] }), { ...idle, tags: [globex] }])
+  })
+
+  it('filters to one tag', async () => {
+    renderWithQuery(view())
+    await screen.findByRole('link', { name: 'Meu Produto' })
+    await userEvent.click(screen.getByRole('button', { name: /^cliente: Globex/ }))
+    expect(screen.queryByRole('link', { name: 'Meu Produto' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Loja' })).toBeInTheDocument()
+  })
+
+  it('groups by a key in use, one band per value', async () => {
+    renderWithQuery(view())
+    await screen.findByRole('link', { name: 'Meu Produto' })
+    await userEvent.click(screen.getByRole('radio', { name: 'Cliente' }))
+    const bands = screen.getAllByRole('region').map((region) => region.getAttribute('aria-label'))
+    expect(bands).toEqual(expect.arrayContaining(['Acme', 'Globex']))
+  })
+
+  it('adds a tag written as key: value, keeping the ones already there', async () => {
+    renderWithQuery(view())
+    await screen.findByRole('link', { name: 'Meu Produto' })
+    await userEvent.click(screen.getAllByRole('button', { name: 'Add a tag' })[0] as HTMLElement)
+    await userEvent.type(screen.getByLabelText('New tag'), 'time: Loja{Enter}')
+    expect(setProjectTags).toHaveBeenCalledWith('produto', [acme, { key: 'time', value: 'Loja' }])
+  })
+
+  it('removes one, and offers neither to somebody who may not edit', async () => {
+    renderWithQuery(view())
+    await screen.findByRole('link', { name: 'Meu Produto' })
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the tag cliente: Acme' }))
+    expect(setProjectTags).toHaveBeenCalledWith('produto', [])
+  })
+
+  it('does not offer to edit to somebody who only reads', async () => {
+    renderWithQuery(view(), undefined, principal({ permissions: ['project:read'] }))
+    await screen.findByRole('link', { name: 'Meu Produto' })
+    expect(screen.queryByRole('button', { name: 'Add a tag' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Remove the tag/ })).toBeNull()
+  })
 })
 
 describe('the Projects page', () => {
@@ -131,6 +182,6 @@ describe('what a role is shown', () => {
   it('offers no way to create a Project to somebody who may not', async () => {
     renderWithQuery(view(), undefined, principal({ role: 'developer', permissions: ['project:read'] }))
     await screen.findByRole('link', { name: 'Meu Produto' })
-    expect(screen.queryByRole('button', { name: 'New project' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add project' })).not.toBeInTheDocument()
   })
 })

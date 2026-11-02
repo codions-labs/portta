@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { SettingsSections } from '@/components/settings/settings-sections'
+import { SettingsShell } from '@/components/settings/settings-shell'
 import { serverTranslation } from '@/lib/i18n/server'
 import { panelSignsPeopleIn } from '@/lib/server/page-data'
 
@@ -12,10 +12,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SettingsLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <SettingsSections signsPeopleIn={panelSignsPeopleIn()} />
-      {children}
-    </>
-  )
+  return <SettingsShell signsPeopleIn={panelSignsPeopleIn()}>{children}</SettingsShell>
 }

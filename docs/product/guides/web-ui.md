@@ -161,6 +161,19 @@ and sign-in attempts from one address are rate-limited:
 
 **Authentication enabled**: a refused sign-in.
 
+The sign-in and the creation of the owner say what the panel is beside the form, and
+the password can be shown while typing it; the owner's password tells you how far it is
+from the ten characters it needs. The second factor is one card: six digits, or a backup
+code, or another account.
+
+A site protected by a password has its own login page, since the people who open it are
+clients and reviewers who have never heard of Portta. It says why it appears (a work in
+progress, shared with guests only, the application never receives the password), names
+the service, project and technology, and says how long to wait after too many wrong
+tries. An address nobody protects any more, such as a temporary link that ended, answers
+with a page that explains what that means and says nothing about whether the address ever
+existed.
+
 Once signed in, the panel is the same panel; the account menu at the foot of the
 sidebar names who you are, and Settings gains Users, API tokens, Security and
 Audit.
@@ -176,9 +189,10 @@ See [Authentication](authentication.md) and
 
 ## The pages
 
-The sidebar lists Overview and Projects, then an **Infrastructure** group
-(Services, Docker, Network, Access, Gateway), then Settings. Environments are
-reached from Projects (**Environments on this host**). An entry the current
+The sidebar follows the tasks of a day: Home, Projects and Access, then an
+**Infrastructure** group with Server and Settings. Services are a view of Projects,
+and an environment no Project adopted is listed there under **No project**; containers, network and gateway are sections
+of Server. On a phone the same entries are a bar under the content. An entry the current
 person may not open is not listed. Every page is a route,
 so a link, a bookmark and the back button all work.
 
@@ -187,6 +201,18 @@ so a link, a bookmark and the back button all work.
 ![Authentication disabled: the Overview page with the host strip, what needs attention, the Projects and the environments using the host](../../images/auth-disabled-overview.png)
 
 **Authentication disabled**: the Overview on the demo host.
+
+**Add project** (`/projects/new`, for whoever may create projects) is the page every
+"Add project" button opens: a folder on this host, an environment Docker already runs,
+an empty project, or the terminal. The panel never opens a project's folder, so for a
+folder it writes the `portta envs analyze` and `portta adopt` commands for the path you
+type, and the plan is read in the terminal.
+
+Until there is a first project, whoever may create one sees where to start instead:
+a project with Compose, containers already running, or an agent, beside what this
+host still needs. It says only what the panel can read, so teaching your agents never
+reads as done: `portta agents status` says that on the host. **See the panel anyway**
+leaves it for that browser, and anything needing attention still shows below it.
 
 The Overview, in the order the questions come. The top line names
 the machine (its commercial name or hostname, its kind, OS, architecture and
@@ -206,43 +232,46 @@ reporting.
 ### Projects
 
 A Project is the product; an environment is one Compose stack running for it.
-The page shows every Project as a card or as a table, with a search, a state
-filter and archived Projects on request; **Environments on this host** opens
-`/environments`. **New project** asks for a name, a slug and a description, and
-the slug is what an environment's `portta.project` label must say to be adopted
-automatically. Opening a Project shows its state, an **Open / Test** menu for
-its primary environment, and its Overview, Environments and Settings tabs. See
+The page lists each Project with its environments: the main address with copy and
+open, who may open it on a public host, and the next action, so most things are
+done from here. A search and filters narrow it, **Table** selects several Projects
+to act on at once, and **By service** reads the same catalogue service by service.
+**No project** holds what the host runs and no Project adopted, with **Adopt into**
+beside it. **Add project** asks for a name, a slug and a description, and the slug
+is what an environment's `portta.project` label must say to be adopted
+automatically.
+
+Opening a Project shows what it uses, environment by environment and service by
+service, with the last hour of CPU and memory, **Open site** for its primary
+environment, **Restart all**, and its Overview, Environments and Settings tabs. See
 [Manage projects](projects.md).
 
 ### Environments
 
-`/environments` lists every Compose project Docker runs, adopted or not.
-`/environments/<name>` is one environment: its services with their addresses,
-resources and logs, **Open / Test**,
-Start, Stop, Restart, Rebuild and the two named removals, a **Logs** tab that
-interleaves every service, and a **Settings** tab for presentation overrides
-and the hostname alias. See [Manage environments](environments.md) and the
+`/environments/<name>` is one environment: its services with their addresses and
+resources, the logs of every service under them, Restart, Stop, **More** and **Open
+site**, and a **Settings** tab for presentation overrides and the hostname alias.
+See [Manage environments](environments.md) and the
 [container console](container-console.md).
 
 ### Services and Docker
 
-**Services** is every service of every integrated project as one filterable
-list, with its addresses. **Docker** is every container on the host, separated
-into Portta, integrated projects, external Compose projects and standalone
-containers, with the networks and published ports. See
+**By service**, in Projects, is every service of every integrated project as one
+filterable list, with its addresses. **Containers**, in Server, is every container on the host, filtered by
+origin (projects, external, Portta's own) or by port conflict, with its image and
+published ports. See
 [Manage services](services.md).
 
 #### Who may open a service
 
-Opening a service shows its drawer. On a public host the **Share with a client**
-section is where its hostname gets a decision: nobody has decided yet, so it is
-closed.
+Opening a service shows it beside the list. On a public host **Who may open** is
+where its hostname gets a decision: nobody has decided yet, so it is closed.
 
 ![Authentication disabled: the service drawer on a public host, where nobody has decided about the hostname and it is closed](../../images/auth-disabled-exposure-closed.png)
 
-**Protect with a password** generates a login and shows the password once; only
-its hash is stored. **Open to everybody** removes the login, **Close it** goes
-back to closed, and a new password replaces the old one. Every change applies on
+**Whoever has the password** generates a login and shows the password once; only
+its hash is stored. **Anybody** removes the login, **Nobody** goes back to closed,
+and a new password replaces the old one. Every change applies on
 the next request and recreates nothing. See
 [Run a public host](public-host.md).
 
@@ -250,50 +279,84 @@ the next request and recreates nothing. See
 
 ### Network
 
-![Authentication disabled: the Network page with domains, TLS, VPN and DNS settings, every routed hostname and the Docker networks with their roles](../../images/auth-disabled-network.png)
+A section of Server, at `/host/network`.
+
+![Authentication disabled: the Network page with addresses, certificates, VPN and the Docker networks with their roles](../../images/auth-disabled-network.png)
 
 **Authentication disabled**: the Network page.
 
-Domains (local, VPN, public), TLS mode and ACME contact, Tailscale state, the DNS
-provider, every routed hostname with its target port, and the Docker networks
-with their role: shared, control, access, or a project's own.
+Addresses, certificates and VPN, each with a link to change it in Settings, and
+the Docker networks with their role: shared, control, access, or a project's own.
+Every routed hostname is in [Access](#access).
 
 ### Access
+
+Who may open what. **Sites** lists every address this host answers on, with who
+may open it on the row: **Password** generates a login and shows the password once (tick **Ask for the password
+alone** first, in the service's panel, to ask for no username at all),
+**Everybody** asks first and removes the login, **Closed** answers nobody. The
+decision applies on the next request. A temporary link is one click from the row.
+
+The panel reads a router's labels the way Traefik does, so an address is never
+called protected only because the registry says so. On a public host, a route
+without the login gate reads **Open, no login**, with no decision to take until the
+gate is there. A router that has no gate and no single address to list, such as a
+`HostRegexp`, a wildcard or a rule with no `Host`, may answer any name on the host
+depending on rule length, whichever project it belongs to: Access and Home name
+it, and every address on the host reads as open until it is fixed.
 
 ![Authentication disabled: the Access page with no open bridge and the TCP services of each project, each with its gateway address and an Open local access button](../../images/auth-disabled-access.png)
 
 **Authentication disabled**: the Access page.
 
-Databases, caches and anything else that speaks TCP rather than HTTP. **Open
-local access** creates the same bridge [`portta access open`](tcp-access.md)
-does, with the same labels, so `portta access list`, `close` and `gc` manage it
-too. It binds `127.0.0.1` on a port the kernel picks, so any number of databases
-can be reachable at once without one of them giving up its standard port. An
-open bridge offers its host, port and a connection string with no password in
-it.
+**Databases and TCP** is everything that speaks TCP rather than HTTP. **Connect**
+creates the same bridge [`portta access open`](tcp-access.md) does, with the same
+labels, so `portta access list`, `close` and `gc` manage it too. It binds `127.0.0.1`
+on a port the kernel picks, so any number of databases can be reachable at once
+without one of them giving up its standard port. An open bridge shows its address,
+a connection text with no password in it, and the password when the panel can read
+it from the container.
 
-The **Gateway address** column is the other way in, when
-[hostname routing](tcp-routing.md) is enabled: a stable
-`<project>-<service>.<domain>:<port>` that needs no bridge. Where a protocol
-cannot do it, or hostname routing is off, the column says so. **Connect** reads
-the container environment on demand to fill a connection string. The page also
-lists persistent forwarders created with
+**Fixed address** is the other way in, when [hostname routing](tcp-routing.md) is
+enabled: a stable `<project>-<service>.<domain>:<port>` that needs no bridge. Where a
+protocol cannot do it, or hostname routing is off, it says so. The page also lists
+persistent forwarders created with
 [`portta service publish --private`](tailscale-services.md).
+
+### Server
+
+The first section, Health, reads the **whole server**, not only the projects. Memory,
+CPU and disk are each a percentage of what the machine has, with the amount beside it
+(12 GB of 32 GB; the disk in powers of ten, as macOS and disk makers count, so a 512 GB disk reads 512 GB), and a bar that splits what is in use between the projects, Portta's
+own containers, and the system and everything else running there. Below, **What is
+using the server** names the share the projects take of what is in use and lists them
+from the largest, as a share of the server. The disk is split the same way, by what each
+project keeps on the Docker disk: its volumes and the writable layer of its containers.
+Images, files in project folders and everything else count as the system. On a server with an NVIDIA GPU the same split is offered for its memory, and each project's page shows what it holds. That reading is
+refreshed every five minutes, so the disk bar can lag behind memory and CPU. The page also shows the time zone
+the server's clock is set to, with its local time, next to the system, hardware and
+runtime details. The time zone is read by the collector on the machine, so it needs a
+collector that has been updated with `portta up` to show.
 
 ### Gateway
 
-Component states, versions, the profile, the checks the panel can make from
-inside its container, and logs for Traefik, the socket proxy and Tailscale.
-**Restart Traefik** restarts the container in place. See
+A section of Server, at `/host/gateway`. Traefik, the socket proxy, authentication and
+Tailscale with their state and version, and logs for each source, with the rest one
+click away. **Restart Traefik** and **Run diagnostics** sit in the Server header on
+every tab: restarting asks first and restarts the container in place, and diagnostics
+are the checks the panel can make from inside its container. See
 [Configure the panel](panel-settings.md#gateway).
 
 ### Settings
 
-**General** (Projects, project addresses, project access, TLS, DNS, the panel
-and Traefik) is listed to whoever holds `settings:read`, and **Environment**
-(host readiness and security findings) to whoever holds `metrics:read`.
-**Users**, **API tokens**, **Security** and **Audit** appear with
-authentication enabled; with it disabled a bookmark into one of them says the
+One page with the sections beside it, in two groups, and a search that finds a
+setting by name, by what it does or by its variable, and opens it. **This host**
+(Projects, Addresses, Site access, Certificates and DNS, Panel and Traefik) is listed
+to whoever holds `settings:read`. Saving is at the foot of the section, and a change
+that is saved but not in effect says what to run. Server readiness and security
+findings are the **Health** section of Server, for whoever holds `metrics:read`.
+**People** (Users, API tokens, Security and Audit) appears with authentication
+enabled; with it disabled a bookmark into one of them says the
 panel does not sign people in. Every section is described in
 [Configure the panel](panel-settings.md); the accounts pages are shown in
 [Authentication](authentication.md).
@@ -304,9 +367,14 @@ panel does not sign people in. Every section is described in
 
 **Authentication disabled**: the command menu.
 
-<kbd>⌘</kbd> <kbd>K</kbd> (<kbd>Ctrl</kbd> <kbd>K</kbd> elsewhere) or **Command
-menu** at the top of the sidebar opens a search over actions, pages, Projects
-and preferences such as the theme. <kbd>[</kbd> toggles the sidebar.
+<kbd>⌘</kbd> <kbd>K</kbd> (<kbd>Ctrl</kbd> <kbd>K</kbd> elsewhere) or the search at
+the top of the sidebar opens a search over services, actions, pages, Projects and
+preferences such as the theme. Name a service, such as `shop web`, and what can be
+done to it comes first, beside its state, address, who may open it and what it uses:
+open the site, copy the address, read its logs, create a temporary link, restart it
+or open its console, each offered only if you may. <kbd>⌥</kbd> (<kbd>Alt</kbd>
+elsewhere) with the letter shown runs it without leaving the search, since the letter
+alone is part of what you type. <kbd>[</kbd> toggles the sidebar.
 
 ### Documentation
 
@@ -359,9 +427,22 @@ Project, `404` for an unknown path or environment.
 
 Never offered: editing configuration or environment variables of a container,
 changing its networks or volumes, running an arbitrary command, resetting a
-database, mass removal, or any kind of prune. The
+database, or any kind of prune. The
 [container console](container-console.md) is a fixed shell inside a project
 container, never a host shell and never a gateway container.
+
+### Acting on several containers
+
+Server > Containers has a checkbox on every row. With some selected, the bar above
+the list starts, stops, restarts, shows their logs together or removes them.
+"Select all" covers what the current filter shows and never a container of
+Portta's own: without those the panel and every site go down, so their
+checkboxes are disabled, and the server refuses them whatever the panel sends.
+
+Removing several asks you to type `remove N`, lists each container and its
+image, and is the same call as removing one: volumes, images and networks stay,
+and only what a container wrote outside any volume is lost. Each removal is in
+the audit log on its own, and a failure on one does not stop the others.
 
 ### Removing a container
 
@@ -515,7 +596,7 @@ portta web restart
 The proxy is up but denying calls. Confirm the panel is talking to its own
 proxy (`PORTTA_RUNTIME_DOCKER_API`), not Traefik's read-only one.
 
-**"Open local access" says the bridge image is not on this host.** The panel
+**"Connect" says the bridge image is not on this host.** The panel
 cannot pull images. `portta web up` pulls it; when the panel was started some
 other way, pull it once on the host:
 

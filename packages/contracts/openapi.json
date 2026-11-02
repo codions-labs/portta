@@ -2105,6 +2105,25 @@
         ],
         "description": "Where this Project sits relative to Projects Home"
       },
+      "ProjectTag": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "additionalProperties": false
+      },
       "ProjectSummary": {
         "type": "object",
         "properties": {
@@ -2134,6 +2153,12 @@
           },
           "location": {
             "$ref": "#/components/schemas/ProjectLocation"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectTag"
+            }
           },
           "environmentCount": {
             "type": "integer",
@@ -2192,6 +2217,7 @@
           "archived",
           "relativePath",
           "location",
+          "tags",
           "environmentCount",
           "runningEnvironmentCount",
           "environments"
@@ -2323,6 +2349,12 @@
           "location": {
             "$ref": "#/components/schemas/ProjectLocation"
           },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectTag"
+            }
+          },
           "environments": {
             "type": "array",
             "items": {
@@ -2339,6 +2371,7 @@
           "relativePath",
           "resolvedPath",
           "location",
+          "tags",
           "environments"
         ],
         "additionalProperties": false
@@ -3950,11 +3983,35 @@
             "items": {
               "$ref": "#/components/schemas/ExposureEntry"
             }
+          },
+          "openRouters": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "names": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Only those this caller may see; count is the whole host."
+              }
+            },
+            "required": [
+              "count",
+              "names"
+            ],
+            "additionalProperties": false,
+            "description": "Containers answering with no login on names that cannot be listed. Any of them means no address on this host can be called protected."
           }
         },
         "required": [
           "enforced",
-          "entries"
+          "entries",
+          "openRouters"
         ],
         "additionalProperties": false
       },
@@ -4900,6 +4957,20 @@
               "null"
             ]
           },
+          "timezone": {
+            "description": "The IANA zone the server clock is set to; absent in readings from an older collector",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "utcOffsetMinutes": {
+            "description": "Minutes east of UTC when the reading was taken",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
           "cpu": {
             "$ref": "#/components/schemas/HostCpuInfo"
           },
@@ -4993,6 +5064,30 @@
             "items": {
               "$ref": "#/components/schemas/HostGpuInfo"
             }
+          },
+          "gpuMemory": {
+            "description": "Memory used and present on the GPUs, from nvidia-smi; absent on other GPUs",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "usedBytes": {
+                    "type": "number"
+                  },
+                  "totalBytes": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "usedBytes",
+                  "totalBytes"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "temperatureCelsius": {
             "description": "CPU package temperature in Celsius, where the platform reports one",
@@ -5154,6 +5249,158 @@
         ],
         "additionalProperties": false
       },
+      "GitState": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The working directory it was read from"
+          },
+          "branch": {
+            "description": "Null when HEAD is detached or the repository has no commit yet",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detached": {
+            "type": "boolean"
+          },
+          "upstream": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ahead": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Commits not yet pushed; null without an upstream"
+          },
+          "behind": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Commits not yet pulled, as last fetched; null without an upstream"
+          },
+          "head": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "sha": {
+                    "type": "string"
+                  },
+                  "subject": {
+                    "type": "string"
+                  },
+                  "author": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "number",
+                    "description": "Unix timestamp in seconds"
+                  }
+                },
+                "required": [
+                  "sha",
+                  "subject",
+                  "author",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "changed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Tracked files with changes not committed"
+          },
+          "untracked": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "M",
+                    "A",
+                    "D",
+                    "U"
+                  ],
+                  "description": "Modified, added, deleted or new (untracked)"
+                }
+              },
+              "required": [
+                "path",
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The first of them: changed + untracked can be longer"
+          },
+          "lastChangeAt": {
+            "anyOf": [
+              {
+                "type": "number",
+                "description": "Unix timestamp in seconds"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The newest of the last commit and the files not committed"
+          },
+          "collectedAt": {
+            "type": "number",
+            "description": "Unix timestamp in seconds"
+          }
+        },
+        "required": [
+          "path",
+          "branch",
+          "detached",
+          "upstream",
+          "ahead",
+          "behind",
+          "head",
+          "changed",
+          "untracked",
+          "files",
+          "lastChangeAt",
+          "collectedAt"
+        ],
+        "additionalProperties": false
+      },
       "ProjectResourceMetrics": {
         "type": "object",
         "properties": {
@@ -5166,6 +5413,11 @@
           "composeProject": {
             "type": "string"
           },
+          "own": {
+            "description": "Set on Portta's own containers (gateway, panel, proxies)",
+            "type": "boolean",
+            "const": true
+          },
           "cpuUtilisation": {
             "type": [
               "number",
@@ -5173,6 +5425,13 @@
             ]
           },
           "memoryUsedBytes": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "gpuMemoryBytes": {
+            "description": "What its containers hold of the GPU's memory",
             "type": [
               "number",
               "null"
@@ -5200,6 +5459,16 @@
             "items": {
               "$ref": "#/components/schemas/ContainerResourceMetrics"
             }
+          },
+          "git": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GitState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -5214,6 +5483,46 @@
           "containers"
         ],
         "additionalProperties": false
+      },
+      "DockerStorageInfo": {
+        "type": "object",
+        "properties": {
+          "collectedAt": {
+            "type": "number",
+            "description": "Unix timestamp in seconds"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "composeProject": {
+                  "type": "string"
+                },
+                "volumeBytes": {
+                  "type": "number",
+                  "description": "The project's named volumes"
+                },
+                "layerBytes": {
+                  "type": "number",
+                  "description": "The writable layer of its containers"
+                }
+              },
+              "required": [
+                "composeProject",
+                "volumeBytes",
+                "layerBytes"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "collectedAt",
+          "projects"
+        ],
+        "additionalProperties": false,
+        "description": "What each Compose project keeps on the Docker disk. Images are shared and are not counted here"
       },
       "MetricsCurrent": {
         "type": "object",
@@ -5279,6 +5588,16 @@
             "items": {
               "$ref": "#/components/schemas/ProjectResourceMetrics"
             }
+          },
+          "dockerStorage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DockerStorageInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -7245,6 +7564,7 @@
               "token.revoked",
               "project.created",
               "project.updated",
+              "project.tagged",
               "project.deleted",
               "environment.started",
               "environment.stopped",
@@ -9709,6 +10029,139 @@
         "x-portta-permission": "project:delete"
       }
     },
+    "/projects/{slug}/tags": {
+      "put": {
+        "operationId": "setProjectTags",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Set the tags of a Project",
+        "description": "Replaces them all. A tag is a label to group and filter by, such as `cliente: Acme`; it grants and hides nothing.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tags": {
+                    "maxItems": 16,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "default": "",
+                          "type": "string",
+                          "maxLength": 32
+                        },
+                        "value": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "tags"
+                ],
+                "additionalProperties": false,
+                "ref": "ProjectTagsBody"
+              }
+            }
+          }
+        },
+        "x-portta-permission": "project:update"
+      }
+    },
     "/projects/{slug}/environments": {
       "put": {
         "operationId": "setProjectEnvironments",
@@ -12104,10 +12557,18 @@
                 "type": "object",
                 "properties": {
                   "user": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 64,
-                    "pattern": "^[A-Za-z0-9._-]+$"
+                    "description": "A login name to ask for beside the password. null asks for the password alone.",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[A-Za-z0-9._-]+$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
                 "additionalProperties": false

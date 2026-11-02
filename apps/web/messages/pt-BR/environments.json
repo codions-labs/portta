@@ -36,18 +36,19 @@
     "removeData": "Remover e dados locais",
     "removeKeepTitle": "Remover este projeto, manter os dados?",
     "removeDataTitle": "Remover este projeto e os dados locais?",
-    "removeFromHost": "Remover {{name}} deste host.",
-    "githubUntouched": "Nada fora deste host muda.",
+    "removeFromHost": "Remover {{name}} deste servidor.",
+    "githubUntouched": "Nada fora deste servidor muda.",
     "previewContainers": "{{count}} container(s) serão removidos.",
     "previewVolumes": "Volumes nomeados: {{names}}. O tamanho é desconhecido: o painel não inspeciona volumes.",
-    "typeName": "Digite {{name}} para confirmar."
+    "typeName": "Digite {{name}} para confirmar.",
+    "more": "Mais"
   },
   "collapsedService": "{{count}} serviço recolhido",
   "collapsedServices": "{{count}} serviços recolhidos",
   "archived": "arquivado",
   "running": "{{running}}/{{total}} em execução",
   "tabs": {
-    "overview": "Visão geral",
+    "overview": "Serviços",
     "services": "Serviços",
     "logs": "Logs",
     "settings": "Configurações"
@@ -106,7 +107,7 @@
   },
   "list": {
     "title": "Ambientes",
-    "description": "Todo projeto Compose neste host, adotado ou não. Um Project é o produto; isto é o que está rodando para ele.",
+    "description": "Todo projeto Compose neste servidor, adotado ou não. Um Project é o produto; isto é o que está rodando para ele.",
     "filterAria": "Filtrar ambientes",
     "searchPlaceholder": "Buscar ambiente, projeto ou serviço",
     "searchAria": "Buscar ambientes",
@@ -114,14 +115,22 @@
     "unattributed": "Sem projeto",
     "running": "Em execução",
     "empty": "Nenhum ambiente em execução",
-    "emptyHint": "Um ambiente aparece quando o Compose está no ar neste host. Adote-o num Project com a label portta.project ou à mão.",
+    "emptyHint": "Um ambiente aparece quando o Compose está no ar neste servidor. Adote-o num Project com a label portta.project ou à mão.",
     "noMatch": "Nenhum ambiente corresponde aos filtros",
     "remembered": "Não em execução"
   },
   "servicesTable": {
     "empty": "Este ambiente não tem serviços",
     "fallback": "Medições ao vivo precisam que o painel sirva os serviços deste ambiente; mostrando o que os containers reportam.",
-    "emptyRemembered": "Os containers foram removidos. Iniciar recria pelo runner."
+    "emptyRemembered": "Os containers foram removidos. Iniciar recria pelo runner.",
+    "unhealthy": "Com problema",
+    "healthy": "Saudável",
+    "stopped": "Parado",
+    "privateAddress": "Só na rede do ambiente",
+    "connect": "Conectar",
+    "filterLogs": "Filtrar logs por {{name}}",
+    "openConsole": "Abrir console de {{name}}",
+    "details": "Detalhes de {{name}}"
   },
   "presence": {
     "remembered": "Não em execução"
@@ -129,5 +138,51 @@
   "settings": {
     "title": "Configurações",
     "description": "Substituições de apresentação, mantidas no banco do gateway. Nada é gravado dentro do projeto."
+  },
+  "openSite": "Abrir site",
+  "healthWord": {
+    "ok": "Saudável",
+    "partial": "Degradado",
+    "down": "Parado",
+    "unhealthy": "Com problema"
+  },
+  "git": {
+    "title": "Código",
+    "verdict": {
+      "changed": "Com alterações",
+      "unpushed": "Sem enviar",
+      "behind": "Atrás do remoto",
+      "noUpstream": "Sem remoto",
+      "clean": "Tudo enviado"
+    },
+    "branch": "Branch",
+    "detached": "HEAD solto, sem branch",
+    "lastCommit": "Último commit",
+    "noCommit": "Ainda sem commit",
+    "uncommitted": "Sem commit",
+    "none": "Nenhum",
+    "files_one": "{{count}} arquivo",
+    "files_other": "{{count}} arquivos",
+    "unpushed": "Sem enviar",
+    "noUpstreamValue": "Esta branch não acompanha um remoto",
+    "commitsTo_one": "{{count}} commit para {{upstream}}",
+    "commitsTo_other": "{{count}} commits para {{upstream}}",
+    "allPushed": "Tudo enviado para {{upstream}}",
+    "behind": "Sem baixar",
+    "commits_one": "{{count}} commit",
+    "commits_other": "{{count}} commits",
+    "lastChange": "Última alteração",
+    "folder": "Pasta",
+    "startedBefore": "Os contêineres subiram antes do último commit. O site no ar pode não ter essas mudanças. Use Reconstruir, no menu Mais.",
+    "filesAria": "Arquivos alterados",
+    "status": {
+      "M": "Alterado",
+      "A": "Adicionado",
+      "D": "Removido",
+      "U": "Novo"
+    },
+    "moreFiles_one": "e mais {{count}} arquivo",
+    "moreFiles_other": "e mais {{count}} arquivos",
+    "readOn": "Lido neste servidor, sem consultar o GitHub · {{time}}"
   }
 }

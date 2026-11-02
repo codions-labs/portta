@@ -13,8 +13,10 @@ import { iconButton } from '@/components/ui/surfaces'
 import { Tooltip } from '@/components/ui/tooltip'
 import { signOut } from '@/lib/auth-client'
 import { usePrincipal } from '@/lib/principal'
+import { cn } from '@/lib/utils'
 
-export function UserMenu() {
+/** `full` draws the avatar and the name, for the foot of the rail; otherwise an icon. */
+export function UserMenu({ full = false, className }: { full?: boolean; className?: string }) {
   const { t } = useTranslation('auth')
   const router = useRouter()
   const principal = usePrincipal()
@@ -23,8 +25,28 @@ export function UserMenu() {
   return (
     <Menu>
       <Tooltip label={principal.name}>
-        <MenuTrigger className={iconButton} aria-label={principal.name}>
-          <User />
+        <MenuTrigger
+          className={cn(
+            full
+              ? 'flex h-10 w-full min-w-0 items-center gap-2.5 rounded-md px-1.5 text-left transition-colors duration-100 hover:bg-fill focus-ring'
+              : iconButton,
+            className,
+          )}
+          aria-label={principal.name}
+        >
+          {full ? (
+            <>
+              <span
+                aria-hidden
+                className="flex size-7 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold text-ink"
+              >
+                {principal.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{principal.name}</span>
+            </>
+          ) : (
+            <User />
+          )}
         </MenuTrigger>
       </Tooltip>
       <MenuContent align="end" className="min-w-56">

@@ -3,18 +3,22 @@
 // The top of every environment tab: what it is, what it belongs to, how it is
 // doing, and the operations its state allows.
 
+import { ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { Environment } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
-import { EnvironmentOpenMenu } from '@/components/entities/open-test-menu'
+import { primaryRoute } from '@/components/entities/environment-row'
+import { ResourceUsage } from '@/components/entities/resource-usage'
 import { EnvironmentActions } from '@/components/environment-actions'
 import { EnvironmentOperations } from '@/components/environment-operations'
 import { PageHeader } from '@/components/shell-bits'
-import { Badge, StatusIndicator } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge'
 import type { BreadcrumbItem } from '@/components/ui/breadcrumb'
+import { Button } from '@/components/ui/button'
 import { environmentHealth, healthTone } from '@/lib/health'
 import { useCan } from '@/lib/permissions'
+import { useEnvironmentServices } from '@/lib/queries'
 import type { EnvironmentOwner } from '@/lib/queries/projects'
 import { narrowTone } from '@/lib/tone'
 import { useFormat } from '@/lib/use-format'
@@ -35,15 +39,17 @@ export function EnvironmentHeader({
   const shown = environment.overrides?.displayName ?? environment.name
   const mayOperate = useCan('environment:operate')
   const mayDestroy = useCan('environment:destroy')
+  const served = useEnvironmentServices(environment.name)
+  const summary = served.data?.resources ?? null
+  const route = primaryRoute(environment)
 
   const breadcrumb: BreadcrumbItem[] = owner
     ? [
         { label: tn('projects'), href: '/projects' },
         { label: owner.name, href: `/projects/${encodeURIComponent(owner.slug)}` },
-        { label: tn('environments'), href: `/projects/${encodeURIComponent(owner.slug)}/environments` },
         { label: shown },
       ]
-    : [{ label: tn('environments'), href: '/environments' }, { label: shown }]
+    : [{ label: tn('environments'), href: '/projects' }, { label: shown }]
 
   return (
     <PageHeader
@@ -53,8 +59,6 @@ export function EnvironmentHeader({
         [
           environment.overrides?.displayName ? t('derivedName', { name: environment.name }) : null,
           environment.overrides?.description ?? null,
-          environment.uptimeSeconds !== null ? t('up', { time: uptime(environment.uptimeSeconds) }) : null,
-          environment.workingDir,
         ]
           .filter(Boolean)
           .join(' · ') || undefined
@@ -64,12 +68,21 @@ export function EnvironmentHeader({
           {remembered ? (
             <Badge tone="outline">{t('presence.remembered')}</Badge>
           ) : (
-            <StatusIndicator tone={narrowTone(healthTone(health))}>
-              {t('header.services', { running: environment.runningCount, total: environment.serviceCount })}
-            </StatusIndicator>
+            <Badge tone={narrowTone(healthTone(health))}>{t(`healthWord.${health}`)}</Badge>
           )}
-          {!remembered && environment.unhealthyCount > 0 ? (
-            <StatusIndicator tone="danger">{t('unhealthy', { count: environment.unhealthyCount })}</StatusIndicator>
+          {remembered ? null : (
+            <span>{t('header.services', { running: environment.runningCount, total: environment.serviceCount })}</span>
+          )}
+          {summary ? (
+            <ResourceUsage
+              cpu={summary.cpuUtilisation}
+              memoryBytes={summary.memoryUsedBytes}
+              memoryLimitBytes={summary.memoryLimitBytes}
+              stale={summary.stale}
+            />
+          ) : null}
+          {environment.uptimeSeconds !== null ? (
+            <span>{t('up', { time: uptime(environment.uptimeSeconds) })}</span>
           ) : null}
           {owner ? null : environment.group ? (
             <Badge tone="outline">{t('partOf', { group: environment.group })}</Badge>
@@ -79,14 +92,11 @@ export function EnvironmentHeader({
           {environment.namespace ? (
             <Badge tone="outline">{t('worktree', { name: environment.namespace })}</Badge>
           ) : null}
-          <Mono kind="text" tone="subtle" className="text-xs">
-            {environment.networks.join(', ')}
-          </Mono>
+          {environment.workingDir ? <Mono kind="path" tone="subtle" value={environment.workingDir} /> : null}
         </>
       }
       actions={
         <>
-          {environment.urls.length > 0 ? <EnvironmentOpenMenu environment={environment} /> : null}
           {/* Start, stop and restart are `environment:operate`. Forgetting
                 the panel's row, rebuilding and removing are `destroy`, and a
                 developer holds the first and not the second. */}
@@ -94,10 +104,18 @@ export function EnvironmentHeader({
             <EnvironmentActions
               project={environment}
               mayForget={mayDestroy}
-              onForgotten={() => router.push('/environments')}
+              onForgotten={() => router.push('/projects')}
             />
           ) : null}
           {remembered || !mayDestroy ? null : <EnvironmentOperations project={environment} />}
+          {route ? (
+            <Button asChild variant="primary">
+              <a href={route.url} target="_blank" rel="noreferrer">
+                <ExternalLink />
+                {t('openSite')}
+              </a>
+            </Button>
+          ) : null}
         </>
       }
     />

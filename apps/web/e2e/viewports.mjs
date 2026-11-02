@@ -43,12 +43,13 @@ const VIEWPORTS = [
 const TARGETS = [
   { name: 'overview', route: '/overview', ready: 'Demo Shop' },
   { name: 'projects', route: '/projects', ready: 'Demo Shop' },
-  { name: 'environments', route: '/environments' },
-  { name: 'services', route: '/services' },
-  { name: 'docker', route: '/docker' },
-  { name: 'network', route: '/network' },
+  { name: 'services', route: '/projects?view=services' },
   { name: 'access', route: '/access' },
-  { name: 'gateway', route: '/gateway' },
+  { name: 'access-tcp', route: '/access/tcp' },
+  { name: 'host', route: '/host' },
+  { name: 'containers', route: '/host/containers' },
+  { name: 'network', route: '/host/network' },
+  { name: 'gateway', route: '/host/gateway' },
   { name: 'settings', route: '/settings' },
   { name: 'docs', route: '/docs', ready: 'Portta docs' },
 ]

@@ -1,29 +1,29 @@
 'use client'
 
-// Every Project on this panel, as cards or as a table.
+// Every Project on this panel with its environments, or as a table to act on
+// several at once.
 //
 // The server read the list for this render and passed it in, so the first paint
 // is the list. From there the query owns it: the interval refetches, and
 // `lib/live.ts` invalidates when Docker says something changed.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { LayoutGrid, Plus, Table2 } from 'lucide-react'
-import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import type { DevelopmentOverview, ProjectSummary } from 'portta-contracts'
+import type { DevelopmentOverview, Environment, ProjectSummary } from 'portta-contracts'
 import { slug as slugify } from 'portta-core/browser'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ProjectCard } from '@/components/entities/project-card'
 import { ProjectTable } from '@/components/entities/project-table'
+import { ProjectGroup, UnownedGroup } from '@/components/projects/project-group'
+import { ProjectsSections, VIEW_STORAGE } from '@/components/projects/projects-sections'
 import {
   Empty,
   ErrorBox,
+  FilterChip,
   PageHeader,
   SkeletonRows,
-  ToolbarCheck,
   ToolbarSearch,
-  ToolbarSelect,
   ViewToolbar,
 } from '@/components/shell-bits'
 import { Button } from '@/components/ui/button'
@@ -37,29 +37,33 @@ import { useCan } from '@/lib/permissions'
 import {
   DEFAULT_PROJECT_FILTERS,
   defaultProjectOrder,
+  groupProjects,
   matchesProjectFilters,
   type ProjectFilters,
-  type ProjectState,
+  type ProjectGrouping,
   type ProjectView,
+  projectState,
   resolveProjectView,
+  tagCounts,
+  tagKeys,
   toListItems,
 } from '@/lib/projects'
-import { keys, useDevelopmentOverview, useEnvironments, useProjects } from '@/lib/queries'
-
-const VIEW_STORAGE = 'portta-projects-view'
-
-const STATES: ProjectState[] = ['running', 'partial', 'unhealthy', 'idle', 'archived']
+import { keys, useDevelopmentOverview, useEnvironments, useExposure, useProjects } from '@/lib/queries'
 
 export function ProjectsView({
   initialProjects,
   initialOverview,
+  startCreating = false,
 }: {
   initialProjects: ProjectSummary[]
   initialOverview: DevelopmentOverview
+  /** Arrived from an "Add project" elsewhere in the panel. */
+  startCreating?: boolean
 }) {
   const { t } = useTranslation('projects')
   const [filters, setFilters] = useState<ProjectFilters>(DEFAULT_PROJECT_FILTERS)
-  const [creating, setCreating] = useState(false)
+  const [creating, setCreating] = useState(startCreating)
+  const [grouping, setGrouping] = useState<ProjectGrouping>('none')
   // Cards until the browser has read its storage: the server cannot know the
   // preference, and a first render that disagrees with its HTML is thrown
   // away and rebuilt, which costs more than the re-render nobody sees.
@@ -73,8 +77,9 @@ export function ProjectsView({
   }, [])
   const catalog = useProjects(initialProjects)
   const overview = useDevelopmentOverview(initialOverview)
-  const runtimes = useEnvironments(true)
+  const environments = useEnvironments(true)
   const mayCreate = useCan('project:create')
+  const exposure = useExposure(useCan('access:read'))
 
   const catalogUnavailable = catalog.error instanceof ApiError && catalog.error.status === 503
 
@@ -83,14 +88,40 @@ export function ProjectsView({
     [catalog.data, overview.data],
   )
   const shown = useMemo(() => items.filter((item) => matchesProjectFilters(item, filters)), [items, filters])
-
-  const chooseView = (next: ProjectView) => {
-    setView(next)
-    try {
-      localStorage.setItem(VIEW_STORAGE, next)
-    } catch {
-      /* private browsing */
-    }
+  const tags = useMemo(() => tagCounts(items), [items])
+  const keysInUse = useMemo(() => tagKeys(items), [items])
+  // A grouping by a key nobody uses any more is no grouping.
+  const effective: ProjectGrouping =
+    grouping.startsWith('tag:') && !keysInUse.includes(grouping.slice(4)) ? 'none' : grouping
+  const bands = useMemo(
+    () =>
+      groupProjects(shown, effective, {
+        state: (state) => t(`state.${state}`),
+        without: (key) => t('group.without', { key }),
+      }),
+    [shown, effective, t],
+  )
+  const known = useMemo(
+    () =>
+      new Map((environments.data ?? []).map((environment): [string, Environment] => [environment.name, environment])),
+    [environments.data],
+  )
+  // What this host runs and no Project adopted. A filter on a Project's state
+  // says nothing about these, so only the search narrows them.
+  const unowned = useMemo(() => {
+    const owned = new Set(items.flatMap((item) => item.environments.map((environment) => environment.name)))
+    const needle = filters.search.trim().toLowerCase()
+    return (environments.data ?? []).filter(
+      (environment) =>
+        !owned.has(environment.name) &&
+        !environment.overrides?.archived &&
+        (needle === '' || environment.name.toLowerCase().includes(needle)),
+    )
+  }, [items, environments.data, filters.search])
+  const counts = {
+    problem: items.filter((item) => ['unhealthy', 'partial'].includes(projectState(item))).length,
+    idle: items.filter((item) => projectState(item) === 'idle').length,
+    archived: items.filter((item) => item.archived).length,
   }
 
   const set = <Key extends keyof ProjectFilters>(key: Key, value: ProjectFilters[Key]) =>
@@ -110,26 +141,54 @@ export function ProjectsView({
         placeholder={t('searchPlaceholder')}
         aria-label={t('searchAria')}
       />
-      <ToolbarSelect
-        value={filters.state}
-        onChange={(event) => set('state', event.target.value as ProjectFilters['state'])}
-        aria-label={t('filters.state')}
-      >
-        <option value="all">{t('filters.anyState')}</option>
-        {STATES.map((state) => (
-          <option key={state} value={state}>
-            {t(`state.${state}` as 'state.running')}
-          </option>
-        ))}
-      </ToolbarSelect>
-      <ToolbarCheck
-        checked={filters.includeArchived}
-        onChange={(event) => set('includeArchived', event.target.checked)}
-      >
-        {t('filters.showArchived')}
-      </ToolbarCheck>
+      <FilterChip active={filters.state === 'all'} onClick={() => set('state', 'all')}>
+        {t('filters.all')}
+      </FilterChip>
+      {counts.problem > 0 ? (
+        <FilterChip active={filters.state === 'problem'} onClick={() => set('state', 'problem')}>
+          {t('filters.problem', { count: counts.problem })}
+        </FilterChip>
+      ) : null}
+      {counts.idle > 0 ? (
+        <FilterChip active={filters.state === 'idle'} onClick={() => set('state', 'idle')}>
+          {t('filters.idle', { count: counts.idle })}
+        </FilterChip>
+      ) : null}
+      {counts.archived > 0 ? (
+        <FilterChip active={filters.state === 'archived'} onClick={() => set('state', 'archived')}>
+          {t('filters.archived', { count: counts.archived })}
+        </FilterChip>
+      ) : null}
     </>
   )
+
+  const tagChips =
+    tags.length > 0 ? (
+      <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label={t('tagsAria')}>
+        <FilterChip active={filters.tag === null} onClick={() => set('tag', null)}>
+          {t('filters.allTags')}
+        </FilterChip>
+        {tags.map((tag) => (
+          <FilterChip key={tag.label} active={filters.tag === tag.label} onClick={() => set('tag', tag.label)}>
+            {tag.label} {tag.count}
+          </FilterChip>
+        ))}
+        <span className="ml-2 text-xs font-semibold text-muted">{t('group.by')}</span>
+        <Segmented
+          label={t('group.by')}
+          value={effective}
+          onChange={setGrouping}
+          options={[
+            { value: 'none', label: t('group.none') },
+            ...keysInUse.map((key) => ({
+              value: `tag:${key}` as const,
+              label: key.charAt(0).toUpperCase() + key.slice(1),
+            })),
+            { value: 'state', label: t('group.state') },
+          ]}
+        />
+      </div>
+    ) : null
 
   const emptyState =
     items.length === 0 ? (
@@ -156,19 +215,15 @@ export function ProjectsView({
       />
     )
 
-  const switcher = (
-    <Segmented
-      label={t('viewLabel')}
-      value={view}
-      onChange={chooseView}
-      options={[
-        { value: 'cards', label: t('views.cards'), icon: LayoutGrid },
-        { value: 'table', label: t('views.table'), icon: Table2 },
-      ]}
-    />
-  )
   const chrome = (
-    <ViewToolbar switcher={switcher} trailing={view === 'table' ? <ColumnsMenu arrangement={table} /> : null}>
+    <ViewToolbar
+      trailing={
+        <>
+          {view === 'table' ? <ColumnsMenu arrangement={table} /> : null}
+          <ProjectsSections active={view} onChoose={setView} />
+        </>
+      }
+    >
       {controls}
     </ViewToolbar>
   )
@@ -192,6 +247,7 @@ export function ProjectsView({
 
       <section className="mb-6">
         {chrome}
+        {tagChips}
         {catalog.isPending ? (
           <Card>
             <SkeletonRows rows={4} />
@@ -204,29 +260,35 @@ export function ProjectsView({
           <Card>
             <ProjectTable items={shown} arrangement={table} empty={emptyState} />
           </Card>
-        ) : shown.length === 0 ? (
-          <Card>{emptyState}</Card>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {shown.map((item) => (
-              <ProjectCard key={item.slug} item={item} />
+          <div className="space-y-4">
+            {shown.length === 0 && (unowned.length === 0 || filters.state !== 'all') ? <Card>{emptyState}</Card> : null}
+            {bands.map((band) => (
+              <section key={band.id} className="space-y-4" aria-label={band.title ?? undefined}>
+                {band.title ? (
+                  <h2 className="flex items-baseline gap-2 pt-1 text-sm font-semibold text-ink">
+                    {band.title}
+                    <span className="text-xs font-normal text-subtle tabular-nums">{band.items.length}</span>
+                  </h2>
+                ) : null}
+                {band.items.map((item) => (
+                  <ProjectGroup key={item.slug} item={item} environments={known} exposure={exposure.data} />
+                ))}
+              </section>
             ))}
+            {filters.state === 'all' && unowned.length > 0 ? (
+              <UnownedGroup environments={unowned} projects={catalog.data ?? []} exposure={exposure.data} />
+            ) : null}
           </div>
         )}
       </section>
 
-      <p className="text-sm">
-        <Link className="text-accent underline-offset-2 hover:underline" href="/environments">
-          {t('environmentsLink', { count: runtimes.data?.length ?? 0 })}
-        </Link>
-      </p>
-
-      {creating ? <CreateProjectDialog open onOpenChange={setCreating} /> : null}
+      {creating && mayCreate ? <CreateProjectDialog open onOpenChange={setCreating} /> : null}
     </>
   )
 }
 
-function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function CreateProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { t } = useTranslation('projects')
   const queryClient = useQueryClient()
   const router = useRouter()

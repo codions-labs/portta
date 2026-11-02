@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { hasForwardAuth } from './forward-auth.ts'
-import { gatewayAlreadyPublic, ungatedContainers } from './gate.ts'
+import { gatewayAlreadyPublic, openCatchAllContainers, ungatedContainers } from './gate.ts'
 import type { ContainerRecord } from './inventory.ts'
 
 function container(name: string, labels: Record<string, string>, state = 'running'): ContainerRecord {
@@ -119,5 +119,49 @@ describe('a gateway that already answers the network', () => {
     expect(gatewayAlreadyPublic([traefik('0.0.0.0', 'running', 8080)])).toBe(false)
     expect(gatewayAlreadyPublic([traefik(null)])).toBe(false)
     expect(gatewayAlreadyPublic([])).toBe(false)
+  })
+})
+
+describe('openCatchAllContainers', () => {
+  const wide = { 'traefik.enable': 'true', 'traefik.http.routers.w.rule': 'HostRegexp(`.+`)' }
+
+  it('finds a router with no gate and no address, wherever it runs', () => {
+    expect(openCatchAllContainers([{ name: 'loose', state: 'running', labels: wide }]).map((c) => c.name)).toEqual([
+      'loose',
+    ])
+  })
+
+  it('leaves out what is stopped, what names its address, and the panel on its own entrypoint', () => {
+    expect(
+      openCatchAllContainers([
+        { state: 'exited', labels: wide },
+        { state: 'running', labels: { 'traefik.enable': 'true', 'traefik.http.routers.w.rule': 'Host(`a.test`)' } },
+        {
+          state: 'running',
+          labels: {
+            'portta.managed': 'true',
+            'traefik.enable': 'true',
+            'traefik.http.routers.portta-panel.rule': 'PathPrefix(`/`)',
+            'traefik.http.routers.portta-panel.entrypoints': 'panel',
+          },
+        },
+      ]),
+    ).toEqual([])
+  })
+
+  it('does not take a label as an excuse', () => {
+    expect(openCatchAllContainers([{ state: 'running', labels: { ...wide, 'portta.managed': 'true' } }])).toHaveLength(
+      1,
+    )
+  })
+
+  it.each(['panel', 'somewhere-else'])('counts somebody else on the %s entrypoint', (entrypoint) => {
+    const labels = { ...wide, 'traefik.http.routers.w.entrypoints': entrypoint }
+    expect(openCatchAllContainers([{ state: 'running', labels }])).toHaveLength(1)
+  })
+
+  it('counts a router that also listens on a public entrypoint', () => {
+    const labels = { ...wide, 'traefik.http.routers.w.entrypoints': 'panel, websecure' }
+    expect(openCatchAllContainers([{ state: 'running', labels }])).toHaveLength(1)
   })
 })

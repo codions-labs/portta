@@ -1,5 +1,5 @@
 import { isWildcardAddress } from './diagnostics.ts'
-import { routingGateStatus } from './forward-auth.ts'
+import { opensUnknownHosts, routingGateStatus } from './forward-auth.ts'
 import type { ContainerRecord } from './inventory.ts'
 
 /**
@@ -26,6 +26,19 @@ export function ungatedContainers(containers: ContainerRecord[]): string[] {
     .filter((container) => routingGateStatus(container.labels) === 'ungated')
     .map((container) => container.name)
     .sort()
+}
+
+/**
+ * Containers answering with no login on names nobody can list.
+ *
+ * A router like that can win any address on the host, depending on rule length,
+ * so this is read across every container, whichever project it belongs to or
+ * none, and no label exempts one: what the labels route is what counts.
+ */
+export function openCatchAllContainers<T extends Pick<ContainerRecord, 'state' | 'labels'>>(
+  containers: readonly T[],
+): T[] {
+  return containers.filter((container) => !STOPPED.has(container.state) && opensUnknownHosts(container.labels))
 }
 
 /**

@@ -304,6 +304,100 @@ describe('ForwardAuth app', () => {
     expect(logs[0]?.address).toBe('203.0.113.4')
   })
 
+  function contextOf(body: string): Record<string, unknown> {
+    const match = /<script id="portta-auth-context" type="application\/json">(.*?)<\/script>/s.exec(body)
+    return JSON.parse(match?.[1] ?? '{}') as Record<string, unknown>
+  }
+
+  describe('a host that asks for the password alone', () => {
+    function passwordOnly() {
+      const instance = setup()
+      const store = readProtectionStore(instance.storePath)
+      const { user: _user, ...bare } = store.protections[0]!
+      writeProtectionStore(instance.storePath, { ...store, protections: [{ ...bare }] })
+      return instance
+    }
+    const post = (app: ReturnType<typeof setup>['app'], body: string) =>
+      app.request('/__portta/auth/login', {
+        method: 'POST',
+        headers: {
+          ...forwarded,
+          origin: 'https://demo.example.com',
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body,
+      })
+
+    it('lets the password in with no username, as nobody in particular', async () => {
+      const { app } = passwordOnly()
+      const response = await post(app, 'password=correct&next=%2F')
+      expect(response.status).toBe(303)
+      const cookie = response.headers.get('set-cookie')?.split(';')[0] ?? ''
+      const verified = await app.request('/verify', { headers: { ...forwarded, cookie } })
+      expect(verified.status).toBe(200)
+      expect(verified.headers.get('x-forwarded-user')).toBe('guest')
+    })
+
+    it('still refuses a wrong password, and tells the page there is no username to ask for', async () => {
+      const { app } = passwordOnly()
+      const response = await post(app, 'password=wrong&next=%2F')
+      expect(response.status).toBe(401)
+      expect(contextOf(await response.text()).protection).toMatchObject({ passwordOnly: true })
+    })
+
+    it('keeps asking for the username where the record has one', async () => {
+      const { app } = setup()
+      expect((await post(app, 'password=correct&next=%2F')).status).toBe(401)
+      expect((await post(app, 'user=reviewer&password=correct&next=%2F')).status).toBe(303)
+    })
+  })
+
+  it('tells the page how long the lock lasts, once too many were wrong', async () => {
+    const limiter = new LoginLimiter({ wait: async () => undefined })
+    const { app } = setup({ limiter })
+    const attempt = () =>
+      app.request('/__portta/auth/login', {
+        method: 'POST',
+        headers: {
+          ...forwarded,
+          origin: 'https://demo.example.com',
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: 'user=reviewer&password=wrong&next=%2F',
+      })
+    let last = await attempt()
+    for (let count = 1; count < 5; count += 1) last = await attempt()
+    expect(last.status).toBe(429)
+    expect(contextOf(await last.text())).toMatchObject({ state: 'login', error: true, lockedMinutes: 15 })
+    expect(contextOf(await (await attempt()).text()).lockedMinutes).toBe(15)
+  })
+
+  it('does not tell a wrong password it was locked', async () => {
+    const { app } = setup({ limiter: new LoginLimiter({ wait: async () => undefined }) })
+    const response = await app.request('/__portta/auth/login', {
+      method: 'POST',
+      headers: {
+        ...forwarded,
+        origin: 'https://demo.example.com',
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body: 'user=reviewer&password=wrong&next=%2F',
+    })
+    expect(response.status).toBe(401)
+    expect(contextOf(await response.text())).not.toHaveProperty('lockedMinutes')
+  })
+
+  it('answers an address nobody protects with a page that explains, and says nothing about it', async () => {
+    const { app } = setup()
+    const response = await app.request('/__portta/auth/login', {
+      headers: { ...forwarded, 'x-forwarded-host': 'ended.example.com', 'accept-language': 'pt-BR' },
+    })
+    expect(response.status).toBe(404)
+    const context = contextOf(await response.text())
+    expect(context).toMatchObject({ state: 'unavailable', locale: 'pt-BR' })
+    expect(context).not.toHaveProperty('protection')
+  })
+
   it('rejects cross-origin login and clears logout cookies', async () => {
     const { app } = setup()
     const refused = await app.request('/__portta/auth/login', {

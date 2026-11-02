@@ -1,10 +1,9 @@
 {
   "title": "Settings",
-  "description": "How Portta names projects, who can reach them, and how this panel is reached.",
-  "notWritable": "The panel cannot write {{path}}. Edit it on the host instead.",
+  "description": "What projects are called, who reaches them and how this panel is opened.",
+  "notWritable": "The panel cannot write {{path}}. Edit it on the server instead.",
   "sectionNotFound": "Settings section “{{group}}” does not exist",
   "chooseGroup": "Choose one of the available groups.",
-  "secretsNote": "Secrets are never returned by the API: the panel only reports whether a token is set. Values are written to {{path}} with mode 600.",
   "learnMore": "Learn more",
   "configureDns": "Configure DNS",
   "configureTls": "Configure TLS",
@@ -13,28 +12,38 @@
   "valueDerived": "Derived automatically",
   "valueEnvironment": "Set by the running environment",
   "envVar": "Environment variable",
-  "restartPending": "These changes take effect after the gateway is recreated. Save now, then use the apply bar.",
+  "restartPending": "These changes take effect after the gateway is recreated. Save now, then apply them.",
   "dashboard": {
     "title": "Traefik dashboard",
-    "description": "The address this host is serving right now. Apply saved settings from the bar at the bottom.",
+    "description": "The address this server is serving right now. Apply saved settings from the bar at the bottom.",
     "loopbackOnly": "this machine only",
     "loopbackHint": "This loopback address only works on this machine. The dashboard has no login of its own, so it is never published on a domain.",
     "tailnetWarning": "On a Tailscale attachment, :8080 is also reachable on the tailnet with no login while the loopback overlay is active.",
     "copyAddress": "Copy address",
     "open": "Open the Traefik dashboard",
-    "openDisabled": "No usable address from here. The loopback URL only works on the host."
+    "openDisabled": "No usable address from here. The loopback URL only works on the server."
   },
   "projectDomain": {
-    "title": "Resulting addresses",
-    "description": "Portta builds each project hostname from this base.",
-    "formula": "How a hostname is formed",
-    "formulaPattern": "<project>-<service>.<base>",
-    "base": "Base domain",
-    "examples": "A project called loja would answer on:",
-    "stateOk": "usable",
-    "stateLimited": "needs attention",
-    "stateBroken": "not resolvable",
-    "note": "This chooses the name only. Who can reach Traefik is decided under Project access."
+    "cardTitle": "What projects are called",
+    "cardDescription": "A name opens nothing by itself. Who may open it is in Access.",
+    "modes": {
+      "local": {
+        "title": "Only on this machine",
+        "help": "Uses localhost, no DNS. Only works here."
+      },
+      "auto": {
+        "title": "Automatic, from the IP",
+        "help": "Uses sslip.io or nip.io. No record, no account."
+      },
+      "custom": {
+        "title": "Your domain",
+        "help": "For a domain you own, with a wildcard record."
+      }
+    },
+    "wildcardBefore": "Create a record",
+    "wildcardAfter": "pointing at this server.",
+    "wildcardExample": "your-domain.com",
+    "preview": "Your addresses will look like:"
   },
   "panel": {
     "network": "Panel network",
@@ -90,13 +99,13 @@
     "vpnHelp": "Choose a Portta-managed tailnet or bind an existing VPN interface. A private domain may override the project base.",
     "privateKinds": {
       "tailscale": "Portta-managed Tailscale",
-      "interface": "VPN already installed on this host"
+      "interface": "VPN already installed on this server"
     },
     "privateKindHelp": {
       "tailscale": "The self-contained default. Traefik joins the Tailscale container's network.",
       "interface": "Bind Traefik to the private address of a host-native Tailscale or another VPN."
     },
-    "privateBindNeeded": "Enter the private address of this host's VPN interface. Portta will still refuse 0.0.0.0.",
+    "privateBindNeeded": "Enter the private address of this server's VPN interface. Portta will still refuse 0.0.0.0.",
     "privateDomainNeeded": "localhost resolves to each person's own machine. Choose automatic project addresses or enter a private domain that resolves to this server.",
     "publicDomain": "Project domain on the internet",
     "publicDomainKinds": {
@@ -192,7 +201,7 @@
     },
     "PORTTA_AUTO_DOMAIN_PROVIDER": {
       "label": "Automatic DNS service",
-      "help": "sslip.io and nip.io both resolve any name that embeds this host address, so neither needs a record or an account."
+      "help": "sslip.io and nip.io both resolve any name that embeds this server address, so neither needs a record or an account."
     },
     "PORTTA_BIND_ADDRESS": {
       "label": "Listen on",
@@ -208,14 +217,14 @@
     },
     "PORTTA_DOMAIN": {
       "label": "Your domain",
-      "help": "The base Portta uses to build project addresses. A wildcard *.<domain> must resolve to this host."
+      "help": "The base Portta uses to build project addresses. A wildcard *.<domain> must resolve to this server."
     },
     "PORTTA_DOMAIN_MODE": {
       "label": "How addresses are built",
-      "help": "This machine uses localhost. Automatic builds a name from this host address, with no DNS record. Your own domain needs a wildcard pointing here.",
+      "help": "This machine uses localhost. Automatic builds a name from this server address, with no DNS record. Your own domain needs a wildcard pointing here.",
       "choices": {
         "local": "This machine (localhost)",
-        "auto": "Automatic (from this host address)",
+        "auto": "Automatic (from this server address)",
         "custom": "A domain you own"
       }
     },
@@ -253,7 +262,7 @@
       "help": "The one directory this installation manages Projects in. Changing it changes the reference; files are not moved. Existing environments outside this path stay visible as unmanaged."
     },
     "PORTTA_PUBLIC_IP": {
-      "label": "Host address",
+      "label": "Server address",
       "help": "The IPv4 address automatic mode embeds in the hostname. Detected during installation."
     },
     "PORTTA_RUNTIME_API_DOCS": {
@@ -262,15 +271,15 @@
     },
     "PORTTA_RUNTIME_DOCS": {
       "label": "Documentation",
-      "help": "Serve the project's documentation at /docs, from this image. Static text with no host information in it, so a routed panel may serve it."
+      "help": "Serve the project's documentation at /docs, from this image. Static text with no server information in it, so a routed panel may serve it."
     },
     "PORTTA_WEB_BIND_ADDRESS": {
       "label": "Bind",
-      "help": "Host interface used to publish the panel. Keep 127.0.0.1 unless it is a tailnet address or you explicitly enable the public entrypoint."
+      "help": "Server interface used to publish the panel. Keep 127.0.0.1 unless it is a tailnet address or you explicitly enable the public entrypoint."
     },
     "PORTTA_WEB_EXPOSE": {
       "label": "How the panel is reached",
-      "help": "This machine is loopback only. The other modes put the panel beyond this host and require sign-in. None of them publishes your projects."
+      "help": "This machine is loopback only. The other modes put the panel beyond this server and require sign-in. None of them publishes your projects."
     },
     "PORTTA_WEB_HOST": {
       "label": "Panel subdomain",
@@ -294,7 +303,7 @@
     },
     "PUBLIC_DOMAIN": {
       "label": "Public project domain",
-      "help": "Domain used to publish opted-in projects on the internet, for example dev.example.com. A wildcard must point at this host."
+      "help": "Domain used to publish opted-in projects on the internet, for example dev.example.com. A wildcard must point at this server."
     },
     "PUBLIC_ENABLED": {
       "label": "Internet access",
@@ -322,7 +331,7 @@
     },
     "TS_AUTHKEY": {
       "label": "Tailscale auth key",
-      "help": "Prefer an ephemeral, tagged, pre-authorised key. Never leaves the host."
+      "help": "Prefer an ephemeral, tagged, pre-authorised key. Never leaves the server."
     }
   },
   "validation": {
@@ -360,10 +369,10 @@
   },
   "localMode": {
     "title": "This panel does not sign people in",
-    "users": "Authentication is disabled: everybody who reaches this panel is the local operator, so there are no accounts to manage. Set PORTTA_AUTH_MODE=required on the host to turn accounts on.",
-    "tokens": "A token belongs to a person, and this panel has none. Set PORTTA_AUTH_MODE=required on the host to turn accounts and tokens on.",
-    "security": "There is no account to secure: this panel does not ask who is asking. Set PORTTA_AUTH_MODE=required on the host to turn accounts on.",
-    "audit": "The audit log records who did what, and here everybody is the local operator. Set PORTTA_AUTH_MODE=required on the host to turn accounts on."
+    "users": "Authentication is disabled: everybody who reaches this panel is the local operator, so there are no accounts to manage. Set PORTTA_AUTH_MODE=required on the server to turn accounts on.",
+    "tokens": "A token belongs to a person, and this panel has none. Set PORTTA_AUTH_MODE=required on the server to turn accounts and tokens on.",
+    "security": "There is no account to secure: this panel does not ask who is asking. Set PORTTA_AUTH_MODE=required on the server to turn accounts on.",
+    "audit": "The audit log records who did what, and here everybody is the local operator. Set PORTTA_AUTH_MODE=required on the server to turn accounts on."
   },
   "users": {
     "title": "Users",
@@ -458,7 +467,7 @@
     "description": "Your own account: your password, your second factor, and where you are signed in.",
     "profile": "Profile",
     "password": "Password",
-    "passwordDescription": "There is no reset by email. An administrator sets a new one, or you run portta auth reset-password on the host.",
+    "passwordDescription": "There is no reset by email. An administrator sets a new one, or you run portta auth reset-password on the server.",
     "changePassword": "Change password",
     "changePasswordDescription": "You will stay signed in here, and be signed out everywhere else.",
     "passwordRefused": "That password was not accepted.",
@@ -497,17 +506,17 @@
   },
   "environment": {
     "title": "Environment",
-    "description": "What this host has installed, and whether each tool is usable from Portta's non-interactive shell.",
+    "description": "What this server has installed, and whether each tool is usable from Portta's non-interactive shell.",
     "neverCollected": "Environment readiness has never been collected.",
-    "runCommand": "Run portta env report on the host. The panel never probes the host from its container.",
+    "runCommand": "Run portta env report on the server. The panel never probes the server from its container.",
     "summary": "{{passed}} passed · {{recommendations}} recommendations · {{problems}} problems",
     "collected": "Collected {{when}}",
     "stale": "Stale",
-    "refreshHint": "Refresh on the host:",
+    "refreshHint": "Refresh on the server:",
     "fix": "Suggestion",
-    "hostSecurity": "Host security",
+    "hostSecurity": "Server security",
     "hostSecurityDescription": "Read-only observations collected {{when}}. Portta changes nothing.",
-    "hostSecurityMissing": "Host security has not been collected yet; run portta env report on the host.",
+    "hostSecurityMissing": "Server security has not been collected yet; run portta env report on the server.",
     "categories": {
       "infrastructure": "Infrastructure",
       "development": "Development",
@@ -538,5 +547,29 @@
     "empty": "Nothing recorded yet.",
     "emptyHint": "Entries appear as accounts, tokens and settings are changed.",
     "older": "Older entries"
+  },
+  "rail": {
+    "host": "This server",
+    "people": "People",
+    "items": {
+      "projects": "Projects",
+      "project-domain": "Addresses",
+      "project-access": "Site access",
+      "tls": "Certificates and DNS",
+      "panel": "Panel",
+      "traefik": "Traefik"
+    }
+  },
+  "search": {
+    "placeholder": "Search settings, such as TLS",
+    "aria": "Search settings",
+    "empty": "No setting found"
+  },
+  "savedIn": "Saved in",
+  "savedInSecrets": "with no secret exposed",
+  "pendingApply": {
+    "title_one": "{{count}} saved change is not in effect yet.",
+    "title_other": "{{count}} saved changes are not in effect yet.",
+    "body": "Apply from the terminal. The gateway's containers will be recreated."
   }
 }

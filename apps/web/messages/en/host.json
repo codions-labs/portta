@@ -1,0 +1,99 @@
+{
+  "facts": {
+    "up": "Up for",
+    "portta": "Portta",
+    "profile": "Profile",
+    "profiles": {
+      "local": "local",
+      "remote-private": "private",
+      "remote-public": "public"
+    },
+    "timezone": "Time zone"
+  },
+  "health": {
+    "resources": "Resources",
+    "window": "Last 30 min",
+    "of": "of {{total}}",
+    "disk": "Disk",
+    "docker": "Docker",
+    "dockerResources": "Available to Docker",
+    "checks": {
+      "title": "Checks",
+      "showAll": "Show all {{count}}",
+      "showFewer": "Show fewer"
+    },
+    "usage": {
+      "note": "These numbers are for the whole server, not only the projects. Each bar splits what is in use between the projects, Portta, and the system and everything else running there.",
+      "memory": "Server memory",
+      "cpu": "Server CPU",
+      "disk": "Server disk",
+      "inUse": "in use",
+      "ofTotal": "{{used}} of {{total}}",
+      "ofCores": "{{used}} of {{total}} cores",
+      "freeOf": "{{free}} free",
+      "ofWhole": "of {{total}}",
+      "diskWhole": "The whole disk the server runs on. What each project keeps on it appears once the collector reports it.",
+      "part": {
+        "projects": "Projects",
+        "portta": "Portta",
+        "system": "System and others",
+        "free": "Free"
+      },
+      "kind": {
+        "memory": "Memory",
+        "cpu": "CPU",
+        "disk": "Disk",
+        "gpu": "GPU"
+      },
+      "who": {
+        "title": "What is using the server",
+        "description": "Tells the projects apart from the operating system and everything else on the server.",
+        "resource": "Resource",
+        "verdict": {
+          "memory": "Projects use {{percent}} of the memory in use.",
+          "cpu": "Projects use {{percent}} of the CPU in use.",
+          "disk": "Projects use {{percent}} of the disk in use.",
+          "gpu": "Projects hold {{percent}} of the GPU memory in use."
+        },
+        "rest": "The other {{percent}} is the system, Portta and other programs.",
+        "diskNote": "The disk is shown as a whole until the collector reports what each project keeps on it. Update it with portta up.",
+        "list": "Projects, largest first · share of the server",
+        "more": "{{count}} more projects",
+        "empty": "No project is using this resource right now.",
+        "unmeasured": "The server does not report this resource.",
+        "diskScope": "Counted for a project: its volumes and the writable layer of its containers. Images, files in project folders and everything else on the disk count as the system."
+      },
+      "gpu": "Server GPU memory"
+    },
+    "clock": {
+      "title": "Time and time zone",
+      "unknown": "The server has not reported its time zone yet. Update the collector with portta up.",
+      "sameAsYou": "Same time zone as your browser.",
+      "differsFromYou": "A different time zone from your browser."
+    },
+    "server": {
+      "title": "Server",
+      "system": "System",
+      "hardware": "Hardware",
+      "environment": "Time zone and runtime",
+      "name": "Name",
+      "os": "System",
+      "kernel": "Kernel",
+      "architecture": "Architecture",
+      "type": "Type",
+      "up": "Up since",
+      "cpu": "CPU",
+      "memory": "Memory",
+      "swap": "swap {{used}} of {{total}}",
+      "disk": "Disk",
+      "gpu": "GPU",
+      "none": "None",
+      "temperature": "Temperature",
+      "timezone": "Time zone",
+      "unreported": "Not reported yet",
+      "docker": "Docker",
+      "dockerResources": "Available to Docker",
+      "portta": "Portta folder"
+    }
+  }
+}

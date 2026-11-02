@@ -37,6 +37,17 @@ describe('metrics helpers', () => {
     expect(chosen?.usedPercent).toBeCloseTo(0.86)
   })
 
+  it('counts what is not free as used on APFS, whose volumes share one container', () => {
+    const GB = 1e9
+    const mounts = [
+      // The sealed system volume: a few GB of its own, and the free space of the whole container.
+      { fs: '/dev/disk3s1s1', type: 'apfs', size: 494 * GB, used: 14 * GB, available: 138 * GB, use: 10, mount: '/' },
+    ]
+    const chosen = filesystemForPath('/Users/fabio/portta', mounts)
+    expect(chosen?.usedBytes).toBe(356 * GB)
+    expect(chosen?.usedPercent).toBeCloseTo(356 / 494)
+  })
+
   it('keeps a GPU model and treats missing utilisation as unavailable, not zero', () => {
     const gpus = normalizeGpus({
       controllers: [{ vendor: 'Apple', model: 'Apple M3 Pro', vram: 18 }],

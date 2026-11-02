@@ -180,6 +180,14 @@ describe('Environment page', () => {
     expect(screen.getByLabelText('Service')).toHaveValue('')
   })
 
+  it('does not let a link start a shell, only the service it names opens', async () => {
+    const element = page('alpha', 'overview', 'web')
+    navigation.search = 'service=web&section=console'
+    renderWithQuery(element)
+    const summary = (await screen.findAllByText('Console')).find((node) => node.tagName === 'SUMMARY')
+    expect(summary?.closest('details')).not.toHaveAttribute('open')
+  })
+
   it('reads one service when the URL names it', async () => {
     renderWithQuery(page('alpha', 'logs', 'postgres'))
     await screen.findByText('postgres ready')
@@ -204,7 +212,7 @@ describe('Environment page', () => {
       expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull()
       expect(screen.queryByRole('button', { name: 'Rebuild' })).toBeNull()
       expect(screen.queryByRole('button', { name: 'Remove, keep data' })).toBeNull()
-      expect(screen.queryByRole('button', { name: 'Open / Test' })).toBeNull()
+      expect(screen.queryByRole('link', { name: 'Open site' })).toBeNull()
       expect(
         await screen.findByText('Containers were removed. Start recreates them through the runner.'),
       ).toBeInTheDocument()
@@ -224,7 +232,7 @@ describe('Environment page', () => {
       await screen.findByRole('dialog', { name: 'Forget this environment?' })
       await userEvent.click(screen.getAllByRole('button', { name: 'Forget' }).at(-1)!)
       await waitFor(() => expect(forgetEnvironment).toHaveBeenCalledWith('alpha'))
-      await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/environments'))
+      await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/projects'))
     })
   })
 })

@@ -11,7 +11,26 @@ import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Field, Input } from '@/components/ui/field'
+import { PasswordInput } from '@/components/ui/password-input'
 import { signIn } from '@/lib/auth-client'
+
+const MIN_PASSWORD = 10
+
+/** How far the password is from long enough, which is the only rule there is. */
+function PasswordLength({ length }: { length: number }) {
+  const { t } = useTranslation('auth')
+  return (
+    <>
+      <span aria-hidden className="mb-1.5 block h-1.5 overflow-hidden rounded-full bg-surface-2">
+        <span
+          className="block h-full rounded-full bg-link transition-[width] duration-150"
+          style={{ width: `${Math.min(100, (length / MIN_PASSWORD) * 100)}%` }}
+        />
+      </span>
+      {length >= MIN_PASSWORD ? t('passwordLongEnough') : t('passwordRemaining', { count: MIN_PASSWORD - length })}
+    </>
+  )
+}
 
 export function SetupForm() {
   const { t } = useTranslation('auth')
@@ -82,11 +101,10 @@ export function SetupForm() {
           />
         )}
       </Field>
-      <Field label={t('password')} hint={t('passwordHint')} required>
+      <Field label={t('password')} hint={<PasswordLength length={password.length} />} required>
         {(id) => (
-          <Input
+          <PasswordInput
             id={id}
-            type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="new-password"
@@ -96,7 +114,10 @@ export function SetupForm() {
         )}
       </Field>
       {error ? (
-        <p role="alert" className="text-xs text-danger">
+        <p
+          role="alert"
+          className="rounded-lg border border-danger/30 bg-danger/6 px-3 py-2 text-sm font-medium text-danger"
+        >
           {error}
         </p>
       ) : null}

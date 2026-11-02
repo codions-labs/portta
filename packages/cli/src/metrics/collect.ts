@@ -2,6 +2,7 @@ import { loadavg } from 'node:os'
 import {
   aggregateProjects,
   type ContainerIdentity,
+  composeProjectOf,
   detectRuntime,
   dockerCliStatsToRaw,
   emptySnapshot,
@@ -12,6 +13,9 @@ import {
   serviceOf,
 } from 'portta-core'
 import { dockerOperatingSystem, inspectContainers, readContainerStats } from '../docker.js'
+import { readGit, workingDirectories } from './git.js'
+import { type GpuReading, readGpu } from './gpu.js'
+import { readDockerStorage } from './storage.js'
 import { loadInstance } from './store.js'
 
 type Settled<T> = PromiseSettledResult<T>
@@ -72,7 +76,18 @@ function matchIdentity(row: { id: string; name: string }, identities: ContainerI
   return { id: row.id || row.name, name: row.name || row.id.slice(0, 12), labels: {} }
 }
 
-async function collectProjects(): Promise<MetricsSnapshot['projects']> {
+/** What the containers of one project hold of the GPU's memory. */
+function gpuMemoryOf(composeProject: string, identities: ContainerIdentity[], gpu: GpuReading | null): number {
+  if (!gpu) return 0
+  let total = 0
+  for (const [id, bytes] of gpu.byContainer) {
+    const identity = identities.find((item) => item.id.startsWith(id) || id.startsWith(item.id))
+    if (identity && composeProjectOf(identity.labels) === composeProject) total += bytes
+  }
+  return total
+}
+
+async function collectProjects(root: string, gpu: GpuReading | null): Promise<MetricsSnapshot['projects']> {
   const [inspected, stats] = await Promise.all([inspectContainers(false), readContainerStats()])
   if (inspected.length === 0 && stats.length === 0) return []
 
@@ -90,7 +105,29 @@ async function collectProjects(): Promise<MetricsSnapshot['projects']> {
       service: serviceOf(identity.labels),
     })
   })
-  return aggregateProjects(metrics, identities)
+  const projects = aggregateProjects(metrics, identities)
+
+  const directories = workingDirectories(identities, root)
+  const ownProject = process.env.PORTTA_PROJECT_NAME?.trim() || 'portta'
+  return Promise.all(
+    projects.map(async (project) => {
+      const directory = directories.get(project.composeProject)
+      const git = directory ? await readGit(directory) : null
+      const held = gpuMemoryOf(project.composeProject, identities, gpu)
+      const withGpu = held > 0 ? { ...project, gpuMemoryBytes: held } : project
+      const measured = project.composeProject === ownProject ? { ...withGpu, own: true as const } : withGpu
+      return git ? { ...measured, git } : measured
+    }),
+  )
+}
+
+/** The zone this process runs in: the collector is a host process, so this is the server's own clock setting. */
+function serverTimezone(now: number): { name: string | null; offsetMinutes: number | null } {
+  let name: string | null = null
+  try {
+    name = Intl.DateTimeFormat().resolvedOptions().timeZone || null
+  } catch {}
+  return { name, offsetMinutes: -new Date(now).getTimezoneOffset() }
 }
 
 export async function collectSnapshot(root: string, now = Date.now()): Promise<MetricsSnapshot> {
@@ -123,20 +160,26 @@ export async function collectSnapshot(root: string, now = Date.now()): Promise<M
     loadavg: loadavg(),
     graphics: facts?.graphics,
     time: value(time),
+    timezone: serverTimezone(now),
     cpuTemperature: value(cpuTemperature),
     battery: value(battery),
     chassis: facts?.chassis,
     storage: filesystemForPath(root, mounts),
   })
 
+  const gpu = await readGpu(now)
+  if (gpu?.memory) snapshot.host.gpuMemory = gpu.memory
+
   const runtimeName = value(operatingSystem) ?? null
   snapshot.runtime = { name: detectRuntime(runtimeName) }
 
   try {
-    snapshot.projects = await collectProjects()
+    snapshot.projects = await collectProjects(root, gpu)
   } catch {
     snapshot.projects = []
   }
+
+  snapshot.dockerStorage = readDockerStorage(now)
 
   return snapshot
 }

@@ -2,10 +2,10 @@
 
 ## Environments
 
-`/environments` lists them — **Environments on this host** on the Projects page
-opens it — and `/environments/<name>` is one, with `logs` and
-`settings` as routes beside it. The rail shows Docker, Network and Gateway only
-to somebody who holds `docker:read` or `gateway:read` — a navigation entry that
+The Projects page lists them under the Project that adopted them, or under **No
+project**, and `/environments/<name>` is one, with `logs` and
+`settings` as routes beside it. The rail shows Host, and each of its sections, only
+to somebody who holds what that section needs — a navigation entry that
 would answer 404 is a worse answer than no entry. Starting, stopping and
 restarting need `environment:operate`; rebuilding, removing and forgetting need
 `environment:destroy`; the overrides form needs `environment:settings`. Reading
@@ -16,24 +16,26 @@ change none of it.
 
 **Authentication disabled**: every environment on this host.
 
-`/environments` lists every Compose project on this host, adopted or not,
-each as a table of its services. `/environments/<name>` is one environment:
+`/environments/<name>` is one environment:
 
 ![Authentication disabled: the demo-shop environment, its seven services as one table with an Open / Test menu, resources and actions per row](../../images/auth-disabled-environment.png)
 
 **Authentication disabled**: one environment.
 
-The header says how many services run, which Project adopted it and why;
-then **Open / Test**, Start, Stop, Restart, Rebuild and
-the two named removals. Three tabs:
+The header says how the environment is doing, how many services run, what it uses
+and where it runs; then Restart, Stop, **More** (Rebuild and the two named removals)
+and **Open site**. Under it, two tabs:
 
 | Tab | What it holds |
 |---|---|
-| **Overview** | One row per service: state and health, the primary address with copy and open, **Open / Test**, CPU and memory from the host collector, image and container, uptime, and the actions that apply. A row opens a drawer with every endpoint, the connection details of a datastore, ports, networks, mounts, what Traefik says, the temporary share, the hostname alias, and the logs inline |
-| **Logs** | Every service at once, interleaved, or one of them; see [Logs across an environment](#logs-across-an-environment) |
+| **Services** | One row per service: state, image, the main address with copy and open, who may open it, CPU and memory. **Connect** on a database, a button that filters the logs, the console, and the details. The logs of every service sit under the list, live, with a chip per service |
 | **Settings** | Display name, description, primary service, collapsed services, pinned and archived, service notes and the hostname alias — nothing is written inside the project |
 
-**Open / Test** is the one menu that answers "how do I reach this": every
+Opening a service puts it beside the list, in the order it is used: its addresses,
+who may open it, sharing it with a client, then the console and the technical
+details folded away. On a narrow screen it opens over the list.
+
+**Open / Test**, on a service's menu, answers "how do I reach this": every
 address by scope — local, LAN, VPN, public — with open and copy, and for a
 datastore the loopback bridge to open or close, the host, the port and a
 connection string. It is the same model the Access page manages
@@ -59,7 +61,7 @@ forgets it in the same step. `GET /api/environments?all=true` returns both kinds
 
 ### Logs across an environment
 
-The Logs tab reads **every** service of the environment at once, interleaved by
+The logs under the services read **every** service of the environment at once, interleaved by
 the timestamp Docker already puts on each line, with the service name in front:
 
 ```text
@@ -72,9 +74,9 @@ postgres | 10:00:03  ready to accept connections
 
 **Authentication disabled**: the Logs tab.
 
-A selector narrows the view to one service, and the choice is in the URL
-(`/environments/alpha/logs?service=api`), so a link opens on exactly what you were
-reading. Tail size, the text filter, follow, timestamps and copy are the same
+A chip narrows the view to one service, and the choice is in the URL
+(`/environments/alpha?logs=api`), so a link opens on exactly what you were reading.
+`/environments/alpha/logs` is the same reading at full height. Tail size, the text filter, follow, timestamps and copy are the same
 controls the service drawer has, because it is the same component; copying an
 aggregated view prefixes each line with its service.
 
@@ -215,3 +217,18 @@ is linked to, never embedded: it is a good tool and duplicating it would need
 the insecure-mode API exposed more widely than it already is. See
 [ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md), and
 [Security](../concepts/security.md) for what enabling that API costs.
+
+## Where the code stands
+
+An environment's page has a **Code** card when the collector could read the folder it
+was started from: the branch, the last commit with who made it and when, how many files
+are not committed (and which), how many commits are not pushed, and when anything last
+changed. A badge says it in a word: **Has changes**, **Not pushed**, **Behind the remote**,
+**No remote** or **All pushed**. When the containers started before the last commit, it
+says what is up may not have it and points to Rebuild.
+
+It is read on the host by the collector (`portta host collect`), never by the panel, and
+never from GitHub: nothing here contacts a remote, so *not pushed* and *behind* are as of
+the last fetch somebody did. Only file names and their status are read, not what is in
+them, and nothing writes to the repository. The reasoning is in
+[ADR 0056](../../development/adr/0056-the-collector-reads-where-the-code-stands.md).

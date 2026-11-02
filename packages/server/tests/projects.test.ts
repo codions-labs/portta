@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Database } from '../src/db/index.ts'
 import { type ProjectCoordinates, resolveAdoption } from '../src/services/adoption.ts'
 import { GATEWAY, PROJECT_A, PROJECT_B } from './fixtures.ts'
-import { del, makeApp, post } from './helpers.ts'
+import { databasePerFile, del, makeApp, post } from './helpers.ts'
 
 const PROJECTS: ProjectCoordinates[] = [
   { id: '1', slug: 'meu-produto', path: '/srv/projects/group/meu-produto' },
@@ -125,6 +125,7 @@ function projectDatabase(): { db: Database; store: Store } {
         ),
       setEnvironments: async (projectId: string, environments: string[]) =>
         void store.environments.set(projectId, environments),
+      listTags: async () => new Map(),
     },
   }
   return { db: db as unknown as Database, store }
@@ -176,6 +177,83 @@ describe('GET/POST /api/projects', () => {
     const response = await bare.request('/api/projects')
     expect(response.status).toBe(503)
     expect((await response.json()).hint).toContain('Docker-backed pages remain available')
+  })
+})
+
+async function putJson(instance: { app: ReturnType<typeof makeApp>['app'] }, path: string, body: unknown) {
+  return instance.app.request(path, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+    headers: { 'content-type': 'application/json', origin: 'http://localhost', host: 'localhost' },
+  })
+}
+
+const freshDatabase = databasePerFile()
+
+describe('tagging a Project', () => {
+  // The real repository on a real SQLite file: tags are a table, and a fake would only agree with itself.
+  async function withProject() {
+    const { database } = await freshDatabase({ empty: true })
+    const instance = makeApp({ containers: [...GATEWAY, ...PROJECT_A] }, {}, database)
+    await post(instance.app, '/api/projects', { slug: 'loja', name: 'Loja' })
+    return instance
+  }
+
+  it('keeps tags with the Project, and lists them', async () => {
+    const instance = await withProject()
+    const response = await putJson(instance, '/api/projects/loja/tags', {
+      tags: [{ key: ' Cliente ', value: ' Acme ' }, { value: 'loja' }],
+    })
+    expect(response.status).toBe(200)
+    expect((await response.json()).tags).toEqual([
+      { key: 'cliente', value: 'Acme' },
+      { key: '', value: 'loja' },
+    ])
+    const list = await (await instance.app.request('/api/projects')).json()
+    expect(list.projects[0].tags).toEqual([
+      { key: 'cliente', value: 'Acme' },
+      { key: '', value: 'loja' },
+    ])
+    const one = await (await instance.app.request('/api/projects/loja')).json()
+    expect(one.tags).toHaveLength(2)
+  })
+
+  it('replaces them all, and one tag twice is one', async () => {
+    const instance = await withProject()
+    await putJson(instance, '/api/projects/loja/tags', { tags: [{ key: 'cliente', value: 'Acme' }] })
+    const response = await putJson(instance, '/api/projects/loja/tags', {
+      tags: [
+        { key: 'cliente', value: 'Globex' },
+        { key: 'Cliente', value: 'Globex' },
+      ],
+    })
+    expect((await response.json()).tags).toEqual([{ key: 'cliente', value: 'Globex' }])
+    const list = await (await instance.app.request('/api/projects')).json()
+    expect(list.projects[0].tags).toEqual([{ key: 'cliente', value: 'Globex' }])
+  })
+
+  it('refuses what is not a label, and what is too many', async () => {
+    const instance = await withProject()
+    expect((await putJson(instance, '/api/projects/loja/tags', { tags: [{ key: 'a:b', value: 'x' }] })).status).toBe(
+      400,
+    )
+    expect((await putJson(instance, '/api/projects/loja/tags', { tags: [{ value: '   ' }] })).status).toBe(400)
+    const many = Array.from({ length: 17 }, (_, index) => ({ value: `t${index}` }))
+    expect((await putJson(instance, '/api/projects/loja/tags', { tags: many })).status).toBe(400)
+  })
+
+  it('answers 404 for a Project that is not there', async () => {
+    const instance = await withProject()
+    expect((await putJson(instance, '/api/projects/nope/tags', { tags: [] })).status).toBe(404)
+  })
+
+  it('goes with the Project when it is removed', async () => {
+    const instance = await withProject()
+    await putJson(instance, '/api/projects/loja/tags', { tags: [{ value: 'loja' }] })
+    await del(instance.app, '/api/projects/loja')
+    await post(instance.app, '/api/projects', { slug: 'loja', name: 'Loja' })
+    const list = await (await instance.app.request('/api/projects')).json()
+    expect(list.projects[0].tags).toEqual([])
   })
 })
 

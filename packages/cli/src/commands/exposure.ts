@@ -82,7 +82,7 @@ export interface ExposureLabels {
 /** Protects a host with a credential. The password is hashed here and never stored. */
 export async function protectedStore(
   store: ProtectionStore,
-  input: { host: string; entryPoint: string; user: string; password: string } & ExposureLabels,
+  input: { host: string; entryPoint: string; user: string | null; password: string } & ExposureLabels,
 ): Promise<ProtectionStore> {
   const host = normalizeProtectionHost(input.host)
   const previous = protectionForHost(store, host)
@@ -91,7 +91,7 @@ export async function protectedStore(
     host,
     entryPoints: [input.entryPoint],
     mode: 'protected',
-    user: input.user,
+    ...(input.user === null ? {} : { user: input.user }),
     hash: await hashPassword(input.password),
     label: input.label ?? input.service ?? host,
     ...(input.project ? { project: input.project } : {}),

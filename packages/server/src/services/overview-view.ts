@@ -67,7 +67,7 @@ export function attentionFor(input: OverviewInput): AttentionItem[] {
           project: slugOf.get(env.name) ?? null,
           environment: env.name,
           service: service.service ?? service.name,
-          href: `#/environments/${encodeURIComponent(env.name)}?service=${encodeURIComponent(service.service ?? service.name)}`,
+          href: `/environments/${encodeURIComponent(env.name)}?service=${encodeURIComponent(service.service ?? service.name)}`,
         })
       }
     }
@@ -79,7 +79,7 @@ export function attentionFor(input: OverviewInput): AttentionItem[] {
         project: slugOf.get(env.name) ?? null,
         environment: env.name,
         service: null,
-        href: `#/environments/${encodeURIComponent(env.name)}`,
+        href: `/environments/${encodeURIComponent(env.name)}`,
       })
     }
   }
@@ -98,7 +98,7 @@ export function attentionFor(input: OverviewInput): AttentionItem[] {
       project: null,
       environment: null,
       service: null,
-      href: '#/overview',
+      href: '/host',
     })
   }
 
@@ -111,7 +111,7 @@ export function attentionFor(input: OverviewInput): AttentionItem[] {
         project: null,
         environment: null,
         service: null,
-        href: '#/gateway',
+        href: '/host/gateway',
       })
     }
   }

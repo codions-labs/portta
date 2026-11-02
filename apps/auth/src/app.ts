@@ -24,9 +24,20 @@ export interface AuthAppDependencies {
 
 interface LoginContext {
   locale: 'en' | 'pt-BR'
+  /** `unavailable`: nothing is protected here any more, which is what an ended link looks like. */
+  state: 'login' | 'unavailable'
   next: string
   error: boolean
-  protection: Pick<ProtectionRecord, 'label' | 'host' | 'project' | 'service' | 'tech'>
+  /** Whole minutes until another try, when too many wrong ones locked the page. */
+  lockedMinutes?: number
+  protection?: Pick<ProtectionRecord, 'label' | 'host' | 'project' | 'service' | 'tech'> & {
+    /** Nobody is asked for a username: the password alone opens it. */
+    passwordOnly: boolean
+  }
+}
+
+function localeOf(c: Context): 'en' | 'pt-BR' {
+  return c.req.header('accept-language')?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'
 }
 
 export function safeNext(value: string | null | undefined): string {
@@ -124,27 +135,40 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
   const renderLogin = (
     c: Context,
     protection: ProtectionRecord,
-    options: { error?: boolean; status?: 200 | 401 | 429; next?: string } = {},
+    options: { error?: boolean; status?: 200 | 401 | 429; next?: string; retryAfter?: number } = {},
   ) => {
-    const locale = c.req.header('accept-language')?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en'
     const context: LoginContext = {
-      locale,
+      locale: localeOf(c),
+      state: 'login',
       next: safeNext(options.next ?? c.req.query('next')),
       error: options.error === true,
+      ...(options.status === 429 && options.retryAfter
+        ? { lockedMinutes: Math.max(1, Math.ceil(options.retryAfter / 60)) }
+        : {}),
       protection: {
         label: protection.label,
         host: protection.host,
+        passwordOnly: protection.user === undefined,
         ...(protection.project ? { project: protection.project } : {}),
         ...(protection.service ? { service: protection.service } : {}),
         ...(protection.tech ? { tech: protection.tech } : {}),
       },
     }
+    return page(c, context, options.status ?? 200)
+  }
+
+  const page = (c: Context, context: LoginContext, status: 200 | 401 | 404 | 429) => {
     const html = loadHtml().replace(
       '<!--PORTTA_AUTH_CONTEXT-->',
       `<script id="portta-auth-context" type="application/json">${escapeJson(context)}</script>`,
     )
-    return c.html(html, options.status ?? 200)
+    return c.html(html, status)
   }
+
+  // Nothing here says whether the address ever existed: a hostname nobody protects and
+  // a link that ended answer the same, so this cannot be used to probe for either.
+  const unavailable = (c: Context) =>
+    page(c, { locale: localeOf(c), state: 'unavailable', next: '/', error: false }, 404)
 
   app.get('/health', (c) => {
     try {
@@ -187,15 +211,13 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
 
   app.get('/__portta/auth/login', (c) => {
     const protection = findProtection(c)
-    return protection && protection.mode === 'protected'
-      ? renderLogin(c, protection)
-      : c.text('Protected destination not found.', 404)
+    return protection && protection.mode === 'protected' ? renderLogin(c, protection) : unavailable(c)
   })
 
   app.post('/__portta/auth/login', async (c) => {
     const protection = findProtection(c)
     const host = forwardedHost(c)
-    if (protection?.mode !== 'protected' || !host) return c.text('Protected destination not found.', 404)
+    if (protection?.mode !== 'protected' || !host) return unavailable(c)
     if (!originAllowed(c, host)) return c.text('Origin refused.', 403)
     const address = clientAddress(c)
     const key = `${protection.scope}\u0000${address}`
@@ -205,15 +227,22 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     if (!allowed.allowed) {
       c.header('Retry-After', String(allowed.retryAfter))
       log({ event: 'login', scope: protection.scope, address, outcome: 'locked' })
-      return renderLogin(c, protection, { error: true, status: 429, next })
+      return renderLogin(c, protection, { error: true, status: 429, next, retryAfter: allowed.retryAfter })
     }
     const user = typeof body.user === 'string' ? body.user : ''
     const password = typeof body.password === 'string' ? body.password : ''
-    if (user !== protection.user || !protection.hash || !(await verifyPassword(password, protection.hash))) {
+    // A record with no username asks for none, and one that has a username still checks it.
+    const userMatches = protection.user === undefined || user === protection.user
+    if (!userMatches || !protection.hash || !(await verifyPassword(password, protection.hash))) {
       const result = await limiter.failure(key)
       if (!result.allowed) c.header('Retry-After', String(result.retryAfter))
       log({ event: 'login', scope: protection.scope, address, outcome: result.allowed ? 'refused' : 'locked' })
-      return renderLogin(c, protection, { error: true, status: result.allowed ? 401 : 429, next })
+      return renderLogin(c, protection, {
+        error: true,
+        status: result.allowed ? 401 : 429,
+        next,
+        ...(result.allowed ? {} : { retryAfter: result.retryAfter }),
+      })
     }
     limiter.success(key)
     const issuedAt = Math.floor(now() / 1000)
@@ -224,7 +253,8 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
         {
           scope: protection.scope,
           host,
-          user: protection.user,
+          // Somebody who only knew the password is nobody in particular, and a header is a string.
+          user: protection.user ?? 'guest',
           issuedAt,
           expiresAt: issuedAt + config.sessionSeconds,
           epoch: protection.epoch,

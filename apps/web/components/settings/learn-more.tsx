@@ -21,7 +21,7 @@ export function LearnMore({ citation }: { citation: string }) {
       href={docsHref(citation)}
       target="_blank"
       rel="noreferrer"
-      className="text-xs text-accent underline underline-offset-2 hover:text-accent"
+      className="text-xs text-link underline underline-offset-2 hover:text-link"
     >
       {t('learnMore')}
     </a>

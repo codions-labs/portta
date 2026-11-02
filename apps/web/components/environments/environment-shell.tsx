@@ -53,7 +53,7 @@ export function EnvironmentShell({ name, children }: { name: string; children: R
           <Empty
             title={t('notFound', { name })}
             hint={
-              <Link className="rounded-xs text-accent hover:underline focus-ring" href="/environments">
+              <Link className="rounded-xs text-link hover:underline focus-ring" href="/projects">
                 {t('backToAll')}
               </Link>
             }
@@ -64,7 +64,9 @@ export function EnvironmentShell({ name, children }: { name: string; children: R
   }
 
   const environment = query.data!
-  const tabs: TabDefinition[] = TABS.map((id) => ({
+  // Logs live under the services; their full-height page keeps its URL but is
+  // not a section of its own.
+  const tabs: TabDefinition[] = (['overview', 'settings'] as const).map((id) => ({
     id,
     label: t(`tabs.${id}`),
     href:
@@ -76,7 +78,7 @@ export function EnvironmentShell({ name, children }: { name: string; children: R
   return (
     <>
       <EnvironmentHeader environment={environment} owner={owner} />
-      <Tabs tabs={tabs} active={tab} label={`${name} sections`} />
+      <Tabs tabs={tabs} active={tab === 'logs' ? 'overview' : tab} label={`${name} sections`} />
       <TabPanel id={tab}>{children}</TabPanel>
     </>
   )

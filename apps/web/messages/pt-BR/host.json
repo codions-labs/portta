@@ -1,0 +1,99 @@
+{
+  "facts": {
+    "up": "Ativo há",
+    "portta": "Portta",
+    "profile": "Perfil",
+    "profiles": {
+      "local": "local",
+      "remote-private": "privado",
+      "remote-public": "público"
+    },
+    "timezone": "Fuso"
+  },
+  "health": {
+    "resources": "Recursos",
+    "window": "Últimos 30 min",
+    "of": "de {{total}}",
+    "disk": "Disco",
+    "docker": "Docker",
+    "dockerResources": "Disponível para o Docker",
+    "checks": {
+      "title": "Verificações",
+      "showAll": "Ver todas as {{count}}",
+      "showFewer": "Ver menos"
+    },
+    "usage": {
+      "note": "Estes números são do servidor inteiro, não só dos projetos. Cada barra divide o que está em uso entre os projetos, o Portta e o sistema com tudo o mais que roda no servidor.",
+      "memory": "Memória do servidor",
+      "cpu": "CPU do servidor",
+      "disk": "Disco do servidor",
+      "inUse": "em uso",
+      "ofTotal": "{{used}} de {{total}}",
+      "ofCores": "{{used}} de {{total}} núcleos",
+      "freeOf": "{{free}} livres",
+      "ofWhole": "de {{total}}",
+      "diskWhole": "O disco inteiro em que o servidor roda. O que cada projeto guarda nele aparece quando o coletor informar.",
+      "part": {
+        "projects": "Projetos",
+        "portta": "Portta",
+        "system": "Sistema e outros",
+        "free": "Livre"
+      },
+      "kind": {
+        "memory": "Memória",
+        "cpu": "CPU",
+        "disk": "Disco",
+        "gpu": "GPU"
+      },
+      "who": {
+        "title": "O que está usando o servidor",
+        "description": "Separa o que é dos projetos do que é do sistema operacional e de todo o resto do servidor.",
+        "resource": "Recurso",
+        "verdict": {
+          "memory": "Os projetos usam {{percent}} da memória em uso.",
+          "cpu": "Os projetos usam {{percent}} da CPU em uso.",
+          "disk": "Os projetos ocupam {{percent}} do disco em uso.",
+          "gpu": "Os projetos usam {{percent}} da memória de GPU em uso."
+        },
+        "rest": "Os outros {{percent}} são do sistema, do Portta e de outros programas.",
+        "diskNote": "O disco aparece inteiro até o coletor informar o que cada projeto guarda nele. Atualize-o com portta up.",
+        "list": "Projetos, do que mais usa ao que menos usa · parte do servidor",
+        "more": "Mais {{count}} projetos",
+        "empty": "Nenhum projeto usa este recurso agora.",
+        "unmeasured": "O servidor não informa este recurso.",
+        "diskScope": "Conta para o projeto: os volumes e a camada de escrita dos contêineres. Imagens, arquivos nas pastas dos projetos e o resto do disco entram como sistema."
+      },
+      "gpu": "Memória de GPU do servidor"
+    },
+    "clock": {
+      "title": "Hora e fuso",
+      "unknown": "O servidor ainda não informou o fuso horário. Atualize o coletor com portta up.",
+      "sameAsYou": "Mesmo fuso do seu navegador.",
+      "differsFromYou": "Fuso diferente do seu navegador."
+    },
+    "server": {
+      "title": "Servidor",
+      "system": "Sistema",
+      "hardware": "Hardware",
+      "environment": "Fuso e execução",
+      "name": "Nome",
+      "os": "Sistema",
+      "kernel": "Kernel",
+      "architecture": "Arquitetura",
+      "type": "Tipo",
+      "up": "Ativo desde",
+      "cpu": "CPU",
+      "memory": "Memória",
+      "swap": "swap {{used}} de {{total}}",
+      "disk": "Disco",
+      "gpu": "GPU",
+      "none": "Nenhuma",
+      "temperature": "Temperatura",
+      "timezone": "Fuso horário",
+      "unreported": "Ainda não informado",
+      "docker": "Docker",
+      "dockerResources": "Disponível para o Docker",
+      "portta": "Pasta do Portta"
+    }
+  }
+}

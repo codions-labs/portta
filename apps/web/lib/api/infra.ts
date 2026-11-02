@@ -109,7 +109,7 @@ export const infraApi = {
       body: '{}',
     }),
   exposure: () => request<ExposureView>('/exposure'),
-  protectService: (id: string, body: { user?: string } = {}) =>
+  protectService: (id: string, body: { user?: string | null } = {}) =>
     request<ExposureResult>(`/services/${encodeURIComponent(id)}/exposure`, {
       method: 'PUT',
       body: JSON.stringify(body),

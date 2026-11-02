@@ -6,6 +6,60 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- An environment's page shows where its code stands: branch, last commit, what is not
+  committed or pushed and when it last changed. The host collector reads it, read-only and
+  without asking any remote.
+- A protected site can ask for the password alone, with no username: `portta protect host
+  --password-only`, `user: null` in `PUT /api/services/{id}/exposure`, and a checkbox in the
+  service's panel. Its login page then shows one field.
+- Projects can carry tags, such as `cliente: Acme`: filter by one, and group the list by
+  a key or by state. Stored in the panel's database, with `PUT /api/projects/{slug}/tags`.
+- Host > Containers selects several containers to start, stop, restart, read the
+  logs of together or remove. Removing asks you to type the count and keeps volumes,
+  images and networks; Portta's own containers cannot be selected.
+
+### Changed
+
+- The panel has a new look: a slate canvas, white cards, navy for the main action
+  and blue for links, in Manrope, Inter and IBM Plex Mono, with larger controls.
+- The panel's sign-in, owner creation and second-factor pages, and the login page of a
+  protected site, say what they are for. The site's explains why it appears, tells how
+  long to wait when locked, and answers an ended link with a page of its own.
+- Adding a project has a page of its own with the four ways in, from a folder, from what
+  already runs, an empty project or the terminal.
+- A host with no project yet opens on where to start and what is left to prepare.
+- Home opens with what needs a person, with the action on the row, then every
+  running environment and what is still open. Projects lists each product with its
+  environments and next action, and a Project's page shows what it uses by service.
+- Host shows the machine's verdict and facts in its header, with restarting Traefik
+  and running diagnostics on every tab. Health leads with its readings, who uses the
+  most and what its last check found; Containers is one list by origin; Network and
+  Gateway keep what is read most, with the rest one click away.
+- The command menu finds services by name and offers what can be done to them first,
+  beside their state, address, who may open them and what they use.
+- Settings keeps its sections beside the page, grouped by this host and people, with
+  a search that opens the setting it finds. Addresses is three choices and the result
+  they give, and saving sits at the foot of the section.
+- Access answers one question per row: who may open each site, decided in place,
+  with opening to everybody asking first. Databases have one button, Connect, and
+  what it takes to use the bridge appears under the row.
+- An environment keeps its logs under its services, live, and its destructive
+  operations in a menu. A service opens beside the list, in the order it is used:
+  addresses, who may open it, sharing it.
+- The rail follows tasks instead of layers: Home, Projects, Access, Host and
+  Settings. Services are a view of Projects, environments are listed under theirs;
+  containers, network, gateway and host health are sections of Host. The old
+  addresses redirect. On a phone the rail is a bar under the content.
+
+### Fixed
+
+- The panel reads Traefik labels the way Traefik does: keys in any case, every boolean
+  `traefik.enable` accepts, `Host` in double quotes or with several values, and a rule
+  as an expression. A router with a regexp, a wildcard or no `Host` no longer gets an
+  invented address; on a public host, if it has no login, Access and Home name it.
+
 ## [0.2.0] - Unreleased
 
 Portta now does one thing: many Docker projects on one host, each at

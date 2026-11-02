@@ -6,7 +6,7 @@
 // merges them once: the counts are null when the dashboard is unavailable, and
 // a component reads one object either way.
 
-import type { ProjectPulse, ProjectSummary } from 'portta-contracts'
+import type { ProjectPulse, ProjectSummary, ProjectTag } from 'portta-contracts'
 import type { ProjectEnvironmentFacts } from '../components/entities/project-actions.tsx'
 
 export type ProjectState = 'archived' | 'unhealthy' | 'partial' | 'running' | 'idle'
@@ -16,6 +16,7 @@ export interface ProjectListItem {
   name: string
   description: string | null
   archived: boolean
+  tags: ProjectTag[]
   environmentCount: number
   runningEnvironments: number
   unhealthyServices: number
@@ -35,6 +36,7 @@ export function toListItem(summary: ProjectSummary, pulse: ProjectPulse | undefi
     name: summary.name,
     description: summary.description,
     archived: summary.archived,
+    tags: summary.tags,
     environmentCount: summary.environmentCount,
     runningEnvironments: summary.runningEnvironmentCount,
     unhealthyServices:
@@ -84,6 +86,7 @@ export function fromPulse(pulse: ProjectPulse): ProjectListItem {
     name: pulse.name,
     description: null,
     archived: pulse.archived,
+    tags: [],
     environmentCount: pulse.environmentCount,
     runningEnvironments: pulse.runningEnvironments,
     unhealthyServices: pulse.unhealthyServices,
@@ -124,21 +127,28 @@ export function resolveProjectView(requested: string | null | undefined): Projec
 
 export interface ProjectFilters {
   search: string
-  state: ProjectState | 'all'
+  /** `problem` is both ways a project can be in trouble: unhealthy and partial. */
+  state: ProjectState | 'all' | 'problem'
   includeArchived: boolean
+  /** One tag, as `tagLabel` writes it; null for every project. */
+  tag: string | null
 }
 
-export const DEFAULT_PROJECT_FILTERS: ProjectFilters = { search: '', state: 'all', includeArchived: false }
+export const DEFAULT_PROJECT_FILTERS: ProjectFilters = { search: '', state: 'all', includeArchived: false, tag: null }
 
 export function matchesProjectFilters(item: ProjectListItem, filters: ProjectFilters): boolean {
   if (item.archived && !filters.includeArchived && filters.state !== 'archived') return false
-  if (filters.state !== 'all' && projectState(item) !== filters.state) return false
+  if (filters.state === 'problem') {
+    if (!['unhealthy', 'partial'].includes(projectState(item))) return false
+  } else if (filters.state !== 'all' && projectState(item) !== filters.state) return false
+  if (filters.tag !== null && !item.tags.some((tag) => tagLabel(tag) === filters.tag)) return false
   const needle = filters.search.trim().toLowerCase()
   if (needle === '') return true
   const haystack = [
     item.slug,
     item.name,
     item.description ?? '',
+    ...item.tags.map(tagLabel),
     ...item.environments.map((environment) => environment.name),
   ]
     .join(' ')
@@ -151,4 +161,75 @@ export function defaultProjectOrder(left: ProjectListItem, right: ProjectListIte
   const byState = projectStateRank(right) - projectStateRank(left)
   if (byState !== 0) return byState
   return left.name.localeCompare(right.name)
+}
+
+/** `cliente: Acme`, or `loja` for one with no key. */
+export function tagLabel(tag: ProjectTag): string {
+  return tag.key === '' ? tag.value : `${tag.key}: ${tag.value}`
+}
+
+/** What somebody typed, as a tag: everything before the first colon is the key. */
+export function parseTag(text: string): ProjectTag | null {
+  const at = text.indexOf(':')
+  const key = at < 0 ? '' : text.slice(0, at).trim().toLowerCase()
+  const value = (at < 0 ? text : text.slice(at + 1)).trim()
+  return value === '' || key.length > 32 || value.length > 64 ? null : { key, value }
+}
+
+export const MAX_TAGS = 16
+
+/** Every tag in use, most used first, so the chips lead with what groups the most. */
+export function tagCounts(items: readonly ProjectListItem[]): Array<{ label: string; count: number }> {
+  const counts = new Map<string, number>()
+  for (const item of items) for (const tag of item.tags) counts.set(tagLabel(tag), (counts.get(tagLabel(tag)) ?? 0) + 1)
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+}
+
+/** The keys projects are tagged with, which are what a list can be grouped by. */
+export function tagKeys(items: readonly ProjectListItem[]): string[] {
+  return [...new Set(items.flatMap((item) => item.tags.map((tag) => tag.key).filter((key) => key !== '')))].sort()
+}
+
+export type ProjectGrouping = 'none' | 'state' | `tag:${string}`
+
+export interface ProjectBand {
+  id: string
+  /** Absent for the one band of a list that is not grouped. */
+  title: string | null
+  items: ProjectListItem[]
+}
+
+const STATE_ORDER: ProjectState[] = ['unhealthy', 'partial', 'running', 'idle', 'archived']
+
+/** Bands in the order they read: states worst first, tag values by name, and "without" last. */
+export function groupProjects(
+  items: readonly ProjectListItem[],
+  grouping: ProjectGrouping,
+  labels: { state: (state: ProjectState) => string; without: (key: string) => string },
+): ProjectBand[] {
+  if (grouping === 'none') return [{ id: 'all', title: null, items: [...items] }]
+  if (grouping === 'state') {
+    return STATE_ORDER.map((state) => ({
+      id: state,
+      title: labels.state(state),
+      items: items.filter((item) => projectState(item) === state),
+    })).filter((band) => band.items.length > 0)
+  }
+  const key = grouping.slice(4)
+  const bands = new Map<string, ProjectListItem[]>()
+  const without: ProjectListItem[] = []
+  for (const item of items) {
+    const values = item.tags.filter((tag) => tag.key === key).map((tag) => tag.value)
+    if (values.length === 0) without.push(item)
+    // One project under each value it carries: a project for two clients is both clients' work.
+    for (const value of values) bands.set(value, [...(bands.get(value) ?? []), item])
+  }
+  return [
+    ...[...bands.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([value, list]) => ({ id: `${key}:${value}`, title: value, items: list })),
+    ...(without.length > 0 ? [{ id: `${key}:`, title: labels.without(key), items: without }] : []),
+  ]
 }

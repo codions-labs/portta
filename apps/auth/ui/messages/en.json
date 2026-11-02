@@ -1,17 +1,60 @@
 {
   "protectedAccess": "Protected access",
-  "heading": "A private door to your workspace.",
-  "explanation": "This service is protected at the Portta edge. Sign in here; the application behind it never receives your password.",
-  "proxyBoundary": "Credential checked before the protected service",
-  "destination": "Destination",
+  "heading": "This project is in a private environment.",
+  "destination": "You are opening",
   "project": "Project",
   "service": "Service",
   "username": "Username",
   "password": "Password",
   "showPassword": "Show password",
   "hidePassword": "Hide password",
-  "signIn": "Sign in",
+  "signIn": "Enter the project",
   "signingIn": "Checking access…",
-  "invalid": "Invalid username or password.",
-  "protectedBy": "Protected by Portta"
+  "invalid": "Wrong username or password.",
+  "protectedBy": "Protected by Portta",
+  "explanation": "You are opening a work-in-progress version, shared only with people who were invited. That is why we ask for a confirmation before showing the content.",
+  "whyLabel": "Why this page appears",
+  "reasons": {
+    "wip": {
+      "title": "It is work in progress",
+      "help": "The content may change, go offline for a few minutes or use test data."
+    },
+    "guests": {
+      "title": "Access is for guests only",
+      "help": "Whoever looks after the project set a username and a password so it is not open to anybody on the internet.",
+      "helpPasswordOnly": "Whoever looks after the project set a password so it is not open to anybody on the internet."
+    },
+    "private": {
+      "title": "Your password never reaches the project",
+      "help": "Portta checks the access before opening the project. The application never receives your password."
+    }
+  },
+  "technology": "Technology",
+  "formHint": "Use the username and password you were given.",
+  "locked_one": "Too many wrong attempts. For safety, try again in {{count}} minute.",
+  "locked_other": "Too many wrong attempts. For safety, try again in {{count}} minutes.",
+  "noAccess": "Did not get access? Ask the person or team who sent you this address.",
+  "unavailableKicker": "Access unavailable",
+  "unavailableHeading": "This access is no longer available.",
+  "unavailableLead": "The address you opened no longer has an active protection. If it was a temporary link, its agreed time may have ended.",
+  "unavailableWhyLabel": "What this means",
+  "unavailableReasons": {
+    "expected": {
+      "title": "This may be expected",
+      "help": "Temporary links are created with a deadline, so access is not left open forever."
+    },
+    "untouched": {
+      "title": "The project was not affected",
+      "help": "Only this address stopped working. Nothing changed in the project."
+    },
+    "comeBack": {
+      "title": "How to get back in",
+      "help": "Ask for a new link from the person or team who shared this address with you."
+    }
+  },
+  "unavailableCardTitle": "No access here",
+  "unavailableCard": "This link's time may have ended, or the access was changed. Whoever sent it can create another in a few seconds.",
+  "unavailableHelp": "Do not know who sent it? Look for the message where you got this address.",
+  "formHintPasswordOnly": "Use the password you were given.",
+  "invalidPasswordOnly": "Wrong password."
 }

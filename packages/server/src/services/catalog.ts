@@ -1,7 +1,7 @@
 // Assemble a Project from the persisted grouping plus the live Environment
 // snapshot. See docs/development/adr/0031-projects-home-and-project.md.
 
-import type { Project, ProjectEnvironment, ProjectLocation, ProjectSummary } from 'portta-contracts'
+import type { Project, ProjectEnvironment, ProjectLocation, ProjectSummary, ProjectTag } from 'portta-contracts'
 import { resolveProjectPath } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import type { Database } from '../db/index.ts'
@@ -24,7 +24,11 @@ export function resolvedPathOf(projectsHome: string | null, relativePath: string
   }
 }
 
-export function toProjectSummary(record: ProjectRecord, adopted: ProjectEnvironment[]): ProjectSummary {
+export function toProjectSummary(
+  record: ProjectRecord,
+  adopted: ProjectEnvironment[],
+  tags: ProjectTag[] = [],
+): ProjectSummary {
   return {
     id: record.id,
     slug: record.slug,
@@ -33,6 +37,7 @@ export function toProjectSummary(record: ProjectRecord, adopted: ProjectEnvironm
     archived: record.archived,
     relativePath: record.relativePath,
     location: projectLocationOf(record.relativePath),
+    tags,
     environmentCount: adopted.length,
     runningEnvironmentCount: adopted.filter((environment) => environment.running).length,
     environments: adopted.map((environment) => ({
@@ -45,7 +50,12 @@ export function toProjectSummary(record: ProjectRecord, adopted: ProjectEnvironm
   }
 }
 
-export function toProject(record: ProjectRecord, adopted: ProjectEnvironment[], projectsHome: string | null): Project {
+export function toProject(
+  record: ProjectRecord,
+  adopted: ProjectEnvironment[],
+  projectsHome: string | null,
+  tags: ProjectTag[] = [],
+): Project {
   return {
     id: record.id,
     slug: record.slug,
@@ -55,6 +65,7 @@ export function toProject(record: ProjectRecord, adopted: ProjectEnvironment[], 
     relativePath: record.relativePath,
     resolvedPath: resolvedPathOf(projectsHome, record.relativePath),
     location: projectLocationOf(record.relativePath),
+    tags,
     environments: adopted,
   }
 }
@@ -62,6 +73,7 @@ export function toProject(record: ProjectRecord, adopted: ProjectEnvironment[], 
 export interface ProjectCatalog {
   records: ProjectRecord[]
   environments: Map<string, ProjectEnvironment[]>
+  tags: Map<string, ProjectTag[]>
   projectsHome: string | null
 }
 
@@ -70,9 +82,10 @@ export async function loadProjectCatalog(
   snapshot: Snapshot,
   config: Pick<PanelConfig, 'projectsHome' | 'projectName'>,
 ): Promise<ProjectCatalog> {
-  const [records, manualLinks, remembered] = await Promise.all([
+  const [records, manualLinks, tags, remembered] = await Promise.all([
     db.projects.list(),
     db.projects.listEnvironments(),
+    db.projects.listTags(),
     rememberedEnvironments(db, snapshot, config),
   ])
   const projectsHome = config.projectsHome
@@ -109,5 +122,5 @@ export async function loadProjectCatalog(
     environments.set(adoption.projectId, list)
   }
 
-  return { records, environments, projectsHome }
+  return { records, environments, tags, projectsHome }
 }

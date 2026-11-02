@@ -6,8 +6,9 @@ import { cn } from '../../lib/utils.ts'
  * hand-written `<Table>` cannot drift apart. A header is quiet sentence case;
  * a row is dense; hover is a tint and nothing more.
  */
-export const thClass = 'h-8 border-b border-line px-3 text-left text-xs font-medium whitespace-nowrap text-subtle'
-export const tdClass = 'border-b border-line-subtle px-3 py-1.5 align-middle'
+export const thClass =
+  'h-10 border-b border-line bg-surface-2 px-3 text-left text-xs font-semibold whitespace-nowrap text-muted first:pl-5 last:pr-5'
+export const tdClass = 'border-b border-line-subtle px-3 py-2.5 align-middle first:pl-5 last:pr-5'
 export const trClass = 'transition-colors duration-100 hover:bg-fill'
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {

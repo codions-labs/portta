@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseAliases, renderAliases } from 'portta-core'
 import { describe, expect, it } from 'vitest'
-import { emptyProtectionStore, openStore, saveExposure } from './exposure.js'
+import { emptyProtectionStore, openStore, protectedStore, saveExposure } from './exposure.js'
 
 describe('saving an exposure decision', () => {
   it('suspends a conflicting alias immediately and preserves its stored state', () => {
@@ -32,5 +32,16 @@ describe('saving an exposure decision', () => {
     const rendered = readFileSync(file, 'utf8')
     expect(rendered).not.toContain('Host(`new-web.example.test`)')
     expect(parseAliases(rendered)).toEqual([alias])
+  })
+})
+
+describe('protecting a host with a password alone', () => {
+  it('stores no username, and keeps one when asked for', async () => {
+    const base = { host: 'shop.example.test', entryPoint: 'websecure', password: 'secret-enough' }
+    const alone = (await protectedStore(emptyProtectionStore(), { ...base, user: null })).protections[0]
+    expect(alone).not.toHaveProperty('user')
+    expect(alone?.mode).toBe('protected')
+    const named = (await protectedStore(emptyProtectionStore(), { ...base, user: 'reviewer' })).protections[0]
+    expect(named?.user).toBe('reviewer')
   })
 })

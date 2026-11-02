@@ -1,40 +1,41 @@
 'use client'
 
-import { AlertTriangle, Boxes, CheckCircle2, CircleDot, ShieldCheck, XCircle } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Activity, AlertTriangle, CheckCircle2, CircleDot, Layers, Plus, ShieldCheck, XCircle } from 'lucide-react'
+import Link from 'next/link'
 import type { AttentionItem, DevelopmentOverview, HostPressure, Overview } from 'portta-contracts'
 import { useTranslation } from 'react-i18next'
-import { CopyButton, Mono } from '@/components/copy'
+import { Mono } from '@/components/copy'
 import { DiagnosticText } from '@/components/diagnostic-text'
-import { ProjectRow } from '@/components/entities/project-card'
-import { ResourceUsage } from '@/components/entities/resource-usage'
-import { EnvironmentActions } from '@/components/environment-actions'
-import { canonicalHost } from '@/components/exposure-panel'
+import { HostAccess, primaryRoute, RouteLine } from '@/components/entities/environment-row'
 import { HostHeader, HostReadings, HostSummarySkeleton, pressureReasons } from '@/components/host-summary'
-import { Empty, ErrorBox, Loading } from '@/components/shell-bits'
-import { Badge } from '@/components/ui/badge'
+import { FirstUse, useFirstUseDismissal } from '@/components/overview/first-use'
+import { Empty, ErrorBox, Loading, MetricCard, PageHeader } from '@/components/shell-bits'
+import { Badge, StatusDot } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
-import { ApiError } from '@/lib/api'
-import { fromPulse } from '@/lib/projects'
+import { ApiError, api } from '@/lib/api'
+import { hostAccess } from '@/lib/host-access'
+import { useCan } from '@/lib/permissions'
 import {
+  useAccess,
+  useClosedHosts,
   useDevelopmentOverview,
+  useEnvironmentOwners,
   useEnvironments,
   useExposure,
   useMetricsCurrent,
   useMetricsHistory,
+  useShares,
   useStatus,
+  useUnprotectedHosts,
 } from '@/lib/queries'
-import { cn } from '@/lib/utils'
+import { useFormat } from '@/lib/use-format'
 
 /**
- * What is happening: the host it happens on, what needs attention, what is
- * running and what it costs. Infrastructure has its own pages; this one
- * answers the question a person asks when they open the panel.
- *
- * The page has no visible title: its subject is the host, so the host's
- * name and kind sit where a title would, the gateway's and the host's
- * verdict beside them, the readings in one strip under them. The page is
- * dense because related things share a line, not because anything is
- * small; a panel with nothing to say takes one row rather than a card.
+ * What a person asks when they open the panel, in that order: is everything
+ * fine, what needs me, and where is the thing I came to open. The machine
+ * itself has its own page, Host.
  */
 export function OverviewView({
   initialOverview,
@@ -91,23 +92,113 @@ function OverviewHeader({ gatewayUp, pressure }: { gatewayUp: boolean; pressure?
 }
 
 function Dashboard({ data }: { data: DevelopmentOverview }) {
+  const { t } = useTranslation('overview')
+  const mayCreate = useCan('project:create')
+  const closed = useClosedHosts()
+  const unprotected = useUnprotectedHosts()
+  const [dismissed, dismiss] = useFirstUseDismissal()
+  const { runtime } = data
+  const needsYou = data.attention.length + (closed.length > 0 ? 1 : 0) + (unprotected.length > 0 ? 1 : 0)
+
+  if (data.projects.length === 0 && mayCreate && !dismissed) {
+    return (
+      <FirstUse
+        onDismiss={dismiss}
+        // A fresh host has none of this, and one with problems must not hide them behind a welcome.
+        attention={needsYou > 0 ? <NeedsYou data={data} closed={closed} unprotected={unprotected} /> : null}
+      />
+    )
+  }
+
   return (
     <>
-      <OverviewHeader gatewayUp={data.gateway.up} pressure={data.resources.host?.pressure} />
+      <PageHeader
+        title={t('title')}
+        description={[
+          t('summary.running', { count: runtime.environmentsRunning }),
+          needsYou > 0 ? t('summary.needsYou', { count: needsYou }) : t('summary.allGood'),
+        ].join(' ')}
+        actions={
+          mayCreate ? (
+            <Button asChild variant="primary">
+              <Link href="/projects/new">
+                <Plus />
+                {t('addProject')}
+              </Link>
+            </Button>
+          ) : null
+        }
+      />
 
-      <div className="space-y-4">
-        <AttentionBand data={data} />
+      <div className="space-y-6">
+        {/* On a phone the sentence under the title says this, and what needs a person comes first. */}
+        <section aria-label={t('metric.label')} className="hidden gap-4 sm:grid sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            label={t('metric.environments')}
+            icon={<Layers />}
+            value={runtime.environmentsRunning}
+            unit={t('metric.ofRunning', { total: runtime.environmentsTotal })}
+          />
+          <MetricCard
+            label={t('metric.services')}
+            icon={<Activity />}
+            value={runtime.servicesRunning - runtime.servicesUnhealthy}
+            unit={t('metric.ofHealthy', { total: runtime.servicesRunning })}
+          />
+          <MetricCard
+            label={t('metric.sites')}
+            icon={<ShieldCheck />}
+            value={runtime.routedUrls}
+            unit={closed.length > 0 ? t('metric.undecided', { count: closed.length }) : t('metric.live')}
+          />
+          <HostUseCard data={data} />
+        </section>
 
-        <div className="grid items-start gap-4 xl:grid-cols-5">
-          <div className="min-w-0 xl:col-span-3">
-            <ProjectsPanel data={data} />
+        <NeedsYou data={data} closed={closed} unprotected={unprotected} />
+
+        <div className="flex flex-wrap items-start gap-6">
+          <div className="min-w-0 flex-[999_1_32rem]">
+            <QuickOpen />
           </div>
-          <div className="min-w-0 xl:col-span-2">
-            <EnvironmentUsagePanel data={data} />
+          <div className="min-w-0 flex-[1_1_20rem]">
+            <OpenNow />
           </div>
         </div>
       </div>
     </>
+  )
+}
+
+/** CPU, memory and disk as three bars, leading to Host where the rest of the readings are. */
+function HostUseCard({ data }: { data: DevelopmentOverview }) {
+  const { t } = useTranslation('overview')
+  const host = data.resources.host
+  const readings = [
+    { label: t('metric.cpu'), ratio: host?.cpuUtilisation ?? null },
+    { label: t('metric.memory'), ratio: host?.memoryUsedPercent ?? null },
+    { label: t('metric.disk'), ratio: host?.storageUsedPercent ?? null },
+  ]
+  return (
+    <Link
+      href="/host"
+      className="flex flex-col gap-2 rounded-xl border border-line bg-surface px-5 py-4 shadow-raised transition-colors duration-100 hover:border-line-strong focus-ring"
+    >
+      <span className="text-xs font-medium tracking-[0.12em] text-subtle uppercase">{t('metric.hostUse')}</span>
+      {readings.map((reading) => (
+        <span key={reading.label} className="grid grid-cols-[3.5rem_1fr_2.5rem] items-center gap-2 text-xs text-subtle">
+          <span>{reading.label}</span>
+          <span className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+            <span
+              className="block h-full rounded-full bg-link"
+              style={{ width: `${Math.round((reading.ratio ?? 0) * 100)}%` }}
+            />
+          </span>
+          <span className="text-right font-semibold text-ink tabular-nums">
+            {reading.ratio === null ? '—' : `${Math.round(reading.ratio * 100)}%`}
+          </span>
+        </span>
+      ))}
+    </Link>
   )
 }
 
@@ -131,180 +222,287 @@ function useAttentionText(data: DevelopmentOverview) {
   }
 }
 
-/**
- * What needs attention, sized to how much there is: one line saying nothing
- * does, one band for one thing, a list for several. A card reserved for an
- * alert that is usually absent is space the work could have had.
- */
-function AttentionBand({ data }: { data: DevelopmentOverview }) {
+/** Restarting from the alert, so nobody has to walk to the service to do it. */
+function RestartService({ environment, service }: { environment: string; service: string }) {
+  const { t } = useTranslation('overview')
+  const queryClient = useQueryClient()
+  const restart = useMutation({
+    mutationFn: () => api.serviceAction(environment, service, 'restart'),
+    onSettled: () => void queryClient.invalidateQueries(),
+  })
+  return (
+    <Button size="sm" busy={restart.isPending} onClick={() => restart.mutate()}>
+      {t('attention.restart')}
+    </Button>
+  )
+}
+
+/** One thing that needs a person: what it is, and the action beside it. */
+function NeedsYouRow({
+  tone,
+  title,
+  detail,
+  children,
+}: {
+  tone: 'danger' | 'warn'
+  title: string
+  detail?: string | null
+  children: React.ReactNode
+}) {
+  return (
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line px-5 py-3 first:border-t-0">
+      <StatusDot tone={tone} label={title} />
+      <div className="min-w-0 flex-[1_1_14rem]">
+        <div className="text-base font-semibold text-ink">{title}</div>
+        {detail ? <div className="truncate text-xs text-subtle">{detail}</div> : null}
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div>
+    </li>
+  )
+}
+
+function NeedsYou({
+  data,
+  closed,
+  unprotected,
+}: {
+  data: DevelopmentOverview
+  closed: string[]
+  unprotected: string[]
+}) {
   const { t } = useTranslation('overview')
   const text = useAttentionText(data)
+  const mayOperate = useCan('environment:operate')
   const items = data.attention
-  const failures = items.filter((item) => item.severity === 'fail').length
-  // The diagnostics page (`/gateway`) is ported with the infrastructure pages;
-  // until it exists this band names what needs attention and links each item,
-  // rather than offering a button that leads nowhere.
-  const diagnostics = null
+  const count = items.length + (closed.length > 0 ? 1 : 0) + (unprotected.length > 0 ? 1 : 0)
 
-  if (items.length === 0) {
+  if (count === 0) {
     return (
-      <div className="flex h-8 items-center gap-2 px-1 text-xs text-subtle">
+      <div className="flex items-center gap-2 rounded-xl border border-line bg-surface px-5 py-3 text-sm text-muted shadow-raised">
         <h2 className="sr-only">{t('attention.title')}</h2>
-        <ShieldCheck className="size-3.5 text-ok" aria-hidden />
+        <ShieldCheck className="size-4 text-ok" aria-hidden />
         <span>{t('attention.none')}</span>
-        <span className="ml-auto">{diagnostics}</span>
       </div>
     )
   }
 
-  const rows = items.map((item, index) => (
-    <li
-      key={`${item.kind}-${index}`}
-      className="flex h-8 min-w-0 items-center gap-2.5 px-3 text-sm transition-colors duration-100 hover:bg-fill"
-    >
-      {item.severity === 'fail' ? (
-        <XCircle className="size-3.5 shrink-0 text-danger" aria-hidden />
-      ) : (
-        <AlertTriangle className="size-3.5 shrink-0 text-warn" aria-hidden />
-      )}
-      <a
-        className="min-w-0 flex-1 truncate rounded-xs text-ink underline-offset-2 hover:underline focus-ring"
-        href={item.href}
-        title={text(item)}
-      >
-        {text(item)}
-      </a>
-      {item.project ? <span className="hidden shrink-0 text-xs text-subtle sm:inline">{item.project}</span> : null}
-    </li>
-  ))
-
-  return (
-    <section
-      aria-label={t('attention.title')}
-      className={cn('overflow-hidden rounded-lg border', failures > 0 ? 'border-danger/35' : 'border-warn/35')}
-    >
-      <div className={cn('flex h-8 items-center gap-2 px-3 text-xs', failures > 0 ? 'bg-danger/6' : 'bg-warn/8')}>
-        <h2 className={cn('font-medium', failures > 0 ? 'text-danger' : 'text-warn')}>{t('attention.title')}</h2>
-        <span className="text-subtle">{t('attention.count', { count: items.length })}</span>
-        <span className="ml-auto">{diagnostics}</span>
-      </div>
-      <ul className="divide-y divide-line-subtle bg-surface">{rows}</ul>
-    </section>
-  )
-}
-
-function ProjectsPanel({ data }: { data: DevelopmentOverview }) {
-  const { t } = useTranslation('overview')
-  const shown = data.projects.filter((pulse) => !pulse.archived).slice(0, 8)
   return (
     <Card>
       <CardHeader
-        title={t('projects.title')}
-        icon={<Boxes />}
-        meta={<span className="text-xs font-normal text-subtle tabular-nums">{shown.length}</span>}
-        actions={
-          <a className="rounded-xs px-1 text-xs text-subtle hover:text-ink hover:underline focus-ring" href="/projects">
-            {t('projects.all')}
-          </a>
-        }
+        title={t('attention.title')}
+        icon={<AlertTriangle className="text-warn" />}
+        meta={<Badge tone="warn">{count}</Badge>}
       />
-      {shown.length === 0 ? (
-        <Empty compact title={t('projects.empty')} hint={t('projects.emptyHint')} />
-      ) : (
-        shown.map((pulse) => <ProjectRow key={pulse.slug} item={fromPulse(pulse)} />)
-      )}
+      <ul>
+        {items.map((item, index) => {
+          const unhealthy = item.kind === 'service-unhealthy' && item.environment && item.service
+          return (
+            <NeedsYouRow
+              key={`${item.kind}-${index}`}
+              tone={item.severity === 'fail' ? 'danger' : 'warn'}
+              title={text(item)}
+              detail={unhealthy ? t('attention.unhealthyDetail') : item.project}
+            >
+              {unhealthy ? (
+                <>
+                  <Button asChild size="sm">
+                    <Link
+                      href={`/environments/${encodeURIComponent(item.environment ?? '')}?logs=${encodeURIComponent(item.service ?? '')}`}
+                    >
+                      {t('attention.logs')}
+                    </Link>
+                  </Button>
+                  {mayOperate ? (
+                    <RestartService environment={item.environment ?? ''} service={item.service ?? ''} />
+                  ) : null}
+                </>
+              ) : (
+                <Button asChild size="sm">
+                  <Link href={item.href}>{t('attention.details')}</Link>
+                </Button>
+              )}
+            </NeedsYouRow>
+          )
+        })}
+        {unprotected.length > 0 ? (
+          <NeedsYouRow
+            tone="danger"
+            title={t('attention.unprotectedSites', { count: unprotected.length })}
+            detail={unprotected.join(', ')}
+          >
+            <Button asChild size="sm">
+              <Link href="/access">{t('attention.review')}</Link>
+            </Button>
+          </NeedsYouRow>
+        ) : null}
+        {closed.length > 0 ? (
+          <NeedsYouRow
+            tone="warn"
+            title={t('attention.closedSites', { count: closed.length })}
+            detail={closed.join(', ')}
+          >
+            <Button asChild size="sm">
+              <Link href="/access">{t('attention.decide')}</Link>
+            </Button>
+          </NeedsYouRow>
+        ) : null}
+      </ul>
     </Card>
   )
 }
 
-function EnvironmentUsagePanel({ data }: { data: DevelopmentOverview }) {
+/** Where a day usually starts: every running environment, its address and who may open it. */
+function QuickOpen() {
   const { t } = useTranslation('overview')
   const environments = useEnvironments(true)
-  const known = new Map((environments.data ?? []).map((environment) => [environment.name, environment]))
+  const { owners } = useEnvironmentOwners()
   const exposure = useExposure()
+  const mayOpen = (environments.data ?? [])
+    .filter((environment) => environment.presence === 'live' && !environment.overrides?.archived)
+    .sort(
+      (a, b) =>
+        Number(Boolean(b.overrides?.pinned)) - Number(Boolean(a.overrides?.pinned)) ||
+        b.unhealthyCount - a.unhealthyCount ||
+        a.name.localeCompare(b.name),
+    )
   return (
     <Card>
       <CardHeader
-        title={t('resources.top')}
-        meta={
-          <span className="text-xs font-normal text-subtle tabular-nums">
-            {t('resources.environments')} {data.runtime.environmentsRunning}/{data.runtime.environmentsTotal}
-          </span>
+        title={t('quick.title')}
+        actions={
+          <Link className="rounded-xs text-sm text-link hover:underline focus-ring" href="/projects">
+            {t('projects.all')}
+          </Link>
         }
       />
-      {data.resources.topProjects.length === 0 ? (
-        <Empty compact title={t('resources.none')} hint={t('resources.topDescription')} />
+      {mayOpen.length === 0 ? (
+        <Empty compact title={t('quick.empty')} hint={t('projects.emptyHint')} />
       ) : (
-        data.resources.topProjects.map((entry) => {
-          const environment = known.get(entry.environment)
-          const route = environment?.urls[0]
-          return (
-            <div
-              key={entry.environment}
-              className="group flex min-h-9 min-w-0 items-center gap-2 border-b border-line-subtle px-3 py-1 text-sm last:border-b-0 hover:bg-fill"
-            >
-              <div className="min-w-0 flex-1">
-                <a
-                  className="block truncate rounded-xs font-medium underline-offset-2 hover:underline focus-ring"
-                  href={
-                    entry.slug
-                      ? `/projects/${encodeURIComponent(entry.slug)}`
-                      : `/environments/${encodeURIComponent(entry.environment)}`
-                  }
+        <ul>
+          {mayOpen.map((environment) => {
+            const route = primaryRoute(environment)
+            const owner = owners.get(environment.name)
+            return (
+              <li
+                key={environment.name}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-5 py-2.5 transition-colors duration-100 first:border-t-0 hover:bg-fill"
+              >
+                <Link
+                  href={`/environments/${encodeURIComponent(environment.name)}`}
+                  className="min-w-0 flex-[1_1_11rem] rounded-xs focus-ring"
                 >
-                  {entry.name}
-                </a>
-                {route ? (
-                  <div className="flex min-w-0 items-center gap-1.5 text-2xs">
-                    <a
-                      className="min-w-0 truncate rounded-xs underline-offset-2 hover:underline focus-ring"
-                      href={route.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <Mono kind="url" value={route.url} tone="subtle">
-                        {route.host}
-                      </Mono>
-                    </a>
-                    <CopyButton value={route.url} size="icon-xs" />
-                    {exposure.data?.enforced ? (
-                      <HostAccess
-                        mode={
-                          exposure.data.entries.find((item) => canonicalHost(item.host) === canonicalHost(route.host))
-                            ?.mode ?? null
-                        }
-                      />
-                    ) : null}
-                  </div>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <StatusDot
+                      tone={environment.unhealthyCount > 0 ? 'danger' : 'ok'}
+                      label={environment.unhealthyCount > 0 ? t('quick.problem') : t('quick.healthy')}
+                    />
+                    <span className="truncate font-semibold text-ink">
+                      {environment.overrides?.displayName ?? environment.name}
+                    </span>
+                  </span>
+                  <span className="block truncate text-xs text-subtle">
+                    {[
+                      owner?.name ?? t('quick.noProject'),
+                      `${environment.runningCount}/${environment.serviceCount}`,
+                    ].join(' · ')}
+                  </span>
+                </Link>
+                <div className="flex min-w-0 flex-[2_1_15rem] items-center gap-1">
+                  {route ? (
+                    <RouteLine route={route} />
+                  ) : (
+                    <span className="truncate text-sm text-subtle">{t('quick.noAddress')}</span>
+                  )}
+                </div>
+                {route && exposure.data?.enforced ? (
+                  <HostAccess mode={hostAccess(environment, route.host, exposure.data)} />
                 ) : null}
-              </div>
-              <ResourceUsage
-                cpu={entry.cpuUtilisation}
-                memoryBytes={entry.memoryUsedBytes}
-                className="ml-auto shrink-0 text-2xs"
-              />
-              {environment && environment.runningCount > 0 ? (
-                <span className="row-actions">
-                  <EnvironmentActions project={environment} />
-                </span>
-              ) : null}
-            </div>
-          )
-        })
+              </li>
+            )
+          })}
+        </ul>
       )}
     </Card>
   )
 }
 
-/** Who may open a hostname on a public host: a credential, everybody, or nobody (no entry means closed). */
-function HostAccess({ mode }: { mode: 'protected' | 'public' | null }) {
-  const { t } = useTranslation('overview', { keyPrefix: 'access' })
-  return mode === 'protected' ? (
-    <Badge tone="ok">{t('protected')}</Badge>
-  ) : mode === 'public' ? (
-    <Badge tone="danger">{t('open')}</Badge>
-  ) : (
-    <Badge tone="warn">{t('closed')}</Badge>
+/** Bridges and temporary links: an exposure nobody remembers is the one worth surfacing. */
+function OpenNow() {
+  const { t } = useTranslation('overview')
+  const { uptime } = useFormat()
+  const queryClient = useQueryClient()
+  const mayRead = useCan('access:read')
+  const mayOpen = useCan('access:open')
+  const mayManage = useCan('access:manage')
+  const access = useAccess(mayRead)
+  const shares = useShares(mayRead)
+  const refresh = () => void queryClient.invalidateQueries()
+  const closeBridge = useMutation({ mutationFn: (id: string) => api.closeBridge(id), onSettled: refresh })
+  const revoke = useMutation({ mutationFn: (id: string) => api.revokeShare(id), onSettled: refresh })
+  if (!mayRead) return null
+
+  const bridges = access.data?.bridges ?? []
+  const links = (shares.data?.shares ?? []).filter((share) => share.state === 'active')
+
+  return (
+    <Card>
+      <CardHeader
+        title={t('open.title')}
+        actions={
+          <Link className="rounded-xs text-sm text-link hover:underline focus-ring" href="/access">
+            {t('open.all')}
+          </Link>
+        }
+      />
+      {bridges.length === 0 && links.length === 0 ? (
+        <CardBody className="text-sm text-subtle">{t('open.none')}</CardBody>
+      ) : (
+        <ul>
+          {bridges.map((bridge) => (
+            <li key={bridge.id} className="flex items-start gap-3 border-t border-line px-5 py-3 first:border-t-0">
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold text-ink">{t('open.bridge')}</div>
+                <div className="truncate text-xs text-subtle">
+                  {bridge.project} / {bridge.service}
+                </div>
+                <Mono kind="port" className="mt-1 block truncate text-xs">
+                  {bridge.bindIp}:{bridge.localPort}
+                </Mono>
+                <div className="text-xs text-subtle">{bridge.expiresAt ? t('open.expiresAt') : t('open.noExpiry')}</div>
+              </div>
+              {mayOpen ? (
+                <Button size="sm" busy={closeBridge.isPending} onClick={() => closeBridge.mutate(bridge.id)}>
+                  {t('open.close')}
+                </Button>
+              ) : null}
+            </li>
+          ))}
+          {links.map((share) => (
+            <li key={share.id} className="flex items-start gap-3 border-t border-line px-5 py-3 first:border-t-0">
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold text-ink">
+                  {share.mode === 'protected' ? t('open.protectedLink') : t('open.publicLink')}
+                </div>
+                <div className="truncate text-xs text-subtle">
+                  {share.project} / {share.service}
+                </div>
+                <Mono kind="url" value={share.url} className="mt-1 block truncate text-xs">
+                  {share.host}
+                </Mono>
+                <div className="text-xs text-subtle">
+                  {t('open.expiresIn', { time: uptime(share.expiresInSeconds) })}
+                </div>
+              </div>
+              {mayManage ? (
+                <Button size="sm" busy={revoke.isPending} onClick={() => revoke.mutate(share.id)}>
+                  {t('open.revoke')}
+                </Button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   )
 }
 
@@ -338,7 +536,7 @@ function ReducedOverview({ reason, initialStatus }: { reason: number; initialSta
           ) : (
             <ul className="divide-y divide-line-subtle">
               {problems.map((problem) => (
-                <li key={problem.id} className="flex gap-2.5 px-3 py-1.5">
+                <li key={problem.id} className="flex gap-2.5 px-5 py-2.5">
                   {problem.status === 'fail' ? (
                     <XCircle className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
                   ) : (

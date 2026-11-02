@@ -8,6 +8,7 @@ import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Field, Input } from '@/components/ui/field'
+import { PasswordInput } from '@/components/ui/password-input'
 import { signIn } from '@/lib/auth-client'
 
 export function SignInForm() {
@@ -53,11 +54,10 @@ export function SignInForm() {
           />
         )}
       </Field>
-      <Field label={t('password')} required>
+      <Field label={t('password')} hint={t('forgotHint')} required>
         {(id) => (
-          <Input
+          <PasswordInput
             id={id}
-            type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
@@ -66,7 +66,10 @@ export function SignInForm() {
         )}
       </Field>
       {error ? (
-        <p role="alert" className="text-xs text-danger">
+        <p
+          role="alert"
+          className="rounded-lg border border-danger/30 bg-danger/6 px-3 py-2 text-sm font-medium text-danger"
+        >
           {error}
         </p>
       ) : null}

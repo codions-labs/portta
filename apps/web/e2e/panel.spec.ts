@@ -23,7 +23,7 @@ test.describe('the panel end to end', () => {
 
     // The route name is the page's h1 for a screen reader; what a person sees
     // at the top is the host, so the heading is asserted present, not visible.
-    await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeAttached()
+    await expect(page.getByRole('heading', { name: 'Home', level: 1 })).toBeAttached()
     await expect(page.getByText('Gateway running')).toBeVisible()
     await expect(page).toHaveTitle('Overview · Portta')
 

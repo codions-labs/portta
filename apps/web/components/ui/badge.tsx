@@ -24,8 +24,8 @@ const badge = cva('inline-flex shrink-0 items-center gap-1 font-medium leading-n
       outline: 'border border-line bg-transparent text-subtle',
     },
     size: {
-      sm: 'h-5 px-1.5 text-2xs',
-      md: 'h-6 px-2 text-xs',
+      sm: 'h-5 px-2 text-xs',
+      md: 'h-6 px-2.5 text-xs',
     },
     shape: {
       square: 'rounded-sm',

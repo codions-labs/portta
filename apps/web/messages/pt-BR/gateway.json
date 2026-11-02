@@ -1,46 +1,26 @@
 {
   "title": "Gateway",
-  "description": "Os componentes próprios do gateway: status, diagnósticos e logs.",
   "checking": "Verificando…",
-  "runDiagnostics": "Executar diagnósticos",
+  "runDiagnostics": "Rodar diagnóstico",
   "restartTraefik": "Reiniciar Traefik",
   "restarted": "{{components}} reiniciado(s). {{note}}:",
-  "components": {
-    "title": "Componentes",
-    "traefik": "Traefik",
-    "socketProxy": "Proxy de socket",
-    "persistence": "Persistência",
-    "tailscale": "Tailscale",
-    "notRunning": "não em execução",
-    "sharedNetwork": "Rede compartilhada",
-    "attached": "{{count}} anexado(s)",
-    "missing": "ausente",
-    "routedServices": "Serviços roteados"
-  },
-  "versions": {
-    "title": "Versões e perfil",
-    "gateway": "Gateway",
-    "panel": "Painel",
-    "profile": "Perfil",
-    "domain": "Domínio",
-    "traefikDashboard": "Dashboard do Traefik",
-    "thisPanel": "Este painel",
-    "loopbackOnly": "apenas loopback",
-    "routedForwardAuth": "roteado, com login Portta",
-    "routedNoCredential": "roteado sem credencial",
-    "readOnly": "somente leitura"
-  },
   "diagnostics": {
     "title": "Diagnósticos",
     "summary": "{{failures}} falha(s), {{warnings}} aviso(s) · {{time}}",
     "description": "Verificações que o painel pode fazer de dentro do seu container.",
     "notRun": "Ainda não executado",
-    "notRunHint": "Para verificações no host (PATH, sockets em escuta, DNS, arquivos de certificado), execute portta doctor.",
-    "deeperChecks": "verificações mais profundas no host:"
+    "notRunHint": "Para verificações no servidor (PATH, sockets em escuta, DNS, arquivos de certificado), execute portta doctor.",
+    "deeperChecks": "verificações mais profundas no servidor:"
   },
   "logs": {
     "title": "Logs",
-    "componentAria": "Componente do gateway"
+    "componentAria": "Componente do gateway",
+    "sources": {
+      "traefik": "traefik",
+      "socket-proxy": "socket proxy",
+      "tailscale": "tailscale",
+      "db": "banco"
+    }
   },
   "apply": {
     "title": "Aplicar configurações salvas",
@@ -50,11 +30,11 @@
     "barApplying": "Aplicando as configurações salvas…",
     "barAction": "Aplicar",
     "barReview": "Revisar",
-    "barManual": "Aplique no host com:",
+    "barManual": "Aplique no servidor com:",
     "unavailable": {
-      "disabled": "Defina PORTTA_APPLY=true no .env do host e rode o comando uma vez.",
-      "refused": "Este host recusa aplicar pelo painel: {{reason}}.",
-      "notPrepared": "PORTTA_APPLY já está ligado; o applier ainda não foi preparado. Rode o comando uma vez no host."
+      "disabled": "Defina PORTTA_APPLY=true no .env do servidor e rode o comando uma vez.",
+      "refused": "Este servidor recusa aplicar pelo painel: {{reason}}.",
+      "notPrepared": "PORTTA_APPLY já está ligado; o applier ainda não foi preparado. Rode o comando uma vez no servidor."
     },
     "confirmTitle": "Aplicar as configurações salvas?",
     "confirmDescription": "O Portta recria os próprios containers para esses valores salvos passarem a valer.",
@@ -62,7 +42,7 @@
     "confirmProjects": "Seus projetos não são tocados. Só os containers do próprio Portta são recriados, e a rede compartilhada fica como está.",
     "confirmMoves": "Uma configuração pendente muda o endereço em que este painel responde, então esta aba não vai reconectar sozinha.",
     "confirmKeepTab": "Mantenha esta aba aberta enquanto roda.",
-    "confirmBuild": "Este host constrói as próprias imagens, então o apply inclui um build Docker. O primeiro pode levar vários minutos.",
+    "confirmBuild": "Este servidor constrói as próprias imagens, então o apply inclui um build Docker. O primeiro pode levar vários minutos.",
     "confirmReference": "Esses valores salvos são só uma nova referência. Não é preciso recriar o gateway.",
     "confirm": "Aplicar",
     "discard": "Descartar",
@@ -91,22 +71,37 @@
     "reload": "Recarregar o painel",
     "reloadWhy": "Esta página ainda mostra o que o processo anterior respondeu.",
     "failedExit": "O applier terminou com código {{code}}. Nada foi desfeito.",
-    "failedHint": "Rode no host para ver a saída inteira:",
+    "failedHint": "Rode no servidor para ver a saída inteira:",
     "showOutput": "Mostrar saída",
-    "timeoutBody": "O painel não responde há {{time}}. Ele pode ainda estar subindo. Recarregue a página, ou termine no host:"
+    "timeoutBody": "O painel não responde há {{time}}. Ele pode ainda estar subindo. Recarregue a página, ou termine no servidor:"
   },
-  "overviewCard": {
-    "title": "Gateway",
-    "profile": "Perfil",
-    "domain": "Domínio",
-    "listening": "Escutando",
-    "tls": "TLS",
-    "tlsEnabled": "ativado ({{mode}})",
+  "actionFailed": "Não deu certo",
+  "restartConfirm": {
+    "title": "Reiniciar o Traefik?",
+    "impact": "Todos os sites deste servidor saem do ar por alguns segundos enquanto ele volta.",
+    "confirm": "Reiniciar"
+  },
+  "parts": {
+    "traefik": "Traefik",
+    "socketProxy": "Proxy de socket",
+    "auth": "Autenticação",
     "tailscale": "Tailscale",
-    "tailscaleRunning": "em execução",
-    "tailscaleEnabledNotRunning": "ativado, não em execução",
-    "publicAccess": "Acesso público",
+    "notRunning": "parado"
+  },
+  "details": {
+    "title": "Detalhes do gateway",
+    "listening": "Escuta em",
     "sharedNetwork": "Rede compartilhada",
-    "attached": "{{name}} · {{count}} conectado(s)"
+    "attached": "{{name}}, {{count}} conectados",
+    "missing": "{{name}} não existe",
+    "routedServices": "Serviços roteados",
+    "persistence": "Persistência",
+    "publicAccess": "Acesso público",
+    "traefikDashboard": "Painel do Traefik",
+    "thisPanel": "Este painel",
+    "loopbackOnly": "Só nesta máquina",
+    "routedForwardAuth": "Roteado, pede login",
+    "routedNoCredential": "Roteado, sem credencial",
+    "readOnly": "Somente leitura"
   }
 }

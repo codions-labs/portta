@@ -9,12 +9,24 @@ import { LogViewer } from './logs.tsx'
 import { Empty } from './shell-bits.tsx'
 import { Card } from './ui/card.tsx'
 
-export function EnvironmentLogs({ project, service }: { project: Environment; service: string | null }) {
+export function EnvironmentLogs({
+  project,
+  service,
+  docked = false,
+  onSelectService,
+}: {
+  project: Environment
+  service: string | null
+  /** Under the list of services, which holds the selection in its own URL. */
+  docked?: boolean
+  onSelectService?: (service: string | null) => void
+}) {
   const { t } = useTranslation('environments')
 
   const base = `/environments/${encodeURIComponent(project.name)}/logs`
 
   if (project.services.length === 0) {
+    if (docked) return null
     return (
       <Card>
         <Empty title={t('servicesEmpty')} hint={t('servicesEmptyHint')} />
@@ -33,16 +45,23 @@ export function EnvironmentLogs({ project, service }: { project: Environment; se
   }))
 
   return (
-    <Card className="flex h-[70vh] min-h-0 flex-col overflow-hidden">
+    <Card
+      className={
+        docked ? 'flex h-96 min-h-0 flex-col overflow-hidden' : 'flex h-[70vh] min-h-0 flex-col overflow-hidden'
+      }
+    >
       <LogViewer
         className="min-h-0 flex-1"
         queryKey={keys.environmentLogs(project.name, service)}
         load={(tail) => api.environmentLogs(project.name, { tail, service })}
         sources={selectable}
         selectedService={service}
-        onSelectService={(next) => navigate(next ? `${base}?service=${encodeURIComponent(next)}` : base)}
+        onSelectService={
+          onSelectService ?? ((next) => navigate(next ? `${base}?service=${encodeURIComponent(next)}` : base))
+        }
         showOrigin={service === null}
         stream={{ environment: project.name }}
+        docked={docked}
       />
     </Card>
   )

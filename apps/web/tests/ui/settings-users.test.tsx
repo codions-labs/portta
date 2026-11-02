@@ -80,6 +80,7 @@ beforeEach(() => {
       archived: false,
       relativePath: null,
       location: 'external',
+      tags: [],
       repositoryCount: 0,
       environmentCount: 0,
       runningEnvironmentCount: 0,

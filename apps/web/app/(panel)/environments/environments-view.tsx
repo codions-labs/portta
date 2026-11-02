@@ -24,6 +24,7 @@ type Filter = 'all' | 'unattributed' | 'running' | 'remembered'
 /** Every Compose project on this host, adopted or not: what is running, as opposed to what is being built. */
 export function EnvironmentsView({ readOnly = false }: { readOnly?: boolean }) {
   const { t } = useTranslation('environments', { keyPrefix: 'list' })
+  const { t: tn } = useTranslation('nav')
   const mayOperate = useCan('environment:operate')
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
@@ -59,7 +60,7 @@ export function EnvironmentsView({ readOnly = false }: { readOnly?: boolean }) {
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader title={tn('projects')} description={t('description')} />
       <ViewToolbar>
         <ToolbarSearch
           value={search}

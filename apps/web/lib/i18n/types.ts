@@ -6,6 +6,7 @@ import type docker from '../../messages/en/docker.json'
 import type environments from '../../messages/en/environments.json'
 import type errors from '../../messages/en/errors.json'
 import type gateway from '../../messages/en/gateway.json'
+import type host from '../../messages/en/host.json'
 import type nav from '../../messages/en/nav.json'
 import type network from '../../messages/en/network.json'
 import type overview from '../../messages/en/overview.json'
@@ -24,6 +25,7 @@ declare module 'i18next' {
       environments: typeof environments
       services: typeof services
       docker: typeof docker
+      host: typeof host
       network: typeof network
       access: typeof access
       gateway: typeof gateway

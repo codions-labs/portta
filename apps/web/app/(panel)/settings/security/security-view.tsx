@@ -14,8 +14,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MySessionsCard } from '@/components/settings/my-sessions-card'
 import { PasswordDialog } from '@/components/settings/password-dialog'
+import { SettingsHeading } from '@/components/settings/settings-shell'
 import { TwoFactorCard } from '@/components/settings/two-factor-card'
-import { KeyValue, PageHeader } from '@/components/shell-bits'
+import { KeyValue } from '@/components/shell-bits'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
@@ -30,7 +31,7 @@ export function SecurityView() {
 
   return (
     <>
-      <PageHeader title={t('security.title')} description={t('security.description')} />
+      <SettingsHeading title={t('security.title')} description={t('security.description')} />
 
       <div className="grid gap-4">
         <Card>

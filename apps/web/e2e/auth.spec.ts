@@ -38,7 +38,7 @@ test.describe('a panel that asks who you are', () => {
     await page.getByRole('button', { name: 'Create owner' }).click()
 
     await expect(page).toHaveURL(/\/overview$/, { timeout: 20_000 })
-    await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeAttached()
+    await expect(page.getByRole('heading', { name: 'Home', level: 1 })).toBeAttached()
 
     // 4. A second setup is refused, whoever asks.
     const again = await request.post('/api/auth/setup', { data: OWNER })

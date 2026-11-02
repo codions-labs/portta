@@ -48,6 +48,29 @@ export function readCurrentMetrics(config: PanelConfig, now = Date.now()): Metri
     host: parsed.host,
     runtime: parsed.runtime ?? null,
     projects: parsed.projects ?? [],
+    dockerStorage: parsed.dockerStorage ?? null,
+  }
+}
+
+/**
+ * What a principal who sees only some projects may read of the server's metrics.
+ *
+ * The host's own readings are the whole machine's and stay; what is per project (its
+ * use, its disk, where its code stands) goes only for the projects they see, with
+ * Portta's own containers. What they do not see stays inside the host's totals.
+ */
+export function metricsFor(metrics: MetricsCurrent, sees: (composeProject: string) => boolean): MetricsCurrent {
+  const own = new Set(metrics.projects.filter((project) => project.own).map((project) => project.composeProject))
+  const allowed = (composeProject: string) => own.has(composeProject) || sees(composeProject)
+  return {
+    ...metrics,
+    projects: metrics.projects.filter((project) => allowed(project.composeProject)),
+    dockerStorage: metrics.dockerStorage
+      ? {
+          ...metrics.dockerStorage,
+          projects: metrics.dockerStorage.projects.filter((entry) => allowed(entry.composeProject)),
+        }
+      : metrics.dockerStorage,
   }
 }
 

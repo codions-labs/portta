@@ -13,6 +13,7 @@ import enDocker from '../../messages/en/docker.json' with { type: 'json' }
 import enEnvironments from '../../messages/en/environments.json' with { type: 'json' }
 import enErrors from '../../messages/en/errors.json' with { type: 'json' }
 import enGateway from '../../messages/en/gateway.json' with { type: 'json' }
+import enHost from '../../messages/en/host.json' with { type: 'json' }
 import enNav from '../../messages/en/nav.json' with { type: 'json' }
 import enNetwork from '../../messages/en/network.json' with { type: 'json' }
 import enOverview from '../../messages/en/overview.json' with { type: 'json' }
@@ -27,6 +28,7 @@ import ptDocker from '../../messages/pt-BR/docker.json' with { type: 'json' }
 import ptEnvironments from '../../messages/pt-BR/environments.json' with { type: 'json' }
 import ptErrors from '../../messages/pt-BR/errors.json' with { type: 'json' }
 import ptGateway from '../../messages/pt-BR/gateway.json' with { type: 'json' }
+import ptHost from '../../messages/pt-BR/host.json' with { type: 'json' }
 import ptNav from '../../messages/pt-BR/nav.json' with { type: 'json' }
 import ptNetwork from '../../messages/pt-BR/network.json' with { type: 'json' }
 import ptOverview from '../../messages/pt-BR/overview.json' with { type: 'json' }
@@ -43,6 +45,7 @@ export const RESOURCES = {
     environments: enEnvironments,
     services: enServices,
     docker: enDocker,
+    host: enHost,
     network: enNetwork,
     access: enAccess,
     gateway: enGateway,
@@ -59,6 +62,7 @@ export const RESOURCES = {
     environments: ptEnvironments,
     services: ptServices,
     docker: ptDocker,
+    host: ptHost,
     network: ptNetwork,
     access: ptAccess,
     gateway: ptGateway,

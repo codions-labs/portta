@@ -510,41 +510,50 @@ export function HostReadings({
       </div>
 
       {open ? (
-        <dl
-          id="host-details"
-          className="grid gap-x-6 gap-y-1 border-t border-line px-3 py-2 text-xs sm:grid-cols-2 lg:grid-cols-4"
-        >
-          <Fact label={t('system')}>
-            {[host.distro ?? host.platform, host.version, host.kernel].filter(Boolean).join(' · ') || '—'}
-          </Fact>
-          <Fact label={t('architecture')}>
-            {host.architecture ?? '—'}
-            {host.virtual ? ` · ${t('virtual')}` : ''}
-          </Fact>
-          <Fact label={t('cpu')}>{host.cpu.brand ?? '—'}</Fact>
-          {host.storage ? (
-            <Fact label={t('storage.path')}>
-              <span className="font-mono break-all">{host.storage.path}</span>
-            </Fact>
-          ) : null}
-          {host.swapTotalBytes !== null ? (
-            <Fact
-              label={t('swap')}
-            >{`${format.bytes(host.swapUsedBytes)} / ${format.bytes(host.swapTotalBytes)}`}</Fact>
-          ) : null}
-          {data.runtime ? <Fact label={t('runtime.label')}>{t(`runtime.${data.runtime.name}`)}</Fact> : null}
-          {host.gpu.map((gpu) => (
-            <Fact key={gpu.model} label={t('gpu')}>
-              {[gpu.model, gpu.vramBytes ? format.bytes(gpu.vramBytes) : null].filter(Boolean).join(' · ')}
-            </Fact>
-          ))}
-        </dl>
+        <div id="host-details" className="border-t border-line px-3 py-2">
+          <HostFacts data={data} />
+        </div>
       ) : null}
     </section>
   )
 }
 
-function Fact({ label, children }: { label: string; children: ReactNode }) {
+/** What the machine is, for the moment somebody needs it. */
+export function HostFacts({ data, children }: { data: MetricsCurrent; children?: ReactNode }) {
+  const { t } = useTranslation('overview', { keyPrefix: 'host' })
+  const format = useFormat()
+  const host = data.host
+  if (!host) return null
+  return (
+    <dl className="grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2 lg:grid-cols-4">
+      <Fact label={t('system')}>
+        {[host.distro ?? host.platform, host.version, host.kernel].filter(Boolean).join(' · ') || '—'}
+      </Fact>
+      <Fact label={t('architecture')}>
+        {host.architecture ?? '—'}
+        {host.virtual ? ` · ${t('virtual')}` : ''}
+      </Fact>
+      <Fact label={t('cpu')}>{host.cpu.brand ?? '—'}</Fact>
+      {host.storage ? (
+        <Fact label={t('storage.path')}>
+          <span className="font-mono break-all">{host.storage.path}</span>
+        </Fact>
+      ) : null}
+      {host.swapTotalBytes !== null ? (
+        <Fact label={t('swap')}>{`${format.bytes(host.swapUsedBytes)} / ${format.bytes(host.swapTotalBytes)}`}</Fact>
+      ) : null}
+      {data.runtime ? <Fact label={t('runtime.label')}>{t(`runtime.${data.runtime.name}`)}</Fact> : null}
+      {host.gpu.map((gpu) => (
+        <Fact key={gpu.model} label={t('gpu')}>
+          {[gpu.model, gpu.vramBytes ? format.bytes(gpu.vramBytes) : null].filter(Boolean).join(' · ')}
+        </Fact>
+      ))}
+      {children}
+    </dl>
+  )
+}
+
+export function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
       <dt className="text-subtle">{label}</dt>

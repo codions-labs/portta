@@ -142,6 +142,7 @@ export function initialState() {
         // demo-shop-postgres.localhost:5432 without publishing a port.
         'traefik.enable': 'true',
         'traefik.docker.network': 'portta-access',
+        'traefik.tcp.routers.demo-shop-postgres.entrypoints': 'postgres',
         'traefik.tcp.routers.demo-shop-postgres.rule': 'HostSNIRegexp(`^demo-shop-postgres\\..+$`)',
         'traefik.tcp.routers.demo-shop-postgres.tls': 'true',
         'traefik.tcp.routers.demo-shop-postgres.tls.options': 'postgres@file',
@@ -165,6 +166,7 @@ export function initialState() {
         }),
         'traefik.enable': 'true',
         'traefik.docker.network': 'portta-access',
+        'traefik.tcp.routers.demo-shop-redis.entrypoints': 'redis',
         'traefik.tcp.routers.demo-shop-redis.rule': 'HostSNIRegexp(`^demo-shop-redis\\..+$`)',
         'traefik.tcp.routers.demo-shop-redis.tls': 'true',
       },

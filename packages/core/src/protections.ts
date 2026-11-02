@@ -23,7 +23,8 @@ export interface ProtectionTech {
 /**
  * What the ForwardAuth service does for a hostname.
  *
- * `protected` asks for the record's credential. `public` lets everybody in
+ * `protected` asks for the record's credential: a password, and a username when
+ * the record has one. `public` lets everybody in
  * and carries no credential at all. A hostname with no record is refused, so
  * forgetting to decide leaves it closed.
  */
@@ -35,7 +36,10 @@ export interface ProtectionRecord {
   host: string
   entryPoints: string[]
   mode: ProtectionMode
-  /** Present exactly when `mode` is `protected`. */
+  /**
+   * The login name, when one is asked for. A protected record without one is
+   * password-only: whoever has the password is in. Never present on a public record.
+   */
   user?: string
   /** Present exactly when `mode` is `protected`. A hash, never the password. */
   hash?: string
@@ -107,7 +111,7 @@ function parseRecord(value: unknown): ProtectionRecord {
     label: nonEmpty(item.label, 'label'),
   }
   if (item.mode === 'protected') {
-    record.user = nonEmpty(item.user, 'user')
+    if (item.user !== undefined) record.user = nonEmpty(item.user, 'user')
     record.hash = nonEmpty(item.hash, 'hash')
   } else if (item.user !== undefined || item.hash !== undefined) {
     throw new InvalidProtectionStore('a public host carries no credential')
