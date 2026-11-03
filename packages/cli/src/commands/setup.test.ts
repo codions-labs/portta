@@ -8,7 +8,7 @@ import { RefusedError } from '../errors.js'
 const mocks = vi.hoisted(() => ({ runProcess: vi.fn() }))
 vi.mock('../process.js', () => ({ runProcess: mocks.runProcess }))
 
-import { setupCommand } from './setup.js'
+import { refreshRuntimeCache, setupCommand } from './setup.js'
 
 const roots: string[] = []
 afterEach(() => {
@@ -72,5 +72,36 @@ describe('setup', () => {
     )
     expect(readFileSync(marker, 'utf8')).toBe('mine\n')
     expect(mocks.runProcess).toHaveBeenCalledTimes(3)
+  })
+})
+
+describe('updating the runtime copy', () => {
+  function packaged(version: string) {
+    const root = mkdtempSync(join(tmpdir(), 'portta-package-'))
+    roots.push(root)
+    mkdirSync(join(root, 'config', 'traefik', 'dynamic'), { recursive: true })
+    mkdirSync(join(root, 'docker'))
+    writeFileSync(join(root, 'VERSION'), `${version}\n`)
+    writeFileSync(join(root, 'docker', 'compose.yaml'), `# ${version}\n`)
+    return root
+  }
+
+  it('keeps the plans and overlays that adopted projects name, and replaces the rest', () => {
+    const target = mkdtempSync(join(tmpdir(), 'portta-install-'))
+    roots.push(target)
+    refreshRuntimeCache(packaged('0.8.0'), target)
+    const adopted = join(target, 'runtime', 'compose', '224fc8d77666a605')
+    mkdirSync(adopted, { recursive: true })
+    writeFileSync(join(adopted, 'compose.portta.yaml'), 'services: {}\n')
+    writeFileSync(join(adopted, 'plan.json'), '{}\n')
+    writeFileSync(join(target, 'runtime', 'old-asset.txt'), 'from an older package\n')
+
+    refreshRuntimeCache(packaged('0.9.0'), target)
+
+    expect(readFileSync(join(adopted, 'compose.portta.yaml'), 'utf8')).toBe('services: {}\n')
+    expect(existsSync(join(adopted, 'plan.json'))).toBe(true)
+    expect(readFileSync(join(target, 'runtime', 'VERSION'), 'utf8')).toBe('0.9.0\n')
+    expect(existsSync(join(target, 'runtime', 'old-asset.txt'))).toBe(false)
+    expect(readFileSync(join(target, 'runtime', 'docker', 'compose.yaml'), 'utf8')).toBe('# 0.9.0\n')
   })
 })
