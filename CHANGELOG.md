@@ -72,6 +72,8 @@ All notable changes to Portta are documented here. The format follows
 
 ### Fixed
 
+- The host collector walks a Projects Home under `/root`, such as `/root/projects`, which its new guard had
+  refused along with `/root` itself; the Add project list was empty on a server run as root.
 - `portta setup` no longer deletes the plans and generated overlays of adopted projects. It replaced the
   whole `runtime/` folder, which is also where `portta adopt` keeps them, so every update removed files
   that running projects name.

@@ -21,8 +21,9 @@ The collector finds the folders, analyses them and publishes the result. The pan
   down, never through a link, skipping hidden folders and dependency folders, and not descending into
   a folder that already is one. It stops at 200.
 * **What it will walk.** Projects Home must be a folder somebody keeps projects in: at least two
-  levels deep and not part of the system (`/etc`, `/proc`, `/sys`, `/dev`, `/boot`, `/root`, Docker's own
-  directories). Anything else publishes nothing.
+  levels deep, not part of the system (`/etc`, `/proc`, `/sys`, `/dev`, `/boot`, Docker's own
+  directories), not a whole account (`/root`, `/home`) and not a hidden folder. `/root/projects` is a place for
+  projects; `/root` and `/root/.ssh` are not. Anything else publishes nothing.
 * **Analysing.** For each it runs the same read-only analysis as `portta analyze` and publishes the
   plan: services, how each would be routed, the ports that would stop being published, fixed container
   names and who on the host already holds them, and a namespace in use by another folder. A Compose file that makes Compose fetch something (`oci://`,
