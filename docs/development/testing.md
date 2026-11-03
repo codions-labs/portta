@@ -202,8 +202,13 @@ GitHub Actions runs `validation.yaml` in one of three modes, chosen by
 | Mode | When | What runs |
 | --- | --- | --- |
 | `pr` | pull requests | static, unit shards, and only the E2E the diff selects |
-| `light` | push to `develop`/`main` before publishing | static and unit shards; never E2E (the PR already ran it) |
-| `release` | GitHub Release | everything, including every gateway suite and browser spec |
+| `light` | push to `develop`/`main` and a GitHub Release | static and unit shards; never E2E (the PR already ran it) |
+| `release` | run by hand (`workflow_dispatch`, mode `release`) | everything, including every gateway suite and browser spec |
+
+A GitHub Release runs `light` too: the E2E the diff selected already passed on the
+pull request, and the npm job smoke-tests the packed CLI before publishing. A change
+to `packages/cli/src/commands/lifecycle` selects the `lifecycle` suite only, and a
+unit test file never selects an E2E suite.
 
 Jobs run in parallel: `static` (`tests/run.mjs --integration --part static`:
 lint, shell and tooling suites, types, OpenAPI, schema), three `unit` shards

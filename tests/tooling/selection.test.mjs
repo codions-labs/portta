@@ -87,6 +87,9 @@ test('CI runs E2E only for paths a suite exercises', () => {
   assert.deepEqual(pick(['packages/core/src/apply.ts', 'tests/e2e/apply.test.sh'], 'light'), none)
   assert.deepEqual(pick(['tests/docker/run.mjs', 'tests/gateway-e2e.mjs']).gateway, ['lifecycle'])
   assert.deepEqual(pick(['packages/core/src/apply.ts']).gateway, ['apply'])
+  // Unit tests and the lifecycle command do not start the whole gateway matrix.
+  assert.deepEqual(pick(['packages/core/src/dynamic.test.ts', 'packages/server/tests/settings.test.ts']).gateway, [])
+  assert.deepEqual(pick(['packages/cli/src/commands/lifecycle.ts']).gateway, ['lifecycle'])
   assert.deepEqual(pick(['packages/cli/src/commands/tls.ts']).gateway, ['local-tls'])
   assert.deepEqual(pick(['apps/web/package.json'], 'pr', ['apps/web/package.json']).gateway, ['web-panel'])
   assert.ok(ciScope(['packages/auth/src/bootstrap.ts']).browser.includes('roles'))
