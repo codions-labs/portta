@@ -9,12 +9,14 @@ import {
   databaseFiles,
   gatewayAlreadyPublic,
   parseAliases,
+  parseEnv,
   patchEnvFile,
   prepareEnvFile,
   projectsFor,
   routesFor,
   type StoredAlias,
   ungatedContainers,
+  writeApplied,
 } from 'portta-core'
 import { ensureCheckoutCli, reexecBuiltCli } from '../checkout-cli.js'
 import { confirm } from '../confirm.js'
@@ -84,6 +86,26 @@ async function compose(
     stdio,
     reject: extra.reject,
   })
+}
+
+/**
+ * Remember which `.env` the gateway was just brought up with, so the panel can
+ * tell a setting that was saved after this point from one that is already in
+ * effect. Never fatal: the gateway is up either way, and without the record the
+ * panel falls back to comparing with its own environment.
+ */
+function recordApplied(root: string, applied: Map<string, string>, output?: Output): void {
+  try {
+    writeApplied(root, applied)
+  } catch (cause) {
+    output?.progress(`warn     could not record the applied settings: ${(cause as Error).message}`)
+  }
+}
+
+/** The `.env` Compose is about to read, captured before it runs so a save made during `up` stays pending. */
+function envBeforeUp(root: string): Map<string, string> {
+  const path = join(root, '.env')
+  return parseEnv(existsSync(path) ? readFileSync(path, 'utf8') : '')
 }
 
 function ensureAuthState(root: string, profile: string): void {
@@ -240,6 +262,7 @@ export async function upCommand(
     if (ungated.length > 0)
       output.warning(`routed with no login gate, so open to the internet: ${ungated.join(', ')}. ${advice}`)
   }
+  const applied = envBeforeUp(context.root)
   output.progress(builds ? 'starting components, building local images' : 'starting components')
   const wait = !options.attach
   const started = await compose(
@@ -261,6 +284,7 @@ export async function upCommand(
     )
   }
 
+  recordApplied(context.root, applied, output)
   await ensureMetricsCollector(context.config.profile, output)
 
   // The optional applier, so the panel can recreate these containers itself.
@@ -474,7 +498,10 @@ export async function resetCommand(options: { demo?: boolean }, command: Command
 }
 
 export async function restartCommand(command: Command): Promise<void> {
+  const root = gatewayContext({ profile: globals(command).profile }).root
+  const applied = envBeforeUp(root)
   await compose(command, ['up', '-d', '--force-recreate', '--wait', '--wait-timeout', '180'])
+  recordApplied(root, applied)
 }
 export async function logsCommand(
   service: string | undefined,
@@ -504,7 +531,10 @@ export async function updateCommand(command: Command): Promise<void> {
   await compose(command, ['config', '--quiet'])
   await compose(command, ['pull', '--ignore-buildable'])
   await confirm('recreate gateway components with the pulled images?', globals(command).yes === true)
+  const root = gatewayContext({ profile: globals(command).profile }).root
+  const applied = envBeforeUp(root)
   await compose(command, ['up', '-d', '--force-recreate', '--wait', '--wait-timeout', '180'])
+  recordApplied(root, applied)
 }
 
 export async function inspectCommand(command: Command): Promise<void> {

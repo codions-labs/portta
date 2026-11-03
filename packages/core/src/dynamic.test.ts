@@ -22,6 +22,26 @@ describe('ForwardAuth dynamic file', () => {
     expect(router).not.toContain('middlewares:')
   })
 
+  it('gives long hosts that share a prefix their own login router', () => {
+    const base = 'ceaf-mppa-reformulacao-01-upgrade-laravel-13'
+    let store = emptyProtectionStore()
+    for (const service of ['app', 'ldap-test']) {
+      store = setProtection(store, {
+        scope: `host:${base}-${service}.example.com`,
+        host: `${base}-${service}.example.com`,
+        entryPoints: ['websecure'],
+        mode: 'protected',
+        user: 'reviewer',
+        hash: '$portta$scrypt$65536$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+        label: service,
+      })
+    }
+    const names = [...renderAuthDynamic(store).matchAll(/^ {4}(portta-auth-login-[^:]+):$/gm)].map((m) => m[1] ?? '')
+    expect(names).toHaveLength(2)
+    expect(new Set(names).size).toBe(2)
+    expect(names.every((name) => name.length <= 80)).toBe(true)
+  })
+
   it('renders no login router for a public host', () => {
     const store = setProtection(emptyProtectionStore(), {
       scope: 'host:api.example.com',

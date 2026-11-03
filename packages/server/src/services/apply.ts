@@ -111,7 +111,7 @@ export async function applyStatus(
   const common = {
     pendingRestart: view.pendingRestart,
     pendingKeys: pending.map((field) => field.key),
-    pendingChanges: pendingChangesOf(view.fields),
+    pendingChanges: pendingChangesOf(view.fields, config),
     movesPanel: movesPanel(pending, config),
     buildsImages: buildsImages(saved),
     profile: config.profile,
