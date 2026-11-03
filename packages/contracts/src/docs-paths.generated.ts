@@ -99,6 +99,7 @@ export const DOC_PATHS: Record<string, string> = {
   "docs/development/adr/0055-portta-routes-and-protects-agents-do-the-work.md": "adr/0055-portta-routes-and-protects-agents-do-the-work",
   "docs/development/adr/0056-the-collector-reads-where-the-code-stands.md": "adr/0056-the-collector-reads-where-the-code-stands",
   "docs/development/adr/0058-the-collector-publishes-a-read-only-copy-of-the-files.md": "adr/0058-the-collector-publishes-a-read-only-copy-of-the-files",
+  "docs/development/adr/0059-the-collector-finds-and-reviews-project-folders.md": "adr/0059-the-collector-finds-and-reviews-project-folders",
   "docs/development/adr/0057-a-panel-session-opens-a-protected-site.md": "adr/0057-a-panel-session-opens-a-protected-site",
   "docs/development/adr/README.md": "adr"
 }

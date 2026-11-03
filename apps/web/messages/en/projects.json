@@ -212,7 +212,7 @@
     "copy": "Copy command",
     "folder": {
       "title": "From a folder on this server",
-      "description": "The panel does not open your projects' folders: the terminal reads the Compose, with the same plan you review here afterwards.",
+      "description": "The host collector finds the folders with Compose under Projects Home and analyzes them. Review one here, and adopt it from the terminal.",
       "label": "Folder path",
       "analyze": "See what would be done, changing nothing:",
       "adopt": "Then adopt:"
@@ -238,6 +238,14 @@
     "agent": {
       "title": "No Compose yet?",
       "description": "Ask an agent with the portta-dockerize skill. Install it with:"
+    },
+    "found": {
+      "services_one": "{{count}} service",
+      "services_other": "{{count}} services",
+      "analyze": "Analyze",
+      "analyzeTyped": "Analyze this folder",
+      "analyzing": "Analyzing",
+      "registered": "Already a project"
     }
   },
   "tagsAria": "Tags",
@@ -288,5 +296,49 @@
     "audited": "Reading {{path}} is recorded in the audit log. Editing and sending stay in your terminal or agent.",
     "noMatch": "No file matches",
     "loadingFile": "Reading…"
+  },
+  "review": {
+    "title": "Review before adopting",
+    "heading": "Review before adopting",
+    "description": "See what Portta understood from {{path}} and decide who may open each site.",
+    "crumbProjects": "Projects",
+    "crumbAdd": "Add",
+    "services": {
+      "title": "Services found",
+      "count_one": "{{count}} in {{file}}",
+      "count_other": "{{count}} in {{file}}",
+      "service": "Service",
+      "how": "How it ends up",
+      "address": "Address",
+      "who": "Who may open",
+      "site": "Site",
+      "private": "Private",
+      "onlyInside": "Only on the environment's network",
+      "password": "Password",
+      "everybody": "Everybody",
+      "later": "Decide later",
+      "bridge": "Connect through a local bridge"
+    },
+    "changes": {
+      "title": "What changes",
+      "joins_one": "{{count}} service joins the gateway network: {{names}}",
+      "joins_other": "{{count}} services join the gateway network: {{names}}",
+      "port": "Port {{port}} of {{service}} stops being published on this server",
+      "collision": "{{name}} is a fixed container name for {{service}}, and {{owner}} already uses it",
+      "fixedName": "{{service}} has a fixed container name, which prevents running two environments of this project",
+      "namespaceInUse": "Containers of a project named {{name}} already run from another folder: give one of them another name before adopting",
+      "adopted": "This folder already has a Portta overlay"
+    },
+    "side": {
+      "name": "Project name",
+      "environment": "Environment name",
+      "environmentHint": "Comes from {{source}}. Prefixes containers, networks and addresses.",
+      "untouched": "Your {{file}} is not edited. The plan stays in Portta's installation.",
+      "register": "Register project",
+      "registerHint": "Registers the project here, with this folder. Starting it is adopted in the terminal.",
+      "commandTitle": "Command that adopts it",
+      "copy": "Copy command",
+      "commandHint": "Run it on the server. It already carries who may open each site."
+    }
   }
 }

@@ -6,6 +6,7 @@ import { collectHostSecurityReport, hostSecurityContext } from '../environment/s
 import { writeHostSecurityReport } from '../environment/security/store.js'
 import { writeEnvironmentReport } from '../environment/store.js'
 import { collectSnapshot } from '../metrics/collect.js'
+import { publishDiscovery } from '../metrics/discovery.js'
 import { collectorRunning, runCollectorLoop, startCollector, stopCollector } from '../metrics/lifecycle.js'
 import { currentFile } from '../metrics/paths.js'
 import { readCurrent, writeCurrent } from '../metrics/store.js'
@@ -25,6 +26,7 @@ function globals(command: Command) {
 export async function collectHostResources(root: string, profile?: string): Promise<string> {
   const snapshot = await collectSnapshot(root)
   const metrics = writeCurrent(root, snapshot)
+  await publishDiscovery(root)
   const [environment, security] = await Promise.all([
     collectEnvironmentReport(),
     collectHostSecurityReport(root, undefined, hostSecurityContext(root, profile)),

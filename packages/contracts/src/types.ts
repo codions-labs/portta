@@ -670,6 +670,77 @@ export const ProjectFileContent = named(
 )
 export type ProjectFileContent = z.infer<typeof ProjectFileContent>
 
+export const DiscoveredFolder = named(
+  z
+    .object({
+      path: z.string().describe('Relative to Projects Home, with forward slashes'),
+      composeFile: z.string(),
+      services: z.number().int().nullable().describe('Null until the collector has analysed the folder'),
+      modifiedAt: z.number().int(),
+      adopted: z.boolean().describe('The folder already has a Portta overlay'),
+      planned: z.boolean().describe('Whether a plan can be reviewed'),
+      registered: z.boolean().describe('A project already has this folder'),
+    })
+    .strict(),
+  'DiscoveredFolder',
+)
+export type DiscoveredFolder = z.infer<typeof DiscoveredFolder>
+
+export const DiscoveredFoldersView = named(
+  z
+    .object({
+      home: z.string().nullable().describe('Projects Home as the host has it, or null when nothing was published'),
+      collectedAt: z.number().int().nullable(),
+      folders: z.array(DiscoveredFolder),
+    })
+    .strict(),
+  'DiscoveredFoldersView',
+)
+export type DiscoveredFoldersView = z.infer<typeof DiscoveredFoldersView>
+
+export const FolderPlanView = named(
+  z
+    .object({
+      path: z.string(),
+      composeFile: z.string(),
+      project: z.object({ name: z.string(), source: z.string() }).strict(),
+      domain: z.string(),
+      adopted: z.boolean(),
+      services: z.array(
+        z
+          .object({
+            name: z.string(),
+            image: z.string().nullable(),
+            kind: z.string(),
+            port: z.string().nullable().describe('The port Portta would route to, for a service that speaks HTTP'),
+            publishedPorts: z.array(z.object({ host: z.string(), container: z.string() }).strict()),
+            containerName: z.string().nullable(),
+          })
+          .strict(),
+      ),
+      findings: z
+        .object({
+          publishedHostPorts: z.array(z.string()),
+          fixedContainerNames: z.array(z.string()),
+          publishedDatastores: z.array(z.string()),
+          implicitNamespace: z.boolean(),
+          containerNameCollisions: z.array(
+            z.object({ service: z.string(), containerName: z.string(), usedBy: z.string() }).strict(),
+          ),
+          namespaceInUse: z
+            .object({ project: z.string(), workingDirs: z.array(z.string()) })
+            .strict()
+            .nullable(),
+        })
+        .strict(),
+      collectedAt: z.number().int(),
+      command: z.string().describe('The terminal command that adopts this folder, with nothing decided yet'),
+    })
+    .strict(),
+  'FolderPlanView',
+)
+export type FolderPlanView = z.infer<typeof FolderPlanView>
+
 export const ShareView = named(
   z
     .object({
