@@ -121,7 +121,7 @@ async function planFolder(
     return null
   }
   if (reachesOut(text)) return null
-  const report = await analyze(join(home, folder.path)).catch(() => null)
+  const report = await analyze(join(home, folder.path), { unattended: true }).catch(() => null)
   if (!report) return null
   return {
     version: 1,
