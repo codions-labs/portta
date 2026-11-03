@@ -83,7 +83,12 @@ export function siteEntryRoutes(deps: AppDeps): Hono {
           return false
         }
       })()
-      const proto = seen === 'https' || panelOnHttps || schemeFor(deps.config) === 'https' ? 'https' : 'http'
+      // The panel was itself reached on https, as the proxy says or as the request's own address says.
+      const requestOnHttps =
+        (c.req.header('x-forwarded-proto') ?? '').split(',').at(-1)?.trim().toLowerCase() === 'https' ||
+        new URL(c.req.url).protocol === 'https:'
+      const proto =
+        seen === 'https' || panelOnHttps || requestOnHttps || schemeFor(deps.config) === 'https' ? 'https' : 'http'
       const site = `${proto}://${record.host}${AUTH_PATH_PREFIX}`
       const back = (reason: 'signedOut' | 'denied' | 'off') =>
         c.redirect(`${site}/login?next=${encodeURIComponent(next)}&panel=${reason}`, 302)

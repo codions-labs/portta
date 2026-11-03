@@ -327,4 +327,13 @@ describe('a panel session opening a protected site', () => {
     )
     expect(response.headers.get('location')).toMatch(/^https:\/\/mine\.example\.com\//)
   })
+
+  it('never goes down to http when the panel request itself arrived on https', async () => {
+    const { p, owner } = await panel()
+    const response = await p.app.request(
+      `/api/site-entry?host=mine.example.com&next=%2F&state=${stateFor('mine.example.com', 'http')}`,
+      { headers: { ...owner, 'x-forwarded-proto': 'https' } },
+    )
+    expect(response.headers.get('location')).toMatch(/^https:\/\/mine\.example\.com\//)
+  })
 })
