@@ -36,7 +36,7 @@ describe('ForwardAuth dynamic file', () => {
         label: service,
       })
     }
-    const names = [...renderAuthDynamic(store).matchAll(/^ {4}(portta-auth-login-[^:]+):$/gm)].map((m) => m[1])
+    const names = [...renderAuthDynamic(store).matchAll(/^ {4}(portta-auth-login-[^:]+):$/gm)].map((m) => m[1] ?? '')
     expect(names).toHaveLength(2)
     expect(new Set(names).size).toBe(2)
     expect(names.every((name) => name.length <= 80)).toBe(true)
