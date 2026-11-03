@@ -25,6 +25,8 @@ export const keys = {
   serviceTraefik: (id: string) => ['services', id, 'traefik'] as const,
   shares: () => ['shares'] as const,
   exposure: () => ['exposure'] as const,
+  projectFiles: (slug: string, environment: string | null) => ['project-files', slug, environment] as const,
+  projectFile: (slug: string, environment: string, path: string) => ['project-file', slug, environment, path] as const,
 
   docker: () => ['docker'] as const,
   dockerHost: () => ['docker', 'host'] as const,

@@ -8,6 +8,10 @@ All notable changes to Portta are documented here. The format follows
 
 ### Added
 
+- A project's page has a Files tab: the file tree with what changed since the last commit, a
+  search, and the text or the changes of a file, read-only. The host collector publishes a bounded
+  copy without secrets; files like `.env` and keys are listed and never shown, and each read is in
+  the audit log.
 - An environment's page shows where its code stands: branch, last commit, what is not
   committed or pushed and when it last changed. The host collector reads it, read-only and
   without asking any remote.

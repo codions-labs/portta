@@ -1,9 +1,17 @@
 // Projects: the product the operator recognises, and what it owns.
 
-import type { Project, ProjectSummary, ProjectTag } from 'portta-contracts'
+import type { Project, ProjectFileContent, ProjectFilesView, ProjectSummary, ProjectTag } from 'portta-contracts'
 import { request } from './client.ts'
 
 export const projectsApi = {
+  projectFiles: (slug: string, environment?: string) =>
+    request<ProjectFilesView>(
+      `/projects/${encodeURIComponent(slug)}/files${environment ? `?environment=${encodeURIComponent(environment)}` : ''}`,
+    ),
+  projectFile: (slug: string, environment: string, path: string) =>
+    request<ProjectFileContent>(
+      `/projects/${encodeURIComponent(slug)}/files/content?environment=${encodeURIComponent(environment)}&path=${encodeURIComponent(path)}`,
+    ),
   projects: () => request<{ projects: ProjectSummary[] }>('/projects').then((data) => data.projects),
   project: (slug: string) => request<Project>(`/projects/${encodeURIComponent(slug)}`),
   createProject: (body: { slug: string; name: string; description: string | null }) =>

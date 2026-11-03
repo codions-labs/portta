@@ -38,7 +38,8 @@
     "label": "Seções de {{name}}",
     "overview": "Visão geral",
     "environments": "Ambientes ({{count}})",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "files": "Arquivos"
   },
   "pulse": {
     "unhealthy": "{{count}} com problema"
@@ -252,5 +253,39 @@
     "placeholder": "Nova tag, como cliente: Acme",
     "remove": "Remover a tag {{tag}}",
     "failed": "Não foi possível salvar as tags"
+  },
+  "files": {
+    "title": "Arquivos",
+    "readOnly": "Somente leitura",
+    "description": "Os arquivos deste projeto, como estavam no host um instante atrás. Editar e enviar continuam no seu terminal ou agente.",
+    "environment": "Ambiente",
+    "uncommitted_one": "{{count}} sem commit",
+    "uncommitted_other": "{{count}} sem commit",
+    "unpushed_one": "{{count}} sem enviar",
+    "unpushed_other": "{{count}} sem enviar",
+    "onlyChanged": "Só alterados",
+    "search": "Buscar arquivo",
+    "tree": "Árvore de arquivos",
+    "empty": "Ainda não há cópia destes arquivos",
+    "emptyHint": "O coletor do host publica a cada meio minuto enquanto o projeto roda e sua pasta é um repositório git seu. Rode portta host watch se nada aparecer.",
+    "pick": "Escolha um arquivo para ler",
+    "ignored": "Ignorado",
+    "new": "Novo",
+    "modified": "Alterado",
+    "deleted": "Apagado",
+    "changedBadge": "Alterado",
+    "showChanges": "Alterações",
+    "showFile": "Arquivo",
+    "show": "Mostrar",
+    "copyPath": "Copiar caminho",
+    "hiddenTitle": "Conteúdo oculto.",
+    "hiddenBody": "Este arquivo costuma guardar segredos, então o painel mostra só que ele existe.",
+    "binary": "É um arquivo binário, então não há texto para mostrar.",
+    "large": "Este arquivo é grande demais para mostrar aqui.",
+    "omitted": "Não há texto para mostrar deste arquivo.",
+    "truncated": "Este projeto é maior do que a cópia que o painel guarda, então faltam arquivos. Os alterados vêm primeiro.",
+    "audited": "A leitura de {{path}} é registrada na auditoria. Editar e enviar continuam no seu terminal ou agente.",
+    "noMatch": "Nenhum arquivo encontrado",
+    "loadingFile": "Lendo…"
   }
 }

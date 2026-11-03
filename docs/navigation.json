@@ -591,6 +591,11 @@
           "description": "Why the host collector reads where a project's code stands, and only reads."
         },
         {
+          "source": "docs/development/adr/0058-the-collector-publishes-a-read-only-copy-of-the-files.md",
+          "slug": "adr/0058-the-collector-publishes-a-read-only-copy-of-the-files",
+          "description": "Why the panel reads a bounded copy of a project's files that the host collector publishes."
+        },
+        {
           "source": "docs/development/adr/README.md",
           "slug": "adr",
           "description": "Architecture decision records."
