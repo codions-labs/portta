@@ -74,7 +74,16 @@ export function siteEntryRoutes(deps: AppDeps): Hono {
       // The scheme is the one the login service saw, which only it can sign for this host. A link
       // cannot ask for plain http, and a server that answers on https never goes back to http.
       const seen = deps.config.authSecret ? readEntryState(state, record.host, deps.config.authSecret) : null
-      const proto = seen === 'https' || schemeFor(deps.config) === 'https' ? 'https' : 'http'
+      // The floor is https whenever the gateway or the panel itself is served on it: a state is
+      // something any visitor can obtain, so it can raise the scheme and never lower it.
+      const panelOnHttps = (() => {
+        try {
+          return new URL(deps.config.panelUrl).protocol === 'https:'
+        } catch {
+          return false
+        }
+      })()
+      const proto = seen === 'https' || panelOnHttps || schemeFor(deps.config) === 'https' ? 'https' : 'http'
       const site = `${proto}://${record.host}${AUTH_PATH_PREFIX}`
       const back = (reason: 'signedOut' | 'denied' | 'off') =>
         c.redirect(`${site}/login?next=${encodeURIComponent(next)}&panel=${reason}`, 302)

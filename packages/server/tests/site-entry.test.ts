@@ -187,7 +187,13 @@ describe('a panel session opening a protected site', () => {
         hash: '$portta$scrypt$65536$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
       }),
     )
-    const p = makeProtectedApp(seeded.database, { authStore, dynamicDir: dir, authSecret: SECRET, tlsEnabled: false })
+    const p = makeProtectedApp(seeded.database, {
+      authStore,
+      dynamicDir: dir,
+      authSecret: SECRET,
+      tlsEnabled: false,
+      panelUrl: '',
+    })
     const security = resolveSecurityMode({
       PORTTA_AUTH_MODE: 'required',
       PORTTA_AUTH_SECRET: 'a-test-secret-that-is-long-enough',
@@ -280,5 +286,45 @@ describe('a panel session opening a protected site', () => {
     const { app } = makeApp({}, { authStore, dynamicDir: dir, authSecret: SECRET }, seeded.database)
     const response = await app.request(entry('mine.example.com'))
     expect(response.headers.get('location')).toContain('panel=off')
+  })
+
+  it('never goes down to http when the panel itself is served on https, whatever state is presented', async () => {
+    const seeded = await seededDatabase()
+    const dir = mkdtempSync(join(tmpdir(), 'portta-site-entry-floor-'))
+    const authStore = join(dir, 'protections.json')
+    writeProtectionStore(
+      authStore,
+      setProtection(emptyProtectionStore(), {
+        entryPoints: ['web'],
+        mode: 'protected',
+        scope: 'host:mine.example.com',
+        host: 'mine.example.com',
+        label: 'mine',
+        hash: '$portta$scrypt$65536$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      }),
+    )
+    const p = makeProtectedApp(seeded.database, {
+      authStore,
+      dynamicDir: dir,
+      authSecret: SECRET,
+      tlsEnabled: false,
+      panelUrl: 'https://panel.example.com',
+    })
+    const security = resolveSecurityMode({
+      PORTTA_AUTH_MODE: 'required',
+      PORTTA_AUTH_SECRET: 'a-test-secret-that-is-long-enough',
+    })
+    await bootstrapOwner(
+      (handle) => createAuth({ db: handle, security, hasOwner: () => hasOwner(handle), password: cheapPasswords }),
+      p.db,
+      { name: 'Ada', email: 'owner@example.test', password: PASSWORD },
+      new Headers(),
+    )
+    const owner = await signInAs(p.auth, 'owner@example.test', PASSWORD)
+    const response = await p.app.request(
+      `/api/site-entry?host=mine.example.com&next=%2F&state=${stateFor('mine.example.com', 'http')}`,
+      { headers: owner },
+    )
+    expect(response.headers.get('location')).toMatch(/^https:\/\/mine\.example\.com\//)
   })
 })

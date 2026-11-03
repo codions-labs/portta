@@ -309,12 +309,13 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     for (const [id, expiresAt] of spentEntries) if (expiresAt <= second) spentEntries.delete(id)
     const refused = () => c.redirect(`${loginUrl(c, next)}&panel=expired`, 302)
     if (!token || spentEntries.has(token.id)) return refused()
+    // Spent first: a token that reached a browser that did not ask for it cannot be tried again.
+    spentEntries.set(token.id, token.expiresAt)
     if (token.host !== host || token.scope !== protection.scope || token.epoch !== protection.epoch) return refused()
     const secure = effectiveProtocol(c) === 'https'
     const state = getCookie(c, stateCookie(secure))
     deleteCookie(c, stateCookie(secure), { path: secure ? '/' : '/__portta/auth', secure })
     if (!state || readEntryState(state, host, config.secret) === null || state !== token.state) return refused()
-    spentEntries.set(token.id, token.expiresAt)
     startSession(c, protection, host, token.user)
     setCookie(c, PANEL_HINT_COOKIE, '1', {
       httpOnly: true,

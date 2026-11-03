@@ -497,6 +497,21 @@ describe('a session of the panel', () => {
     expect(otherBrowser.headers.get('set-cookie') ?? '').not.toContain('__portta_session')
   })
 
+  it('spends a token even when it reached the wrong browser, so it cannot be tried again', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const token = entry()
+    const wrong = await arrive(
+      app,
+      token,
+      '/orders',
+      `__Host-portta_entry=${issueEntryState('demo.example.com', 'https', secret)}`,
+    )
+    expect(wrong.headers.get('location')).toContain('panel=expired')
+    const right = await arrive(app, token)
+    expect(right.headers.get('location')).toContain('panel=expired')
+    expect(right.headers.get('set-cookie') ?? '').not.toContain('__portta_session')
+  })
+
   it('does not send a browser anywhere but a path on the site', async () => {
     const { app } = setup({ panelUrl: PANEL })
     const response = await arrive(app, entry(), '/\t/evil.example')
