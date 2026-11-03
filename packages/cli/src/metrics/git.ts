@@ -64,6 +64,8 @@ async function git(view: View, args: readonly string[]): Promise<string | null> 
         GIT_TERMINAL_PROMPT: '0',
         // A file called `src/*` is that file, not every file under src.
         GIT_LITERAL_PATHSPECS: '1',
+        // Objects come from this repository only, never from another one it was told to borrow from.
+        GIT_ALTERNATE_OBJECT_DIRECTORIES: '',
         GIT_NO_LAZY_FETCH: '1',
         LC_ALL: 'C',
       },
@@ -231,6 +233,11 @@ function privateView(directory: string, uid: number | undefined): View | null {
     // HEAD is copied, not linked: git reads a linked HEAD as an old-style symbolic ref.
     writeFileSync(join(gitDir, 'HEAD'), head, { mode: 0o600 })
     // What the owner excluded for themselves, and nobody else: copied through the same checked read.
+    // A repository that borrows objects from somewhere else would show that somewhere else's content.
+    if (lstatSync(join(real, 'objects', 'info', 'alternates'), { throwIfNoEntry: false })) {
+      rmSync(gitDir, { recursive: true, force: true })
+      return null
+    }
     const excludePath = join(real, 'info', 'exclude')
     const exclude = readSmallFile(excludePath, CONFIG_LIMIT, uid)
     // One that is there and cannot be read safely (too large, a link, not the owner's) is not a

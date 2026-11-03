@@ -49,11 +49,13 @@ export function filesDir(root: string): string {
 }
 
 /**
- * Whether a patch describes the text that was read through the checked descriptor.
+ * Whether the new side of a patch is the text that was read through the checked descriptor.
  *
  * git reads the file again by its path, so what it shows could be a different file if the path was
  * swapped in between. Every line a patch keeps from the new version (added or unchanged) must be a
- * line of the text that was read; a patch of anything else fails here.
+ * line of the text that was read. The old side (removed lines) comes from the repository's own
+ * objects, which are only as trustworthy as the repository: one that borrows objects from another
+ * is not read at all (see `privateView`).
  */
 export function patchMatchesText(patch: string, text: string): boolean {
   const known = new Set(text.split('\n'))

@@ -183,4 +183,11 @@ describe('a patch must be about the text that was read', () => {
     expect(patchMatchesText(patch, 'something else entirely\n')).toBe(false)
     expect(patchMatchesText('@@ -1 +1 @@\n-a\n+TOKEN=leaked\n', 'export const one = 2\n')).toBe(false)
   })
+
+  it('publishes nothing for a repository that borrows its objects from another one', async () => {
+    const { folder, root, environment } = project()
+    writeFileSync(join(folder, '.git/objects/info/alternates'), `${mkdtempSync(join(tmpdir(), 'portta-alt-'))}\n`)
+    await publishFiles(root, environment, folder, Date.now() + 6_000_000)
+    expect(existsSync(join(filesDir(root), environment, 'index.json'))).toBe(false)
+  })
 })
