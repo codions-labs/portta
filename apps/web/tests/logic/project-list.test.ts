@@ -4,6 +4,7 @@ import { affectedBy, availableActions } from '@/components/entities/project-acti
 import {
   DEFAULT_PROJECT_FILTERS,
   defaultProjectOrder,
+  groupByFolder,
   groupProjects,
   matchesProjectFilters,
   parseTag,
@@ -194,5 +195,53 @@ describe('tags on the project list', () => {
     const both = toListItem(summary({ slug: 'd', tags: [acme, globex] }), undefined)
     const bands = groupProjects([both], 'tag:cliente', { state: String, without: String })
     expect(bands.map((band) => band.title)).toEqual(['Acme', 'Globex'])
+  })
+})
+
+describe('environments nobody adopted', () => {
+  const env = (name: string, workingDir: string | null, mounts: string[] = []) =>
+    ({ name, workingDir, services: [{ mounts: mounts.map((source) => ({ source })) }] }) as never
+
+  it('puts the ones that run from the same folder together, in the order they were found', () => {
+    const groups = groupByFolder([
+      env('billing', '/srv/billing'),
+      env('tuttoria-a', '/root/projects/tuttoria'),
+      env('tuttoria-e2e', '/root/projects/tuttoria'),
+      env('hand-made', null),
+      env('tuttoria-b', '/root/projects/tuttoria'),
+    ])
+    expect(groups.map((group) => [group.folder, group.environments.map((entry) => entry.name)])).toEqual([
+      [null, ['billing']],
+      ['/root/projects/tuttoria', ['tuttoria-a', 'tuttoria-e2e', 'tuttoria-b']],
+      [null, ['hand-made']],
+    ])
+  })
+
+  it('does not make a group of one, or of what names no folder', () => {
+    const groups = groupByFolder([env('a', '/srv/a'), env('b', null), env('c', null)])
+    expect(groups.every((group) => group.folder === null)).toBe(true)
+    expect(groups).toHaveLength(3)
+  })
+
+  it('brings in one started by hand when every file it mounts is from that folder', () => {
+    const groups = groupByFolder([
+      env('tuttoria-a', '/root/projects/tuttoria'),
+      env('tuttoria-e2e', '/root/projects/tuttoria'),
+      env('validation', null, ['/root/projects/tuttoria/docker/mysql/init.sql', '/var/lib/docker/volumes/x/_data']),
+    ])
+    expect(groups).toHaveLength(1)
+    expect(groups[0]?.environments.map((entry) => entry.name)).toEqual(['tuttoria-a', 'tuttoria-e2e', 'validation'])
+  })
+
+  it('guesses nothing when the mounts reach outside the folder or could belong to two', () => {
+    const groups = groupByFolder([
+      env('a', '/srv/app'),
+      env('b', '/srv/app'),
+      env('outside', null, ['/srv/app/x', '/etc/hosts']),
+      env('nested-a', '/srv/app/sub'),
+      env('ambiguous', null, ['/srv/app/sub/file']),
+    ])
+    expect(groups.find((group) => group.environments.some((entry) => entry.name === 'outside'))?.folder).toBeNull()
+    expect(groups.find((group) => group.environments.some((entry) => entry.name === 'ambiguous'))?.folder).toBeNull()
   })
 })

@@ -187,7 +187,9 @@
     "openSite": "Open site",
     "unowned": "No project",
     "unownedHint": "Runs on this server and no project adopted it",
-    "adoptInto": "Adopt into"
+    "adoptInto": "Adopt into",
+    "sameFolder": "{{count}} environments run from the same folder",
+    "gather": "Group into the {{name}} project"
   },
   "row": {
     "services": "{{running}}/{{total}} services",
