@@ -35,6 +35,7 @@ import { gatewayRoutes } from './routes/gateway.ts'
 import { hostRoutes } from './routes/host.ts'
 import { networkRoutes } from './routes/network.ts'
 import { overrideRoutes } from './routes/overrides.ts'
+import { projectFileRoutes } from './routes/project-files.ts'
 import { projectRoutes } from './routes/projects.ts'
 import { runnerRoutes } from './routes/runner.ts'
 import { serviceRoutes } from './routes/services.ts'
@@ -170,6 +171,7 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', runnerRoutes(deps))
   api.route('/', overrideRoutes(deps))
   api.route('/', projectRoutes(deps))
+  api.route('/', projectFileRoutes(deps))
   api.route('/', serviceRoutes(deps))
   api.route('/', dockerRoutes(deps))
   api.route('/', networkRoutes(deps))

@@ -565,6 +565,56 @@ export const ExposureResult = named(
 )
 export type ExposureResult = z.infer<typeof ExposureResult>
 
+export const ProjectFile = named(
+  z
+    .object({
+      path: z.string().describe('Relative to the project folder, with forward slashes'),
+      kind: z.enum(['file', 'dir', 'link']),
+      size: z.number().int().nullable(),
+      status: z.enum(['M', 'A', 'D', 'U']).nullable().describe('Against the last commit; U is not tracked yet'),
+      ignored: z.boolean().describe('Listed because git ignores it, such as node_modules. Never read.'),
+      readable: z
+        .enum(['text', 'hidden', 'binary', 'large', 'omitted'])
+        .describe('hidden: usually holds a secret, so only its existence is shown'),
+      diff: z.boolean().describe('Whether there are changes to show against the last commit'),
+    })
+    .strict(),
+  'ProjectFile',
+)
+export type ProjectFile = z.infer<typeof ProjectFile>
+
+export const ProjectFilesView = named(
+  z
+    .object({
+      environments: z.array(z.string()).describe('The environments of this project that have a copy of their files'),
+      environment: z.string().nullable(),
+      branch: z.string().nullable(),
+      head: z.object({ hash: z.string(), subject: z.string(), at: z.number().int() }).strict().nullable(),
+      changed: z.number().int(),
+      untracked: z.number().int(),
+      ahead: z.number().int().nullable(),
+      collectedAt: z.number().int().nullable(),
+      truncated: z.boolean().describe('The project is bigger than the copy: the changed files come first'),
+      files: z.array(ProjectFile),
+    })
+    .strict(),
+  'ProjectFilesView',
+)
+export type ProjectFilesView = z.infer<typeof ProjectFilesView>
+
+export const ProjectFileContent = named(
+  z
+    .object({
+      environment: z.string(),
+      path: z.string(),
+      content: z.string(),
+      diff: z.string().nullable().describe('The changes against the last commit, as a patch'),
+    })
+    .strict(),
+  'ProjectFileContent',
+)
+export type ProjectFileContent = z.infer<typeof ProjectFileContent>
+
 export const ShareView = named(
   z
     .object({

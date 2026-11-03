@@ -283,3 +283,31 @@ async function readThrough(view: View, collectedAt: number): Promise<GitState | 
     collectedAt,
   }
 }
+
+/**
+ * Runs git on a project's folder the way `readGit` does, for the callers that need more than the
+ * summary. Null when the folder is not a repository git may read, which includes one whose own
+ * configuration names a command; otherwise whatever `use` returns. The private copy of the
+ * repository's configuration is removed afterwards.
+ */
+export async function withRepository<T>(
+  directory: string,
+  use: (run: (args: readonly string[]) => Promise<string | null>) => Promise<T>,
+): Promise<T | null> {
+  if (!isAbsolute(directory) || directory.includes('\0')) return null
+  let view: View | null = null
+  try {
+    view = privateView(directory, process.getuid?.())
+  } catch {
+    return null
+  }
+  if (!view) return null
+  const open = view
+  try {
+    const config = await git(open, ['config', '--file', join(open.gitDir, 'config'), '--list', '-z'])
+    if (config === null || repositoryRunsCommands(config)) return null
+    return await use((args) => git(open, args))
+  } finally {
+    rmSync(open.gitDir, { recursive: true, force: true })
+  }
+}
