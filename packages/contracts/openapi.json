@@ -6707,6 +6707,13 @@
           "href": {
             "type": "string",
             "description": "Where in the panel to act on it"
+          },
+          "code": {
+            "description": "The id of the diagnostic check behind a `diagnostic` item, so a page can say it in its own language",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -6716,7 +6723,8 @@
           "project",
           "environment",
           "service",
-          "href"
+          "href",
+          "code"
         ],
         "additionalProperties": false
       },

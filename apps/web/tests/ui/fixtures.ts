@@ -313,6 +313,7 @@ export function makeOverview(overrides: Partial<DevelopmentOverview> = {}): Deve
         project: 'produto',
         environment: 'produto',
         service: 'worker',
+        code: null,
         href: '/environments/produto?service=worker',
       },
     ],

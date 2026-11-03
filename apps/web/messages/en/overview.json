@@ -20,7 +20,8 @@
     "unprotectedSites_one": "{{count}} site answers everybody, with no login",
     "unprotectedSites_other": "{{count}} sites answer everybody, with no login",
     "closedSites_one": "{{count}} site is closed because nobody decided",
-    "closedSites_other": "{{count}} sites are closed because nobody decided"
+    "closedSites_other": "{{count}} sites are closed because nobody decided",
+    "environmentDegraded": "{{environment}} has services that are not running"
   },
   "projects": {
     "title": "Projects",
