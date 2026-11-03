@@ -4,10 +4,13 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import { type Context, Hono } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import {
+  crawlerMayRead,
+  crawlersFor,
   normalizeProtectionHost,
   type ProtectionRecord,
   protectionForHost,
   readProtectionStore,
+  renderRobots,
   verifyPassword,
 } from 'portta-core'
 import { type AuthConfig, loadAuthConfig } from './config.ts'
@@ -185,6 +188,11 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     const protection = findProtection(c)
     const host = forwardedHost(c)
     if (!protection || !host || protection.host !== host) return c.body(null, 401)
+    // A crawler the host keeps out is refused by the name it gives, before anything else is
+    // decided: robots.txt only asks, and this is what answers the ones that do not listen.
+    if (!crawlerMayRead(crawlersFor(readProtectionStore(config.storePath), protection), c.req.header('user-agent'))) {
+      return c.text('Crawlers are not allowed here.', 403)
+    }
     // Decided per hostname, in the record and nowhere else: a public host is
     // let through at once, and there is nothing to send a browser to.
     if (protection.mode === 'public') return c.body(null, 200)
@@ -207,6 +215,21 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     if (!isNavigation(c)) return c.body(null, 401)
     const next = safeNext(c.req.header('x-forwarded-uri'))
     return c.redirect(loginUrl(c, next), 302)
+  })
+
+  // Reached through a router the generated file puts on each host that keeps a crawler out.
+  app.get('/__portta/auth/robots.txt', (c) => {
+    const protection = findProtection(c)
+    const robots = protection ? renderRobots(crawlersFor(readProtectionStore(config.storePath), protection)) : null
+    if (robots === null) return c.body(null, 404)
+    c.header('Cache-Control', 'public, max-age=3600')
+    return c.text(robots)
+  })
+
+  // Nothing Portta serves for a login should ever be found by a search.
+  app.use('/__portta/auth/*', async (c, next) => {
+    await next()
+    c.header('X-Robots-Tag', 'noindex, nofollow')
   })
 
   app.get('/__portta/auth/login', (c) => {

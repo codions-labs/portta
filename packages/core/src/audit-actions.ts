@@ -50,6 +50,7 @@ export const AUDIT_ACTIONS = [
   'share.revoked',
   'gateway.applied',
   'settings.changed',
+  'crawlers.changed',
   'settings.discarded',
   'database.migrated',
   'container.console_opened',

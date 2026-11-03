@@ -565,6 +565,56 @@ export const ExposureResult = named(
 )
 export type ExposureResult = z.infer<typeof ExposureResult>
 
+export const CrawlerPolicy = named(
+  z
+    .object({
+      search: z.boolean().describe('Search engines such as Googlebot and Bingbot'),
+      train: z.boolean().describe('AI crawlers that collect text to train models, such as GPTBot and ClaudeBot'),
+      live: z.boolean().describe('AI agents that read a page because a person asked, such as ChatGPT-User'),
+      preview: z.boolean().describe('Link previews in chats and social networks, such as Slackbot'),
+    })
+    .strict()
+    .describe('Which kinds of crawler may read a hostname. true lets that kind in.'),
+  'CrawlerPolicy',
+)
+export type CrawlerPolicy = z.infer<typeof CrawlerPolicy>
+
+export const CrawlerSettings = named(
+  z
+    .object({
+      default: CrawlerPolicy.describe(
+        'What every project follows unless it has an exception. Everything blocked by default.',
+      ),
+      exceptions: z
+        .array(
+          z
+            .object({
+              project: z.string().describe('The slug of the project'),
+              name: z.string(),
+              policy: CrawlerPolicy,
+            })
+            .strict(),
+        )
+        .describe('Only the projects this caller may see'),
+    })
+    .strict(),
+  'CrawlerSettings',
+)
+export type CrawlerSettings = z.infer<typeof CrawlerSettings>
+
+export const ProjectCrawlers = named(
+  z
+    .object({
+      default: CrawlerPolicy,
+      own: CrawlerPolicy.nullable().describe('The exception set for this project, or null when it follows the default'),
+      effective: CrawlerPolicy,
+      mixed: z.boolean().describe('True when the environments of this project do not all have the same exception'),
+    })
+    .strict(),
+  'ProjectCrawlers',
+)
+export type ProjectCrawlers = z.infer<typeof ProjectCrawlers>
+
 export const ShareView = named(
   z
     .object({
