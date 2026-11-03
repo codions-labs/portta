@@ -1,4 +1,14 @@
-import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs'
+import {
+  closeSync,
+  constants,
+  existsSync,
+  fstatSync,
+  lstatSync,
+  openSync,
+  readFileSync,
+  readSync,
+  realpathSync,
+} from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import type { Command } from 'commander'
 import {
@@ -280,9 +290,21 @@ function readProjectConfig(root: string): {
     : { source: 'file', path: PROJECT_CONFIG_PATH, config: null, issues: parsed.issues }
 }
 
-function isSmallRegularFile(file: string): boolean {
-  const info = lstatSync(file, { throwIfNoEntry: false })
-  return info?.isFile() === true && info.size <= 64 * 1024
+/** `.env` read through one descriptor: a link, a pipe or anything over 64 KB is refused, not read. */
+function readSmallEnv(file: string): string | 'absent' | 'refused' {
+  if (lstatSync(file, { throwIfNoEntry: false }) === undefined) return 'absent'
+  let fd: number | undefined
+  try {
+    fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+    const info = fstatSync(fd)
+    if (!info.isFile() || info.size > 64 * 1024) return 'refused'
+    const buffer = Buffer.alloc(64 * 1024)
+    return buffer.subarray(0, readSync(fd, buffer, 0, buffer.length, 0)).toString('utf8')
+  } catch {
+    return 'refused'
+  } finally {
+    if (fd !== undefined) closeSync(fd)
+  }
 }
 
 export async function analyze(pathValue: string, options: AnalyzeOptions = {}, containers?: ContainerRecord[]) {
@@ -322,9 +344,11 @@ export async function analyze(pathValue: string, options: AnalyzeOptions = {}, c
       .find((file) => existsSync(join(path, file))) ??
     ['compose.portta.yaml', 'compose.portta.yml'].find((file) => existsSync(join(path, file))) ??
     null
-  const projectFromEnv = isSmallRegularFile(join(path, '.env'))
-    ? parseEnv(readFileSync(join(path, '.env'), 'utf8')).get('COMPOSE_PROJECT_NAME')
-    : undefined
+  const envText = readSmallEnv(join(path, '.env'))
+  // Compose would read a .env we refuse, and the namespace is its answer: say so rather than guess another.
+  if (unattended && envText === 'refused') throw new UsageError(`${join(path, '.env')} is not a plain file`)
+  const projectFromEnv =
+    envText === 'absent' || envText === 'refused' ? undefined : parseEnv(envText).get('COMPOSE_PROJECT_NAME')
   const declaredName = declaredComposeName(composeFile)
   const project = projectFromEnv || composeNamespace(declaredName ?? model.name ?? basename(path))
   const services = Object.entries(model.services).map(([name, service]) => ({
