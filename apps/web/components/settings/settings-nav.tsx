@@ -90,6 +90,11 @@ export function SettingsNav({ signsPeopleIn }: { signsPeopleIn: boolean }) {
               />
             )
           })}
+          <Item
+            href="/settings/crawlers"
+            label={t('rail.items.crawlers')}
+            active={pathname.startsWith('/settings/crawlers')}
+          />
         </>
       ) : null}
       {people.length > 0 ? (

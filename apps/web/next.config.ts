@@ -68,6 +68,8 @@ const config: NextConfig = {
           { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
+          // Never a search result, and never read by an AI crawler. public/robots.txt asks the same.
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive, noimageai' },
         ],
       },
     ]

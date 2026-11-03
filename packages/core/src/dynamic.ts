@@ -1,10 +1,13 @@
 export const FORWARD_AUTH_MIDDLEWARE = 'portta-forward-auth'
 export const AUTH_SERVICE = 'portta-auth'
 export const AUTH_PATH_PREFIX = '/__portta/auth'
+export const ROBOTS_PATH = '/robots.txt'
+const ROBOTS_MIDDLEWARE = 'portta-auth-robots-path'
 
 import { createHash } from 'node:crypto'
 
-import type { ProtectionStore } from './protections.ts'
+import { renderRobots } from './crawlers.ts'
+import { crawlersFor, type ProtectionStore } from './protections.ts'
 
 export class UnsafeDynamicValueError extends Error {}
 
@@ -61,6 +64,17 @@ export function renderAuthDynamic(store: ProtectionStore): string {
     lines.push('      priority: 10000')
     lines.push(`      service: ${AUTH_SERVICE}`)
   }
+  // A host that keeps any crawler out answers /robots.txt itself, whatever the application
+  // has there. A host that lets every crawler in leaves the application's own file alone.
+  for (const protection of store.protections) {
+    if (renderRobots(crawlersFor(store, protection)) === null) continue
+    lines.push(`    portta-auth-robots-${dynamicName(protection.scope)}:`)
+    lines.push(`      rule: ${quoteDynamicValue(`Host(\`${ruleHost(protection.host)}\`) && Path(\`${ROBOTS_PATH}\`)`)}`)
+    lines.push(`      entryPoints: [${protection.entryPoints.join(', ')}]`)
+    lines.push('      priority: 10000')
+    lines.push(`      middlewares: [${ROBOTS_MIDDLEWARE}]`)
+    lines.push(`      service: ${AUTH_SERVICE}`)
+  }
   lines.push(
     '  services:',
     `    ${AUTH_SERVICE}:`,
@@ -68,6 +82,9 @@ export function renderAuthDynamic(store: ProtectionStore): string {
     '        servers:',
     `          - url: ${quoteDynamicValue('http://portta-auth:4180')}`,
     '  middlewares:',
+    `    ${ROBOTS_MIDDLEWARE}:`,
+    '      replacePath:',
+    `        path: ${quoteDynamicValue(`${AUTH_PATH_PREFIX}/robots.txt`)}`,
     `    ${FORWARD_AUTH_MIDDLEWARE}:`,
     '      forwardAuth:',
     `        address: ${quoteDynamicValue('http://portta-auth:4180/verify')}`,

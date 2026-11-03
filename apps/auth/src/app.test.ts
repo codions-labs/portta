@@ -6,6 +6,7 @@ import {
   hashPassword,
   readProtectionStore,
   removeProtection,
+  setDefaultCrawlers,
   setProtection,
   writeProtectionStore,
 } from 'portta-core'
@@ -416,6 +417,66 @@ describe('ForwardAuth app', () => {
       headers: { ...forwarded, accept: 'text/html', 'sec-fetch-mode': 'navigate' },
     })
     expect(nextRequest.status).toBe(302)
+  })
+})
+
+describe('crawlers', () => {
+  const googlebot = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+  const gptbot = 'Mozilla/5.0 AppleWebKit/537.36 (compatible; GPTBot/1.2)'
+  const browser = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15'
+  const verify = (app: ReturnType<typeof setup>['app'], userAgent: string) =>
+    app.request('/verify', { headers: { ...forwarded, accept: 'text/html', 'user-agent': userAgent } })
+
+  it('refuses a crawler by default, on a host that asks for a login and on one that does not', async () => {
+    const { app, storePath } = setup()
+    expect((await verify(app, googlebot)).status).toBe(403)
+    writeProtectionStore(
+      storePath,
+      setProtection(readProtectionStore(storePath), {
+        scope: 'host:api.example.com',
+        host: 'api.example.com',
+        entryPoints: ['websecure'],
+        mode: 'public',
+        label: 'api',
+      }),
+    )
+    const open = await app.request('/verify', {
+      headers: { ...forwarded, 'x-forwarded-host': 'api.example.com', 'user-agent': gptbot },
+    })
+    expect(open.status).toBe(403)
+  })
+
+  it('does not change what a person with a browser sees', async () => {
+    const { app } = setup()
+    expect((await verify(app, browser)).status).toBe(302)
+  })
+
+  it('lets the kinds the default allows reach the login decision, and still refuses the rest', async () => {
+    const { app, storePath } = setup()
+    writeProtectionStore(
+      storePath,
+      setDefaultCrawlers(readProtectionStore(storePath), { search: true, train: false, live: false, preview: false }),
+    )
+    expect((await verify(app, googlebot)).status).toBe(302)
+    expect((await verify(app, gptbot)).status).toBe(403)
+  })
+
+  it('answers robots.txt for a host that keeps crawlers out, and has none for one that lets them in', async () => {
+    const { app, storePath } = setup()
+    const robots = await app.request('/__portta/auth/robots.txt', { headers: forwarded })
+    expect(robots.status).toBe(200)
+    expect(await robots.text()).toBe('User-agent: *\nDisallow: /\n')
+    writeProtectionStore(
+      storePath,
+      setDefaultCrawlers(readProtectionStore(storePath), { search: true, train: true, live: true, preview: true }),
+    )
+    expect((await app.request('/__portta/auth/robots.txt', { headers: forwarded })).status).toBe(404)
+  })
+
+  it('never lets a search engine index the login page', async () => {
+    const { app } = setup()
+    const login = await app.request('/__portta/auth/login', { headers: forwarded })
+    expect(login.headers.get('x-robots-tag')).toBe('noindex, nofollow')
   })
 })
 

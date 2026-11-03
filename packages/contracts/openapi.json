@@ -4050,6 +4050,132 @@
         ],
         "additionalProperties": false
       },
+      "CrawlerPolicy": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "boolean",
+            "description": "Search engines such as Googlebot and Bingbot"
+          },
+          "train": {
+            "type": "boolean",
+            "description": "AI crawlers that collect text to train models, such as GPTBot and ClaudeBot"
+          },
+          "live": {
+            "type": "boolean",
+            "description": "AI agents that read a page because a person asked, such as ChatGPT-User"
+          },
+          "preview": {
+            "type": "boolean",
+            "description": "Link previews in chats and social networks, such as Slackbot"
+          }
+        },
+        "required": [
+          "search",
+          "train",
+          "live",
+          "preview"
+        ],
+        "additionalProperties": false,
+        "description": "Which kinds of crawler may read a hostname. true lets that kind in."
+      },
+      "CrawlerSettings": {
+        "type": "object",
+        "properties": {
+          "default": {
+            "$ref": "#/components/schemas/CrawlerPolicy",
+            "description": "What every project follows unless it has an exception. Everything blocked by default."
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "project": {
+                  "type": "string",
+                  "description": "The slug of the project"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "policy": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CrawlerPolicy",
+                      "description": "Which kinds of crawler may read a hostname. true lets that kind in."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Null when the environments of the project disagree"
+                },
+                "mixed": {
+                  "type": "boolean",
+                  "description": "True when the environments of the project do not all follow the same exception"
+                }
+              },
+              "required": [
+                "project",
+                "name",
+                "policy",
+                "mixed"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Only the projects this caller may see, including the ones whose environments disagree"
+          }
+        },
+        "required": [
+          "default",
+          "exceptions"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectCrawlers": {
+        "type": "object",
+        "properties": {
+          "default": {
+            "$ref": "#/components/schemas/CrawlerPolicy"
+          },
+          "own": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CrawlerPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The exception set for this project, or null when it follows the default"
+          },
+          "effective": {
+            "$ref": "#/components/schemas/CrawlerPolicy"
+          },
+          "mixed": {
+            "type": "boolean",
+            "description": "True when the environments of this project do not all have the same exception"
+          },
+          "byEnvironment": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CrawlerPolicy"
+            },
+            "description": "What each environment follows, which decides the verdict of each of its addresses"
+          }
+        },
+        "required": [
+          "default",
+          "own",
+          "effective",
+          "mixed",
+          "byEnvironment"
+        ],
+        "additionalProperties": false
+      },
       "DoctorResponse": {
         "type": "object",
         "properties": {
@@ -7595,6 +7721,7 @@
               "share.revoked",
               "gateway.applied",
               "settings.changed",
+              "crawlers.changed",
               "settings.discarded",
               "database.migrated",
               "container.console_opened",
@@ -12748,6 +12875,398 @@
           }
         ],
         "x-portta-permission": "service:protect"
+      }
+    },
+    "/crawlers": {
+      "get": {
+        "operationId": "getCrawlers",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Which crawlers may read the hostnames of this server",
+        "description": "The server default, which blocks every crawler until it is changed, and the projects that have an exception.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlerSettings"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "access:read"
+      },
+      "put": {
+        "operationId": "setDefaultCrawlers",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Set which crawlers may read projects that have no exception",
+        "description": "Takes effect on the next request. Nothing is restarted.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlerPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "search": {
+                    "type": "boolean",
+                    "description": "Search engines such as Googlebot and Bingbot"
+                  },
+                  "train": {
+                    "type": "boolean",
+                    "description": "AI crawlers that collect text to train models, such as GPTBot and ClaudeBot"
+                  },
+                  "live": {
+                    "type": "boolean",
+                    "description": "AI agents that read a page because a person asked, such as ChatGPT-User"
+                  },
+                  "preview": {
+                    "type": "boolean",
+                    "description": "Link previews in chats and social networks, such as Slackbot"
+                  }
+                },
+                "required": [
+                  "search",
+                  "train",
+                  "live",
+                  "preview"
+                ],
+                "additionalProperties": false,
+                "description": "Which kinds of crawler may read a hostname. true lets that kind in.",
+                "ref": "CrawlerPolicy"
+              }
+            }
+          }
+        },
+        "x-portta-permission": "settings:manage"
+      }
+    },
+    "/projects/{slug}/crawlers": {
+      "get": {
+        "operationId": "getProjectCrawlers",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Which crawlers may read the addresses of a project",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectCrawlers"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "project:read"
+      },
+      "put": {
+        "operationId": "setProjectCrawlers",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Set an exception to the server default for one project",
+        "description": "Written to every environment the project has adopted. An environment adopted later follows the server default until this is saved again.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectCrawlers"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The requested operation conflicts with the current runtime state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "policy": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "search": {
+                            "type": "boolean",
+                            "description": "Search engines such as Googlebot and Bingbot"
+                          },
+                          "train": {
+                            "type": "boolean",
+                            "description": "AI crawlers that collect text to train models, such as GPTBot and ClaudeBot"
+                          },
+                          "live": {
+                            "type": "boolean",
+                            "description": "AI agents that read a page because a person asked, such as ChatGPT-User"
+                          },
+                          "preview": {
+                            "type": "boolean",
+                            "description": "Link previews in chats and social networks, such as Slackbot"
+                          }
+                        },
+                        "required": [
+                          "search",
+                          "train",
+                          "live",
+                          "preview"
+                        ],
+                        "additionalProperties": false,
+                        "description": "Which kinds of crawler may read a hostname. true lets that kind in.",
+                        "ref": "CrawlerPolicy"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "null returns the project to the server default"
+                  }
+                },
+                "required": [
+                  "policy"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-portta-permission": "project:update"
       }
     },
     "/gateway": {

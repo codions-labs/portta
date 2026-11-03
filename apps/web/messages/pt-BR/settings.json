@@ -557,7 +557,8 @@
       "project-access": "Acesso aos sites",
       "tls": "Certificados e DNS",
       "panel": "Painel",
-      "traefik": "Traefik"
+      "traefik": "Traefik",
+      "crawlers": "Buscadores e bots"
     }
   },
   "search": {
@@ -571,5 +572,93 @@
     "title_one": "{{count}} alteração salva ainda não vale.",
     "title_other": "{{count}} alterações salvas ainda não valem.",
     "body": "Aplique pelo terminal. Os contêineres do gateway serão recriados."
+  },
+  "crawlers": {
+    "title": "Buscadores e bots",
+    "description": "Se buscadores e bots de IA podem encontrar e ler seus projetos. Tudo fica bloqueado até você dizer o contrário.",
+    "defaultTitle": "Padrão do servidor para buscadores e bots",
+    "defaultDescription": "Todo projeto segue este padrão, a menos que tenha uma exceção própria.",
+    "state": {
+      "all": "Tudo bloqueado",
+      "noAi": "Só buscadores",
+      "open": "Tudo permitido",
+      "custom": "Personalizado",
+      "exception": "Exceção ativa",
+      "mixed": "Misto"
+    },
+    "presets": {
+      "all": {
+        "title": "Bloquear todos (recomendado)",
+        "help": "Nenhum buscador nem bot de IA encontra ou lê seus projetos."
+      },
+      "noAi": {
+        "title": "Permitir buscadores, bloquear IA",
+        "help": "Google e Bing podem indexar. Bots de IA continuam recusados."
+      },
+      "open": {
+        "title": "Permitir todos",
+        "help": "Qualquer buscador e bot pode ler endereços abertos a todos."
+      }
+    },
+    "kinds": {
+      "search": {
+        "title": "Buscadores",
+        "examples": "Googlebot, Bingbot, DuckDuckBot, YandexBot"
+      },
+      "train": {
+        "title": "IA que treina modelos",
+        "examples": "GPTBot, ClaudeBot, CCBot, Google-Extended"
+      },
+      "live": {
+        "title": "IA que lê a pedido de uma pessoa",
+        "examples": "ChatGPT-User, Claude-User, PerplexityBot"
+      },
+      "preview": {
+        "title": "Prévia de link em redes e chats",
+        "examples": "Slackbot, facebookexternalhit, WhatsApp"
+      }
+    },
+    "allowed": "Permitido",
+    "blocked": "Bloqueado",
+    "allow": "Permitir",
+    "block": "Bloquear",
+    "howTitle": "Como o bloqueio é feito.",
+    "howBody": "O robots.txt é um pedido que bots educados respeitam. Por isso o Portta também recusa, com 403, quem se identifica como um bot bloqueado. Um cliente que mente sobre quem é não pode ser barrado assim.",
+    "panelNote": "Este painel e as telas de login dos sites protegidos nunca são indexados, qualquer que seja a sua escolha aqui.",
+    "effect": "Vale na próxima requisição. Nada é reiniciado.",
+    "discard": "Descartar",
+    "save": "Salvar",
+    "exceptionsTitle": "Projetos com exceção",
+    "exceptionsDescription": "Estes projetos não seguem o padrão acima.",
+    "noExceptions": "Nenhum projeto tem exceção.",
+    "projectTitle": "Buscadores e bots",
+    "projectDescription": "Se buscadores e bots podem encontrar e ler os endereços de {{project}}.",
+    "choices": {
+      "default": {
+        "title": "Seguir o padrão do servidor",
+        "help": "Muda junto com o padrão."
+      },
+      "block": {
+        "title": "Bloquear todos",
+        "help": "Mantém todo bot fora deste projeto, mesmo que o padrão seja aberto."
+      },
+      "custom": {
+        "title": "Permitir alguns",
+        "help": "Escolha o que pode encontrar e ler este projeto."
+      }
+    },
+    "irreversible": "O que você permitir pode aparecer em buscas e em respostas de IA, e o que já foi lido não dá para desfazer. Vale só para endereços abertos a todos.",
+    "confirm": "Entendo que este projeto ficará visível para o que eu permitir.",
+    "mixed": "Os ambientes deste projeto não têm todos a mesma exceção. Salvar aplica a mesma em todos eles.",
+    "table": {
+      "address": "Endereço",
+      "access": "Quem pode abrir",
+      "search": "Buscadores",
+      "ai": "Bots de IA",
+      "everyone": "Todos",
+      "password": "Senha"
+    },
+    "serverDefault": "O padrão do servidor fica em Configurações.",
+    "changeDefault": "Mudar o padrão"
   }
 }

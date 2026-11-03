@@ -8,6 +8,11 @@ All notable changes to Portta are documented here. The format follows
 
 ### Added
 
+- Search engines and AI crawlers are kept out of every project and of the panel by default.
+  Settings > Search engines and bots sets the default, and a project's Settings tab sets an
+  exception (`PUT /api/crawlers`, `PUT /api/projects/{slug}/crawlers`). The gateway answers
+  `/robots.txt` for a host that keeps a crawler out and refuses with `403` a request that
+  names itself as one; four kinds can be allowed separately.
 - An environment's page shows where its code stands: branch, last commit, what is not
   committed or pushed and when it last changed. The host collector reads it, read-only and
   without asking any remote.

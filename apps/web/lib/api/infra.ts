@@ -8,6 +8,8 @@ import type {
   ConfigPatchResult,
   ConfigView,
   ContainerSummary,
+  CrawlerPolicy,
+  CrawlerSettings,
   Diagnostic,
   DockerHost,
   EnvironmentReport,
@@ -19,6 +21,7 @@ import type {
   MetricsHistory,
   NetworkView,
   Overview,
+  ProjectCrawlers,
   RemovalPreview,
   RunnerStatus,
   SecurityReport,
@@ -109,6 +112,15 @@ export const infraApi = {
       body: '{}',
     }),
   exposure: () => request<ExposureView>('/exposure'),
+  crawlers: () => request<CrawlerSettings>('/crawlers'),
+  setCrawlers: (policy: CrawlerPolicy) =>
+    request<CrawlerPolicy>('/crawlers', { method: 'PUT', body: JSON.stringify(policy) }),
+  projectCrawlers: (slug: string) => request<ProjectCrawlers>(`/projects/${encodeURIComponent(slug)}/crawlers`),
+  setProjectCrawlers: (slug: string, policy: CrawlerPolicy | null) =>
+    request<ProjectCrawlers>(`/projects/${encodeURIComponent(slug)}/crawlers`, {
+      method: 'PUT',
+      body: JSON.stringify({ policy }),
+    }),
   protectService: (id: string, body: { user?: string | null } = {}) =>
     request<ExposureResult>(`/services/${encodeURIComponent(id)}/exposure`, {
       method: 'PUT',

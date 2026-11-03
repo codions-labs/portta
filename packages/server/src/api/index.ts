@@ -26,6 +26,7 @@ import { accessRoutes } from './routes/access.ts'
 import { auditRoutes } from './routes/audit.ts'
 import { authRoutes } from './routes/auth.ts'
 import { configRoutes } from './routes/config.ts'
+import { crawlerRoutes } from './routes/crawlers.ts'
 import { databaseRoutes } from './routes/database.ts'
 import { developmentRoutes } from './routes/development.ts'
 import { dockerRoutes } from './routes/docker.ts'
@@ -177,6 +178,7 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', accessRoutes(deps))
   api.route('/', shareRoutes(deps))
   api.route('/', exposureRoutes(deps))
+  api.route('/', crawlerRoutes(deps))
   api.route('/', gatewayRoutes(deps))
   api.route('/', hostRoutes(deps))
   api.route('/', configRoutes(deps))
