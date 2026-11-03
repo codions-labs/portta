@@ -119,6 +119,28 @@ describe('crawler policy', () => {
     expect(readProtectionStore(authStore).environments).toEqual({ alpha: OPEN })
   })
 
+  it('lets go of the exceptions of a project that is removed, so the next one does not inherit them', async () => {
+    const { send, authStore } = await panel()
+    await send('PUT', '/api/projects/produto/crawlers', { policy: OPEN })
+    expect((await send('DELETE', '/api/projects/produto')).status).toBe(200)
+    expect(readProtectionStore(authStore).environments).toBeUndefined()
+  })
+
+  it('keeps every exception when it cannot tell which environments are adopted, rather than forgetting them', async () => {
+    const seeded = await seededDatabase({ empty: true })
+    const dir = mkdtempSync(join(tmpdir(), 'portta-crawlers-'))
+    const authStore = join(dir, 'protections.json')
+    writeProtectionStore(authStore, { ...readProtectionStore(authStore), environments: { alpha: OPEN } })
+    const { app } = makeApp({}, { authStore, dynamicDir: dir }, seeded.database)
+    const response = await app.request('/api/crawlers', {
+      method: 'PUT',
+      body: JSON.stringify(NONE),
+      headers: { 'content-type': 'application/json', origin: 'http://localhost', host: 'localhost' },
+    })
+    expect(response.status).toBe(200)
+    expect(readProtectionStore(authStore).environments).toEqual({ alpha: OPEN })
+  })
+
   it('forgets the exception of an environment nobody has when any decision is saved', async () => {
     const { send, authStore } = await panel()
     const store = readProtectionStore(authStore)

@@ -126,6 +126,14 @@ export function projectRoutes(deps: AppDeps): Hono {
   const app = new Hono()
   const home = () => deps.config.projectsHome
 
+  /** Which project has each environment, as the project pages count them: by link, label and folder. */
+  async function ownersOfEnvironments(db: Database, fresh = false): Promise<Map<string, string>> {
+    const catalog = await assemble(db, await deps.cache.get(fresh), deps.config)
+    return new Map(
+      [...catalog.environments].flatMap(([id, list]) => list.map((entry) => [entry.environment, id] as const)),
+    )
+  }
+
   app.get(
     '/projects',
     documentRoute({
@@ -267,8 +275,19 @@ export function projectRoutes(deps: AppDeps): Hono {
       const existing = await db.projects.find(slug)
       if (!existing) throw new HTTPException(404, { message: `no project '${slug}'` })
       authorizeScope(c, projectScope(existing.id))
+      const owned = [...(await ownersOfEnvironments(db))].filter(([, id]) => id === existing.id).map(([name]) => name)
       if (!(await db.projects.remove(slug))) {
         throw new HTTPException(404, { message: `no project '${slug}'` })
+      }
+      // The grouping is gone, and an exception made for it must not wait for the next project to inherit it.
+      const released = releaseCrawlerExceptions(deps.config, owned)
+      if (released.length > 0) {
+        await record(deps, c, {
+          action: 'crawlers.changed',
+          resourceType: 'project',
+          resourceName: slug,
+          metadata: { released },
+        })
       }
       // No projectId: the row is gone, and the column would be nulled by the
       // cascade a moment later. The slug is what a person reads anyway.
@@ -336,9 +355,9 @@ export function projectRoutes(deps: AppDeps): Hono {
     async (c) => {
       const db = requireDatabase(deps.db)
       const slug = c.req.param('slug')
-      const record = await db.projects.find(slug)
-      if (!record) throw new HTTPException(404, { message: `no project '${slug}'` })
-      authorizeScope(c, projectScope(record.id))
+      const project = await db.projects.find(slug)
+      if (!project) throw new HTTPException(404, { message: `no project '${slug}'` })
+      authorizeScope(c, projectScope(project.id))
 
       const body = EnvironmentsBody.parse(await c.req.json())
       const snapshot = await deps.cache.get()
@@ -347,22 +366,29 @@ export function projectRoutes(deps: AppDeps): Hono {
           throw new OverrideRefused(`no environment '${name}' is running`)
         }
       }
-      const before = new Set(
-        (await db.projects.listEnvironments())
-          .filter((row) => row.projectId === record.id)
-          .map((row) => row.composeProject),
+      const before = await ownersOfEnvironments(db)
+      await db.projects.setEnvironments(project.id, body.environments)
+      // An exception was a decision about the project that had the environment, not about the
+      // environment: whatever changed hands lets go of it, and the audit log says which.
+      const after = await ownersOfEnvironments(db, true)
+      const moved = [...new Set([...before.keys(), ...after.keys()])].filter(
+        (name) => before.get(name) !== after.get(name),
       )
-      await db.projects.setEnvironments(record.id, body.environments)
-      // An exception was a decision about the project that had the environment, not about the environment.
-      const after = new Set(body.environments)
-      releaseCrawlerExceptions(deps.config, [
-        ...[...before].filter((name) => !after.has(name)),
-        ...[...after].filter((name) => !before.has(name)),
-      ])
+      const released = releaseCrawlerExceptions(deps.config, moved)
+      if (released.length > 0) {
+        await record(deps, c, {
+          action: 'crawlers.changed',
+          resourceType: 'project',
+          resourceId: String(project.id),
+          resourceName: project.slug,
+          projectId: Number(project.id),
+          metadata: { released },
+        })
+      }
 
       const catalog = await assemble(db, await deps.cache.get(true), deps.config)
       return c.json(
-        toProject(record, catalog.environments.get(record.id) ?? [], home(), catalog.tags.get(record.id) ?? []),
+        toProject(project, catalog.environments.get(project.id) ?? [], home(), catalog.tags.get(project.id) ?? []),
       )
     },
   )

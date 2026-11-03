@@ -6,6 +6,7 @@ import { z } from 'portta-core/zod'
 import { requireDatabase } from '../../db/index.ts'
 import type { AppDeps } from '../../deps.ts'
 import { projectScope, visible } from '../../services/access-control.ts'
+import { loadProjectCatalog } from '../../services/catalog.ts'
 import {
   NoEnvironmentsToCover,
   projectCrawlers,
@@ -31,14 +32,17 @@ const ProjectBody = z
 export function crawlerRoutes(deps: AppDeps): Hono {
   const app = new Hono()
 
-  async function environmentsOf(projectId: string): Promise<string[]> {
-    const rows = await requireDatabase(deps.db).projects.listEnvironments()
-    return rows.filter((row) => row.projectId === projectId).map((row) => row.composeProject)
+  /**
+   * The environments each project has, as the project pages count them: by a link made by hand, by
+   * the `portta.project` label and by the folder. Only the first is a row in the database, so
+   * reading the rows alone would leave an exception with nothing to apply to.
+   */
+  async function adoptions(): Promise<Map<string, string[]>> {
+    const catalog = await loadProjectCatalog(requireDatabase(deps.db), await deps.cache.get(), deps.config)
+    return new Map([...catalog.environments].map(([id, list]) => [id, list.map((entry) => entry.environment)]))
   }
 
-  async function adoptedEnvironments(): Promise<Set<string>> {
-    return new Set((await requireDatabase(deps.db).projects.listEnvironments()).map((row) => row.composeProject))
-  }
+  const allAdopted = (map: Map<string, string[]>) => new Set([...map.values()].flat())
 
   app.get(
     '/crawlers',
@@ -55,8 +59,9 @@ export function crawlerRoutes(deps: AppDeps): Hono {
     async (c) => {
       const db = requireDatabase(deps.db)
       const exceptions: Array<{ project: string; name: string; policy: CrawlerPolicy | null; mixed: boolean }> = []
+      const owned = await adoptions()
       for (const project of visible(principalOf(c), await db.projects.list(), (row) => projectScope(row.id))) {
-        const state = projectCrawlers(deps.config, await environmentsOf(project.id))
+        const state = projectCrawlers(deps.config, owned.get(project.id) ?? [])
         if (state.own || state.mixed) {
           exceptions.push({ project: project.slug, name: project.name, policy: state.own, mixed: state.mixed })
         }
@@ -79,7 +84,7 @@ export function crawlerRoutes(deps: AppDeps): Hono {
     }),
     async (c) => {
       const policy = CrawlerPolicy.parse(await c.req.json())
-      saveDefaultCrawlers(deps.config, policy, await adoptedEnvironments())
+      saveDefaultCrawlers(deps.config, policy, allAdopted(await adoptions()))
       await record(deps, c, {
         action: 'crawlers.changed',
         resourceType: 'settings',
@@ -105,7 +110,7 @@ export function crawlerRoutes(deps: AppDeps): Hono {
       const existing = await requireDatabase(deps.db).projects.find(c.req.param('slug'))
       if (!existing) throw new HTTPException(404, { message: `no project '${c.req.param('slug')}'` })
       authorizeScope(c, projectScope(existing.id))
-      return c.json(projectCrawlers(deps.config, await environmentsOf(existing.id)))
+      return c.json(projectCrawlers(deps.config, (await adoptions()).get(existing.id) ?? []))
     },
   )
 
@@ -128,9 +133,10 @@ export function crawlerRoutes(deps: AppDeps): Hono {
       if (!existing) throw new HTTPException(404, { message: `no project '${c.req.param('slug')}'` })
       authorizeScope(c, projectScope(existing.id))
       const body = ProjectBody.parse(await c.req.json())
-      const environments = await environmentsOf(existing.id)
+      const owned = await adoptions()
+      const environments = owned.get(existing.id) ?? []
       try {
-        saveProjectCrawlers(deps.config, environments, body.policy, await adoptedEnvironments())
+        saveProjectCrawlers(deps.config, environments, body.policy, allAdopted(owned))
       } catch (error) {
         if (error instanceof NoEnvironmentsToCover) throw new HTTPException(409, { message: error.message })
         throw error

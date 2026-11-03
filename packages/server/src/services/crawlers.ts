@@ -86,15 +86,22 @@ export function saveProjectCrawlers(
 
 /** Drops the exceptions of environments no project has. */
 export function forgetStaleExceptions(store: ProtectionStore, adopted: ReadonlySet<string>): ProtectionStore {
+  // Nothing adopted at all is more likely a view that could not be read than a host with no
+  // projects, and forgetting every exception on that evidence would change what is enforced.
+  if (adopted.size === 0) return store
   const stale = Object.keys(store.environments ?? {}).filter((name) => !adopted.has(name))
   return stale.length === 0 ? store : setEnvironmentCrawlers(store, stale, null)
 }
 
-/** Forgets the exceptions of the environments that just changed hands, and writes only when there were any. */
-export function releaseCrawlerExceptions(config: PanelConfig, environments: readonly string[]): void {
+/**
+ * Forgets the exceptions of the environments that just changed hands, and writes only when there
+ * were any. Returns the environments it let go of, so the caller can say so in the audit log.
+ */
+export function releaseCrawlerExceptions(config: PanelConfig, environments: readonly string[]): string[] {
   const store = readProtectionStore(config.authStore)
   const held = environments.filter((name) => store.environments?.[name] !== undefined)
   if (held.length > 0) saveProtectionState(config, setEnvironmentCrawlers(store, held, null))
+  return held
 }
 
 /** The policy one environment follows, for the pages that show a verdict per address. */

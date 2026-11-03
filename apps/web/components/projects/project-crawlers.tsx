@@ -141,7 +141,7 @@ export function ProjectCrawlers({ project, mayEdit }: { project: Project; mayEdi
                   const open = entry.mode === 'public'
                   // What the address's own environment follows: a project whose environments
                   // disagree shows each one's verdict, and a change not saved yet shows the draft.
-                  const own = dirty ? policy : (state.byEnvironment[entry.project ?? ''] ?? policy)
+                  const own = dirty ? policy : (state.byEnvironment[entry.project ?? ''] ?? state.default)
                   const search = open && own.search
                   const ai = open && (own.train || own.live)
                   return (
