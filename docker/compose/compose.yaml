@@ -196,6 +196,8 @@ services:
       PORTTA_AUTH_SECRET: ${PORTTA_AUTH_SECRET:-}
       PORTTA_AUTH_UI_DIR: /app/apps/auth/dist/ui
       PORTTA_AUTH_SESSION_SECONDS: "43200"
+      # Where a browser reaches the panel. Empty: a panel session cannot open a protected site.
+      PORTTA_PANEL_URL: ${PORTTA_PANEL_URL:-}
     volumes:
       - ./state/auth:/app/state/auth:ro
     networks:

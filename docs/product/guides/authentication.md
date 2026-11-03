@@ -386,6 +386,19 @@ Failed logins are delayed progressively; five failures in ten minutes lock that
 host/IP pair for fifteen minutes. Logs carry scope, client address and outcome —
 never a password, cookie or Authorization value.
 
+### Opening a protected site with the panel
+
+A person who is signed in to the panel and may see a project does not need that project's
+password. The site's login page offers **Continue with my Portta account**; the panel checks the
+session and the person's membership of the project that owns the hostname, and the site opens as
+that person. The first time a browser does this it asks; after that its visits to a login page of
+that site go to the panel by themselves, so there is nothing to click. Anyone else uses the password
+as before and is never sent to the panel.
+
+It needs `PORTTA_PANEL_URL` to be the address a browser reaches the panel at, and the panel to sign
+people in (`PORTTA_AUTH_MODE=required`). A share, and an environment no project adopted, open this
+way only for owners and admins. See [ADR 0057](../../development/adr/0057-a-panel-session-opens-a-protected-site.md).
+
 ### Shares
 
 ```bash
@@ -436,6 +449,33 @@ labels:
 
 Until that label exists the record does nothing, and removing the record while
 the label stays leaves the host closed.
+
+### Search engines and bots
+
+By default no search engine and no AI crawler may find or read a project. The default and
+the exceptions live in `state/auth/protections.json`, next to the decisions above, and apply on
+the next request. Settings > Search engines and bots sets the default
+(`PUT /api/crawlers`); a project's Settings tab sets an exception
+(`PUT /api/projects/{slug}/crawlers`, `null` returns it to the default). The audit log records
+both as `crawlers.changed`.
+
+Four kinds can be allowed on their own: search engines, AI that trains models, AI that reads
+when a person asks, and link previews in chats and social networks. Two things enforce the
+choice on every host that passes through ForwardAuth, protected or public:
+
+- `/robots.txt` is answered by `portta-auth` for any host that keeps a kind out, whatever the
+  application has there. A host that allows every kind keeps the application's own file.
+- A request that names itself as a blocked kind (`Googlebot`, `GPTBot`, `ClaudeBot`,
+  `ChatGPT-User`, `Slackbot` and the like) gets `403` before anything else is decided.
+
+`robots.txt` is a request and the `User-Agent` is whatever the client says it is, so a client
+that lies about what it is can still reach an address that is open to everybody. Addresses that
+ask for a password never show their content to a crawler, and the sign-in pages carry
+`X-Robots-Tag: noindex`. The panel itself sends the same header and serves a `robots.txt` that
+disallows everything. A project's exception is stored per environment, so an environment adopted
+later follows the default until the project's setting is saved again, and an environment a
+project lets go of loses the exception that was made for it. A project with no environment cannot
+have an exception (`409`); a project whose environments disagree is listed as mixed.
 
 ## State and recovery
 

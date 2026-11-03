@@ -13,6 +13,7 @@ import {
   serviceOf,
 } from 'portta-core'
 import { dockerOperatingSystem, inspectContainers, readContainerStats } from '../docker.js'
+import { pruneFiles, publishFiles } from './files.js'
 import { readGit, workingDirectories } from './git.js'
 import { type GpuReading, readGpu } from './gpu.js'
 import { readDockerStorage } from './storage.js'
@@ -108,11 +109,13 @@ async function collectProjects(root: string, gpu: GpuReading | null): Promise<Me
   const projects = aggregateProjects(metrics, identities)
 
   const directories = workingDirectories(identities, root)
+  pruneFiles(root, new Set(directories.keys()))
   const ownProject = process.env.PORTTA_PROJECT_NAME?.trim() || 'portta'
   return Promise.all(
     projects.map(async (project) => {
       const directory = directories.get(project.composeProject)
       const git = directory ? await readGit(directory) : null
+      if (directory) await publishFiles(root, project.composeProject, directory)
       const held = gpuMemoryOf(project.composeProject, identities, gpu)
       const withGpu = held > 0 ? { ...project, gpuMemoryBytes: held } : project
       const measured = project.composeProject === ownProject ? { ...withGpu, own: true as const } : withGpu

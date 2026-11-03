@@ -12,6 +12,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { BLOCK_ALL_CRAWLERS, type CrawlerPolicy, parseCrawlerPolicy } from './crawlers.ts'
 
 export const PROTECTION_STORE_VERSION = 1 as const
 
@@ -53,6 +54,13 @@ export interface ProtectionRecord {
 export interface ProtectionStore {
   version: typeof PROTECTION_STORE_VERSION
   protections: ProtectionRecord[]
+  /** Which crawlers may read a host nothing below speaks for. Absent means none may. */
+  crawlers?: CrawlerPolicy
+  /**
+   * Exceptions to `crawlers`, by the environment a record belongs to (its `project`).
+   * An environment with no entry here follows the default.
+   */
+  environments?: Record<string, CrawlerPolicy>
 }
 
 export class InvalidProtectionStore extends Error {}
@@ -141,6 +149,23 @@ export function parseProtectionStore(text: string): ProtectionStore {
     throw new InvalidProtectionStore('unsupported protection store version')
   }
   const protections = object.protections.map(parseRecord)
+  let crawlers: CrawlerPolicy | undefined
+  let environments: Record<string, CrawlerPolicy> | undefined
+  try {
+    if (object.crawlers !== undefined) crawlers = parseCrawlerPolicy(object.crawlers)
+    if (object.environments !== undefined) {
+      const raw = object.environments
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('invalid environments')
+      environments = {}
+      for (const [name, policy] of Object.entries(raw)) {
+        environments[nonEmpty(name, 'environment')] = parseCrawlerPolicy(policy)
+      }
+    }
+  } catch (error) {
+    throw error instanceof InvalidProtectionStore
+      ? error
+      : new InvalidProtectionStore(error instanceof Error ? error.message : 'invalid crawler policy')
+  }
   const scopes = new Set<string>()
   const hosts = new Set<string>()
   for (const protection of protections) {
@@ -153,6 +178,8 @@ export function parseProtectionStore(text: string): ProtectionStore {
   return {
     version: PROTECTION_STORE_VERSION,
     protections: protections.sort((left, right) => left.scope.localeCompare(right.scope)),
+    ...(crawlers ? { crawlers } : {}),
+    ...(environments && Object.keys(environments).length > 0 ? { environments } : {}),
   }
 }
 
@@ -210,4 +237,28 @@ export function removeProtection(store: ProtectionStore, scope: string): Protect
 export function protectionForHost(store: ProtectionStore, host: string): ProtectionRecord | null {
   const normalized = normalizeProtectionHost(host)
   return store.protections.find((item) => item.host === normalized) ?? null
+}
+
+/** What crawlers may do on this record's host: its environment's exception, else the default, else nothing. */
+export function crawlersFor(store: ProtectionStore, record: Pick<ProtectionRecord, 'project'>): CrawlerPolicy {
+  const own = record.project ? store.environments?.[record.project] : undefined
+  return own ?? store.crawlers ?? BLOCK_ALL_CRAWLERS
+}
+
+export function setDefaultCrawlers(store: ProtectionStore, policy: CrawlerPolicy): ProtectionStore {
+  return parseProtectionStore(JSON.stringify({ ...store, crawlers: policy }))
+}
+
+/** `null` removes the exceptions, so those environments follow the default again. */
+export function setEnvironmentCrawlers(
+  store: ProtectionStore,
+  environments: readonly string[],
+  policy: CrawlerPolicy | null,
+): ProtectionStore {
+  const next = { ...(store.environments ?? {}) }
+  for (const name of environments) {
+    if (policy) next[name] = policy
+    else delete next[name]
+  }
+  return parseProtectionStore(JSON.stringify({ ...store, environments: next }))
 }

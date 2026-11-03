@@ -38,7 +38,8 @@
     "label": "Seções de {{name}}",
     "overview": "Visão geral",
     "environments": "Ambientes ({{count}})",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "files": "Arquivos"
   },
   "pulse": {
     "unhealthy": "{{count}} com problema"
@@ -174,7 +175,8 @@
     "problem": "Com problema {{count}}",
     "idle": "Parados {{count}}",
     "archived": "Arquivados {{count}}",
-    "allTags": "Todas"
+    "allTags": "Todas",
+    "unpushed": "Código sem enviar {{count}}"
   },
   "noMatch": "Nenhum projeto corresponde a estes filtros",
   "noMatchHint": "Amplie a busca ou limpe o filtro de estado.",
@@ -210,7 +212,7 @@
     "copy": "Copiar comando",
     "folder": {
       "title": "De uma pasta deste servidor",
-      "description": "O painel não abre as pastas dos seus projetos: o Compose é lido pelo terminal, com o mesmo plano que você revisa aqui depois.",
+      "description": "O coletor do host encontra as pastas com Compose em Projects Home e as analisa. Revise uma aqui e adote pelo terminal.",
       "label": "Caminho da pasta",
       "analyze": "Veja o que será feito, sem alterar nada:",
       "adopt": "Depois adote:"
@@ -236,6 +238,14 @@
     "agent": {
       "title": "Ainda não tem Compose?",
       "description": "Peça a um agente com a habilidade portta-dockerize. Instale com:"
+    },
+    "found": {
+      "services_one": "{{count}} serviço",
+      "services_other": "{{count}} serviços",
+      "analyze": "Analisar",
+      "analyzeTyped": "Analisar esta pasta",
+      "analyzing": "Analisando",
+      "registered": "Já é um projeto"
     }
   },
   "tagsAria": "Tags",
@@ -252,5 +262,83 @@
     "placeholder": "Nova tag, como cliente: Acme",
     "remove": "Remover a tag {{tag}}",
     "failed": "Não foi possível salvar as tags"
+  },
+  "files": {
+    "title": "Arquivos",
+    "readOnly": "Somente leitura",
+    "description": "Os arquivos deste projeto, como estavam no host um instante atrás. Editar e enviar continuam no seu terminal ou agente.",
+    "environment": "Ambiente",
+    "uncommitted_one": "{{count}} sem commit",
+    "uncommitted_other": "{{count}} sem commit",
+    "unpushed_one": "{{count}} sem enviar",
+    "unpushed_other": "{{count}} sem enviar",
+    "onlyChanged": "Só alterados",
+    "search": "Buscar arquivo",
+    "tree": "Árvore de arquivos",
+    "empty": "Ainda não há cópia destes arquivos",
+    "emptyHint": "O coletor do host publica a cada meio minuto enquanto o projeto roda e sua pasta é um repositório git seu. Rode portta host watch se nada aparecer.",
+    "pick": "Escolha um arquivo para ler",
+    "ignored": "Ignorado",
+    "new": "Novo",
+    "modified": "Alterado",
+    "deleted": "Apagado",
+    "changedBadge": "Alterado",
+    "showChanges": "Alterações",
+    "showFile": "Arquivo",
+    "show": "Mostrar",
+    "copyPath": "Copiar caminho",
+    "hiddenTitle": "Conteúdo oculto.",
+    "hiddenBody": "Este arquivo costuma guardar segredos, então o painel mostra só que ele existe.",
+    "binary": "É um arquivo binário, então não há texto para mostrar.",
+    "large": "Este arquivo é grande demais para mostrar aqui.",
+    "omitted": "Não há texto para mostrar deste arquivo.",
+    "truncated": "Este projeto é maior do que a cópia que o painel guarda, então faltam arquivos. Os alterados vêm primeiro.",
+    "audited": "A leitura de {{path}} é registrada na auditoria. Editar e enviar continuam no seu terminal ou agente.",
+    "noMatch": "Nenhum arquivo encontrado",
+    "loadingFile": "Lendo…"
+  },
+  "review": {
+    "title": "Revisar antes de adotar",
+    "heading": "Revisar antes de adotar",
+    "description": "Veja o que o Portta entendeu de {{path}} e decida quem pode abrir cada site.",
+    "crumbProjects": "Projetos",
+    "crumbAdd": "Adicionar",
+    "services": {
+      "title": "Serviços encontrados",
+      "count_one": "{{count}} no {{file}}",
+      "count_other": "{{count}} no {{file}}",
+      "service": "Serviço",
+      "how": "Como fica",
+      "address": "Endereço",
+      "who": "Quem pode abrir",
+      "site": "Site",
+      "private": "Privado",
+      "onlyInside": "Só na rede do ambiente",
+      "password": "Senha",
+      "everybody": "Todos",
+      "later": "Decidir depois",
+      "bridge": "Conecte por uma ponte local"
+    },
+    "changes": {
+      "title": "O que muda",
+      "joins_one": "{{count}} serviço entra na rede do gateway: {{names}}",
+      "joins_other": "{{count}} serviços entram na rede do gateway: {{names}}",
+      "port": "A porta {{port}} de {{service}} deixa de ser publicada neste servidor",
+      "collision": "{{name}} é um nome de contêiner fixo de {{service}}, e {{owner}} já o usa",
+      "fixedName": "{{service}} tem nome de contêiner fixo, o que impede rodar dois ambientes deste projeto",
+      "namespaceInUse": "Contêineres de um projeto chamado {{name}} já rodam de outra pasta: dê outro nome a um dos dois antes de adotar",
+      "adopted": "Esta pasta já tem uma sobreposição do Portta"
+    },
+    "side": {
+      "name": "Nome do projeto",
+      "environment": "Nome do ambiente",
+      "environmentHint": "Vem de {{source}}. Prefixa contêineres, redes e endereços.",
+      "untouched": "Seu {{file}} não é editado. O plano fica na instalação do Portta.",
+      "register": "Registrar projeto",
+      "registerHint": "Registra o projeto aqui, com esta pasta. Subir é adotar pelo terminal.",
+      "commandTitle": "Comando que adota",
+      "copy": "Copiar comando",
+      "commandHint": "Rode no servidor. Ele já leva quem pode abrir cada site."
+    }
   }
 }

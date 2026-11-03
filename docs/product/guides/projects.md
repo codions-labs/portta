@@ -1,5 +1,12 @@
 # Manage projects
 
+## Adding from the panel
+
+Settings readers (owners and administrators) see **Add project** list the folders the host collector
+found under Projects Home. **Analyze** opens the same report as `portta analyze`; choose who may open
+each site and register the project, then run the `portta adopt` command the page prepares. The
+collector refreshes the list every few minutes, and the panel never opens the folders itself.
+
 ## Projects
 
 Every page below is a route, not a tab held in memory: `/projects`,

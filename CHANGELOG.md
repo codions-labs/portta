@@ -8,6 +8,23 @@ All notable changes to Portta are documented here. The format follows
 
 ### Added
 
+- Add project lists the folders with Compose under Projects Home and opens a review of each: the
+  services and how they would be routed, who may open each site, what changes and the collisions the
+  host already has. Register project creates it in the panel; the review gives the `portta adopt`
+  command with those decisions. The host collector finds and analyses the folders; the panel never
+  opens Projects Home.
+- Search engines and AI crawlers are kept out of every project and of the panel by default.
+  Settings > Search engines and bots sets the default, and a project's Settings tab sets an
+  exception (`PUT /api/crawlers`, `PUT /api/projects/{slug}/crawlers`). The gateway answers
+  `/robots.txt` for a host that keeps a crawler out and refuses with `403` a request that
+  names itself as one; four kinds can be allowed separately.
+- A project's page has a Files tab: the file tree with what changed since the last commit, a
+  search, and the text or the changes of a file, read-only. The host collector publishes a bounded
+  copy without secrets; files like `.env` and keys are listed and never shown, and each read is in
+  the audit log.
+- Someone signed in to the panel who may see a project opens its protected site without the
+  password: the login page offers "Continue with my Portta account", and a browser that has done
+  it once goes there by itself. A signed token of one minute and one use carries the session.
 - An environment's page shows where its code stands: branch, last commit, what is not
   committed or pushed and when it last changed. The host collector reads it, read-only and
   without asking any remote.

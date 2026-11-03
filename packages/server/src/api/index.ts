@@ -26,8 +26,10 @@ import { accessRoutes } from './routes/access.ts'
 import { auditRoutes } from './routes/audit.ts'
 import { authRoutes } from './routes/auth.ts'
 import { configRoutes } from './routes/config.ts'
+import { crawlerRoutes } from './routes/crawlers.ts'
 import { databaseRoutes } from './routes/database.ts'
 import { developmentRoutes } from './routes/development.ts'
+import { discoveryRoutes } from './routes/discovery.ts'
 import { dockerRoutes } from './routes/docker.ts'
 import { environmentRoutes } from './routes/environments.ts'
 import { exposureRoutes } from './routes/exposure.ts'
@@ -35,10 +37,12 @@ import { gatewayRoutes } from './routes/gateway.ts'
 import { hostRoutes } from './routes/host.ts'
 import { networkRoutes } from './routes/network.ts'
 import { overrideRoutes } from './routes/overrides.ts'
+import { projectFileRoutes } from './routes/project-files.ts'
 import { projectRoutes } from './routes/projects.ts'
 import { runnerRoutes } from './routes/runner.ts'
 import { serviceRoutes } from './routes/services.ts'
 import { shareRoutes } from './routes/shares.ts'
+import { siteEntryRoutes } from './routes/site-entry.ts'
 import { statusRoutes } from './routes/status.ts'
 import { tokenRoutes } from './routes/tokens.ts'
 import { tunnelRoutes } from './routes/tunnel.ts'
@@ -59,6 +63,8 @@ export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   'GET /api/health',
   'GET /api/auth/status',
   'POST /api/auth/setup',
+  // A redirect that decides for itself whether a session may speak for a site's login.
+  'GET /api/site-entry',
 ])
 
 /**
@@ -170,6 +176,8 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', runnerRoutes(deps))
   api.route('/', overrideRoutes(deps))
   api.route('/', projectRoutes(deps))
+  api.route('/', discoveryRoutes(deps))
+  api.route('/', projectFileRoutes(deps))
   api.route('/', serviceRoutes(deps))
   api.route('/', dockerRoutes(deps))
   api.route('/', networkRoutes(deps))
@@ -177,6 +185,8 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', accessRoutes(deps))
   api.route('/', shareRoutes(deps))
   api.route('/', exposureRoutes(deps))
+  api.route('/', crawlerRoutes(deps))
+  api.route('/', siteEntryRoutes(deps))
   api.route('/', gatewayRoutes(deps))
   api.route('/', hostRoutes(deps))
   api.route('/', configRoutes(deps))

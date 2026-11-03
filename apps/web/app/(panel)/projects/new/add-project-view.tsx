@@ -4,17 +4,18 @@
 // what Docker and the host's collector say), so reading Compose files is the
 // terminal's job, and this page says so instead of pretending to scan.
 
-import { Terminal } from 'lucide-react'
+import { Folder, Terminal } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CopyButton } from '@/components/copy'
 import { Callout, PageHeader } from '@/components/shell-bits'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/field'
 import { useEnvironments } from '@/lib/queries'
-import { useEnvironmentOwners } from '@/lib/queries/projects'
+import { useDiscoveredFolders, useEnvironmentOwners } from '@/lib/queries/projects'
 import { CreateProjectDialog } from '../projects-view'
 
 function Command({ value, label }: { value: string; label: string }) {
@@ -38,11 +39,21 @@ export function AddProjectView() {
   const [path, setPath] = useState('')
   const [creating, setCreating] = useState(false)
   const environments = useEnvironments(true)
+  const folders = useDiscoveredFolders()
   const { owners } = useEnvironmentOwners()
   const waiting = (environments.data ?? []).filter(
     (environment) =>
       environment.presence === 'live' && !environment.overrides?.archived && !owners.has(environment.name),
   )
+  const found = folders.data?.folders ?? []
+  const home = folders.data?.home ?? null
+  // What was typed, as a folder the collector listed: `~/projects/x` and the absolute path both mean `x`.
+  const typed = path
+    .trim()
+    .replace(/^~\/projects\//, '')
+    .replace(home ? `${home}/` : '\0', '')
+    .replace(/\/+$/, '')
+  const typedMatch = found.find((folder) => folder.path === typed && folder.planned)
   const target = path.trim() === '' ? '~/projects/minha-loja' : quoted(path.trim())
 
   return (
@@ -56,6 +67,33 @@ export function AddProjectView() {
       <div className="min-w-0 space-y-6">
         <Card>
           <CardHeader title={t('folder.title')} description={t('folder.description')} />
+          {found.length > 0 ? (
+            <ul className="divide-y divide-line border-b border-line">
+              {found.map((folder) => (
+                <li key={folder.path} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                  <Folder className="size-4 shrink-0 text-subtle" aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <b className="block truncate font-mono text-sm font-medium text-ink">{`${home ?? '~/projects'}/${folder.path}`}</b>
+                    <span className="text-xs text-subtle">
+                      {folder.composeFile}
+                      {folder.services !== null ? ` · ${t('found.services', { count: folder.services })}` : ''}
+                    </span>
+                  </span>
+                  {folder.registered ? (
+                    <Badge tone="ok">{t('found.registered')}</Badge>
+                  ) : folder.planned ? (
+                    <Button asChild size="sm">
+                      <Link href={`/projects/new/review?path=${encodeURIComponent(folder.path)}`}>
+                        {t('found.analyze')}
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Badge>{t('found.analyzing')}</Badge>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <CardBody className="space-y-3">
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-ink">{t('folder.label')}</span>
@@ -66,6 +104,13 @@ export function AddProjectView() {
                 placeholder="~/projects/minha-loja"
               />
             </label>
+            {typedMatch ? (
+              <Button asChild size="sm">
+                <Link href={`/projects/new/review?path=${encodeURIComponent(typedMatch.path)}`}>
+                  {t('found.analyzeTyped')}
+                </Link>
+              </Button>
+            ) : null}
             <div className="space-y-1.5">
               <p className="text-xs text-subtle">{t('folder.analyze')}</p>
               <Command value={`portta envs analyze ${target}`} label={t('copy')} />

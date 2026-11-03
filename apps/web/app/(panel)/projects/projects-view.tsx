@@ -38,6 +38,7 @@ import {
   DEFAULT_PROJECT_FILTERS,
   defaultProjectOrder,
   groupProjects,
+  hasUnpushedCode,
   matchesProjectFilters,
   type ProjectFilters,
   type ProjectGrouping,
@@ -48,7 +49,14 @@ import {
   tagKeys,
   toListItems,
 } from '@/lib/projects'
-import { keys, useDevelopmentOverview, useEnvironments, useExposure, useProjects } from '@/lib/queries'
+import {
+  keys,
+  useDevelopmentOverview,
+  useEnvironments,
+  useExposure,
+  useMetricsCurrent,
+  useProjects,
+} from '@/lib/queries'
 
 export function ProjectsView({
   initialProjects,
@@ -80,6 +88,7 @@ export function ProjectsView({
   const environments = useEnvironments(true)
   const mayCreate = useCan('project:create')
   const exposure = useExposure(useCan('access:read'))
+  const metrics = useMetricsCurrent()
 
   const catalogUnavailable = catalog.error instanceof ApiError && catalog.error.status === 503
 
@@ -87,7 +96,23 @@ export function ProjectsView({
     () => toListItems(catalog.data ?? [], overview.data?.projects).sort(defaultProjectOrder),
     [catalog.data, overview.data],
   )
-  const shown = useMemo(() => items.filter((item) => matchesProjectFilters(item, filters)), [items, filters])
+  // The environments whose code is not committed or not pushed, as the host collector read it.
+  const unpushed = useMemo(
+    () =>
+      new Set(
+        (metrics.data?.projects ?? [])
+          .filter(
+            (project) =>
+              project.git && (project.git.changed + project.git.untracked > 0 || (project.git.ahead ?? 0) > 0),
+          )
+          .map((project) => project.composeProject),
+      ),
+    [metrics.data],
+  )
+  const shown = useMemo(
+    () => items.filter((item) => matchesProjectFilters(item, filters, unpushed)),
+    [items, filters, unpushed],
+  )
   const tags = useMemo(() => tagCounts(items), [items])
   const keysInUse = useMemo(() => tagKeys(items), [items])
   // A grouping by a key nobody uses any more is no grouping.
@@ -121,6 +146,7 @@ export function ProjectsView({
   const counts = {
     problem: items.filter((item) => ['unhealthy', 'partial'].includes(projectState(item))).length,
     idle: items.filter((item) => projectState(item) === 'idle').length,
+    unpushed: items.filter((item) => hasUnpushedCode(item, unpushed)).length,
     archived: items.filter((item) => item.archived).length,
   }
 
@@ -147,6 +173,11 @@ export function ProjectsView({
       {counts.problem > 0 ? (
         <FilterChip active={filters.state === 'problem'} onClick={() => set('state', 'problem')}>
           {t('filters.problem', { count: counts.problem })}
+        </FilterChip>
+      ) : null}
+      {counts.unpushed > 0 ? (
+        <FilterChip active={filters.state === 'unpushed'} onClick={() => set('state', 'unpushed')}>
+          {t('filters.unpushed', { count: counts.unpushed })}
         </FilterChip>
       ) : null}
       {counts.idle > 0 ? (

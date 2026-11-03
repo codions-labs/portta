@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { type Context, Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { authorizeScope, principalOf } from 'portta-auth-core/hono'
 import { Project, ProjectSummary } from 'portta-contracts'
@@ -8,6 +8,7 @@ import { type Database, requireDatabase } from '../../db/index.ts'
 import type { AppDeps } from '../../deps.ts'
 import { projectScope, visible } from '../../services/access-control.ts'
 import { loadProjectCatalog, type ProjectCatalog, toProject, toProjectSummary } from '../../services/catalog.ts'
+import { releaseCrawlerExceptions } from '../../services/crawlers.ts'
 import type { Snapshot } from '../../services/inventory.ts'
 import { OverrideRefused } from '../../services/overrides.ts'
 import { record } from '../audit.ts'
@@ -125,6 +126,53 @@ export function projectRoutes(deps: AppDeps): Hono {
   const app = new Hono()
   const home = () => deps.config.projectsHome
 
+  /** Which project has each environment, as the project pages count them: by link, label and folder. */
+  async function ownersOfEnvironments(db: Database, snapshot: Snapshot): Promise<Map<string, string>> {
+    const catalog = await assemble(db, snapshot, deps.config)
+    return new Map(
+      [...catalog.environments].flatMap(([id, list]) => list.map((entry) => [entry.environment, id] as const)),
+    )
+  }
+
+  /**
+   * Runs a change that can move an environment from one project to another, and lets go of the
+   * crawler exceptions of whatever moved. An exception was a decision about the project that had the
+   * environment, so it must not pass to the next one. Both views are read from one snapshot, so a
+   * container starting meanwhile is not mistaken for a move, and `only` limits the release to what the
+   * request could have changed.
+   */
+  async function releasingMoved<T>(
+    db: Database,
+    c: Context,
+    about: {
+      /** A project that does not exist yet is named from what the change returns. */
+      project: { id: string; slug: string } | ((result: T) => { id: string; slug: string })
+      only?: (name: string, before: Map<string, string>) => boolean
+    },
+    change: () => Promise<T>,
+  ): Promise<T> {
+    const snapshot = await deps.cache.get()
+    const before = await ownersOfEnvironments(db, snapshot)
+    const result = await change()
+    const after = await ownersOfEnvironments(db, snapshot)
+    const moved = [...new Set([...before.keys(), ...after.keys()])].filter(
+      (name) => before.get(name) !== after.get(name) && (about.only?.(name, before) ?? true),
+    )
+    const released = releaseCrawlerExceptions(deps.config, moved)
+    if (released.length > 0) {
+      const project = typeof about.project === 'function' ? about.project(result) : about.project
+      await record(deps, c, {
+        action: 'crawlers.changed',
+        resourceType: 'project',
+        resourceId: String(project.id),
+        resourceName: project.slug,
+        projectId: Number(project.id),
+        metadata: { released },
+      })
+    }
+    return result
+  }
+
   app.get(
     '/projects',
     documentRoute({
@@ -168,8 +216,15 @@ export function projectRoutes(deps: AppDeps): Hono {
       if (await db.projects.find(body.slug)) {
         throw new HTTPException(409, { message: `a project named '${body.slug}' already exists` })
       }
-      const created = await refusedOnValidation(() =>
-        db.projects.create({ ...body, description: body.description ?? null, relativePath: body.relativePath ?? null }),
+      // A new project can adopt a folder's environments by path, and they come with whatever was decided for them.
+      const created = await releasingMoved(db, c, { project: (made) => ({ id: made.id, slug: made.slug }) }, () =>
+        refusedOnValidation(() =>
+          db.projects.create({
+            ...body,
+            description: body.description ?? null,
+            relativePath: body.relativePath ?? null,
+          }),
+        ),
       )
       await record(deps, c, {
         action: 'project.created',
@@ -227,7 +282,9 @@ export function projectRoutes(deps: AppDeps): Hono {
       const existing = await db.projects.find(slug)
       if (!existing) throw new HTTPException(404, { message: `no project '${slug}'` })
       authorizeScope(c, projectScope(existing.id))
-      const updated = await refusedOnValidation(() => db.projects.update(slug, patch))
+      const updated = await (patch.relativePath !== undefined
+        ? releasingMoved(db, c, { project: existing }, () => refusedOnValidation(() => db.projects.update(slug, patch)))
+        : refusedOnValidation(() => db.projects.update(slug, patch)))
       if (!updated) throw new HTTPException(404, { message: `no project '${slug}'` })
       await record(deps, c, {
         action: 'project.updated',
@@ -266,8 +323,21 @@ export function projectRoutes(deps: AppDeps): Hono {
       const existing = await db.projects.find(slug)
       if (!existing) throw new HTTPException(404, { message: `no project '${slug}'` })
       authorizeScope(c, projectScope(existing.id))
+      const owned = [...(await ownersOfEnvironments(db, await deps.cache.get()))]
+        .filter(([, id]) => id === existing.id)
+        .map(([name]) => name)
       if (!(await db.projects.remove(slug))) {
         throw new HTTPException(404, { message: `no project '${slug}'` })
+      }
+      // The grouping is gone, and an exception made for it must not wait for the next project to inherit it.
+      const released = releaseCrawlerExceptions(deps.config, owned)
+      if (released.length > 0) {
+        await record(deps, c, {
+          action: 'crawlers.changed',
+          resourceType: 'project',
+          resourceName: slug,
+          metadata: { released },
+        })
       }
       // No projectId: the row is gone, and the column would be nulled by the
       // cascade a moment later. The slug is what a person reads anyway.
@@ -335,9 +405,9 @@ export function projectRoutes(deps: AppDeps): Hono {
     async (c) => {
       const db = requireDatabase(deps.db)
       const slug = c.req.param('slug')
-      const record = await db.projects.find(slug)
-      if (!record) throw new HTTPException(404, { message: `no project '${slug}'` })
-      authorizeScope(c, projectScope(record.id))
+      const project = await db.projects.find(slug)
+      if (!project) throw new HTTPException(404, { message: `no project '${slug}'` })
+      authorizeScope(c, projectScope(project.id))
 
       const body = EnvironmentsBody.parse(await c.req.json())
       const snapshot = await deps.cache.get()
@@ -346,11 +416,38 @@ export function projectRoutes(deps: AppDeps): Hono {
           throw new OverrideRefused(`no environment '${name}' is running`)
         }
       }
-      await db.projects.setEnvironments(record.id, body.environments)
+      // Defence in depth: today only roles that see everything hold project:update. Claiming an
+      // environment is claiming whatever can be read through it: its logs, its console and its files.
+      // Somebody who sees only their own projects may keep or drop the environments their project
+      // already has, and may not take one that belongs to another project or to none.
+      if (principalOf(c).scope !== 'all') {
+        const held = new Set(
+          (await db.projects.listEnvironments())
+            .filter((row) => row.projectId === project.id)
+            .map((row) => row.composeProject),
+        )
+        const foreign = body.environments.filter((name) => !held.has(name))
+        if (foreign.length > 0) {
+          throw new HTTPException(403, {
+            message: `'${foreign[0]}' is not one of this project's environments; only an owner or administrator can adopt it`,
+          })
+        }
+      }
+      const asked = new Set(body.environments)
+      await releasingMoved(
+        db,
+        c,
+        {
+          project,
+          // What this request could change: the environments it names and the ones the project had.
+          only: (name, before) => asked.has(name) || before.get(name) === project.id,
+        },
+        () => db.projects.setEnvironments(project.id, body.environments),
+      )
 
       const catalog = await assemble(db, await deps.cache.get(true), deps.config)
       return c.json(
-        toProject(record, catalog.environments.get(record.id) ?? [], home(), catalog.tags.get(record.id) ?? []),
+        toProject(project, catalog.environments.get(project.id) ?? [], home(), catalog.tags.get(project.id) ?? []),
       )
     },
   )

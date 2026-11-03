@@ -565,6 +565,183 @@ export const ExposureResult = named(
 )
 export type ExposureResult = z.infer<typeof ExposureResult>
 
+export const CrawlerPolicy = named(
+  z
+    .object({
+      search: z.boolean().describe('Search engines such as Googlebot and Bingbot'),
+      train: z.boolean().describe('AI crawlers that collect text to train models, such as GPTBot and ClaudeBot'),
+      live: z.boolean().describe('AI agents that read a page because a person asked, such as ChatGPT-User'),
+      preview: z.boolean().describe('Link previews in chats and social networks, such as Slackbot'),
+    })
+    .strict()
+    .describe('Which kinds of crawler may read a hostname. true lets that kind in.'),
+  'CrawlerPolicy',
+)
+export type CrawlerPolicy = z.infer<typeof CrawlerPolicy>
+
+export const CrawlerSettings = named(
+  z
+    .object({
+      default: CrawlerPolicy.describe(
+        'What every project follows unless it has an exception. Everything blocked by default.',
+      ),
+      exceptions: z
+        .array(
+          z
+            .object({
+              project: z.string().describe('The slug of the project'),
+              name: z.string(),
+              policy: CrawlerPolicy.nullable().describe('Null when the environments of the project disagree'),
+              mixed: z
+                .boolean()
+                .describe('True when the environments of the project do not all follow the same exception'),
+            })
+            .strict(),
+        )
+        .describe('Only the projects this caller may see, including the ones whose environments disagree'),
+    })
+    .strict(),
+  'CrawlerSettings',
+)
+export type CrawlerSettings = z.infer<typeof CrawlerSettings>
+
+export const ProjectCrawlers = named(
+  z
+    .object({
+      default: CrawlerPolicy,
+      own: CrawlerPolicy.nullable().describe('The exception set for this project, or null when it follows the default'),
+      effective: CrawlerPolicy,
+      mixed: z.boolean().describe('True when the environments of this project do not all have the same exception'),
+      byEnvironment: z
+        .record(z.string(), CrawlerPolicy)
+        .describe('What each environment follows, which decides the verdict of each of its addresses'),
+    })
+    .strict(),
+  'ProjectCrawlers',
+)
+export type ProjectCrawlers = z.infer<typeof ProjectCrawlers>
+export const ProjectFile = named(
+  z
+    .object({
+      path: z.string().describe('Relative to the project folder, with forward slashes'),
+      kind: z.enum(['file', 'dir', 'link']),
+      size: z.number().int().nullable(),
+      status: z.enum(['M', 'A', 'D', 'U']).nullable().describe('Against the last commit; U is not tracked yet'),
+      ignored: z.boolean().describe('Listed because git ignores it, such as node_modules. Never read.'),
+      readable: z
+        .enum(['text', 'hidden', 'binary', 'large', 'omitted'])
+        .describe('hidden: usually holds a secret, so only its existence is shown'),
+      diff: z.boolean().describe('Whether there are changes to show against the last commit'),
+    })
+    .strict(),
+  'ProjectFile',
+)
+export type ProjectFile = z.infer<typeof ProjectFile>
+
+export const ProjectFilesView = named(
+  z
+    .object({
+      environments: z.array(z.string()).describe('The environments of this project that have a copy of their files'),
+      environment: z.string().nullable(),
+      branch: z.string().nullable(),
+      head: z.object({ hash: z.string(), subject: z.string(), at: z.number().int() }).strict().nullable(),
+      changed: z.number().int(),
+      untracked: z.number().int(),
+      ahead: z.number().int().nullable(),
+      collectedAt: z.number().int().nullable(),
+      truncated: z.boolean().describe('The project is bigger than the copy: the changed files come first'),
+      files: z.array(ProjectFile),
+    })
+    .strict(),
+  'ProjectFilesView',
+)
+export type ProjectFilesView = z.infer<typeof ProjectFilesView>
+
+export const ProjectFileContent = named(
+  z
+    .object({
+      environment: z.string(),
+      path: z.string(),
+      content: z.string(),
+      diff: z.string().nullable().describe('The changes against the last commit, as a patch'),
+    })
+    .strict(),
+  'ProjectFileContent',
+)
+export type ProjectFileContent = z.infer<typeof ProjectFileContent>
+
+export const DiscoveredFolder = named(
+  z
+    .object({
+      path: z.string().describe('Relative to Projects Home, with forward slashes'),
+      composeFile: z.string(),
+      services: z.number().int().nullable().describe('Null until the collector has analysed the folder'),
+      modifiedAt: z.number().int(),
+      adopted: z.boolean().describe('The folder already has a Portta overlay'),
+      planned: z.boolean().describe('Whether a plan can be reviewed'),
+      registered: z.boolean().describe('A project already has this folder'),
+    })
+    .strict(),
+  'DiscoveredFolder',
+)
+export type DiscoveredFolder = z.infer<typeof DiscoveredFolder>
+
+export const DiscoveredFoldersView = named(
+  z
+    .object({
+      home: z.string().nullable().describe('Projects Home as the host has it, or null when nothing was published'),
+      collectedAt: z.number().int().nullable(),
+      folders: z.array(DiscoveredFolder),
+    })
+    .strict(),
+  'DiscoveredFoldersView',
+)
+export type DiscoveredFoldersView = z.infer<typeof DiscoveredFoldersView>
+
+export const FolderPlanView = named(
+  z
+    .object({
+      home: z.string().describe('Projects Home as the host has it, which the command is written against'),
+      path: z.string(),
+      composeFile: z.string(),
+      project: z.object({ name: z.string(), source: z.string() }).strict(),
+      domain: z.string(),
+      adopted: z.boolean(),
+      services: z.array(
+        z
+          .object({
+            name: z.string(),
+            image: z.string().nullable(),
+            kind: z.string(),
+            port: z.string().nullable().describe('The port Portta would route to, for a service that speaks HTTP'),
+            publishedPorts: z.array(z.object({ host: z.string(), container: z.string() }).strict()),
+            containerName: z.string().nullable(),
+          })
+          .strict(),
+      ),
+      findings: z
+        .object({
+          publishedHostPorts: z.array(z.string()),
+          fixedContainerNames: z.array(z.string()),
+          publishedDatastores: z.array(z.string()),
+          implicitNamespace: z.boolean(),
+          containerNameCollisions: z.array(
+            z.object({ service: z.string(), containerName: z.string(), usedBy: z.string() }).strict(),
+          ),
+          namespaceInUse: z
+            .object({ project: z.string(), workingDirs: z.array(z.string()) })
+            .strict()
+            .nullable(),
+        })
+        .strict(),
+      collectedAt: z.number().int(),
+      command: z.string().describe('The terminal command that adopts this folder, with nothing decided yet'),
+    })
+    .strict(),
+  'FolderPlanView',
+)
+export type FolderPlanView = z.infer<typeof FolderPlanView>
+
 export const ShareView = named(
   z
     .object({

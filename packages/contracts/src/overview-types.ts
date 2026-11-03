@@ -42,6 +42,12 @@ export const AttentionItem = named(
       environment: z.string().nullable(),
       service: z.string().nullable(),
       href: z.string().describe('Where in the panel to act on it'),
+      code: z
+        .string()
+        .nullable()
+        .describe(
+          'The id of the diagnostic check behind a `diagnostic` item, so a page can say it in its own language',
+        ),
     })
     .strict(),
   'AttentionItem',

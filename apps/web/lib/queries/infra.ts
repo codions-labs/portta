@@ -58,6 +58,14 @@ export function useExposure(enabled = true) {
   return useQuery({ queryKey: keys.exposure(), queryFn: api.exposure, enabled })
 }
 
+export function useCrawlers(enabled = true) {
+  return useQuery({ queryKey: keys.crawlers(), queryFn: api.crawlers, enabled })
+}
+
+export function useProjectCrawlers(slug: string, enabled = true) {
+  return useQuery({ queryKey: keys.projectCrawlers(slug), queryFn: () => api.projectCrawlers(slug), enabled })
+}
+
 export function useShares(enabled = true) {
   return useQuery({ queryKey: keys.shares(), queryFn: api.shares, enabled })
 }

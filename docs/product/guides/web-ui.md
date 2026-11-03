@@ -425,6 +425,13 @@ Project, `404` for an unknown path or environment.
 | TCP service | open a loopback bridge, close it, copy host / port / connection string |
 | Gateway | status, diagnostics, logs, restart Traefik, apply saved settings (with `PORTTA_APPLY=true`) |
 
+A project's **Files** tab shows its files read-only: the tree with what changed since the last
+commit, a search, and the text of a file or its changes. It reads a copy the host collector
+publishes every half minute, so it is a moment old. Files that usually hold secrets (`.env`, keys,
+certificates, credentials) are listed and their content is never shown, binaries and large files
+are listed without text, and ignored folders such as `node_modules` appear as one line. Each read
+is recorded in the audit log. Editing and sending stay in the terminal or the agent.
+
 Never offered: editing configuration or environment variables of a container,
 changing its networks or volumes, running an arbitrary command, resetting a
 database, or any kind of prune. The

@@ -58,3 +58,28 @@ export function useEnvironmentOwners() {
   }
   return { owners, isPending, error }
 }
+
+export function useProjectFiles(slug: string, environment: string | null) {
+  return useQuery({
+    queryKey: keys.projectFiles(slug, environment),
+    queryFn: () => api.projectFiles(slug, environment ?? undefined),
+    refetchInterval: 15_000,
+  })
+}
+
+export function useProjectFile(slug: string, environment: string | null, path: string | null) {
+  return useQuery({
+    queryKey: keys.projectFile(slug, environment ?? '', path ?? ''),
+    queryFn: () => api.projectFile(slug, environment as string, path as string),
+    enabled: environment !== null && path !== null,
+    retry: false,
+  })
+}
+
+export function useDiscoveredFolders() {
+  return useQuery({ queryKey: keys.discoveredFolders(), queryFn: api.discoveredFolders, refetchInterval: 30_000 })
+}
+
+export function useFolderPlan(path: string) {
+  return useQuery({ queryKey: keys.folderPlan(path), queryFn: () => api.folderPlan(path), retry: false })
+}

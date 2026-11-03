@@ -128,7 +128,7 @@ export function resolveProjectView(requested: string | null | undefined): Projec
 export interface ProjectFilters {
   search: string
   /** `problem` is both ways a project can be in trouble: unhealthy and partial. */
-  state: ProjectState | 'all' | 'problem'
+  state: ProjectState | 'all' | 'problem' | 'unpushed'
   includeArchived: boolean
   /** One tag, as `tagLabel` writes it; null for every project. */
   tag: string | null
@@ -136,9 +136,23 @@ export interface ProjectFilters {
 
 export const DEFAULT_PROJECT_FILTERS: ProjectFilters = { search: '', state: 'all', includeArchived: false, tag: null }
 
-export function matchesProjectFilters(item: ProjectListItem, filters: ProjectFilters): boolean {
+/**
+ * Whether a project has code that is not committed or not pushed in any of its environments.
+ * ``unpushed` is the set of environments the collector says so about; it reads them from the host.
+ */
+export function hasUnpushedCode(item: ProjectListItem, unpushed: ReadonlySet<string>): boolean {
+  return item.environments.some((environment) => unpushed.has(environment.name))
+}
+
+export function matchesProjectFilters(
+  item: ProjectListItem,
+  filters: ProjectFilters,
+  unpushed: ReadonlySet<string> = new Set(),
+): boolean {
   if (item.archived && !filters.includeArchived && filters.state !== 'archived') return false
-  if (filters.state === 'problem') {
+  if (filters.state === 'unpushed') {
+    if (!hasUnpushedCode(item, unpushed)) return false
+  } else if (filters.state === 'problem') {
     if (!['unhealthy', 'partial'].includes(projectState(item))) return false
   } else if (filters.state !== 'all' && projectState(item) !== filters.state) return false
   if (filters.tag !== null && !item.tags.some((tag) => tagLabel(tag) === filters.tag)) return false

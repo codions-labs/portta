@@ -2397,6 +2397,511 @@
         ],
         "additionalProperties": false
       },
+      "DiscoveredFolder": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative to Projects Home, with forward slashes"
+          },
+          "composeFile": {
+            "type": "string"
+          },
+          "services": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null until the collector has analysed the folder"
+          },
+          "modifiedAt": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "adopted": {
+            "type": "boolean",
+            "description": "The folder already has a Portta overlay"
+          },
+          "planned": {
+            "type": "boolean",
+            "description": "Whether a plan can be reviewed"
+          },
+          "registered": {
+            "type": "boolean",
+            "description": "A project already has this folder"
+          }
+        },
+        "required": [
+          "path",
+          "composeFile",
+          "services",
+          "modifiedAt",
+          "adopted",
+          "planned",
+          "registered"
+        ],
+        "additionalProperties": false
+      },
+      "DiscoveredFoldersView": {
+        "type": "object",
+        "properties": {
+          "home": {
+            "description": "Projects Home as the host has it, or null when nothing was published",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "collectedAt": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "folders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveredFolder"
+            }
+          }
+        },
+        "required": [
+          "home",
+          "collectedAt",
+          "folders"
+        ],
+        "additionalProperties": false
+      },
+      "FolderPlanView": {
+        "type": "object",
+        "properties": {
+          "home": {
+            "type": "string",
+            "description": "Projects Home as the host has it, which the command is written against"
+          },
+          "path": {
+            "type": "string"
+          },
+          "composeFile": {
+            "type": "string"
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "domain": {
+            "type": "string"
+          },
+          "adopted": {
+            "type": "boolean"
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "image": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "port": {
+                  "description": "The port Portta would route to, for a service that speaks HTTP",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "publishedPorts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "host": {
+                        "type": "string"
+                      },
+                      "container": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "host",
+                      "container"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "containerName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "image",
+                "kind",
+                "port",
+                "publishedPorts",
+                "containerName"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "findings": {
+            "type": "object",
+            "properties": {
+              "publishedHostPorts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "fixedContainerNames": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "publishedDatastores": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "implicitNamespace": {
+                "type": "boolean"
+              },
+              "containerNameCollisions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "service": {
+                      "type": "string"
+                    },
+                    "containerName": {
+                      "type": "string"
+                    },
+                    "usedBy": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "service",
+                    "containerName",
+                    "usedBy"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "namespaceInUse": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "project": {
+                        "type": "string"
+                      },
+                      "workingDirs": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "project",
+                      "workingDirs"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "publishedHostPorts",
+              "fixedContainerNames",
+              "publishedDatastores",
+              "implicitNamespace",
+              "containerNameCollisions",
+              "namespaceInUse"
+            ],
+            "additionalProperties": false
+          },
+          "collectedAt": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "command": {
+            "type": "string",
+            "description": "The terminal command that adopts this folder, with nothing decided yet"
+          }
+        },
+        "required": [
+          "home",
+          "path",
+          "composeFile",
+          "project",
+          "domain",
+          "adopted",
+          "services",
+          "findings",
+          "collectedAt",
+          "command"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectFile": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative to the project folder, with forward slashes"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "file",
+              "dir",
+              "link"
+            ]
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "M",
+                  "A",
+                  "D",
+                  "U"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Against the last commit; U is not tracked yet"
+          },
+          "ignored": {
+            "type": "boolean",
+            "description": "Listed because git ignores it, such as node_modules. Never read."
+          },
+          "readable": {
+            "type": "string",
+            "enum": [
+              "text",
+              "hidden",
+              "binary",
+              "large",
+              "omitted"
+            ],
+            "description": "hidden: usually holds a secret, so only its existence is shown"
+          },
+          "diff": {
+            "type": "boolean",
+            "description": "Whether there are changes to show against the last commit"
+          }
+        },
+        "required": [
+          "path",
+          "kind",
+          "size",
+          "status",
+          "ignored",
+          "readable",
+          "diff"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectFilesView": {
+        "type": "object",
+        "properties": {
+          "environments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The environments of this project that have a copy of their files"
+          },
+          "environment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "branch": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "head": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "hash": {
+                    "type": "string"
+                  },
+                  "subject": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "hash",
+                  "subject",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "changed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "untracked": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "ahead": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collectedAt": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "The project is bigger than the copy: the changed files come first"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectFile"
+            }
+          }
+        },
+        "required": [
+          "environments",
+          "environment",
+          "branch",
+          "head",
+          "changed",
+          "untracked",
+          "ahead",
+          "collectedAt",
+          "truncated",
+          "files"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectFileContent": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "diff": {
+            "description": "The changes against the last commit, as a patch",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "environment",
+          "path",
+          "content",
+          "diff"
+        ],
+        "additionalProperties": false
+      },
       "ServicesResponse": {
         "type": "object",
         "properties": {
@@ -4047,6 +4552,132 @@
           "ok",
           "entry",
           "note"
+        ],
+        "additionalProperties": false
+      },
+      "CrawlerPolicy": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "boolean",
+            "description": "Search engines such as Googlebot and Bingbot"
+          },
+          "train": {
+            "type": "boolean",
+            "description": "AI crawlers that collect text to train models, such as GPTBot and ClaudeBot"
+          },
+          "live": {
+            "type": "boolean",
+            "description": "AI agents that read a page because a person asked, such as ChatGPT-User"
+          },
+          "preview": {
+            "type": "boolean",
+            "description": "Link previews in chats and social networks, such as Slackbot"
+          }
+        },
+        "required": [
+          "search",
+          "train",
+          "live",
+          "preview"
+        ],
+        "additionalProperties": false,
+        "description": "Which kinds of crawler may read a hostname. true lets that kind in."
+      },
+      "CrawlerSettings": {
+        "type": "object",
+        "properties": {
+          "default": {
+            "$ref": "#/components/schemas/CrawlerPolicy",
+            "description": "What every project follows unless it has an exception. Everything blocked by default."
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "project": {
+                  "type": "string",
+                  "description": "The slug of the project"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "policy": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CrawlerPolicy",
+                      "description": "Which kinds of crawler may read a hostname. true lets that kind in."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Null when the environments of the project disagree"
+                },
+                "mixed": {
+                  "type": "boolean",
+                  "description": "True when the environments of the project do not all follow the same exception"
+                }
+              },
+              "required": [
+                "project",
+                "name",
+                "policy",
+                "mixed"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Only the projects this caller may see, including the ones whose environments disagree"
+          }
+        },
+        "required": [
+          "default",
+          "exceptions"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectCrawlers": {
+        "type": "object",
+        "properties": {
+          "default": {
+            "$ref": "#/components/schemas/CrawlerPolicy"
+          },
+          "own": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CrawlerPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The exception set for this project, or null when it follows the default"
+          },
+          "effective": {
+            "$ref": "#/components/schemas/CrawlerPolicy"
+          },
+          "mixed": {
+            "type": "boolean",
+            "description": "True when the environments of this project do not all have the same exception"
+          },
+          "byEnvironment": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CrawlerPolicy"
+            },
+            "description": "What each environment follows, which decides the verdict of each of its addresses"
+          }
+        },
+        "required": [
+          "default",
+          "own",
+          "effective",
+          "mixed",
+          "byEnvironment"
         ],
         "additionalProperties": false
       },
@@ -6707,6 +7338,13 @@
           "href": {
             "type": "string",
             "description": "Where in the panel to act on it"
+          },
+          "code": {
+            "description": "The id of the diagnostic check behind a `diagnostic` item, so a page can say it in its own language",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -6716,7 +7354,8 @@
           "project",
           "environment",
           "service",
-          "href"
+          "href",
+          "code"
         ],
         "additionalProperties": false
       },
@@ -7567,6 +8206,7 @@
               "project.created",
               "project.updated",
               "project.tagged",
+              "project_file.read",
               "project.deleted",
               "environment.started",
               "environment.stopped",
@@ -7587,6 +8227,7 @@
               "share.revoked",
               "gateway.applied",
               "settings.changed",
+              "crawlers.changed",
               "settings.discarded",
               "database.migrated",
               "container.console_opened",
@@ -10282,6 +10923,320 @@
         "x-portta-permission": "project:update"
       }
     },
+    "/discovery/folders": {
+      "get": {
+        "operationId": "listDiscoveredFolders",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "The folders under Projects Home that hold a Compose file",
+        "description": "Found by the host collector, which publishes them every few minutes. The panel never opens Projects Home.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveredFoldersView"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "settings:read"
+      }
+    },
+    "/discovery/plan": {
+      "get": {
+        "operationId": "getFolderPlan",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "What adopting a discovered folder would do",
+        "description": "The same read-only report as `portta analyze`. Only a folder the collector listed can be asked about.",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "description": "A path from the folder list.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderPlanView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "settings:read"
+      }
+    },
+    "/projects/{slug}/files": {
+      "get": {
+        "operationId": "listProjectFiles",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "The files of a project, as the collector published them",
+        "description": "A read-only copy made on the host with secrets left out. The panel never opens the project folder. Files that usually hold secrets, binaries and large files are listed and not shown.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "description": "One of the project’s environments. Defaults to the first that has files.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFilesView"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "project:read"
+      }
+    },
+    "/projects/{slug}/files/content": {
+      "get": {
+        "operationId": "readProjectFile",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "The text of one file of a project, and its changes",
+        "description": "Each read is recorded in the audit log.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": true,
+            "description": "One of the project’s environments. Defaults to the first that has files.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "description": "A path from the listing.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFileContent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "project:read"
+      }
+    },
     "/services": {
       "get": {
         "operationId": "listServices",
@@ -12740,6 +13695,472 @@
           }
         ],
         "x-portta-permission": "service:protect"
+      }
+    },
+    "/crawlers": {
+      "get": {
+        "operationId": "getCrawlers",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Which crawlers may read the hostnames of this server",
+        "description": "The server default, which blocks every crawler until it is changed, and the projects that have an exception.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlerSettings"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "access:read"
+      },
+      "put": {
+        "operationId": "setDefaultCrawlers",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Set which crawlers may read projects that have no exception",
+        "description": "Takes effect on the next request. Nothing is restarted.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlerPolicy"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "search": {
+                    "type": "boolean",
+                    "description": "Search engines such as Googlebot and Bingbot"
+                  },
+                  "train": {
+                    "type": "boolean",
+                    "description": "AI crawlers that collect text to train models, such as GPTBot and ClaudeBot"
+                  },
+                  "live": {
+                    "type": "boolean",
+                    "description": "AI agents that read a page because a person asked, such as ChatGPT-User"
+                  },
+                  "preview": {
+                    "type": "boolean",
+                    "description": "Link previews in chats and social networks, such as Slackbot"
+                  }
+                },
+                "required": [
+                  "search",
+                  "train",
+                  "live",
+                  "preview"
+                ],
+                "additionalProperties": false,
+                "description": "Which kinds of crawler may read a hostname. true lets that kind in.",
+                "ref": "CrawlerPolicy"
+              }
+            }
+          }
+        },
+        "x-portta-permission": "settings:manage"
+      }
+    },
+    "/projects/{slug}/crawlers": {
+      "get": {
+        "operationId": "getProjectCrawlers",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Which crawlers may read the addresses of a project",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectCrawlers"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "project:read"
+      },
+      "put": {
+        "operationId": "setProjectCrawlers",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Set an exception to the server default for one project",
+        "description": "Written to every environment the project has adopted. An environment adopted later follows the server default until this is saved again.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectCrawlers"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The requested operation conflicts with the current runtime state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "policy": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "search": {
+                            "type": "boolean",
+                            "description": "Search engines such as Googlebot and Bingbot"
+                          },
+                          "train": {
+                            "type": "boolean",
+                            "description": "AI crawlers that collect text to train models, such as GPTBot and ClaudeBot"
+                          },
+                          "live": {
+                            "type": "boolean",
+                            "description": "AI agents that read a page because a person asked, such as ChatGPT-User"
+                          },
+                          "preview": {
+                            "type": "boolean",
+                            "description": "Link previews in chats and social networks, such as Slackbot"
+                          }
+                        },
+                        "required": [
+                          "search",
+                          "train",
+                          "live",
+                          "preview"
+                        ],
+                        "additionalProperties": false,
+                        "description": "Which kinds of crawler may read a hostname. true lets that kind in.",
+                        "ref": "CrawlerPolicy"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "null returns the project to the server default"
+                  }
+                },
+                "required": [
+                  "policy"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "x-portta-permission": "project:update"
+      }
+    },
+    "/site-entry": {
+      "get": {
+        "operationId": "enterSite",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Open a protected site with the panel session",
+        "description": "Always a redirect, to the address the protection store holds for the host: with a one-minute single-use token when the session may see the project behind it, and with the reason in `panel` when not. It decides for itself, so it answers without a credential.",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "query",
+            "required": true,
+            "description": "The protected hostname that sent the browser here.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "next",
+            "in": "query",
+            "required": false,
+            "description": "The path to open afterwards. Anything but a local path becomes /.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "description": "What the browser holds, to be signed into the token.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {}
+        ]
       }
     },
     "/gateway": {
