@@ -210,7 +210,14 @@ function HostUseCard({ data }: { data: DevelopmentOverview }) {
 function useAttentionText(data: DevelopmentOverview) {
   const { t } = useTranslation('overview')
   const { t: tp } = useTranslation('overview', { keyPrefix: 'pressure' })
+  const { t: td, i18n } = useTranslation('diagnostics')
   return (item: AttentionItem): string => {
+    if (item.kind === 'environment-degraded' && item.environment) {
+      return t('attention.environmentDegraded', { environment: item.environment })
+    }
+    if (item.kind === 'diagnostic' && item.code && i18n.exists(`${item.code}.title`, { ns: 'diagnostics' })) {
+      return td(`${item.code}.title` as never) as unknown as string
+    }
     if (item.kind === 'host-pressure') {
       const reasons = pressureReasons(data.resources.host?.pressure, tp as never)
       if (reasons.length > 0) return t('attention.hostPressure', { reasons: reasons.join(', ') })
