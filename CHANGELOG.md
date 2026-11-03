@@ -55,6 +55,10 @@ All notable changes to Portta are documented here. The format follows
 
 ### Fixed
 
+- "A saved setting is not in effect yet" no longer stays on after `portta up`. A setting
+  is pending when it was saved after the last `up`, which records the `.env` it applied,
+  so values the CLI derives (the domain, the bind address, the profile) stop counting as
+  pending on a public host.
 - The panel reads Traefik labels the way Traefik does: keys in any case, every boolean
   `traefik.enable` accepts, `Host` in double quotes or with several values, and a rule
   as an expression. A router with a regexp, a wildcard or no `Host` no longer gets an

@@ -9,12 +9,14 @@ import {
   databaseFiles,
   gatewayAlreadyPublic,
   parseAliases,
+  parseEnv,
   patchEnvFile,
   prepareEnvFile,
   projectsFor,
   routesFor,
   type StoredAlias,
   ungatedContainers,
+  writeApplied,
 } from 'portta-core'
 import { ensureCheckoutCli, reexecBuiltCli } from '../checkout-cli.js'
 import { confirm } from '../confirm.js'
@@ -84,6 +86,21 @@ async function compose(
     stdio,
     reject: extra.reject,
   })
+}
+
+/**
+ * Remember which `.env` the gateway was just brought up with, so the panel can
+ * tell a setting that was saved after this point from one that is already in
+ * effect. Never fatal: the gateway is up either way, and without the record the
+ * panel falls back to comparing with its own environment.
+ */
+function recordApplied(root: string, output?: Output): void {
+  try {
+    const path = join(root, '.env')
+    writeApplied(root, parseEnv(existsSync(path) ? readFileSync(path, 'utf8') : ''))
+  } catch (cause) {
+    output?.progress(`warn     could not record the applied settings: ${(cause as Error).message}`)
+  }
 }
 
 function ensureAuthState(root: string, profile: string): void {
@@ -261,6 +278,7 @@ export async function upCommand(
     )
   }
 
+  recordApplied(context.root, output)
   await ensureMetricsCollector(context.config.profile, output)
 
   // The optional applier, so the panel can recreate these containers itself.
@@ -475,6 +493,7 @@ export async function resetCommand(options: { demo?: boolean }, command: Command
 
 export async function restartCommand(command: Command): Promise<void> {
   await compose(command, ['up', '-d', '--force-recreate', '--wait', '--wait-timeout', '180'])
+  recordApplied(gatewayContext({ profile: globals(command).profile }).root)
 }
 export async function logsCommand(
   service: string | undefined,
@@ -505,6 +524,7 @@ export async function updateCommand(command: Command): Promise<void> {
   await compose(command, ['pull', '--ignore-buildable'])
   await confirm('recreate gateway components with the pulled images?', globals(command).yes === true)
   await compose(command, ['up', '-d', '--force-recreate', '--wait', '--wait-timeout', '180'])
+  recordApplied(gatewayContext({ profile: globals(command).profile }).root)
 }
 
 export async function inspectCommand(command: Command): Promise<void> {

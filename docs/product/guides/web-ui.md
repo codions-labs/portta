@@ -460,7 +460,9 @@ configuration from the environment it was created with
 ([ADR 0003](../../development/adr/0003-traefik-static-config-via-env.md)), so a
 settings change needs the containers **recreated**. Saved settings the running
 gateway has not picked up are marked `pending restart`, and a bar at the top of
-every page says so. Applying them is a command on the host:
+every page says so. A setting is pending when it was saved after the last
+`portta up`; a successful `up` clears it, including settings the CLI derives
+(domain, bind address, profile). Applying them is a command on the host:
 
 ```bash
 portta up
