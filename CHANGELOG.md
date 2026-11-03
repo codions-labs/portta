@@ -72,6 +72,9 @@ All notable changes to Portta are documented here. The format follows
 
 ### Fixed
 
+- `portta setup` no longer deletes the plans and generated overlays of adopted projects. It replaced the
+  whole `runtime/` folder, which is also where `portta adopt` keeps them, so every update removed files
+  that running projects name.
 - A project that was adopted is no longer refused by the host collector: its branch, commits and
   files show in the panel. The overlay `portta adopt` writes is not in the project's folder, and the
   check that every Compose file is there refused every adopted project.

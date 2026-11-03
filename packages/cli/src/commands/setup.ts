@@ -66,14 +66,28 @@ function packagedRuntime(): string {
   return found
 }
 
+/** What lives in `<root>/runtime` that the package does not own, and an update must leave alone. */
+const PRESERVED_IN_RUNTIME = 'compose'
+
+/**
+ * Replaces `<target>/runtime`, the copy of the packaged runtime, with the one in `source`.
+ *
+ * `compose/` is not part of the package: `portta adopt` writes each adopted project's plan and
+ * generated overlay there, and a running project names those files. Replacing the whole folder deleted
+ * them on every update, so everything is replaced except that.
+ */
+export function refreshRuntimeCache(source: string, target: string): void {
+  const cache = join(target, 'runtime')
+  if (existsSync(cache) && realpathSync(source) === realpathSync(cache)) return
+  for (const entry of existsSync(cache) ? readdirSync(cache) : []) {
+    if (entry !== PRESERVED_IN_RUNTIME) rmSync(join(cache, entry), { recursive: true, force: true })
+  }
+  cpSync(source, cache, { recursive: true, force: true })
+}
+
 function installRuntime(source: string, target: string): void {
   mkdirSync(target, { recursive: true })
-  const cache = join(target, 'runtime')
-  const sameCache = existsSync(cache) && realpathSync(source) === realpathSync(cache)
-  if (!sameCache) {
-    rmSync(cache, { recursive: true, force: true })
-    cpSync(source, cache, { recursive: true, force: true })
-  }
+  refreshRuntimeCache(source, target)
   for (const entry of readdirSync(source)) {
     if (entry === 'config') continue
     const destination = join(target, entry)
