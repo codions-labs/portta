@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import {
   emptyProtectionStore,
   hashPassword,
+  issueSiteEntry,
   readProtectionStore,
   removeProtection,
   setProtection,
@@ -22,7 +23,9 @@ beforeAll(async () => {
   passwordHash = await hashPassword('correct')
 })
 
-function setup(options: { now?: () => number; limiter?: LoginLimiter; logs?: Record<string, unknown>[] } = {}) {
+function setup(
+  options: { now?: () => number; limiter?: LoginLimiter; logs?: Record<string, unknown>[]; panelUrl?: string } = {},
+) {
   const directory = mkdtempSync(join(tmpdir(), 'portta-auth-'))
   const storePath = join(directory, 'protections.json')
   writeProtectionStore(
@@ -47,6 +50,7 @@ function setup(options: { now?: () => number; limiter?: LoginLimiter; logs?: Rec
     secret,
     uiDir: directory,
     sessionSeconds: 43_200,
+    panelUrl: options.panelUrl ?? '',
   }
   const logs = options.logs ?? []
   const app = createAuthApp({
@@ -57,6 +61,11 @@ function setup(options: { now?: () => number; limiter?: LoginLimiter; logs?: Rec
     loadHtml: () => html,
   })
   return { app, logs, storePath }
+}
+
+function contextOf(body: string): Record<string, unknown> {
+  const match = /<script id="portta-auth-context" type="application\/json">(.*?)<\/script>/s.exec(body)
+  return JSON.parse(match?.[1] ?? '{}') as Record<string, unknown>
 }
 
 const forwarded = {
@@ -304,11 +313,6 @@ describe('ForwardAuth app', () => {
     expect(logs[0]?.address).toBe('203.0.113.4')
   })
 
-  function contextOf(body: string): Record<string, unknown> {
-    const match = /<script id="portta-auth-context" type="application\/json">(.*?)<\/script>/s.exec(body)
-    return JSON.parse(match?.[1] ?? '{}') as Record<string, unknown>
-  }
-
   describe('a host that asks for the password alone', () => {
     function passwordOnly() {
       const instance = setup()
@@ -416,6 +420,90 @@ describe('ForwardAuth app', () => {
       headers: { ...forwarded, accept: 'text/html', 'sec-fetch-mode': 'navigate' },
     })
     expect(nextRequest.status).toBe(302)
+  })
+})
+
+describe('a session of the panel', () => {
+  const PANEL = 'https://panel.example.com'
+  const entry = (overrides: Partial<Parameters<typeof issueSiteEntry>[0]> = {}, at = Date.now()) =>
+    issueSiteEntry(
+      { host: 'demo.example.com', scope: 'share:a7f3', epoch: 1, user: 'Ada', ...overrides },
+      secret,
+      Math.floor(at / 1000),
+    )
+  const arrive = (app: ReturnType<typeof setup>['app'], token: string, next = '/orders') =>
+    app.request(`/__portta/auth/panel?token=${encodeURIComponent(token)}&next=${encodeURIComponent(next)}`, {
+      headers: forwarded,
+    })
+
+  it('opens the site once, as the person the panel named', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const token = entry()
+    const response = await arrive(app, token)
+    expect(response.status).toBe(303)
+    expect(response.headers.get('location')).toBe('/orders')
+    const cookie = (response.headers.get('set-cookie') ?? '').split(/,(?=\s*__)/)[0]?.split(';')[0] ?? ''
+    const verified = await app.request('/verify', { headers: { ...forwarded, cookie } })
+    expect(verified.status).toBe(200)
+    expect(verified.headers.get('x-forwarded-user')).toBe('Ada')
+
+    const again = await arrive(app, token)
+    expect(again.status).toBe(302)
+    expect(again.headers.get('location')).toContain('panel=expired')
+  })
+
+  it.each([
+    ['another host', { host: 'other.example.com' }],
+    ['another decision', { scope: 'share:zzzz' }],
+    ['a password that has been rotated since', { epoch: 2 }],
+  ])('refuses a token made for %s', async (_name, overrides) => {
+    const { app } = setup({ panelUrl: PANEL })
+    const response = await arrive(app, entry(overrides))
+    expect(response.status).toBe(302)
+    expect(response.headers.get('set-cookie')).toBeNull()
+  })
+
+  it('refuses a token that is old, edited or signed with another secret', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    expect((await arrive(app, entry({}, Date.now() - 120_000))).headers.get('set-cookie')).toBeNull()
+    expect((await arrive(app, `${entry()}x`)).headers.get('set-cookie')).toBeNull()
+    const other = issueSiteEntry(
+      { host: 'demo.example.com', scope: 'share:a7f3', epoch: 1, user: 'Ada' },
+      'cd'.repeat(32),
+      Math.floor(Date.now() / 1000),
+    )
+    expect((await arrive(app, other)).headers.get('set-cookie')).toBeNull()
+  })
+
+  it('opens nothing on a server that did not say where its panel is', async () => {
+    const { app } = setup()
+    expect((await arrive(app, entry())).headers.get('set-cookie')).toBeNull()
+    const login = await app.request('/__portta/auth/login', { headers: forwarded })
+    expect(contextOf(await login.text())).not.toHaveProperty('panel')
+  })
+
+  it('offers the panel on the login page, and sends a browser that used it before straight there', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const first = await app.request('/__portta/auth/login?next=%2Forders', { headers: forwarded })
+    expect(first.status).toBe(200)
+    expect(contextOf(await first.text()).panel).toEqual({
+      url: `${PANEL}/api/site-entry?host=demo.example.com&next=%2Forders&proto=https`,
+    })
+
+    const returning = await app.request('/__portta/auth/login?next=%2Forders', {
+      headers: { ...forwarded, cookie: '__portta_panel=1' },
+    })
+    expect(returning.status).toBe(302)
+    expect(returning.headers.get('location')).toContain(`${PANEL}/api/site-entry?host=demo.example.com`)
+  })
+
+  it('says why the panel did not open the site, and shows the password form instead of sending the browser back', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const denied = await app.request('/__portta/auth/login?panel=denied', {
+      headers: { ...forwarded, cookie: '__portta_panel=1' },
+    })
+    expect(denied.status).toBe(200)
+    expect(contextOf(await denied.text()).panel).toMatchObject({ notice: 'denied' })
   })
 })
 

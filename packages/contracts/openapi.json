@@ -12742,6 +12742,80 @@
         "x-portta-permission": "service:protect"
       }
     },
+    "/site-entry": {
+      "get": {
+        "operationId": "enterSite",
+        "tags": [
+          "Shares"
+        ],
+        "summary": "Open a protected site with the panel session",
+        "description": "Always a redirect, to the address the protection store holds for the host: with a one-minute single-use token when the session may see the project behind it, and with the reason in `panel` when not. It decides for itself, so it answers without a credential.",
+        "parameters": [
+          {
+            "name": "host",
+            "in": "query",
+            "required": true,
+            "description": "The protected hostname that sent the browser here.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "next",
+            "in": "query",
+            "required": false,
+            "description": "The path to open afterwards. Anything but a local path becomes /.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "proto",
+            "in": "query",
+            "required": false,
+            "description": "`http` or `https`; anything else is https.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {}
+        ]
+      }
+    },
     "/gateway": {
       "get": {
         "operationId": "getGateway",

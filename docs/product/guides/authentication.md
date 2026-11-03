@@ -386,6 +386,19 @@ Failed logins are delayed progressively; five failures in ten minutes lock that
 host/IP pair for fifteen minutes. Logs carry scope, client address and outcome —
 never a password, cookie or Authorization value.
 
+### Opening a protected site with the panel
+
+A person who is signed in to the panel and may see a project does not need that project's
+password. The site's login page offers **Continue with my Portta account**; the panel checks the
+session and the person's membership of the project that owns the hostname, and the site opens as
+that person. The first time a browser does this it asks; after that its visits to a login page of
+that site go to the panel by themselves, so there is nothing to click. Anyone else uses the password
+as before and is never sent to the panel.
+
+It needs `PORTTA_PANEL_URL` to be the address a browser reaches the panel at, and the panel to sign
+people in (`PORTTA_AUTH_MODE=required`). A share, and an environment no project adopted, open this
+way only for owners and admins. See [ADR 0057](../../development/adr/0057-a-panel-session-opens-a-protected-site.md).
+
 ### Shares
 
 ```bash

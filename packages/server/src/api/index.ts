@@ -39,6 +39,7 @@ import { projectRoutes } from './routes/projects.ts'
 import { runnerRoutes } from './routes/runner.ts'
 import { serviceRoutes } from './routes/services.ts'
 import { shareRoutes } from './routes/shares.ts'
+import { siteEntryRoutes } from './routes/site-entry.ts'
 import { statusRoutes } from './routes/status.ts'
 import { tokenRoutes } from './routes/tokens.ts'
 import { tunnelRoutes } from './routes/tunnel.ts'
@@ -59,6 +60,8 @@ export const PUBLIC_ROUTES: ReadonlySet<string> = new Set([
   'GET /api/health',
   'GET /api/auth/status',
   'POST /api/auth/setup',
+  // A redirect that decides for itself whether a session may speak for a site's login.
+  'GET /api/site-entry',
 ])
 
 /**
@@ -177,6 +180,7 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', accessRoutes(deps))
   api.route('/', shareRoutes(deps))
   api.route('/', exposureRoutes(deps))
+  api.route('/', siteEntryRoutes(deps))
   api.route('/', gatewayRoutes(deps))
   api.route('/', hostRoutes(deps))
   api.route('/', configRoutes(deps))

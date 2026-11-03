@@ -8,6 +8,9 @@ All notable changes to Portta are documented here. The format follows
 
 ### Added
 
+- Someone signed in to the panel who may see a project opens its protected site without the
+  password: the login page offers "Continue with my Portta account", and a browser that has done
+  it once goes there by itself. A signed token of one minute and one use carries the session.
 - An environment's page shows where its code stands: branch, last commit, what is not
   committed or pushed and when it last changed. The host collector reads it, read-only and
   without asking any remote.

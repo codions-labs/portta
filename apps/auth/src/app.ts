@@ -8,11 +8,15 @@ import {
   type ProtectionRecord,
   protectionForHost,
   readProtectionStore,
+  readSiteEntry,
   verifyPassword,
 } from 'portta-core'
 import { type AuthConfig, loadAuthConfig } from './config.ts'
 import { LoginLimiter } from './rate-limit.ts'
 import { issueSession, readSession, SESSION_COOKIE } from './session.ts'
+
+/** Remembers, per host, that this browser got in with the panel before, so it is sent there at once. */
+const PANEL_HINT_COOKIE = '__portta_panel'
 
 export interface AuthAppDependencies {
   config?: AuthConfig
@@ -30,6 +34,11 @@ interface LoginContext {
   error: boolean
   /** Whole minutes until another try, when too many wrong ones locked the page. */
   lockedMinutes?: number
+  /**
+   * Present when a session of the panel may open this site. `url` is where the browser goes to
+   * ask the panel; `notice` is why the last try did not get in.
+   */
+  panel?: { url: string; notice?: 'signedOut' | 'denied' | 'expired' }
   protection?: Pick<ProtectionRecord, 'label' | 'host' | 'project' | 'service' | 'tech'> & {
     /** Nobody is asked for a username: the password alone opens it. */
     passwordOnly: boolean
@@ -132,6 +141,56 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     return host ? protectionForHost(store, host) : null
   }
 
+  /** Where this host asks the panel whether the browser's session may open it. */
+  const panelEntryUrl = (c: Context, next: string): string | null => {
+    const host = forwardedHost(c)
+    if (!config.panelUrl || !host) return null
+    const proto = effectiveProtocol(c) === 'http' ? 'http' : 'https'
+    return `${config.panelUrl}/api/site-entry?host=${encodeURIComponent(host)}&next=${encodeURIComponent(next)}&proto=${proto}`
+  }
+
+  const panelContext = (c: Context, nextValue?: string): Pick<LoginContext, 'panel'> => {
+    const notice = c.req.query('panel')
+    if (notice === 'off') return {}
+    const url = panelEntryUrl(c, safeNext(nextValue ?? c.req.query('next')))
+    if (!url) return {}
+    return {
+      panel: {
+        url,
+        ...(notice === 'signedOut' || notice === 'denied' || notice === 'expired' ? { notice } : {}),
+      },
+    }
+  }
+
+  /** Tokens already spent, so one made for a single entry cannot open a second. */
+  const spentEntries = new Map<string, number>()
+
+  const startSession = (c: Context, protection: ProtectionRecord, host: string, user: string) => {
+    const issuedAt = Math.floor(now() / 1000)
+    setCookie(
+      c,
+      SESSION_COOKIE,
+      issueSession(
+        {
+          scope: protection.scope,
+          host,
+          user,
+          issuedAt,
+          expiresAt: issuedAt + config.sessionSeconds,
+          epoch: protection.epoch,
+        },
+        config.secret,
+      ),
+      {
+        httpOnly: true,
+        sameSite: 'Lax',
+        secure: effectiveProtocol(c) === 'https',
+        path: '/',
+        maxAge: config.sessionSeconds,
+      },
+    )
+  }
+
   const renderLogin = (
     c: Context,
     protection: ProtectionRecord,
@@ -142,6 +201,7 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
       state: 'login',
       next: safeNext(options.next ?? c.req.query('next')),
       error: options.error === true,
+      ...panelContext(c, options.next),
       ...(options.status === 429 && options.retryAfter
         ? { lockedMinutes: Math.max(1, Math.ceil(options.retryAfter / 60)) }
         : {}),
@@ -211,7 +271,40 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
 
   app.get('/__portta/auth/login', (c) => {
     const protection = findProtection(c)
-    return protection && protection.mode === 'protected' ? renderLogin(c, protection) : unavailable(c)
+    if (!protection || protection.mode !== 'protected') return unavailable(c)
+    // A browser that got in with the panel before goes there again by itself. One that has
+    // never done it sees the password form first, so a person who cannot reach the panel is
+    // never sent to a page they cannot open.
+    if (!c.req.query('panel') && getCookie(c, PANEL_HINT_COOKIE) === '1') {
+      const url = panelEntryUrl(c, safeNext(c.req.query('next')))
+      if (url) return c.redirect(url, 302)
+    }
+    return renderLogin(c, protection)
+  })
+
+  // Where the panel sends the browser back with a token for this host.
+  app.get('/__portta/auth/panel', (c) => {
+    const protection = findProtection(c)
+    const host = forwardedHost(c)
+    if (protection?.mode !== 'protected' || !host || protection.host !== host) return unavailable(c)
+    const next = safeNext(c.req.query('next'))
+    const second = Math.floor(now() / 1000)
+    const token = config.panelUrl ? readSiteEntry(c.req.query('token') ?? '', config.secret, second) : null
+    for (const [id, expiresAt] of spentEntries) if (expiresAt <= second) spentEntries.delete(id)
+    const refused = () => c.redirect(`${loginUrl(c, next)}&panel=expired`, 302)
+    if (!token || spentEntries.has(token.id)) return refused()
+    if (token.host !== host || token.scope !== protection.scope || token.epoch !== protection.epoch) return refused()
+    spentEntries.set(token.id, token.expiresAt)
+    startSession(c, protection, host, token.user)
+    setCookie(c, PANEL_HINT_COOKIE, '1', {
+      httpOnly: true,
+      sameSite: 'Lax',
+      secure: effectiveProtocol(c) === 'https',
+      path: '/__portta/auth',
+      maxAge: 60 * 60 * 24 * 30,
+    })
+    log({ event: 'login', scope: protection.scope, address: clientAddress(c), outcome: 'panel' })
+    return c.redirect(next, 303)
   })
 
   app.post('/__portta/auth/login', async (c) => {
@@ -245,30 +338,8 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
       })
     }
     limiter.success(key)
-    const issuedAt = Math.floor(now() / 1000)
-    setCookie(
-      c,
-      SESSION_COOKIE,
-      issueSession(
-        {
-          scope: protection.scope,
-          host,
-          // Somebody who only knew the password is nobody in particular, and a header is a string.
-          user: protection.user ?? 'guest',
-          issuedAt,
-          expiresAt: issuedAt + config.sessionSeconds,
-          epoch: protection.epoch,
-        },
-        config.secret,
-      ),
-      {
-        httpOnly: true,
-        sameSite: 'Lax',
-        secure: effectiveProtocol(c) === 'https',
-        path: '/',
-        maxAge: config.sessionSeconds,
-      },
-    )
+    // Somebody who only knew the password is nobody in particular, and a header is a string.
+    startSession(c, protection, host, protection.user ?? 'guest')
     log({ event: 'login', scope: protection.scope, address, outcome: 'accepted' })
     return c.redirect(next, 303)
   })

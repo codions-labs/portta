@@ -15,6 +15,7 @@ interface AuthContext {
   next: string
   error: boolean
   lockedMinutes?: number
+  panel?: { url: string; notice?: 'signedOut' | 'denied' | 'expired' }
   protection?: {
     label: string
     host: string
@@ -213,6 +214,25 @@ function AuthPage() {
                     {pending ? t('signingIn') : t('signIn')}
                   </Button>
                 </form>
+                {context.panel && (
+                  <div className="auth-panel">
+                    {context.panel.notice && context.panel.notice !== 'signedOut' && (
+                      <p className="auth-error" role="alert">
+                        {t(`panelNotice.${context.panel.notice}`)}
+                      </p>
+                    )}
+                    <div className="auth-or" role="separator">
+                      <span>{t('or')}</span>
+                    </div>
+                    <a className="auth-panel-link" href={context.panel.url}>
+                      <Users aria-hidden="true" />
+                      {t('continueWithPanel')}
+                    </a>
+                    <p className="auth-help">
+                      {t(context.panel.notice === 'signedOut' ? 'panelNotice.signedOut' : 'panelHelp')}
+                    </p>
+                  </div>
+                )}
                 <p className="auth-help">{t('noAccess')}</p>
               </>
             ) : (
