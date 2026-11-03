@@ -12770,10 +12770,10 @@
             }
           },
           {
-            "name": "proto",
+            "name": "state",
             "in": "query",
-            "required": false,
-            "description": "`http` or `https`; anything else is https.",
+            "required": true,
+            "description": "What the browser holds, to be signed into the token.",
             "schema": {
               "type": "string"
             }

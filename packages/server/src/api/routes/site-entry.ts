@@ -13,17 +13,19 @@ import {
   normalizeProtectionHost,
   protectionForHost,
   readProtectionStore,
+  SITE_ENTRY_STATE,
+  safeLocalPath,
 } from 'portta-core'
 import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { adoptions } from '../../services/access-control.ts'
 import { documentRoute } from '../openapi.ts'
 
-/** The same rule the login service applies to where it sends somebody afterwards. */
-function safeNext(value: string | undefined): string {
-  if (!value?.startsWith('/') || value.startsWith('//')) return '/'
-  if (/[\r\n\\]/.test(value) || /%(?:0d|0a|2f|5c)/i.test(value)) return '/'
-  return value
+/** What the site's application is told about who this is: printable, bounded and unique per account. */
+function identityOf(principal: { email: string | null; name: string; userId: string | null }): string {
+  const raw = principal.email ?? principal.userId ?? principal.name
+  const clean = raw.replace(/[^\x21-\x7e]/g, '').slice(0, 128)
+  return clean === '' ? 'panel-user' : clean
 }
 
 export function siteEntryRoutes(deps: AppDeps): Hono {
@@ -51,7 +53,7 @@ export function siteEntryRoutes(deps: AppDeps): Hono {
       parameters: [
         query('host', 'The protected hostname that sent the browser here.', true),
         query('next', 'The path to open afterwards. Anything but a local path becomes /.'),
-        query('proto', '`http` or `https`; anything else is https.'),
+        query('state', 'What the browser holds, to be signed into the token.', true),
       ],
       errors: [400, 404],
     }),
@@ -66,8 +68,10 @@ export function siteEntryRoutes(deps: AppDeps): Hono {
       // Only a host that asks for a login has a login page to go back to.
       if (!record || record.mode !== 'protected') return c.text('Unknown address.', 404)
 
-      const proto = c.req.query('proto') === 'http' ? 'http' : 'https'
-      const next = safeNext(c.req.query('next'))
+      // From how the gateway is served, never from the request: a link must not be able to make
+      // the token travel in the clear.
+      const proto = deps.config.tlsEnabled ? 'https' : 'http'
+      const next = safeLocalPath(c.req.query('next'))
       const site = `${proto}://${record.host}${AUTH_PATH_PREFIX}`
       const back = (reason: 'signedOut' | 'denied' | 'off') =>
         c.redirect(`${site}/login?next=${encodeURIComponent(next)}&panel=${reason}`, 302)
@@ -76,14 +80,21 @@ export function siteEntryRoutes(deps: AppDeps): Hono {
       if (deps.security.mode === 'open' || !deps.config.authSecret) return back('off')
       const principal = await deps.principals.fromHeaders(c.req.raw.headers)
       if (!principal) return back('signedOut')
+      // A browser session. An API token has no business opening a site in a browser.
+      if (principal.kind !== 'user') return back('denied')
+      const state = c.req.query('state') ?? ''
+      if (!SITE_ENTRY_STATE.test(state)) return c.text('Missing state.', 400)
 
-      // An environment nobody adopted, and a share, belong to whoever sees everything.
+      // A share, and an environment nobody adopted, belong to whoever sees everything, even when a
+      // share names the project it was made from.
+      const isShare = record.scope.startsWith('share:')
       const projectId = record.project ? ((await adoptions(deps.db)).get(record.project) ?? null) : null
-      const allowed = principal.scope === 'all' || (projectId !== null && sees(principal, projectId))
+      const allowed = principal.scope === 'all' || (!isShare && projectId !== null && sees(principal, projectId))
       if (!allowed) return back('denied')
 
       const token = issueSiteEntry(
-        { host: record.host, scope: record.scope, epoch: record.epoch, user: principal.name },
+        // The address, which is unique, and not the name, which anybody can choose and two people can share.
+        { host: record.host, scope: record.scope, epoch: record.epoch, user: identityOf(principal), state },
         deps.config.authSecret,
         Math.floor(Date.now() / 1000),
       )

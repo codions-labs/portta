@@ -425,15 +425,21 @@ describe('ForwardAuth app', () => {
 
 describe('a session of the panel', () => {
   const PANEL = 'https://panel.example.com'
+  const STATE = 's'.repeat(24)
   const entry = (overrides: Partial<Parameters<typeof issueSiteEntry>[0]> = {}, at = Date.now()) =>
     issueSiteEntry(
-      { host: 'demo.example.com', scope: 'share:a7f3', epoch: 1, user: 'Ada', ...overrides },
+      { host: 'demo.example.com', scope: 'share:a7f3', epoch: 1, user: 'ada@example.test', state: STATE, ...overrides },
       secret,
       Math.floor(at / 1000),
     )
-  const arrive = (app: ReturnType<typeof setup>['app'], token: string, next = '/orders') =>
+  const arrive = (
+    app: ReturnType<typeof setup>['app'],
+    token: string,
+    next = '/orders',
+    cookie = `__portta_entry=${STATE}`,
+  ) =>
     app.request(`/__portta/auth/panel?token=${encodeURIComponent(token)}&next=${encodeURIComponent(next)}`, {
-      headers: forwarded,
+      headers: { ...forwarded, ...(cookie ? { cookie } : {}) },
     })
 
   it('opens the site once, as the person the panel named', async () => {
@@ -442,10 +448,10 @@ describe('a session of the panel', () => {
     const response = await arrive(app, token)
     expect(response.status).toBe(303)
     expect(response.headers.get('location')).toBe('/orders')
-    const cookie = (response.headers.get('set-cookie') ?? '').split(/,(?=\s*__)/)[0]?.split(';')[0] ?? ''
+    const cookie = /__portta_session=[^;]+/.exec(response.headers.get('set-cookie') ?? '')?.[0] ?? ''
     const verified = await app.request('/verify', { headers: { ...forwarded, cookie } })
     expect(verified.status).toBe(200)
-    expect(verified.headers.get('x-forwarded-user')).toBe('Ada')
+    expect(verified.headers.get('x-forwarded-user')).toBe('ada@example.test')
 
     const again = await arrive(app, token)
     expect(again.status).toBe(302)
@@ -468,11 +474,28 @@ describe('a session of the panel', () => {
     expect((await arrive(app, entry({}, Date.now() - 120_000))).headers.get('set-cookie')).toBeNull()
     expect((await arrive(app, `${entry()}x`)).headers.get('set-cookie')).toBeNull()
     const other = issueSiteEntry(
-      { host: 'demo.example.com', scope: 'share:a7f3', epoch: 1, user: 'Ada' },
+      { host: 'demo.example.com', scope: 'share:a7f3', epoch: 1, user: 'Ada', state: STATE },
       'cd'.repeat(32),
       Math.floor(Date.now() / 1000),
     )
     expect((await arrive(app, other)).headers.get('set-cookie')).toBeNull()
+  })
+
+  it('opens nothing for a browser that did not ask, even with a token that is otherwise good', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const noCookie = await arrive(app, entry(), '/orders', '')
+    expect(noCookie.headers.get('location')).toContain('panel=expired')
+    expect(noCookie.headers.get('set-cookie') ?? '').not.toContain('__portta_session')
+    const otherBrowser = await arrive(app, entry(), '/orders', `__portta_entry=${'o'.repeat(24)}`)
+    expect(otherBrowser.headers.get('location')).toContain('panel=expired')
+    expect(otherBrowser.headers.get('set-cookie') ?? '').not.toContain('__portta_session')
+  })
+
+  it('does not send a browser anywhere but a path on the site', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const response = await arrive(app, entry(), '/\t/evil.example')
+    expect(response.status).toBe(303)
+    expect(response.headers.get('location')).toBe('/')
   })
 
   it('opens nothing on a server that did not say where its panel is', async () => {
@@ -486,9 +509,12 @@ describe('a session of the panel', () => {
     const { app } = setup({ panelUrl: PANEL })
     const first = await app.request('/__portta/auth/login?next=%2Forders', { headers: forwarded })
     expect(first.status).toBe(200)
-    expect(contextOf(await first.text()).panel).toEqual({
-      url: `${PANEL}/api/site-entry?host=demo.example.com&next=%2Forders&proto=https`,
-    })
+    const panel = contextOf(await first.text()).panel as { url: string }
+    expect(panel.url).toMatch(
+      new RegExp(`^${PANEL}/api/site-entry\\?host=demo\\.example\\.com&next=%2Forders&state=[A-Za-z0-9_-]{24}$`),
+    )
+    const state = /state=([A-Za-z0-9_-]+)$/.exec(panel.url)?.[1]
+    expect(first.headers.get('set-cookie')).toContain(`__portta_entry=${state}`)
 
     const returning = await app.request('/__portta/auth/login?next=%2Forders', {
       headers: { ...forwarded, cookie: '__portta_panel=1' },
@@ -508,11 +534,16 @@ describe('a session of the panel', () => {
 })
 
 describe('safe redirects', () => {
-  it.each(['https://evil.example', '//evil.example', '/%2F/evil', '/%5cevil', '/ok\r\nLocation: evil'])(
-    'rejects %s',
-    (value) => {
-      expect(safeNext(value)).toBe('/')
-    },
-  )
+  it.each([
+    'https://evil.example',
+    '//evil.example',
+    '/%2F/evil',
+    '/%5cevil',
+    '/ok\r\nLocation: evil',
+    '/\t/evil.example',
+    '/%09/evil.example',
+  ])('rejects %s', (value) => {
+    expect(safeNext(value)).toBe('/')
+  })
   it('keeps an exact local path and query', () => expect(safeNext('/orders/42?tab=items')).toBe('/orders/42?tab=items'))
 })

@@ -10,12 +10,31 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
 export const SITE_ENTRY_SECONDS = 60
 
+/**
+ * A path on the same host, or `/`.
+ *
+ * Browsers drop tabs and line breaks from an address before they read it, so `/<tab>/evil.example`
+ * is `//evil.example` to them. Every control character is therefore refused, and so is a
+ * backslash, which they read as a slash. One implementation, for the panel and the login service.
+ */
+export function safeLocalPath(value: string | null | undefined): string {
+  if (!value?.startsWith('/') || value.startsWith('//')) return '/'
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are exactly what is refused
+  if (/[\u0000-\u001f\u007f\\\s]/.test(value) || /%(?:0[0-9a-d]|1[0-9a-f]|7f|2f|5c)/i.test(value)) return '/'
+  return value
+}
+
+/** The shape of the value that ties a token to the browser that asked for it. */
+export const SITE_ENTRY_STATE = /^[A-Za-z0-9_-]{16,64}$/
+
 export interface SiteEntryToken {
   host: string
   scope: string
   /** The epoch of the host's decision when the token was made: a rotated password ends it. */
   epoch: number
   user: string
+  /** What the browser that asked for the token holds, so a token cannot be put in another browser. */
+  state: string
   expiresAt: number
   id: string
 }
@@ -52,6 +71,7 @@ export function readSiteEntry(value: string, secret: string, nowSeconds: number)
       typeof parsed.scope !== 'string' ||
       typeof parsed.user !== 'string' ||
       typeof parsed.id !== 'string' ||
+      typeof parsed.state !== 'string' ||
       !Number.isSafeInteger(parsed.epoch) ||
       !Number.isSafeInteger(parsed.expiresAt)
     )

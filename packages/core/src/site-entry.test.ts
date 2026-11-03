@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { issueSiteEntry, readSiteEntry, SITE_ENTRY_SECONDS } from './site-entry.ts'
+import { issueSiteEntry, readSiteEntry, SITE_ENTRY_SECONDS, safeLocalPath } from './site-entry.ts'
 
 const secret = 'ab'.repeat(32)
-const input = { host: 'demo.example.com', scope: 'host:demo.example.com', epoch: 3, user: 'Ada' }
+const input = {
+  host: 'demo.example.com',
+  scope: 'host:demo.example.com',
+  epoch: 3,
+  user: 'ada@example.test',
+  state: 'n'.repeat(24),
+}
 
 describe('site entry token', () => {
   it('carries who and where, and lasts a minute', () => {
@@ -24,5 +30,29 @@ describe('site entry token', () => {
     const a = readSiteEntry(issueSiteEntry(input, secret, 1000), secret, 1000)
     const b = readSiteEntry(issueSiteEntry(input, secret, 1000), secret, 1000)
     expect(a?.id).not.toBe(b?.id)
+  })
+})
+
+describe('safe local path', () => {
+  it.each([
+    'https://evil.example',
+    '//evil.example',
+    '/\t/evil.example',
+    '/\n/evil.example',
+    '/ /evil.example',
+    '/%09/evil.example',
+    '/%2F/evil',
+    '/%5cevil',
+    '/\\evil',
+    '/ok\r\nLocation: evil',
+    '/\u0000',
+    '',
+  ])('turns %j into /', (value) => {
+    expect(safeLocalPath(value)).toBe('/')
+  })
+
+  it('keeps a local path and its query', () => {
+    expect(safeLocalPath('/orders/42?tab=items&x=a%20b')).toBe('/orders/42?tab=items&x=a%20b')
+    expect(safeLocalPath(undefined)).toBe('/')
   })
 })
