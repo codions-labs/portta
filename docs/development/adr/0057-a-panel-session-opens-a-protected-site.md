@@ -42,8 +42,9 @@ The site sends the browser to the panel, the panel decides, and the browser come
   that used the panel before is. Nothing about the panel is on the page unless it is configured.
 * Rotating the password or removing the decision ends sessions made this way, because the epoch is
   part of the token and of the session.
-* Revoking a person's membership does not end a session they already hold on a site, which lasts
-  until it expires, as a password session does.
+* A session that came from the panel lasts an hour, not the twelve of a password session. Revoking a
+  person's membership does not end one they already hold on a site, but it ends within the hour, and a
+  browser that used the panel before comes back through it, which asks again.
 * The token is in a URL for a minute and is single-use. It is not a credential for the panel.
 * A panel running without accounts (`PORTTA_AUTH_MODE=disabled`) has no session to speak for anyone,
   so the link leads back to the password form.

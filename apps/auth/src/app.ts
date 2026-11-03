@@ -22,6 +22,8 @@ import { LoginLimiter } from './rate-limit.ts'
 import { issueSession, readSession, SESSION_COOKIE } from './session.ts'
 
 /** Remembers, per host, that this browser got in with the panel before, so it is sent there at once. */
+/** How long a session that came from the panel lasts, whatever a password session is set to. */
+const PANEL_SESSION_SECONDS = 3600
 const PANEL_HINT_COOKIE = '__portta_panel'
 /** Ties a token from the panel to the browser that asked for it, as `state` does in OAuth. */
 const PANEL_STATE_COOKIE = '__portta_entry'
@@ -184,7 +186,13 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
   /** Tokens already spent, so one made for a single entry cannot open a second. */
   const spentEntries = new Map<string, number>()
 
-  const startSession = (c: Context, protection: ProtectionRecord, host: string, user: string) => {
+  const startSession = (
+    c: Context,
+    protection: ProtectionRecord,
+    host: string,
+    user: string,
+    seconds = config.sessionSeconds,
+  ) => {
     const issuedAt = Math.floor(now() / 1000)
     setCookie(
       c,
@@ -195,7 +203,7 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
           host,
           user,
           issuedAt,
-          expiresAt: issuedAt + config.sessionSeconds,
+          expiresAt: issuedAt + seconds,
           epoch: protection.epoch,
         },
         config.secret,
@@ -205,7 +213,7 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
         sameSite: 'Lax',
         secure: effectiveProtocol(c) === 'https',
         path: '/',
-        maxAge: config.sessionSeconds,
+        maxAge: seconds,
       },
     )
   }
@@ -339,7 +347,9 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     const state = getCookie(c, stateCookie(secure))
     deleteCookie(c, stateCookie(secure), { path: secure ? '/' : '/__portta/auth', secure })
     if (!state || readEntryState(state, host, config.secret) === null || state !== token.state) return refused()
-    startSession(c, protection, host, token.user)
+    // Short, because the panel can take the right to see the project away and a password cannot: when it
+    // ends, the browser that came this way comes back through the panel, which asks again.
+    startSession(c, protection, host, token.user, Math.min(config.sessionSeconds, PANEL_SESSION_SECONDS))
     setCookie(c, PANEL_HINT_COOKIE, '1', {
       httpOnly: true,
       sameSite: 'Lax',

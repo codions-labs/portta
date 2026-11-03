@@ -471,6 +471,19 @@ describe('a session of the panel', () => {
     expect(response.headers.get('set-cookie')).toBeNull()
   })
 
+  it('lasts an hour, not as long as a password session, so a right the panel takes away is soon gone', async () => {
+    let at = Date.now()
+    const { app } = setup({ panelUrl: PANEL, now: () => at })
+    const response = await arrive(app, entry({}, at))
+    const cookie = /__portta_session=[^;]+/.exec(response.headers.get('set-cookie') ?? '')?.[0] ?? ''
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=3600')
+    expect((await app.request('/verify', { headers: { ...forwarded, cookie } })).status).toBe(200)
+    at += 3601_000
+    expect(
+      (await app.request('/verify', { headers: { ...forwarded, cookie, accept: 'application/json' } })).status,
+    ).toBe(401)
+  })
+
   it('refuses a token that is old, edited or signed with another secret', async () => {
     const { app } = setup({ panelUrl: PANEL })
     expect((await arrive(app, entry({}, Date.now() - 120_000))).headers.get('set-cookie')).toBeNull()
