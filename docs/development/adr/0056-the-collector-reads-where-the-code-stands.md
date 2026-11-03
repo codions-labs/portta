@@ -56,7 +56,9 @@ What is never done:
   git's own rule for a repository, or whose user the collector cannot tell. The folder must
   also hold the Compose files the containers say Compose read
   (`com.docker.compose.project.config_files`), so a label that names some other folder
-  without one is not followed, and a folder that two projects both name is given to
+  without one is not followed. The overlay that `portta adopt` generates lives in Portta's own
+  `runtime/compose/`, so it is accepted from that one place and from nowhere else, and at least one file
+  must still be in the folder, and a folder that two projects both name is given to
   neither. These catch a label that is wrong or careless. They do not prove who wrote it:
   whoever can start a container on the host can write any label, and the collector has no
   record of its own to compare it with. What is left is metadata of repositories that user

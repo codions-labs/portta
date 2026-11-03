@@ -147,7 +147,7 @@ export function workingDirectories(
       const inside = relative(realpathSync(root), real)
       if (inside === '' || (!inside.startsWith('..') && !inside.startsWith(sep))) continue
       if (statSync(real).uid !== uid) continue
-      if (!holdsComposeFiles(real, files.get(project))) continue
+      if (!holdsComposeFiles(real, files.get(project), root)) continue
       trusted.set(project, real)
     } catch {
       // Not there on this host: nothing to read.
@@ -156,15 +156,36 @@ export function workingDirectories(
   return trusted
 }
 
-/** Every file the project's containers say Compose read is there, and inside the folder. */
-function holdsComposeFiles(directory: string, named: ReadonlySet<string> | undefined): boolean {
+/**
+ * Every file the project's containers say Compose read is in the folder, or is one Portta wrote itself
+ * to adopt it, and at least one is in the folder.
+ *
+ * An adopted project always names the overlay `portta adopt` generated, which lives in Portta's own
+ * `runtime/compose/` and not in the project. Requiring every file to be in the folder refused every
+ * adopted project, and with it their branch, their commits and their files. The overlay is accepted
+ * only from that one place, so a label cannot name a file anywhere else to be believed.
+ */
+function holdsComposeFiles(directory: string, named: ReadonlySet<string> | undefined, root: string): boolean {
   if (!named || named.size === 0) return false
+  let overlays: string | null = null
+  try {
+    overlays = join(realpathSync(root), 'runtime', 'compose')
+  } catch {
+    overlays = null
+  }
+  let inFolder = 0
   for (const file of named) {
     if (!isAbsolute(file)) return false
-    const inside = relative(directory, realpathSync(file))
-    if (inside === '' || inside.startsWith('..') || isAbsolute(inside)) return false
+    const real = realpathSync(file)
+    const inside = relative(directory, real)
+    if (inside !== '' && !inside.startsWith('..') && !isAbsolute(inside)) {
+      inFolder += 1
+      continue
+    }
+    const wrote = overlays === null ? '..' : relative(overlays, real)
+    if (wrote === '' || wrote.startsWith('..') || isAbsolute(wrote)) return false
   }
-  return true
+  return inFolder > 0
 }
 
 /** Null when this is not a work tree git can read, or git is not there. */

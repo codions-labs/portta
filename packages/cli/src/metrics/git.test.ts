@@ -150,6 +150,26 @@ describe('which folder a project was started from', () => {
     expect(workingDirectories([labels('a', mine), labels('a', mine)], root).get('a')).toBeTruthy()
   })
 
+  it('takes the folder of a project that was adopted, whose files include the overlay Portta wrote', () => {
+    const overlays = join(root, 'runtime', 'compose', 'abc123')
+    mkdirSync(overlays, { recursive: true })
+    const overlay = join(overlays, 'compose.portta.yaml')
+    writeFileSync(overlay, 'services: {}\n')
+    const adopted = labels('adopted', mine, [join(mine, 'compose.yaml'), overlay])
+    expect(workingDirectories([adopted], root).get('adopted')).toBeTruthy()
+  })
+
+  it('does not believe an overlay that is somewhere else, or a project that names only overlays', () => {
+    const elsewhere = mkdtempSync(join(tmpdir(), 'portta-elsewhere-'))
+    const forged = join(elsewhere, 'compose.portta.yaml')
+    writeFileSync(forged, 'services: {}\n')
+    expect(workingDirectories([labels('f', mine, [join(mine, 'compose.yaml'), forged])], root).has('f')).toBe(false)
+    const overlays = join(root, 'runtime', 'compose', 'only')
+    mkdirSync(overlays, { recursive: true })
+    writeFileSync(join(overlays, 'compose.portta.yaml'), 'services: {}\n')
+    expect(workingDirectories([labels('g', mine, [join(overlays, 'compose.portta.yaml')])], root).has('g')).toBe(false)
+  })
+
   it('takes none when the containers disagree, or the path is not absolute', () => {
     const other = mkdtempSync(join(tmpdir(), 'portta-other-'))
     expect(workingDirectories([labels('a', mine), labels('a', other)], root).has('a')).toBe(false)

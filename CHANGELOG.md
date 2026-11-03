@@ -72,6 +72,9 @@ All notable changes to Portta are documented here. The format follows
 
 ### Fixed
 
+- A project that was adopted is no longer refused by the host collector: its branch, commits and
+  files show in the panel. The overlay `portta adopt` writes is not in the project's folder, and the
+  check that every Compose file is there refused every adopted project.
 - "A saved setting is not in effect yet" no longer stays on after `portta up`. A setting
   is pending when it was saved after the last `up`, which records the `.env` it applied,
   so values the CLI derives (the domain, the bind address, the profile) stop counting as
