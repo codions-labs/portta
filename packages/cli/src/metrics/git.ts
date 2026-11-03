@@ -118,32 +118,16 @@ export function workingDirectories(
     }
     files.set(project, named)
   }
-  // A folder two projects both name is claimed by at least one that did not start there. Counted
-  // by where the name really leads, so a link or a trailing slash does not make it two folders.
-  const resolved = new Map<string, string | null>()
-  const resolve = (directory: string): string | null => {
-    if (!resolved.has(directory)) {
-      try {
-        resolved.set(directory, isAbsolute(directory) ? realpathSync(directory) : null)
-      } catch {
-        resolved.set(directory, null)
-      }
-    }
-    return resolved.get(directory) ?? null
-  }
-  const claims = new Map<string, number>()
-  for (const directories of claimed.values()) {
-    for (const real of new Set([...directories].map(resolve))) {
-      if (real !== null) claims.set(real, (claims.get(real) ?? 0) + 1)
-    }
-  }
+  // Several Compose projects can run from one folder: the one adopted for the branch it is on, one the
+  // tests start with `-p`, one started by hand. Git belongs to the folder, so each of them gets it. A
+  // project that only names a folder it did not start in does not hold that folder's Compose files, and
+  // fails the check below on its own.
   const trusted = new Map<string, string>()
   for (const [project, directories] of claimed) {
     const [only] = directories
     if (directories.size !== 1 || !only || !isAbsolute(only)) continue
     try {
       const real = realpathSync(only)
-      if (claims.get(real) !== 1) continue
       const inside = relative(realpathSync(root), real)
       if (inside === '' || (!inside.startsWith('..') && !inside.startsWith(sep))) continue
       if (statSync(real).uid !== uid) continue
