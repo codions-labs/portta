@@ -63,7 +63,8 @@ export function discoveryRoutes(deps: AppDeps): Hono {
       if (!isDiscoverablePath(path)) throw new HTTPException(400, { message: 'not a folder under Projects Home' })
       const plan = readFolderPlan(deps.config, path)
       if (!plan) throw new HTTPException(404, { message: 'the collector has no plan for this folder yet' })
-      return c.json({ ...plan, command: adoptCommand(path, {}) })
+      const home = readDiscoveredFolders(deps.config)?.home ?? '~/projects'
+      return c.json({ ...plan, home, command: adoptCommand(path, {}, home) })
     },
   )
 

@@ -58,7 +58,11 @@ export function ReviewView({ path }: { path: string }) {
   const http = data.services.filter((service) => service.kind === 'http')
   const choiceOf = (service: string): Choice => choices[service] ?? 'later'
   const projectName = name ?? titleOf(path)
-  const command = adoptCommand(path, Object.fromEntries(http.map((service) => [service.name, choiceOf(service.name)])))
+  const command = adoptCommand(
+    path,
+    Object.fromEntries(http.map((service) => [service.name, choiceOf(service.name)])),
+    data.home,
+  )
   const published = data.services.filter((service) => service.publishedPorts.length > 0)
 
   return (

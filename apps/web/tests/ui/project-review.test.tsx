@@ -24,6 +24,7 @@ beforeEach(() => {
   push.mockReset()
   createProject.mockReset().mockResolvedValue({ slug: 'loja-nova' })
   folderPlan.mockReset().mockResolvedValue({
+    home: '/home/ada/projects',
     path: 'loja-nova',
     composeFile: 'compose.yaml',
     project: { name: 'loja-nova', source: 'directory name (implicit)' },
@@ -49,7 +50,7 @@ beforeEach(() => {
       namespaceInUse: null,
     },
     collectedAt: 1,
-    command: 'portta adopt ~/projects/loja-nova',
+    command: 'portta adopt /home/ada/projects/loja-nova',
   })
 })
 
@@ -65,11 +66,11 @@ describe('Reviewing a folder before adopting it', () => {
     const user = userEvent.setup()
     renderWithQuery(<ReviewView path="loja-nova" />)
     await screen.findByText('loja-nova-web.portta.example')
-    expect(screen.getByText('portta adopt ~/projects/loja-nova')).toBeInTheDocument()
+    expect(screen.getByText('portta adopt /home/ada/projects/loja-nova')).toBeInTheDocument()
     await user.click(screen.getByRole('radio', { name: 'Password' }))
-    expect(screen.getByText('portta adopt ~/projects/loja-nova --protect web')).toBeInTheDocument()
+    expect(screen.getByText('portta adopt /home/ada/projects/loja-nova --protect web')).toBeInTheDocument()
     await user.click(screen.getByRole('radio', { name: 'Everybody' }))
-    expect(screen.getByText('portta adopt ~/projects/loja-nova --public web')).toBeInTheDocument()
+    expect(screen.getByText('portta adopt /home/ada/projects/loja-nova --public web')).toBeInTheDocument()
   })
 
   it('registers the project with this folder, and opens it', async () => {

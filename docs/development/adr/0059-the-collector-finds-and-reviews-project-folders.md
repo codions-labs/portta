@@ -20,9 +20,14 @@ The collector finds the folders, analyses them and publishes the result. The pan
   `.env`, else `~/projects`, `/srv/projects` for root) that hold a Compose file, at most three levels
   down, never through a link, skipping hidden folders and dependency folders, and not descending into
   a folder that already is one. It stops at 200.
+* **What it will walk.** Projects Home must be a folder somebody keeps projects in: at least two
+  levels deep and not part of the system (`/etc`, `/proc`, `/sys`, `/dev`, `/boot`, `/root`, Docker's own
+  directories). Anything else publishes nothing.
 * **Analysing.** For each it runs the same read-only analysis as `portta analyze` and publishes the
   plan: services, how each would be routed, the ports that would stop being published, fixed container
-  names and who on the host already holds them, and a namespace in use by another folder. It re-analyses
+  names and who on the host already holds them, and a namespace in use by another folder. A Compose file that makes Compose fetch something (`oci://`,
+  `git+`, a URL in `include` or `extends`) is listed and not analysed, because the collector does this on
+  its own and must not download anything. It re-analyses
   a folder when its Compose file changes or every five minutes, at most eight a cycle.
 * **Where.** `state/discovery/folders.json` and `state/discovery/plans/<hash of the path>`, mounted
   into the panel read-only. No path from a request is ever opened: the panel answers only for a folder
@@ -30,7 +35,8 @@ The collector finds the folders, analyses them and publishes the result. The pan
 * **What the page does.** The Add project page lists the folders and opens a review: the plan, who may
   open each site (password, everybody, decide later), what changes, and the name. **Register project**
   creates the project in the panel with that folder (`relativePath`); it starts nothing. The review also
-  gives the exact `portta adopt` command, with the decisions as `--protect`/`--public`.
+  gives the exact `portta adopt` command, written against the absolute Projects Home the collector
+  published, with the decisions as `--protect`/`--public`.
 * **Who.** Whoever holds `settings:read`, which is the owner and administrators: the list reveals the
   layout of the host's disk.
 

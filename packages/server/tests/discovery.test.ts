@@ -91,7 +91,8 @@ describe('what adopting a folder would do', () => {
       path: 'loja-nova',
       services: [{ name: 'web', port: '3000' }, { name: 'postgres' }],
       findings: { publishedDatastores: ['postgres'] },
-      command: 'portta adopt ~/projects/loja-nova',
+      home: '/home/ada/projects',
+      command: 'portta adopt /home/ada/projects/loja-nova',
     })
   })
 

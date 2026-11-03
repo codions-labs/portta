@@ -701,6 +701,7 @@ export type DiscoveredFoldersView = z.infer<typeof DiscoveredFoldersView>
 export const FolderPlanView = named(
   z
     .object({
+      home: z.string().describe('Projects Home as the host has it, which the command is written against'),
       path: z.string(),
       composeFile: z.string(),
       project: z.object({ name: z.string(), source: z.string() }).strict(),

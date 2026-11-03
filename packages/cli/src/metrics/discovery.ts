@@ -29,6 +29,25 @@ const SKIPPED = new Set(['node_modules', 'lost+found', 'vendor', 'dist', 'build'
 const PLANS_PER_CYCLE = 8
 const REPLAN_MS = 5 * 60_000
 
+const SENSITIVE_ROOTS = ['/etc', '/proc', '/sys', '/dev', '/boot', '/root', '/var/lib/docker', '/var/run', '/run']
+
+/** A Projects Home the collector will walk: a folder somebody keeps projects in, never a part of the system. */
+export function isWalkableHome(home: string): boolean {
+  if (home.split('/').filter(Boolean).length < 2) return false
+  return !SENSITIVE_ROOTS.some((root) => home === root || home.startsWith(`${root}/`))
+}
+
+/**
+ * Whether a Compose file reaches outside the folder to fetch something: an `include` or `extends` that
+ * names an OCI artifact, a git repository or a URL. Reading it would have Compose download it, and the
+ * collector does this on its own, so those folders are listed and not analysed.
+ */
+export function reachesOut(composeText: string): boolean {
+  return /(oci:\/\/|git\+[a-z]+:\/\/|git@[\w.-]+:|\b(?:file|path|extends):\s*['"]?https?:\/\/|^\s*-\s*['"]?https?:\/\/)/im.test(
+    composeText,
+  )
+}
+
 export function discoveryDir(root: string): string {
   return join(root, 'state/discovery')
 }
@@ -41,7 +60,8 @@ export function projectsHomeOf(root: string): string | null {
       : new Map<string, string>()
     const configured = env.get('PORTTA_PROJECTS_HOME')?.trim()
     const home = configured && configured !== '' ? configured : defaultProjectsHome(homedir(), process.getuid?.() === 0)
-    return normalizeProjectsHome(home, root, homedir())
+    const normalized = normalizeProjectsHome(home, root, homedir())
+    return isWalkableHome(normalized) ? normalized : null
   } catch {
     return null
   }
@@ -82,9 +102,16 @@ const planned = new Map<string, { at: number; modifiedAt: number; plan: FolderPl
 
 async function planFolder(
   home: string,
-  folder: { path: string; modifiedAt: number },
+  folder: { path: string; composeFile: string; modifiedAt: number },
   now: number,
 ): Promise<FolderPlan | null> {
+  let text = ''
+  try {
+    text = readFileSync(join(home, folder.path, folder.composeFile), 'utf8')
+  } catch {
+    return null
+  }
+  if (reachesOut(text)) return null
   const report = await analyze(join(home, folder.path)).catch(() => null)
   if (!report) return null
   return {

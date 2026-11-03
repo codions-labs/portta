@@ -65,11 +65,16 @@ export function isDiscoverablePath(path: string): boolean {
 }
 
 /** What the CLI prints for the same folder, so the review can be done in a terminal too. */
-export function adoptCommand(folder: string, decisions: Record<string, 'protect' | 'public' | 'later'>): string {
+export function adoptCommand(
+  folder: string,
+  decisions: Record<string, 'protect' | 'public' | 'later'>,
+  /** Projects Home as the collector published it, so the command names the folder that was reviewed. */
+  home = '~/projects',
+): string {
   const quote = (value: string) => (/^[A-Za-z0-9_./~-]+$/.test(value) ? value : `'${value.replace(/'/g, `'\\''`)}'`)
   const flags = Object.entries(decisions)
     .filter(([name, choice]) => choice !== 'later' && /^[A-Za-z0-9_.-]+$/.test(name))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([name, choice]) => `--${choice === 'protect' ? 'protect' : 'public'} ${name}`)
-  return ['portta adopt', quote(`~/projects/${folder}`), ...flags].join(' ')
+  return ['portta adopt', quote(`${home.replace(/\/+$/, '')}/${folder}`), ...flags].join(' ')
 }

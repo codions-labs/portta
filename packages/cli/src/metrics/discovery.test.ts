@@ -42,7 +42,9 @@ vi.mock('../commands/projects.js', () => ({
   })),
 }))
 
-const { discoveryDir, findComposeFolders, publishDiscovery } = await import('./discovery.js')
+const { discoveryDir, findComposeFolders, isWalkableHome, publishDiscovery, reachesOut } = await import(
+  './discovery.js'
+)
 
 function home() {
   const root = mkdtempSync(join(tmpdir(), 'portta-discovery-root-'))
@@ -90,5 +92,34 @@ describe('publishing what was found', () => {
     writeFileSync(join(root, '.env'), `PORTTA_PROJECTS_HOME=${join(root, 'missing')}\n`)
     await publishDiscovery(root)
     expect(existsSync(join(discoveryDir(root), 'folders.json'))).toBe(false)
+  })
+})
+
+describe('what the collector will walk and read on its own', () => {
+  it.each(['/', '/home', '/etc', '/etc/portta', '/root', '/proc/1', '/var/lib/docker/volumes'])(
+    'will not walk %s as Projects Home',
+    (home) => expect(isWalkableHome(home)).toBe(false),
+  )
+
+  it.each(['/srv/projects', '/home/ada/projects', '/Users/ada/Projects'])('walks %s', (home) =>
+    expect(isWalkableHome(home)).toBe(true),
+  )
+
+  it('does not analyse a Compose file that makes Compose fetch something', () => {
+    expect(reachesOut('include:\n  - oci://registry.example/stack:1\n')).toBe(true)
+    expect(reachesOut('include:\n  - git+https://github.com/acme/stack.git\n')).toBe(true)
+    expect(reachesOut('services:\n  web:\n    extends:\n      file: https://example.com/base.yml\n')).toBe(true)
+    expect(reachesOut('services:\n  web:\n    image: nginx\n    ports: ["8080:80"]\n')).toBe(false)
+  })
+
+  it('lists such a folder and publishes no plan for it', async () => {
+    const { root, projects } = home()
+    mkdirSync(join(projects, 'remoto'))
+    writeFileSync(join(projects, 'remoto', 'compose.yaml'), 'include:\n  - oci://registry.example/stack:1\n')
+    await publishDiscovery(root, Date.now())
+    const index = JSON.parse(readFileSync(join(discoveryDir(root), 'folders.json'), 'utf8'))
+    const named = (path: string) => index.folders.find((folder: { path: string }) => folder.path === path)
+    expect(named('remoto')).toMatchObject({ planned: false })
+    expect(named('loja-nova')).toMatchObject({ planned: true })
   })
 })
