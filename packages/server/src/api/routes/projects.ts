@@ -144,7 +144,11 @@ export function projectRoutes(deps: AppDeps): Hono {
   async function releasingMoved<T>(
     db: Database,
     c: Context,
-    about: { project: { id: string; slug: string }; only?: (name: string, before: Map<string, string>) => boolean },
+    about: {
+      /** A project that does not exist yet is named from what the change returns. */
+      project: { id: string; slug: string } | ((result: T) => { id: string; slug: string })
+      only?: (name: string, before: Map<string, string>) => boolean
+    },
     change: () => Promise<T>,
   ): Promise<T> {
     const snapshot = await deps.cache.get()
@@ -156,12 +160,13 @@ export function projectRoutes(deps: AppDeps): Hono {
     )
     const released = releaseCrawlerExceptions(deps.config, moved)
     if (released.length > 0) {
+      const project = typeof about.project === 'function' ? about.project(result) : about.project
       await record(deps, c, {
         action: 'crawlers.changed',
         resourceType: 'project',
-        resourceId: String(about.project.id),
-        resourceName: about.project.slug,
-        projectId: Number(about.project.id),
+        resourceId: String(project.id),
+        resourceName: project.slug,
+        projectId: Number(project.id),
         metadata: { released },
       })
     }
@@ -212,7 +217,7 @@ export function projectRoutes(deps: AppDeps): Hono {
         throw new HTTPException(409, { message: `a project named '${body.slug}' already exists` })
       }
       // A new project can adopt a folder's environments by path, and they come with whatever was decided for them.
-      const created = await releasingMoved(db, c, { project: { id: '0', slug: body.slug } }, () =>
+      const created = await releasingMoved(db, c, { project: (made) => ({ id: made.id, slug: made.slug }) }, () =>
         refusedOnValidation(() =>
           db.projects.create({
             ...body,
