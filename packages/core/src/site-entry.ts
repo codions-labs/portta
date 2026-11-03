@@ -25,7 +25,31 @@ export function safeLocalPath(value: string | null | undefined): string {
 }
 
 /** The shape of the value that ties a token to the browser that asked for it. */
-export const SITE_ENTRY_STATE = /^[A-Za-z0-9_-]{16,64}$/
+export const SITE_ENTRY_STATE = /^[A-Za-z0-9_-]{16,64}\.(http|https)\.[A-Za-z0-9_-]{20,64}$/
+
+function stateMac(nonce: string, host: string, proto: string, secret: string): string {
+  return createHmac('sha256', secret).update(`site-entry-state.${host}.${proto}.${nonce}`).digest('base64url')
+}
+
+/**
+ * What the login service gives a browser before sending it to the panel.
+ *
+ * The scheme it saw is part of it and so is the host, signed, so the panel can trust the scheme to
+ * return to without taking it from a link, and a value made for one host is no use for another.
+ */
+export function issueEntryState(host: string, proto: 'http' | 'https', secret: string): string {
+  const nonce = randomBytes(18).toString('base64url')
+  return `${nonce}.${proto}.${stateMac(nonce, host, proto, secret)}`
+}
+
+/** The scheme the login service saw, or null when the value is not one it made for this host. */
+export function readEntryState(value: string, host: string, secret: string): 'http' | 'https' | null {
+  if (!SITE_ENTRY_STATE.test(value)) return null
+  const [nonce, proto, mac] = value.split('.') as [string, 'http' | 'https', string]
+  const expected = Buffer.from(stateMac(nonce, host, proto, secret))
+  const supplied = Buffer.from(mac)
+  return supplied.length === expected.length && timingSafeEqual(supplied, expected) ? proto : null
+}
 
 export interface SiteEntryToken {
   host: string

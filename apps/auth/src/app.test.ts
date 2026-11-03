@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import {
   emptyProtectionStore,
   hashPassword,
+  issueEntryState,
   issueSiteEntry,
   readProtectionStore,
   removeProtection,
@@ -425,7 +426,7 @@ describe('ForwardAuth app', () => {
 
 describe('a session of the panel', () => {
   const PANEL = 'https://panel.example.com'
-  const STATE = 's'.repeat(24)
+  const STATE = issueEntryState('demo.example.com', 'https', secret)
   const entry = (overrides: Partial<Parameters<typeof issueSiteEntry>[0]> = {}, at = Date.now()) =>
     issueSiteEntry(
       { host: 'demo.example.com', scope: 'share:a7f3', epoch: 1, user: 'ada@example.test', state: STATE, ...overrides },
@@ -436,7 +437,7 @@ describe('a session of the panel', () => {
     app: ReturnType<typeof setup>['app'],
     token: string,
     next = '/orders',
-    cookie = `__portta_entry=${STATE}`,
+    cookie = `__Host-portta_entry=${STATE}`,
   ) =>
     app.request(`/__portta/auth/panel?token=${encodeURIComponent(token)}&next=${encodeURIComponent(next)}`, {
       headers: { ...forwarded, ...(cookie ? { cookie } : {}) },
@@ -486,7 +487,12 @@ describe('a session of the panel', () => {
     const noCookie = await arrive(app, entry(), '/orders', '')
     expect(noCookie.headers.get('location')).toContain('panel=expired')
     expect(noCookie.headers.get('set-cookie') ?? '').not.toContain('__portta_session')
-    const otherBrowser = await arrive(app, entry(), '/orders', `__portta_entry=${'o'.repeat(24)}`)
+    const otherBrowser = await arrive(
+      app,
+      entry(),
+      '/orders',
+      `__Host-portta_entry=${issueEntryState('demo.example.com', 'https', secret)}`,
+    )
     expect(otherBrowser.headers.get('location')).toContain('panel=expired')
     expect(otherBrowser.headers.get('set-cookie') ?? '').not.toContain('__portta_session')
   })
@@ -511,10 +517,10 @@ describe('a session of the panel', () => {
     expect(first.status).toBe(200)
     const panel = contextOf(await first.text()).panel as { url: string }
     expect(panel.url).toMatch(
-      new RegExp(`^${PANEL}/api/site-entry\\?host=demo\\.example\\.com&next=%2Forders&state=[A-Za-z0-9_-]{24}$`),
+      new RegExp(`^${PANEL}/api/site-entry\\?host=demo\\.example\\.com&next=%2Forders&state=[A-Za-z0-9_.-]+$`),
     )
-    const state = /state=([A-Za-z0-9_-]+)$/.exec(panel.url)?.[1]
-    expect(first.headers.get('set-cookie')).toContain(`__portta_entry=${state}`)
+    const state = /state=([A-Za-z0-9_.-]+)$/.exec(panel.url)?.[1]
+    expect(first.headers.get('set-cookie')).toContain(`__Host-portta_entry=${state}`)
 
     const returning = await app.request('/__portta/auth/login?next=%2Forders', {
       headers: { ...forwarded, cookie: '__portta_panel=1' },

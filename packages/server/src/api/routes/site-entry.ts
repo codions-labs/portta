@@ -12,11 +12,12 @@ import {
   issueSiteEntry,
   normalizeProtectionHost,
   protectionForHost,
+  readEntryState,
   readProtectionStore,
-  SITE_ENTRY_STATE,
   safeLocalPath,
 } from 'portta-core'
 import { z } from 'portta-core/zod'
+import { schemeFor } from '../../config.ts'
 import type { AppDeps } from '../../deps.ts'
 import { adoptions } from '../../services/access-control.ts'
 import { documentRoute } from '../openapi.ts'
@@ -68,10 +69,12 @@ export function siteEntryRoutes(deps: AppDeps): Hono {
       // Only a host that asks for a login has a login page to go back to.
       if (!record || record.mode !== 'protected') return c.text('Unknown address.', 404)
 
-      // From how the gateway is served, never from the request: a link must not be able to make
-      // the token travel in the clear.
-      const proto = deps.config.tlsEnabled ? 'https' : 'http'
       const next = safeLocalPath(c.req.query('next'))
+      const state = c.req.query('state') ?? ''
+      // The scheme is the one the login service saw, which only it can sign for this host. A link
+      // cannot ask for plain http, and a server that answers on https never goes back to http.
+      const seen = deps.config.authSecret ? readEntryState(state, record.host, deps.config.authSecret) : null
+      const proto = seen === 'https' || schemeFor(deps.config) === 'https' ? 'https' : 'http'
       const site = `${proto}://${record.host}${AUTH_PATH_PREFIX}`
       const back = (reason: 'signedOut' | 'denied' | 'off') =>
         c.redirect(`${site}/login?next=${encodeURIComponent(next)}&panel=${reason}`, 302)
@@ -82,8 +85,7 @@ export function siteEntryRoutes(deps: AppDeps): Hono {
       if (!principal) return back('signedOut')
       // A browser session. An API token has no business opening a site in a browser.
       if (principal.kind !== 'user') return back('denied')
-      const state = c.req.query('state') ?? ''
-      if (!SITE_ENTRY_STATE.test(state)) return c.text('Missing state.', 400)
+      if (seen === null) return c.text('Missing or unknown state.', 400)
 
       // A share, and an environment nobody adopted, belong to whoever sees everything, even when a
       // share names the project it was made from.

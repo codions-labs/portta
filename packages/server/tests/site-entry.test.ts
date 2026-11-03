@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { bootstrapOwner, createAuth, hasOwner, resolveSecurityMode } from 'portta-auth-core'
 import {
   emptyProtectionStore,
+  issueEntryState,
   readProtectionStore,
   readSiteEntry,
   setProtection,
@@ -83,13 +84,15 @@ async function panel() {
   return { ask, owner, p, seeded, asOwner }
 }
 
-const STATE = 's'.repeat(24)
-const entry = (host: string, extra = '') => `/api/site-entry?host=${host}&next=%2Forders&state=${STATE}${extra}`
+const stateFor = (host: string, proto: 'http' | 'https' = 'https') => issueEntryState(host, proto, SECRET)
+const entry = (host: string, extra = '') =>
+  `/api/site-entry?host=${host}&next=%2Forders&state=${stateFor(host)}${extra}`
 
 describe('a panel session opening a protected site', () => {
   it('sends the owner back with a token for that host and decision', async () => {
     const { ask, owner } = await panel()
-    const response = await ask(entry('mine.example.com'), owner)
+    const path = entry('mine.example.com')
+    const response = await ask(path, owner)
     expect(response.status).toBe(302)
     const location = new URL(response.headers.get('location') ?? '')
     expect(`${location.origin}${location.pathname}`).toBe('https://mine.example.com/__portta/auth/panel')
@@ -99,7 +102,7 @@ describe('a panel session opening a protected site', () => {
       host: 'mine.example.com',
       scope: 'host:mine.example.com',
       user: 'owner@example.test',
-      state: STATE,
+      state: new URL(path, 'http://panel').searchParams.get('state'),
     })
   })
 
@@ -115,7 +118,7 @@ describe('a panel session opening a protected site', () => {
   it('never returns to an address the request supplies', async () => {
     const { ask, owner } = await panel()
     const response = await ask(
-      `/api/site-entry?host=mine.example.com&next=https%3A%2F%2Fevil.example&state=${STATE}`,
+      `/api/site-entry?host=mine.example.com&next=https%3A%2F%2Fevil.example&state=${stateFor('mine.example.com')}`,
       owner,
     )
     const location = new URL(response.headers.get('location') ?? '')
@@ -162,16 +165,55 @@ describe('a panel session opening a protected site', () => {
     expect((await ask(entry('share.example.com'), developer)).headers.get('location')).toContain('panel=denied')
   })
 
-  it('takes the scheme from how the gateway is served and ignores what a link asks for', async () => {
+  it('goes back on the scheme the login service saw, never on one a link asks for, and never down to http on a server that answers on https', async () => {
     const { ask, owner } = await panel()
-    const response = await ask(`${entry('mine.example.com')}&proto=http`, owner)
-    expect(response.headers.get('location')).toMatch(/^https:\/\/mine\.example\.com\//)
+    // The panel() server answers on https: a state signed for http, or a link asking for it, changes nothing.
+    const http = `/api/site-entry?host=mine.example.com&next=%2F&state=${stateFor('mine.example.com', 'http')}&proto=http`
+    expect((await ask(http, owner)).headers.get('location')).toMatch(/^https:\/\/mine\.example\.com\//)
+  })
+
+  it('goes back on https when the login service saw https behind an edge, though the gateway itself is plain http', async () => {
+    const seeded = await seededDatabase()
+    const dir = mkdtempSync(join(tmpdir(), 'portta-site-entry-edge-'))
+    const authStore = join(dir, 'protections.json')
+    writeProtectionStore(
+      authStore,
+      setProtection(emptyProtectionStore(), {
+        entryPoints: ['web'],
+        mode: 'protected',
+        scope: 'host:mine.example.com',
+        host: 'mine.example.com',
+        label: 'mine',
+        hash: '$portta$scrypt$65536$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      }),
+    )
+    const p = makeProtectedApp(seeded.database, { authStore, dynamicDir: dir, authSecret: SECRET, tlsEnabled: false })
+    const security = resolveSecurityMode({
+      PORTTA_AUTH_MODE: 'required',
+      PORTTA_AUTH_SECRET: 'a-test-secret-that-is-long-enough',
+    })
+    await bootstrapOwner(
+      (handle) => createAuth({ db: handle, security, hasOwner: () => hasOwner(handle), password: cheapPasswords }),
+      p.db,
+      { name: 'Ada', email: 'owner@example.test', password: PASSWORD },
+      new Headers(),
+    )
+    const owner = await signInAs(p.auth, 'owner@example.test', PASSWORD)
+    const go = (proto: 'http' | 'https') =>
+      p.app.request(`/api/site-entry?host=mine.example.com&next=%2F&state=${stateFor('mine.example.com', proto)}`, {
+        headers: owner,
+      })
+    expect((await go('https')).headers.get('location')).toMatch(/^https:\/\/mine\.example\.com\/__portta\/auth\/panel/)
+    expect((await go('http')).headers.get('location')).toMatch(/^http:\/\/mine\.example\.com\/__portta\/auth\/panel/)
   })
 
   it('wants the state of the browser that asked, so a token cannot be put in another', async () => {
     const { ask, owner } = await panel()
     expect((await ask('/api/site-entry?host=mine.example.com&next=%2F', owner)).status).toBe(400)
     expect((await ask('/api/site-entry?host=mine.example.com&next=%2F&state=short', owner)).status).toBe(400)
+    // A well-formed state the login service did not sign for this host is no state.
+    const other = stateFor('theirs.example.com')
+    expect((await ask(`/api/site-entry?host=mine.example.com&next=%2F&state=${other}`, owner)).status).toBe(400)
   })
 
   it('does not open a site for an API token, which is not a browser session', async () => {

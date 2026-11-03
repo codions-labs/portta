@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { issueSiteEntry, readSiteEntry, SITE_ENTRY_SECONDS, safeLocalPath } from './site-entry.ts'
+import {
+  issueEntryState,
+  issueSiteEntry,
+  readEntryState,
+  readSiteEntry,
+  SITE_ENTRY_SECONDS,
+  safeLocalPath,
+} from './site-entry.ts'
 
 const secret = 'ab'.repeat(32)
 const input = {
@@ -54,5 +61,21 @@ describe('safe local path', () => {
   it('keeps a local path and its query', () => {
     expect(safeLocalPath('/orders/42?tab=items&x=a%20b')).toBe('/orders/42?tab=items&x=a%20b')
     expect(safeLocalPath(undefined)).toBe('/')
+  })
+})
+
+describe('entry state', () => {
+  it('carries the scheme the login service saw, for the host it was made for', () => {
+    const state = issueEntryState('demo.example.com', 'https', secret)
+    expect(readEntryState(state, 'demo.example.com', secret)).toBe('https')
+    expect(readEntryState(issueEntryState('demo.example.com', 'http', secret), 'demo.example.com', secret)).toBe('http')
+  })
+
+  it('is no use for another host, with another secret, or with the scheme edited', () => {
+    const state = issueEntryState('demo.example.com', 'https', secret)
+    expect(readEntryState(state, 'other.example.com', secret)).toBeNull()
+    expect(readEntryState(state, 'demo.example.com', 'cd'.repeat(32))).toBeNull()
+    expect(readEntryState(state.replace('.https.', '.http.'), 'demo.example.com', secret)).toBeNull()
+    expect(readEntryState('s'.repeat(24), 'demo.example.com', secret)).toBeNull()
   })
 })

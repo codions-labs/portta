@@ -1,16 +1,16 @@
-import { randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { type Context, Hono } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import {
+  issueEntryState,
   normalizeProtectionHost,
   type ProtectionRecord,
   protectionForHost,
+  readEntryState,
   readProtectionStore,
   readSiteEntry,
-  SITE_ENTRY_STATE,
   safeLocalPath,
   verifyPassword,
 } from 'portta-core'
@@ -22,6 +22,11 @@ import { issueSession, readSession, SESSION_COOKIE } from './session.ts'
 const PANEL_HINT_COOKIE = '__portta_panel'
 /** Ties a token from the panel to the browser that asked for it, as `state` does in OAuth. */
 const PANEL_STATE_COOKIE = '__portta_entry'
+/**
+ * On https the cookie carries the `__Host-` prefix, which a browser accepts only without a Domain
+ * and from the host itself, so a sibling host cannot plant one for this one to read.
+ */
+const stateCookie = (secure: boolean) => (secure ? `__Host-${PANEL_STATE_COOKIE.slice(2)}` : PANEL_STATE_COOKIE)
 
 export interface AuthAppDependencies {
   config?: AuthConfig
@@ -147,14 +152,14 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     const host = forwardedHost(c)
     if (!config.panelUrl || !host) return null
     const proto = effectiveProtocol(c) === 'http' ? 'http' : 'https'
-    // Remembered by this browser alone: a token made for somebody else's request is not accepted
-    // from a link they were sent.
-    const state = randomBytes(18).toString('base64url')
-    setCookie(c, PANEL_STATE_COOKIE, state, {
+    // Signed with the host and the scheme this request arrived on, and remembered by this browser
+    // alone: a token made for somebody else's request is not accepted from a link they were sent.
+    const state = issueEntryState(host, proto, config.secret)
+    setCookie(c, stateCookie(proto === 'https'), state, {
       httpOnly: true,
       sameSite: 'Lax',
       secure: proto === 'https',
-      path: '/__portta/auth',
+      path: proto === 'https' ? '/' : '/__portta/auth',
       maxAge: 600,
     })
     return `${config.panelUrl}/api/site-entry?host=${encodeURIComponent(host)}&next=${encodeURIComponent(next)}&state=${state}`
@@ -305,9 +310,10 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
     const refused = () => c.redirect(`${loginUrl(c, next)}&panel=expired`, 302)
     if (!token || spentEntries.has(token.id)) return refused()
     if (token.host !== host || token.scope !== protection.scope || token.epoch !== protection.epoch) return refused()
-    const state = getCookie(c, PANEL_STATE_COOKIE)
-    deleteCookie(c, PANEL_STATE_COOKIE, { path: '/__portta/auth' })
-    if (!state || !SITE_ENTRY_STATE.test(state) || state !== token.state) return refused()
+    const secure = effectiveProtocol(c) === 'https'
+    const state = getCookie(c, stateCookie(secure))
+    deleteCookie(c, stateCookie(secure), { path: secure ? '/' : '/__portta/auth', secure })
+    if (!state || readEntryState(state, host, config.secret) === null || state !== token.state) return refused()
     spentEntries.set(token.id, token.expiresAt)
     startSession(c, protection, host, token.user)
     setCookie(c, PANEL_HINT_COOKIE, '1', {
