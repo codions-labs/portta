@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import type { Command } from 'commander'
 import {
@@ -246,6 +246,11 @@ function declaredComposeName(file: string): string | null {
 export interface AnalyzeOptions {
   /** The Compose file, relative to the directory argument or absolute. Without it the usual names are tried. */
   file?: string
+  /**
+   * Run without a person watching (the collector): nothing is interpolated, so no variable of the host
+   * or of a `.env` ends up in the result, and Compose is given a deadline.
+   */
+  unattended?: boolean
 }
 
 /** What the project declares about itself, or the defaults when it declares
@@ -275,6 +280,11 @@ function readProjectConfig(root: string): {
     : { source: 'file', path: PROJECT_CONFIG_PATH, config: null, issues: parsed.issues }
 }
 
+function isSmallRegularFile(file: string): boolean {
+  const info = lstatSync(file, { throwIfNoEntry: false })
+  return info?.isFile() === true && info.size <= 64 * 1024
+}
+
 export async function analyze(pathValue: string, options: AnalyzeOptions = {}, containers?: ContainerRecord[]) {
   const base = resolve(pathValue)
   let composeFile: string
@@ -289,11 +299,17 @@ export async function analyze(pathValue: string, options: AnalyzeOptions = {}, c
   // The project directory is the file's: that is where Compose reads .env and
   // where the overlay goes, whether the file was named or found.
   const path = dirname(composeFile)
-  let result = await runProcess('docker', ['compose', '-f', composeFile, 'config', '--format', 'json'], {
-    cwd: path,
-    reject: false,
-  })
-  if (result.exitCode !== 0)
+  const unattended = options.unattended === true
+  let result = unattended
+    ? await runProcess('docker', ['compose', '-f', composeFile, 'config', '--format', 'json', '--no-interpolate'], {
+        cwd: path,
+        timeout: 20_000,
+      })
+    : await runProcess('docker', ['compose', '-f', composeFile, 'config', '--format', 'json'], {
+        cwd: path,
+        reject: false,
+      })
+  if (!unattended && result.exitCode !== 0)
     result = await runProcess(
       'docker',
       ['compose', '-f', composeFile, 'config', '--format', 'json', '--no-interpolate'],
@@ -306,7 +322,7 @@ export async function analyze(pathValue: string, options: AnalyzeOptions = {}, c
       .find((file) => existsSync(join(path, file))) ??
     ['compose.portta.yaml', 'compose.portta.yml'].find((file) => existsSync(join(path, file))) ??
     null
-  const projectFromEnv = existsSync(join(path, '.env'))
+  const projectFromEnv = isSmallRegularFile(join(path, '.env'))
     ? parseEnv(readFileSync(join(path, '.env'), 'utf8')).get('COMPOSE_PROJECT_NAME')
     : undefined
   const declaredName = declaredComposeName(composeFile)

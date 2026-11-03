@@ -103,6 +103,7 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
   let lastHistory = 0
   let lastEnvironment = 0
   let lastDiscovery = 0
+  let discovering = false
   let running = true
   const halt = () => {
     running = false
@@ -135,9 +136,13 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
         appendLog(root, `environment collect failed: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
-    if (started - lastDiscovery >= DISCOVERY_INTERVAL_MS) {
+    if (!discovering && started - lastDiscovery >= DISCOVERY_INTERVAL_MS) {
+      // Not awaited: folders are the projects' and a slow one must not stop the host's metrics.
       lastDiscovery = started
-      await publishDiscovery(root, started)
+      discovering = true
+      void publishDiscovery(root, started).finally(() => {
+        discovering = false
+      })
     }
     const elapsed = Date.now() - started
     const wait = Math.max(0, COLLECT_INTERVAL_MS - elapsed)
