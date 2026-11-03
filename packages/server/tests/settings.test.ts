@@ -187,7 +187,7 @@ describe('the Settings view and its writes', () => {
     })
   })
 
-  it('flags as secret in the catalogue exactly the keys the applied record digests', () => {
+  it('digests every key the catalogue flags as secret, and no catalogue key is digested by mistake', () => {
     for (const spec of FIELDS) expect(isSecretKey(spec.key), spec.key).toBe(spec.secret === true)
   })
 

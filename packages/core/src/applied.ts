@@ -10,8 +10,8 @@
 // So `up` records the `.env` it applied, and "pending" is a difference between
 // two snapshots of the same file. See ADR 0026.
 
-import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { createHash, randomBytes } from 'node:crypto'
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, writeSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 /** Relative to PORTTA_HOME; `state/panel` is the directory the panel mounts. */
@@ -20,7 +20,9 @@ export const APPLIED_FILE = 'state/panel/applied-env.json'
 /** Where the panel finds it, inside its container. */
 export const APPLIED_FILE_IN_PANEL = '/app/state/panel/applied-env.json'
 
-const SECRET_KEY = /(SECRET|TOKEN|AUTHKEY|PASSWORD|API_KEY)$/
+// Unanchored and wide on purpose: a key that is wrongly digested costs nothing,
+// one that is wrongly written in the clear leaks.
+const SECRET_KEY = /(SECRET|TOKEN|AUTHKEY|PASSWORD|PASSWD|CREDENTIAL|PRIVATE_?KEY|API_?KEY|ACCESS_?KEY|_KEY)/i
 
 /**
  * Secrets are recorded as a digest, so this file never holds a second copy of
@@ -66,12 +68,24 @@ export function readApplied(path: string): AppliedSnapshot | null {
   }
 }
 
-/** Written beside the target and renamed over it, so a reader never sees half of one. */
+/**
+ * Written beside the target and renamed over it, so a reader never sees half of
+ * one. The panel can write this directory and `up` may run as root inside the
+ * applier, so the temporary file is created exclusively (`wx` fails on anything
+ * already there, a symlink included, instead of following it) under a name that
+ * cannot be guessed. It stays world-readable because the panel, a different
+ * user from the applier's root, has to read it; it holds no secret.
+ */
 export function writeApplied(root: string, env: Map<string, string>): void {
   const path = join(root, APPLIED_FILE)
   mkdirSync(dirname(path), { recursive: true })
-  const temporary = `${path}.${process.pid}.tmp`
-  writeFileSync(temporary, `${JSON.stringify(snapshotOf(env), null, 2)}\n`, { mode: 0o644 })
+  const temporary = `${path}.${randomBytes(8).toString('hex')}.tmp`
+  const descriptor = openSync(temporary, 'wx', 0o644)
+  try {
+    writeSync(descriptor, `${JSON.stringify(snapshotOf(env), null, 2)}\n`)
+  } finally {
+    closeSync(descriptor)
+  }
   renameSync(temporary, path)
 }
 
