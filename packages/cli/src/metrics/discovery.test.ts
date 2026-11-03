@@ -96,12 +96,20 @@ describe('publishing what was found', () => {
 })
 
 describe('what the collector will walk and read on its own', () => {
-  it.each(['/', '/home', '/etc', '/etc/portta', '/root', '/proc/1', '/var/lib/docker/volumes'])(
-    'will not walk %s as Projects Home',
-    (home) => expect(isWalkableHome(home)).toBe(false),
-  )
+  it.each([
+    '/',
+    '/home',
+    '/etc',
+    '/etc/portta',
+    '/root',
+    '/root/',
+    '/root/.ssh',
+    '/home/ada/.config/projects',
+    '/proc/1',
+    '/var/lib/docker/volumes',
+  ])('will not walk %s as Projects Home', (home) => expect(isWalkableHome(home)).toBe(false))
 
-  it.each(['/srv/projects', '/home/ada/projects', '/Users/ada/Projects'])('walks %s', (home) =>
+  it.each(['/srv/projects', '/home/ada/projects', '/Users/ada/Projects', '/root/projects'])('walks %s', (home) =>
     expect(isWalkableHome(home)).toBe(true),
   )
 
