@@ -204,7 +204,12 @@ async function build(directory: string, environment: string, now: number): Promi
       if (file.diff) {
         // No external diff driver, no textconv: both name a program git would run.
         const patch = await git(['diff', 'HEAD', '--no-color', '--no-ext-diff', '--no-textconv', '--', file.path])
-        if (patch && patch.trim() !== '') {
+        // git read the file by its path, so it is checked again afterwards: still a single-name regular
+        // file, and a patch that is about this path and no other.
+        const still = lstatSync(join(real, file.path), { throwIfNoEntry: false })
+        const headers = (patch ?? '').split('\n').filter((line) => line.startsWith('diff --git '))
+        const aboutThisFile = headers.length === 1 && headers[0] === `diff --git a/${file.path} b/${file.path}`
+        if (patch && patch.trim() !== '' && still?.isFile() && still.nlink === 1 && aboutThisFile) {
           diffs.set(file.path, patch.slice(0, FILES_MAX_DIFF_BYTES))
           total += Math.min(Buffer.byteLength(patch), FILES_MAX_DIFF_BYTES)
         } else file.diff = false
@@ -212,7 +217,7 @@ async function build(directory: string, environment: string, now: number): Promi
     }
 
     const [hash, subject, at] = (log ?? '').trim().split('\x1f')
-    const [behind, ahead] = (counts ?? '').trim().split(/\s+/).map(Number)
+    const [, ahead] = (counts ?? '').trim().split(/\s+/).map(Number)
     const changed = [...changes.values()].filter((value) => value !== 'U').length
     return {
       index: {

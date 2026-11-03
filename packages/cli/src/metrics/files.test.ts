@@ -163,4 +163,12 @@ describe('the copy of a project’s files the panel reads', () => {
     expect(index.files.find((file) => file.path === 'hard.txt')?.readable).not.toBe('text')
     expect(blobs(root, environment).join('\n')).not.toContain('root:$6$')
   })
+
+  it('publishes nothing when the owner’s exclude file is there and cannot be read safely', async () => {
+    const { folder, root, environment } = project()
+    writeFileSync(join(folder, 'secret-draft.txt'), 'not for anybody\n')
+    writeFileSync(join(folder, '.git/info/exclude'), `secret-draft.txt\n${'#'.repeat(80 * 1024)}\n`)
+    await publishFiles(root, environment, folder, Date.now() + 5_000_000)
+    expect(existsSync(join(filesDir(root), environment, 'index.json'))).toBe(false)
+  })
 })

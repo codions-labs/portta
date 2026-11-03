@@ -231,7 +231,14 @@ function privateView(directory: string, uid: number | undefined): View | null {
     // HEAD is copied, not linked: git reads a linked HEAD as an old-style symbolic ref.
     writeFileSync(join(gitDir, 'HEAD'), head, { mode: 0o600 })
     // What the owner excluded for themselves, and nobody else: copied through the same checked read.
-    const exclude = readSmallFile(join(real, 'info', 'exclude'), CONFIG_LIMIT, uid)
+    const excludePath = join(real, 'info', 'exclude')
+    const exclude = readSmallFile(excludePath, CONFIG_LIMIT, uid)
+    // One that is there and cannot be read safely (too large, a link, not the owner's) is not a
+    // reason to carry on without it: what it hides would be published as if nobody had hidden it.
+    if (exclude === null && lstatSync(excludePath, { throwIfNoEntry: false })) {
+      rmSync(gitDir, { recursive: true, force: true })
+      return null
+    }
     if (exclude) {
       mkdirSync(join(gitDir, 'info'), { mode: 0o700 })
       writeFileSync(join(gitDir, 'info', 'exclude'), exclude, { mode: 0o600 })
