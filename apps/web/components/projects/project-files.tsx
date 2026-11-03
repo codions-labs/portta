@@ -271,7 +271,6 @@ export function ProjectFilesTab({ slug }: { slug: string }) {
                 <pre className="max-h-[32rem] overflow-auto py-2 font-mono text-xs leading-6">
                   {lines.map((line, index) => (
                     <div
-                      // biome-ignore lint/suspicious/noArrayIndexKey: lines have no identity beyond their place
                       key={index}
                       className={cn(
                         'flex gap-4 px-4',

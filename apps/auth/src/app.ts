@@ -310,7 +310,7 @@ export function createAuthApp(dependencies: AuthAppDependencies = {}): Hono {
 
   app.get('/__portta/auth/login', (c) => {
     const protection = findProtection(c)
-    if (!protection || protection.mode !== 'protected') return unavailable(c)
+    if (protection?.mode !== 'protected') return unavailable(c)
     // A browser that got in with the panel before goes there again by itself. One that has
     // never done it sees the password form first, so a person who cannot reach the panel is
     // never sent to a page they cannot open.

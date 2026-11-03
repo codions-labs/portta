@@ -82,7 +82,7 @@ export function readFileContent(config: PanelConfig, environment: string, path: 
   if (!isSafeRelativePath(path) || isSecretPath(path)) return null
   const index = readFilesIndex(config, environment)
   const entry = index?.files.find((file) => file.path === path)
-  if (!entry || entry.kind !== 'file' || entry.ignored || entry.readable !== 'text') return null
+  if (entry?.kind !== 'file' || entry.ignored || entry.readable !== 'text') return null
   const key = fileKey(path)
   const content = readSmall(join(config.filesDir, environment, 'blobs', key), FILES_MAX_TEXT_BYTES)
   if (content === null) return null

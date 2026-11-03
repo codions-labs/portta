@@ -67,7 +67,7 @@ export function siteEntryRoutes(deps: AppDeps): Hono {
       }
       const record = protectionForHost(readProtectionStore(deps.config.authStore), host)
       // Only a host that asks for a login has a login page to go back to.
-      if (!record || record.mode !== 'protected') return c.text('Unknown address.', 404)
+      if (record?.mode !== 'protected') return c.text('Unknown address.', 404)
 
       const next = safeLocalPath(c.req.query('next'))
       const state = c.req.query('state') ?? ''

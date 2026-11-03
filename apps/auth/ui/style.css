@@ -422,11 +422,11 @@
   text-decoration: none;
 }
 
-.auth-panel-link:hover {
-  background: var(--color-fill, #f1f5f9);
-}
-
-.auth-panel-link svg {
+a.auth-panel-link svg {
   width: 1rem;
   height: 1rem;
+}
+
+.auth-panel-link:hover {
+  background: var(--color-fill, #f1f5f9);
 }
