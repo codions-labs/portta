@@ -100,6 +100,13 @@ describe('filters', () => {
     expect(matchesProjectFilters(item, { ...DEFAULT_PROJECT_FILTERS, search: 'nothing' })).toBe(false)
   })
 
+  it('finds the projects whose code is not committed or not pushed in any environment', () => {
+    const state = { ...DEFAULT_PROJECT_FILTERS, state: 'unpushed' as const }
+    expect(matchesProjectFilters(item, state, new Set(['produto-pr-12']))).toBe(true)
+    expect(matchesProjectFilters(item, state, new Set(['another']))).toBe(false)
+    expect(matchesProjectFilters(item, state)).toBe(false)
+  })
+
   it('narrows by state', () => {
     expect(matchesProjectFilters(item, { ...DEFAULT_PROJECT_FILTERS, state: 'running' })).toBe(true)
     expect(matchesProjectFilters(item, { ...DEFAULT_PROJECT_FILTERS, state: 'idle' })).toBe(false)

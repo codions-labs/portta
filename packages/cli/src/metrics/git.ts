@@ -250,8 +250,23 @@ function privateView(directory: string, uid: number | undefined): View | null {
       mkdirSync(join(gitDir, 'info'), { mode: 0o700 })
       writeFileSync(join(gitDir, 'info', 'exclude'), exclude, { mode: 0o600 })
     }
-    for (const name of ['index', 'refs', 'objects', 'packed-refs', 'shallow']) {
-      if (lstatSync(join(real, name), { throwIfNoEntry: false })) symlinkSync(join(real, name), join(gitDir, name))
+    // What is linked in is what git will read as the repository, so each part must be what it says
+    // it is: a real folder or file of this user's, never a link to somewhere else.
+    for (const [name, kind] of [
+      ['index', 'file'],
+      ['refs', 'dir'],
+      ['objects', 'dir'],
+      ['packed-refs', 'file'],
+      ['shallow', 'file'],
+    ] as const) {
+      const part = lstatSync(join(real, name), { throwIfNoEntry: false })
+      if (!part) continue
+      const right = kind === 'dir' ? part.isDirectory() : part.isFile()
+      if (!right || (uid !== undefined && part.uid !== uid)) {
+        rmSync(gitDir, { recursive: true, force: true })
+        return null
+      }
+      symlinkSync(join(real, name), join(gitDir, name))
     }
     return { directory, gitDir }
   } catch {

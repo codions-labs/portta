@@ -175,7 +175,8 @@
     "problem": "With a problem {{count}}",
     "idle": "Stopped {{count}}",
     "archived": "Archived {{count}}",
-    "allTags": "All"
+    "allTags": "All",
+    "unpushed": "Unpushed code {{count}}"
   },
   "noMatch": "No project matches these filters",
   "noMatchHint": "Widen the search, or clear the state filter.",

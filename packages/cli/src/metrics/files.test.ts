@@ -6,6 +6,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs'
@@ -188,6 +189,16 @@ describe('a patch must be about the text that was read', () => {
     const { folder, root, environment } = project()
     writeFileSync(join(folder, '.git/objects/info/alternates'), `${mkdtempSync(join(tmpdir(), 'portta-alt-'))}\n`)
     await publishFiles(root, environment, folder, Date.now() + 6_000_000)
+    expect(existsSync(join(filesDir(root), environment, 'index.json'))).toBe(false)
+  })
+
+  it('publishes nothing when the objects or refs of the repository are a link to somewhere else', async () => {
+    const { folder, root, environment } = project()
+    const elsewhere = mkdtempSync(join(tmpdir(), 'portta-elsewhere-'))
+    run(elsewhere, 'init', '-b', 'main')
+    rmSync(join(folder, '.git/refs'), { recursive: true, force: true })
+    symlinkSync(join(elsewhere, '.git/refs'), join(folder, '.git/refs'))
+    await publishFiles(root, environment, folder, Date.now() + 7_000_000)
     expect(existsSync(join(filesDir(root), environment, 'index.json'))).toBe(false)
   })
 })

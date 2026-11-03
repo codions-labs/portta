@@ -33,6 +33,9 @@ publishes a bounded copy of what is safe to show, and the panel reads the copy.
   Terraform state and variables, and anything under `.ssh`, `.aws`, `.gnupg`, `.kube` or `.docker`.
   The panel lists them and says their content is hidden. The same rule is applied again when the
   panel reads, so a copy that somehow holds one is still not served.
+* **Which repository.** One whose `objects`, `refs`, `index`, `packed-refs` and `shallow` are what they
+  say they are (real folders and files of the collector's user, never links), with no borrowed
+  objects (`objects/info/alternates`) and no unreadable `info/exclude`. Anything else is not read.
 * **Which folder.** The one ADR 0056 trusts (its own user's, holding the Compose files the containers name, outside Portta), and git is held on the same short lead: a private copy
   of the repository's checked configuration, no external diff driver or text conversion, no hooks.
 * **Who reads.** Whoever may read the project (`project:read`, within their projects). Every read of

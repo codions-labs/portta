@@ -175,7 +175,8 @@
     "problem": "Com problema {{count}}",
     "idle": "Parados {{count}}",
     "archived": "Arquivados {{count}}",
-    "allTags": "Todas"
+    "allTags": "Todas",
+    "unpushed": "Código sem enviar {{count}}"
   },
   "noMatch": "Nenhum projeto corresponde a estes filtros",
   "noMatchHint": "Amplie a busca ou limpe o filtro de estado.",
