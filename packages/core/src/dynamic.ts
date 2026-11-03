@@ -2,6 +2,8 @@ export const FORWARD_AUTH_MIDDLEWARE = 'portta-forward-auth'
 export const AUTH_SERVICE = 'portta-auth'
 export const AUTH_PATH_PREFIX = '/__portta/auth'
 
+import { createHash } from 'node:crypto'
+
 import type { ProtectionStore } from './protections.ts'
 
 export class UnsafeDynamicValueError extends Error {}
@@ -13,13 +15,14 @@ export function quoteDynamicValue(value: string): string {
 }
 
 function dynamicName(value: string): string {
-  return (
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9-]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 48) || 'protection'
-  )
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  if (slug.length <= 48) return slug || 'protection'
+  // Truncating alone makes long names that share a prefix collide, and the later router wins.
+  const digest = createHash('sha256').update(value).digest('hex').slice(0, 8)
+  return `${slug.slice(0, 39).replace(/-+$/, '')}-${digest}`
 }
 
 function ruleHost(authority: string): string {

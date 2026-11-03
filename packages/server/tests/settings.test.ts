@@ -2,9 +2,10 @@ import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { ConfigView } from 'portta-contracts'
+import { isSecretKey, parseEnv, writeApplied } from 'portta-core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { buildConfigView, discardConfig, patchConfig, pendingChangesOf } from '../src/services/configview.ts'
-import { ValidationError, validateCombination, validateValue } from '../src/services/settings.ts'
+import { FIELDS, ValidationError, validateCombination, validateValue } from '../src/services/settings.ts'
 import { makeApp, testConfig } from './helpers.ts'
 
 describe('validation', () => {
@@ -113,6 +114,81 @@ describe('the Settings view and its writes', () => {
       ]),
     )
     delete process.env.PORTTA_DOMAIN
+  })
+
+  it('does not count the loopback bind address as pending on the public profile', () => {
+    writeFileSync(envFile, 'PORTTA_BIND_ADDRESS=127.0.0.1\n')
+    process.env.PORTTA_BIND_ADDRESS = '0.0.0.0'
+    const view = buildConfigView(testConfig({ envFile, profile: 'remote-public' }))
+    expect(view.fields.find((f) => f.key === 'PORTTA_BIND_ADDRESS')?.pending).toBe(false)
+    expect(view.pendingRestart).toBe(false)
+    delete process.env.PORTTA_BIND_ADDRESS
+  })
+
+  describe('against what the last `up` applied', () => {
+    const publicEnv = [
+      'PORTTA_PROFILE=local',
+      'PORTTA_DOMAIN=localhost',
+      'PORTTA_BIND_ADDRESS=127.0.0.1',
+      'PUBLIC_DOMAIN=portta.app',
+      'TS_AUTHKEY=tskey_auth_secret_value',
+      '',
+    ].join('\n')
+
+    it('is not pending for a value the CLI derives, once `up` has run', () => {
+      writeFileSync(envFile, publicEnv)
+      writeApplied(dir, parseEnv(publicEnv))
+      // The CLI ran `up remote-public`, so the panel's process holds derived values.
+      process.env.PORTTA_PROFILE = 'remote-public'
+      process.env.PUBLIC_DOMAIN = 'portta.app'
+      process.env.PORTTA_DOMAIN = 'portta.app'
+      process.env.PORTTA_BIND_ADDRESS = '0.0.0.0'
+      try {
+        const config = testConfig({ envFile, appliedFile: join(dir, 'state/panel/applied-env.json') })
+        const view = buildConfigView(config)
+        expect(view.pendingRestart).toBe(false)
+      } finally {
+        delete process.env.PORTTA_PROFILE
+        delete process.env.PUBLIC_DOMAIN
+        delete process.env.PORTTA_DOMAIN
+        delete process.env.PORTTA_BIND_ADDRESS
+      }
+    })
+
+    it('is pending after a save, for a secret too, and clears on the next `up`', () => {
+      writeFileSync(envFile, publicEnv)
+      writeApplied(dir, parseEnv(publicEnv))
+      const config = testConfig({ envFile, appliedFile: join(dir, 'state/panel/applied-env.json') })
+
+      patchConfig(config, { PORTTA_DOMAIN: 'dev.test', TS_AUTHKEY: 'tskey_auth_other' })
+      const view = buildConfigView(config)
+      expect(view.fields.filter((f) => f.pending).map((f) => f.key)).toEqual(['PORTTA_DOMAIN', 'TS_AUTHKEY'])
+      expect(pendingChangesOf(view.fields, config)).toEqual(
+        expect.arrayContaining([expect.objectContaining({ key: 'PORTTA_DOMAIN', from: 'localhost', to: 'dev.test' })]),
+      )
+
+      writeApplied(dir, parseEnv(readFileSync(envFile, 'utf8')))
+      expect(buildConfigView(config).pendingRestart).toBe(false)
+    })
+
+    it('discards back to the applied value, not the derived one running', () => {
+      writeFileSync(envFile, publicEnv)
+      writeApplied(dir, parseEnv(publicEnv))
+      const config = testConfig({ envFile, appliedFile: join(dir, 'state/panel/applied-env.json') })
+      process.env.PORTTA_DOMAIN = 'portta.app'
+      try {
+        patchConfig(config, { PORTTA_DOMAIN: 'dev.test' })
+        discardConfig(config, ['PORTTA_DOMAIN'])
+        expect(readFileSync(envFile, 'utf8')).toContain('PORTTA_DOMAIN=localhost')
+        expect(buildConfigView(config).pendingRestart).toBe(false)
+      } finally {
+        delete process.env.PORTTA_DOMAIN
+      }
+    })
+  })
+
+  it('flags as secret in the catalogue exactly the keys the applied record digests', () => {
+    for (const spec of FIELDS) expect(isSecretKey(spec.key), spec.key).toBe(spec.secret === true)
   })
 
   it('puts the running value back when a pending change is discarded', () => {

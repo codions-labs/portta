@@ -10,10 +10,13 @@ import type {
   ProjectDomain,
 } from 'portta-contracts'
 import {
+  appliedValue,
+  differsFromApplied,
   exampleHostnames,
   isDomainMode,
   isWritable,
   parseEnv,
+  readApplied,
   readEnvFile,
   setEnvValue,
   updateEnvFile,
@@ -86,6 +89,10 @@ function normaliseBoolean(value: string): string {
 export function buildConfigView(config: PanelConfig): ConfigView {
   const text = readEnvFile(config.envFile)
   const saved = parseEnv(text)
+  // What `portta up` last applied. Absent on an installation that has not run
+  // one since this record existed, which falls back to comparing with the
+  // running process.
+  const applied = readApplied(config.appliedFile)
 
   const fields: ConfigField[] = FIELDS.map((spec) => {
     const stored = saved.get(spec.key) ?? null
@@ -117,7 +124,10 @@ export function buildConfigView(config: PanelConfig): ConfigView {
       }
     }
 
-    const desired = isSet ? stored : defaultValue
+    // The CLI forces the bind address to 0.0.0.0 on the public profile whatever .env says,
+    // so the saved loopback value never reaches the gateway and is not a pending change.
+    const forcedByProfile = spec.key === 'PORTTA_BIND_ADDRESS' && config.profile === 'remote-public'
+    const desired = forcedByProfile ? '0.0.0.0' : isSet ? stored : defaultValue
     const actual = runningValue ?? defaultValue
 
     return {
@@ -129,9 +139,12 @@ export function buildConfigView(config: PanelConfig): ConfigView {
       ...(valueSource ? { valueSource } : {}),
       secret,
       isSet,
-      // Pending means "saved here, not yet in the running gateway". A key
-      // absent from .env is on the CLI's default, which is what is running.
-      pending: stored !== null && compare(desired) !== compare(actual),
+      // Pending means "saved here, not yet applied": `.env` differs from what
+      // the last `up` was given. Without that record, from the running process;
+      // a key absent from .env is then on the CLI's default.
+      pending: applied
+        ? differsFromApplied(applied, spec.key, stored)
+        : stored !== null && compare(desired) !== compare(actual),
       kind: spec.kind,
       ...(spec.choices ? { choices: spec.choices } : {}),
       group: spec.group,
@@ -208,16 +221,17 @@ export function patchConfig(config: PanelConfig, updates: Record<string, string 
  * The before/after a confirmation needs, including secrets (as presence, never
  * values). Built here so apply status and the settings page agree on one list.
  */
-export function pendingChangesOf(fields: ConfigField[]): PendingChange[] {
+export function pendingChangesOf(fields: ConfigField[], config?: PanelConfig): PendingChange[] {
+  const applied = config ? readApplied(config.appliedFile) : null
   return fields
     .filter((field) => field.pending)
     .map((field) => {
-      const running = runtimeValue(field.key)
+      const running = applied && !field.secret ? appliedValue(applied, field.key) : runtimeValue(field.key)
       return {
         key: field.key,
         label: field.label,
         group: field.group,
-        from: field.secret ? null : field.runtimeValue,
+        from: field.secret ? null : applied ? appliedValue(applied, field.key) || null : field.runtimeValue,
         to: field.secret ? null : field.value,
         secret: field.secret,
         fromSet: running !== null && running !== '',
@@ -247,6 +261,7 @@ export function discardConfig(config: PanelConfig, keys?: string[]): ConfigDisca
   }
 
   const view = buildConfigView(config)
+  const snapshot = readApplied(config.appliedFile)
   const pending = view.fields.filter((field) => field.pending)
   const wanted = keys === undefined ? pending : pending.filter((field) => keys.includes(field.key))
 
@@ -265,7 +280,9 @@ export function discardConfig(config: PanelConfig, keys?: string[]): ConfigDisca
   for (const field of wanted) {
     const spec = FIELDS_BY_KEY.get(field.key)
     if (!spec) throw new ValidationError(field.key, 'is not a setting the panel manages')
-    const running = runtimeValue(field.key)
+    // Back to what was applied when there is a record of it; secrets are only
+    // recorded as a digest, so they come from this process as before.
+    const running = snapshot && !field.secret ? appliedValue(snapshot, field.key) : runtimeValue(field.key)
     const value =
       running === null || running === '' ? '' : spec.kind === 'boolean' ? normaliseBoolean(running) : running
     if (value !== '') validateValue(field.key, value)

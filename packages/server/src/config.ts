@@ -5,7 +5,14 @@
 // Gateway-wide defaults are owned by portta-core.
 
 import { existsSync, readFileSync } from 'node:fs'
-import { attachment, BRIDGE_IMAGE, isTrue, loadGatewayConfig, resolveDatabase } from 'portta-core'
+import {
+  APPLIED_FILE_IN_PANEL,
+  attachment,
+  BRIDGE_IMAGE,
+  isTrue,
+  loadGatewayConfig,
+  resolveDatabase,
+} from 'portta-core'
 
 export { isTrue }
 
@@ -25,6 +32,8 @@ export interface PanelConfig {
   host: string
   port: number
   envFile: string
+  /** What the last `portta up` applied; absent until one has run. */
+  appliedFile: string
   versionFile: string
   uiDir: string
   docsDir: string
@@ -152,6 +161,7 @@ export function loadConfig(overrides: Partial<PanelConfig> = {}): PanelConfig {
     host: env('PORTTA_RUNTIME_HOST', '0.0.0.0'),
     port: Number(env('PORTTA_RUNTIME_PORT', '8081')),
     envFile: env('PORTTA_RUNTIME_ENV_FILE', '/app/state/.env'),
+    appliedFile: env('PORTTA_RUNTIME_APPLIED_FILE', APPLIED_FILE_IN_PANEL),
     versionFile,
     uiDir: env('PORTTA_RUNTIME_UI_DIR', './dist/ui'),
     docsDir: env('PORTTA_RUNTIME_DOCS_DIR', './dist/docs'),
