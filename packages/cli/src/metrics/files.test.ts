@@ -1,5 +1,14 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  linkSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileKey, type PublishedFiles } from 'portta-core'
@@ -111,5 +120,47 @@ describe('the copy of a project’s files the panel reads', () => {
     await publishFiles(root, '../escape', plain, Date.now() + 2_000_000)
     expect(existsSync(join(filesDir(root), 'plain', 'index.json'))).toBe(false)
     expect(existsSync(join(root, 'state/escape'))).toBe(false)
+  })
+
+  it('keeps out what the owner excluded for themselves in .git/info/exclude', async () => {
+    const { read, folder, root, environment } = project()
+    writeFileSync(join(folder, 'local-notes.txt'), 'my private notes\n')
+    writeFileSync(join(folder, '.git/info/exclude'), 'local-notes.txt\n')
+    const index = await read()
+    // Listed as ignored, like node_modules, and never read.
+    expect(index.files.find((file) => file.path === 'local-notes.txt')).toMatchObject({
+      ignored: true,
+      readable: 'omitted',
+    })
+    expect(blobs(root, environment).join('\n')).not.toContain('my private notes')
+  })
+
+  it('takes a file name for a file name, not for a pattern that reaches other files', async () => {
+    const { read, folder, root, environment } = project()
+    writeFileSync(join(folder, 'src/lone*.ts'), 'one\n')
+    run(folder, 'add', '-f', 'src/lone*.ts', 'src')
+    run(folder, 'commit', '-m', 'second')
+    writeFileSync(join(folder, 'src/lone*.ts'), 'two\n')
+    writeFileSync(join(folder, 'src/app.ts'), 'export const one = 99999\n')
+    await read()
+    const patches = readdirSync(join(filesDir(root), environment, 'diffs')).map((name) =>
+      readFileSync(join(filesDir(root), environment, 'diffs', name), 'utf8'),
+    )
+    const star = patches.find((patch) => patch.includes('lone*.ts')) ?? ''
+    expect(star).not.toContain('99999')
+  })
+
+  it('does not read a file that has another name, which could lead out of the folder', async () => {
+    const { read, folder, root, environment } = project()
+    const outside = mkdtempSync(join(tmpdir(), 'portta-outside-'))
+    writeFileSync(join(outside, 'shadow'), 'root:$6$hash\n')
+    try {
+      linkSync(join(outside, 'shadow'), join(folder, 'hard.txt'))
+    } catch {
+      return
+    }
+    const index = await read()
+    expect(index.files.find((file) => file.path === 'hard.txt')?.readable).not.toBe('text')
+    expect(blobs(root, environment).join('\n')).not.toContain('root:$6$')
   })
 })

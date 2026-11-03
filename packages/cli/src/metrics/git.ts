@@ -13,6 +13,7 @@ import {
   constants,
   fstatSync,
   lstatSync,
+  mkdirSync,
   mkdtempSync,
   openSync,
   readSync,
@@ -61,6 +62,8 @@ async function git(view: View, args: readonly string[]): Promise<string | null> 
         ...process.env,
         GIT_OPTIONAL_LOCKS: '0',
         GIT_TERMINAL_PROMPT: '0',
+        // A file called `src/*` is that file, not every file under src.
+        GIT_LITERAL_PATHSPECS: '1',
         GIT_NO_LAZY_FETCH: '1',
         LC_ALL: 'C',
       },
@@ -227,6 +230,12 @@ function privateView(directory: string, uid: number | undefined): View | null {
     writeFileSync(join(gitDir, 'config'), config, { mode: 0o600 })
     // HEAD is copied, not linked: git reads a linked HEAD as an old-style symbolic ref.
     writeFileSync(join(gitDir, 'HEAD'), head, { mode: 0o600 })
+    // What the owner excluded for themselves, and nobody else: copied through the same checked read.
+    const exclude = readSmallFile(join(real, 'info', 'exclude'), CONFIG_LIMIT, uid)
+    if (exclude) {
+      mkdirSync(join(gitDir, 'info'), { mode: 0o700 })
+      writeFileSync(join(gitDir, 'info', 'exclude'), exclude, { mode: 0o600 })
+    }
     for (const name of ['index', 'refs', 'objects', 'packed-refs', 'shallow']) {
       if (lstatSync(join(real, name), { throwIfNoEntry: false })) symlinkSync(join(real, name), join(gitDir, name))
     }

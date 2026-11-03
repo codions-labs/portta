@@ -32,12 +32,18 @@ publishes a bounded copy of what is safe to show, and the panel reads the copy.
   Terraform state and variables, and anything under `.ssh`, `.aws`, `.gnupg`, `.kube` or `.docker`.
   The panel lists them and says their content is hidden. The same rule is applied again when the
   panel reads, so a copy that somehow holds one is still not served.
-* **Which folder.** The one ADR 0056 trusts, and git is held on the same short lead: a private copy
+* **Which folder.** The one ADR 0056 trusts (its own user's, holding the Compose files the containers name, outside Portta), and git is held on the same short lead: a private copy
   of the repository's checked configuration, no external diff driver or text conversion, no hooks.
 * **Who reads.** Whoever may read the project (`project:read`, within their projects). Every read of
   a file is a line in the audit log (`project_file.read`) with the environment and path.
 
 ## Consequences
+
+* The folder is found from a label the containers carry, as in ADR 0056. Anyone who can start a
+  container with a forged label already controls the host's Docker, so this adds no new reach, but
+  it does mean the copy is as trustworthy as that label check and no more.
+* What git is told to ignore, including the owner's own `.git/info/exclude`, is left out and listed
+  as ignored. A file git does not ignore and whose name looks harmless is copied, tracked or not.
 
 * The panel never shows a project's files live: what it shows is as old as the last publication,
   every half minute while the project runs. A file saved a second ago is not there yet.

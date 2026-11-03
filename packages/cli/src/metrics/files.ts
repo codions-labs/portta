@@ -20,6 +20,7 @@ import {
   readSync,
   realpathSync,
   rmSync,
+  statSync,
 } from 'node:fs'
 import { join, sep } from 'node:path'
 import {
@@ -70,6 +71,23 @@ function readText(
   try {
     const info = fstatSync(fd)
     if (!info.isFile()) return { text: null, size: 0, readable: 'omitted' }
+    // A second name for the same bytes can lead out of the folder, and the check above cannot see it.
+    if (info.nlink > 1) return { text: null, size: 0, readable: 'omitted' }
+    // The file that was opened must be the one the path leads to now, inside the folder: a folder
+    // swapped for a link between the check and the open does not pass.
+    try {
+      const again = realpathSync(full)
+      const now = statSync(again)
+      if (
+        (again !== join(real, path) && !again.startsWith(real + sep)) ||
+        now.dev !== info.dev ||
+        now.ino !== info.ino
+      ) {
+        return { text: null, size: 0, readable: 'omitted' }
+      }
+    } catch {
+      return { text: null, size: 0, readable: 'omitted' }
+    }
     if (info.size > limit) return { text: null, size: info.size, readable: 'large' }
     const buffer = Buffer.alloc(info.size)
     const read = readSync(fd, buffer, 0, info.size, 0)

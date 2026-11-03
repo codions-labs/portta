@@ -49,29 +49,45 @@ export function fileKey(path: string): string {
 }
 
 const SECRET_NAMES = [
-  /^\.env(\..+)?$/i,
+  // .env, .env.local, .env-production, .env_prod, prod.env, production.env
+  /^\.env([-_.].*)?$/i,
+  /\.env$/i,
   /^\.envrc$/i,
-  /^\.npmrc$/i,
-  /^\.pypirc$/i,
-  /^\.netrc$/i,
-  /^\.htpasswd$/i,
-  /^\.git-credentials$/i,
-  /^id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$/i,
-  /^credentials(\..+)?$/i,
-  /^secrets?(\..+)?$/i,
-  /^service-account.*\.json$/i,
-  /\.(pem|key|p12|pfx|jks|keystore|kdbx|asc|gpg|tfstate)$/i,
-  /\.tfstate\.backup$/i,
-  /\.tfvars$/i,
+  /^\.(npmrc|pypirc|netrc|htpasswd|pgpass|my\.cnf|s3cfg|dockercfg|git-credentials|boto|vault-token)$/i,
+  /^id_[a-z0-9]+(\.pub)?$/i,
+  /^wp-config(\..+)?\.php$/i,
+  // Anything that says what it is.
+  /secret/i,
+  /credential/i,
+  /passw(or)?d/i,
+  /private[-_]?key/i,
+  /service[-_]?account/i,
+  /\.(pem|key|p8|p12|pfx|jks|keystore|ppk|kdbx|asc|gpg|pgp|tfstate|tfvars|ovpn)$/i,
+  /\.tfstate\./i,
 ]
-const SAFE_ENV_EXAMPLES = /^\.env\.(example|sample|template|dist|defaults)$/i
-const SECRET_DIRECTORIES = new Set(['.ssh', '.aws', '.gnupg', '.kube', '.docker'])
+const SAFE_ENV_EXAMPLES = /^\.env[-_.](example|sample|template|dist|defaults)$/i
+const SECRET_DIRECTORIES = new Set(
+  [
+    '.ssh',
+    '.aws',
+    '.gnupg',
+    '.kube',
+    '.docker',
+    '.gcloud',
+    '.azure',
+    '.terraform',
+    'secrets',
+    'secret',
+    'credentials',
+    'private',
+  ].map((name) => name.toLowerCase()),
+)
 
 /** A file that usually holds a secret: the panel says it exists and shows nothing of it. */
 export function isSecretPath(path: string): boolean {
   const parts = path.split('/').filter(Boolean)
   const name = parts.at(-1) ?? ''
-  if (parts.slice(0, -1).some((part) => SECRET_DIRECTORIES.has(part))) return true
+  if (parts.slice(0, -1).some((part) => SECRET_DIRECTORIES.has(part.toLowerCase()))) return true
   if (SAFE_ENV_EXAMPLES.test(name)) return false
   return SECRET_NAMES.some((pattern) => pattern.test(name))
 }

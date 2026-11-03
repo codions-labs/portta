@@ -14,11 +14,21 @@ describe('what is shown of a project’s files', () => {
     '.npmrc',
     'config/credentials.json',
     'secrets.yaml',
+    'prod.env',
+    '.env-production',
+    '.env_prod',
+    'app/Secrets/keys.txt',
+    'config/CREDENTIALS.yml',
+    'db/password.txt',
+    'gcp-service-account.json',
+    'vpn/client.ovpn',
+    '.pgpass',
+    '.Env',
   ])('keeps %s to itself', (path) => {
     expect(isSecretPath(path)).toBe(true)
   })
 
-  it.each(['.env.example', 'api/.env.sample', 'src/app.ts', 'README.md', 'docs/secrets-policy.md', 'keyboard.ts'])(
+  it.each(['.env.example', 'api/.env.sample', 'src/app.ts', 'README.md', 'keyboard.ts', 'docs/guide.md'])(
     'shows %s',
     (path) => {
       expect(isSecretPath(path)).toBe(false)
