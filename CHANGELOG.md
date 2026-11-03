@@ -72,6 +72,11 @@ All notable changes to Portta are documented here. The format follows
 
 ### Fixed
 
+- The host collector publishes the folders under Projects Home from its running loop, not only from
+  `portta host collect`, so Add project lists them on a server that runs `portta host watch`.
+- Several Compose projects that run from one folder each get the folder's git state. The collector gave
+  the folder to none of them, so a product with an environment for its branch and one for its tests
+  showed no branch or commits at all.
 - Projects lists the environments nobody adopted that run from one folder together, with a button that
   makes them a project: a folder easily runs the branch's environment, one the tests start and a container
   started by hand, and each used to look like a project of its own. One with no folder in its labels joins
