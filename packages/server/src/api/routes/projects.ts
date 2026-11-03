@@ -416,6 +416,23 @@ export function projectRoutes(deps: AppDeps): Hono {
           throw new OverrideRefused(`no environment '${name}' is running`)
         }
       }
+      // Defence in depth: today only roles that see everything hold project:update. Claiming an
+      // environment is claiming whatever can be read through it: its logs, its console and its files.
+      // Somebody who sees only their own projects may keep or drop the environments their project
+      // already has, and may not take one that belongs to another project or to none.
+      if (principalOf(c).scope !== 'all') {
+        const held = new Set(
+          (await db.projects.listEnvironments())
+            .filter((row) => row.projectId === project.id)
+            .map((row) => row.composeProject),
+        )
+        const foreign = body.environments.filter((name) => !held.has(name))
+        if (foreign.length > 0) {
+          throw new HTTPException(403, {
+            message: `'${foreign[0]}' is not one of this project's environments; only an owner or administrator can adopt it`,
+          })
+        }
+      }
       const asked = new Set(body.environments)
       await releasingMoved(
         db,

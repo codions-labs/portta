@@ -30,6 +30,7 @@ export const AUDIT_ACTIONS = [
   'project.created',
   'project.updated',
   'project.tagged',
+  'project_file.read',
   'project.deleted',
   'environment.started',
   'environment.stopped',

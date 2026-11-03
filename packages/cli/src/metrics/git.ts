@@ -13,6 +13,7 @@ import {
   constants,
   fstatSync,
   lstatSync,
+  mkdirSync,
   mkdtempSync,
   openSync,
   readSync,
@@ -61,6 +62,10 @@ async function git(view: View, args: readonly string[]): Promise<string | null> 
         ...process.env,
         GIT_OPTIONAL_LOCKS: '0',
         GIT_TERMINAL_PROMPT: '0',
+        // A file called `src/*` is that file, not every file under src.
+        GIT_LITERAL_PATHSPECS: '1',
+        // Objects come from this repository only, never from another one it was told to borrow from.
+        GIT_ALTERNATE_OBJECT_DIRECTORIES: '',
         GIT_NO_LAZY_FETCH: '1',
         LC_ALL: 'C',
       },
@@ -227,6 +232,24 @@ function privateView(directory: string, uid: number | undefined): View | null {
     writeFileSync(join(gitDir, 'config'), config, { mode: 0o600 })
     // HEAD is copied, not linked: git reads a linked HEAD as an old-style symbolic ref.
     writeFileSync(join(gitDir, 'HEAD'), head, { mode: 0o600 })
+    // What the owner excluded for themselves, and nobody else: copied through the same checked read.
+    // A repository that borrows objects from somewhere else would show that somewhere else's content.
+    if (lstatSync(join(real, 'objects', 'info', 'alternates'), { throwIfNoEntry: false })) {
+      rmSync(gitDir, { recursive: true, force: true })
+      return null
+    }
+    const excludePath = join(real, 'info', 'exclude')
+    const exclude = readSmallFile(excludePath, CONFIG_LIMIT, uid)
+    // One that is there and cannot be read safely (too large, a link, not the owner's) is not a
+    // reason to carry on without it: what it hides would be published as if nobody had hidden it.
+    if (exclude === null && lstatSync(excludePath, { throwIfNoEntry: false })) {
+      rmSync(gitDir, { recursive: true, force: true })
+      return null
+    }
+    if (exclude) {
+      mkdirSync(join(gitDir, 'info'), { mode: 0o700 })
+      writeFileSync(join(gitDir, 'info', 'exclude'), exclude, { mode: 0o600 })
+    }
     for (const name of ['index', 'refs', 'objects', 'packed-refs', 'shallow']) {
       if (lstatSync(join(real, name), { throwIfNoEntry: false })) symlinkSync(join(real, name), join(gitDir, name))
     }
@@ -281,5 +304,33 @@ async function readThrough(view: View, collectedAt: number): Promise<GitState | 
     files: parsed.files.slice(0, GIT_FILE_LIMIT),
     lastChangeAt: times.length === 0 ? null : Math.max(...times),
     collectedAt,
+  }
+}
+
+/**
+ * Runs git on a project's folder the way `readGit` does, for the callers that need more than the
+ * summary. Null when the folder is not a repository git may read, which includes one whose own
+ * configuration names a command; otherwise whatever `use` returns. The private copy of the
+ * repository's configuration is removed afterwards.
+ */
+export async function withRepository<T>(
+  directory: string,
+  use: (run: (args: readonly string[]) => Promise<string | null>) => Promise<T>,
+): Promise<T | null> {
+  if (!isAbsolute(directory) || directory.includes('\0')) return null
+  let view: View | null = null
+  try {
+    view = privateView(directory, process.getuid?.())
+  } catch {
+    return null
+  }
+  if (!view) return null
+  const open = view
+  try {
+    const config = await git(open, ['config', '--file', join(open.gitDir, 'config'), '--list', '-z'])
+    if (config === null || repositoryRunsCommands(config)) return null
+    return await use((args) => git(open, args))
+  } finally {
+    rmSync(open.gitDir, { recursive: true, force: true })
   }
 }

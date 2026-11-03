@@ -130,6 +130,8 @@ export interface PanelConfig {
   dynamicDir: string
   /** Where the CLI metrics collector writes current.json and history. */
   metricsDir: string
+  /** The read-only copy of project files the collector publishes. */
+  filesDir: string
   /** Past this age, current.json is marked stale. */
   metricsStaleSeconds: number
   /** Host-written readiness report. The panel only reads this directory. */
@@ -223,6 +225,7 @@ export function loadConfig(overrides: Partial<PanelConfig> = {}): PanelConfig {
     webExternalPort: env('PORTTA_WEB_PORT', '8081'),
     dynamicDir: env('PORTTA_RUNTIME_DYNAMIC_DIR', '/app/state/traefik-dynamic'),
     metricsDir: env('PORTTA_RUNTIME_METRICS_DIR', '/app/state/metrics'),
+    filesDir: env('PORTTA_RUNTIME_FILES_DIR', '/app/state/files'),
     metricsStaleSeconds: Number(env('PORTTA_RUNTIME_METRICS_STALE_SECONDS', '30')),
     environmentDir: env('PORTTA_RUNTIME_ENVIRONMENT_DIR', '/app/state/environment'),
     environmentStaleSeconds: Number(env('PORTTA_RUNTIME_ENVIRONMENT_STALE_SECONDS', '900')),

@@ -38,7 +38,8 @@
     "label": "{{name}} sections",
     "overview": "Overview",
     "environments": "Environments ({{count}})",
-    "settings": "Settings"
+    "settings": "Settings",
+    "files": "Files"
   },
   "pulse": {
     "unhealthy": "{{count}} unhealthy"
@@ -252,5 +253,39 @@
     "placeholder": "New tag, like client: Acme",
     "remove": "Remove the tag {{tag}}",
     "failed": "Could not save the tags"
+  },
+  "files": {
+    "title": "Files",
+    "readOnly": "Read only",
+    "description": "The files of this project, as they were on the host a moment ago. Editing and sending stay in your terminal or agent.",
+    "environment": "Environment",
+    "uncommitted_one": "{{count}} uncommitted",
+    "uncommitted_other": "{{count}} uncommitted",
+    "unpushed_one": "{{count}} unpushed",
+    "unpushed_other": "{{count}} unpushed",
+    "onlyChanged": "Only changed",
+    "search": "Search file",
+    "tree": "File tree",
+    "empty": "No copy of these files yet",
+    "emptyHint": "The host collector publishes them every half minute while the project runs and its folder is a git repository of yours. Run portta host watch if nothing appears.",
+    "pick": "Pick a file to read it",
+    "ignored": "Ignored",
+    "new": "New",
+    "modified": "Modified",
+    "deleted": "Deleted",
+    "changedBadge": "Changed",
+    "showChanges": "Changes",
+    "showFile": "File",
+    "show": "Show",
+    "copyPath": "Copy path",
+    "hiddenTitle": "Content hidden.",
+    "hiddenBody": "This file usually holds secrets, so the panel only shows that it exists.",
+    "binary": "This is a binary file, so there is no text to show.",
+    "large": "This file is too large to show here.",
+    "omitted": "There is no text to show for this file.",
+    "truncated": "This project is bigger than the copy the panel keeps, so some files are missing. The changed ones come first.",
+    "audited": "Reading {{path}} is recorded in the audit log. Editing and sending stay in your terminal or agent.",
+    "noMatch": "No file matches",
+    "loadingFile": "Reading…"
   }
 }

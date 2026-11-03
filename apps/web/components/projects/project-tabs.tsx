@@ -9,8 +9,8 @@ import { usePathname } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { Tabs } from '@/components/ui/tabs'
 
-const TABS = ['overview', 'environments', 'settings'] as readonly string[]
-export type ProjectTab = 'overview' | 'environments' | 'settings'
+const TABS = ['overview', 'environments', 'files', 'settings'] as readonly string[]
+export type ProjectTab = 'overview' | 'environments' | 'files' | 'settings'
 
 /** `/projects/shop/environments/alpha` is still the environments tab. */
 export function tabFromPath(pathname: string, slug: string): ProjectTab {
@@ -31,6 +31,7 @@ export function ProjectTabs({ slug, name, environments }: { slug: string; name: 
       tabs={[
         { id: 'overview', label: t('tabs.overview'), href: base },
         { id: 'environments', label: t('tabs.environments', { count: environments }), href: `${base}/environments` },
+        { id: 'files', label: t('tabs.files'), href: `${base}/files` },
         { id: 'settings', label: t('tabs.settings'), href: `${base}/settings` },
       ]}
     />

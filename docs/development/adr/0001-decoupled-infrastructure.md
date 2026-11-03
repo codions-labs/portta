@@ -21,7 +21,9 @@ and databases to a tool none of them chose.
 Portta is installed once per host and stays completely decoupled from
 the projects that use it.
 
-It **does not**: move or clone projects, mount their directories, own their
+It **does not**: move or clone projects, mount their directories (the host collector publishes a
+bounded read-only copy of some of their files instead, see
+[0058](0058-the-collector-publishes-a-read-only-copy-of-the-files.md)), own their
 containers, volumes, networks or databases, or take part in their lifecycle.
 It never stops a consumer container, never removes a consumer volume, and never
 runs `docker system prune`.

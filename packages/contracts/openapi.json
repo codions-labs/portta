@@ -2397,6 +2397,219 @@
         ],
         "additionalProperties": false
       },
+      "ProjectFile": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative to the project folder, with forward slashes"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "file",
+              "dir",
+              "link"
+            ]
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "M",
+                  "A",
+                  "D",
+                  "U"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Against the last commit; U is not tracked yet"
+          },
+          "ignored": {
+            "type": "boolean",
+            "description": "Listed because git ignores it, such as node_modules. Never read."
+          },
+          "readable": {
+            "type": "string",
+            "enum": [
+              "text",
+              "hidden",
+              "binary",
+              "large",
+              "omitted"
+            ],
+            "description": "hidden: usually holds a secret, so only its existence is shown"
+          },
+          "diff": {
+            "type": "boolean",
+            "description": "Whether there are changes to show against the last commit"
+          }
+        },
+        "required": [
+          "path",
+          "kind",
+          "size",
+          "status",
+          "ignored",
+          "readable",
+          "diff"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectFilesView": {
+        "type": "object",
+        "properties": {
+          "environments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The environments of this project that have a copy of their files"
+          },
+          "environment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "branch": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "head": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "hash": {
+                    "type": "string"
+                  },
+                  "subject": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "hash",
+                  "subject",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "changed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "untracked": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "ahead": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collectedAt": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "The project is bigger than the copy: the changed files come first"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectFile"
+            }
+          }
+        },
+        "required": [
+          "environments",
+          "environment",
+          "branch",
+          "head",
+          "changed",
+          "untracked",
+          "ahead",
+          "collectedAt",
+          "truncated",
+          "files"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectFileContent": {
+        "type": "object",
+        "properties": {
+          "environment": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "diff": {
+            "description": "The changes against the last commit, as a patch",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "environment",
+          "path",
+          "content",
+          "diff"
+        ],
+        "additionalProperties": false
+      },
       "ServicesResponse": {
         "type": "object",
         "properties": {
@@ -7701,6 +7914,7 @@
               "project.created",
               "project.updated",
               "project.tagged",
+              "project_file.read",
               "project.deleted",
               "environment.started",
               "environment.stopped",
@@ -10415,6 +10629,187 @@
           }
         },
         "x-portta-permission": "project:update"
+      }
+    },
+    "/projects/{slug}/files": {
+      "get": {
+        "operationId": "listProjectFiles",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "The files of a project, as the collector published them",
+        "description": "A read-only copy made on the host with secrets left out. The panel never opens the project folder. Files that usually hold secrets, binaries and large files are listed and not shown.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": false,
+            "description": "One of the project’s environments. Defaults to the first that has files.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFilesView"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "project:read"
+      }
+    },
+    "/projects/{slug}/files/content": {
+      "get": {
+        "operationId": "readProjectFile",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "The text of one file of a project, and its changes",
+        "description": "Each read is recorded in the audit log.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "The Project slug, as created.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "required": true,
+            "description": "One of the project’s environments. Defaults to the first that has files.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "description": "A path from the listing.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFileContent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "project:read"
       }
     },
     "/services": {

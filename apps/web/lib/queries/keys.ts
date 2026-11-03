@@ -27,6 +27,8 @@ export const keys = {
   exposure: () => ['exposure'] as const,
   crawlers: () => ['crawlers'] as const,
   projectCrawlers: (slug: string) => ['crawlers', slug] as const,
+  projectFiles: (slug: string, environment: string | null) => ['project-files', slug, environment] as const,
+  projectFile: (slug: string, environment: string, path: string) => ['project-file', slug, environment, path] as const,
 
   docker: () => ['docker'] as const,
   dockerHost: () => ['docker', 'host'] as const,
