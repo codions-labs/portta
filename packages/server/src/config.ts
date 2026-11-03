@@ -132,6 +132,8 @@ export interface PanelConfig {
   metricsDir: string
   /** The read-only copy of project files the collector publishes. */
   filesDir: string
+  /** The folders and plans the collector publishes for the Add project pages. */
+  discoveryDir: string
   /** Past this age, current.json is marked stale. */
   metricsStaleSeconds: number
   /** Host-written readiness report. The panel only reads this directory. */
@@ -226,6 +228,7 @@ export function loadConfig(overrides: Partial<PanelConfig> = {}): PanelConfig {
     dynamicDir: env('PORTTA_RUNTIME_DYNAMIC_DIR', '/app/state/traefik-dynamic'),
     metricsDir: env('PORTTA_RUNTIME_METRICS_DIR', '/app/state/metrics'),
     filesDir: env('PORTTA_RUNTIME_FILES_DIR', '/app/state/files'),
+    discoveryDir: env('PORTTA_RUNTIME_DISCOVERY_DIR', '/app/state/discovery'),
     metricsStaleSeconds: Number(env('PORTTA_RUNTIME_METRICS_STALE_SECONDS', '30')),
     environmentDir: env('PORTTA_RUNTIME_ENVIRONMENT_DIR', '/app/state/environment'),
     environmentStaleSeconds: Number(env('PORTTA_RUNTIME_ENVIRONMENT_STALE_SECONDS', '900')),

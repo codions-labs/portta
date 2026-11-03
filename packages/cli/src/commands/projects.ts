@@ -275,7 +275,7 @@ function readProjectConfig(root: string): {
     : { source: 'file', path: PROJECT_CONFIG_PATH, config: null, issues: parsed.issues }
 }
 
-async function analyze(pathValue: string, options: AnalyzeOptions = {}, containers?: ContainerRecord[]) {
+export async function analyze(pathValue: string, options: AnalyzeOptions = {}, containers?: ContainerRecord[]) {
   const base = resolve(pathValue)
   let composeFile: string
   if (options.file) {

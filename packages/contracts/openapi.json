@@ -2397,6 +2397,293 @@
         ],
         "additionalProperties": false
       },
+      "DiscoveredFolder": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative to Projects Home, with forward slashes"
+          },
+          "composeFile": {
+            "type": "string"
+          },
+          "services": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null until the collector has analysed the folder"
+          },
+          "modifiedAt": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "adopted": {
+            "type": "boolean",
+            "description": "The folder already has a Portta overlay"
+          },
+          "planned": {
+            "type": "boolean",
+            "description": "Whether a plan can be reviewed"
+          },
+          "registered": {
+            "type": "boolean",
+            "description": "A project already has this folder"
+          }
+        },
+        "required": [
+          "path",
+          "composeFile",
+          "services",
+          "modifiedAt",
+          "adopted",
+          "planned",
+          "registered"
+        ],
+        "additionalProperties": false
+      },
+      "DiscoveredFoldersView": {
+        "type": "object",
+        "properties": {
+          "home": {
+            "description": "Projects Home as the host has it, or null when nothing was published",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "collectedAt": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "folders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveredFolder"
+            }
+          }
+        },
+        "required": [
+          "home",
+          "collectedAt",
+          "folders"
+        ],
+        "additionalProperties": false
+      },
+      "FolderPlanView": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "composeFile": {
+            "type": "string"
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "domain": {
+            "type": "string"
+          },
+          "adopted": {
+            "type": "boolean"
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "image": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "port": {
+                  "description": "The port Portta would route to, for a service that speaks HTTP",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "publishedPorts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "host": {
+                        "type": "string"
+                      },
+                      "container": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "host",
+                      "container"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "containerName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "image",
+                "kind",
+                "port",
+                "publishedPorts",
+                "containerName"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "findings": {
+            "type": "object",
+            "properties": {
+              "publishedHostPorts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "fixedContainerNames": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "publishedDatastores": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "implicitNamespace": {
+                "type": "boolean"
+              },
+              "containerNameCollisions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "service": {
+                      "type": "string"
+                    },
+                    "containerName": {
+                      "type": "string"
+                    },
+                    "usedBy": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "service",
+                    "containerName",
+                    "usedBy"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "namespaceInUse": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "project": {
+                        "type": "string"
+                      },
+                      "workingDirs": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "project",
+                      "workingDirs"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "publishedHostPorts",
+              "fixedContainerNames",
+              "publishedDatastores",
+              "implicitNamespace",
+              "containerNameCollisions",
+              "namespaceInUse"
+            ],
+            "additionalProperties": false
+          },
+          "collectedAt": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "command": {
+            "type": "string",
+            "description": "The terminal command that adopts this folder, with nothing decided yet"
+          }
+        },
+        "required": [
+          "path",
+          "composeFile",
+          "project",
+          "domain",
+          "adopted",
+          "services",
+          "findings",
+          "collectedAt",
+          "command"
+        ],
+        "additionalProperties": false
+      },
       "ProjectFile": {
         "type": "object",
         "properties": {
@@ -10629,6 +10916,139 @@
           }
         },
         "x-portta-permission": "project:update"
+      }
+    },
+    "/discovery/folders": {
+      "get": {
+        "operationId": "listDiscoveredFolders",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "The folders under Projects Home that hold a Compose file",
+        "description": "Found by the host collector, which publishes them every few minutes. The panel never opens Projects Home.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveredFoldersView"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "settings:read"
+      }
+    },
+    "/discovery/plan": {
+      "get": {
+        "operationId": "getFolderPlan",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "What adopting a discovered folder would do",
+        "description": "The same read-only report as `portta analyze`. Only a folder the collector listed can be asked about.",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "description": "A path from the folder list.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderPlanView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required local dependency is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "settings:read"
       }
     },
     "/projects/{slug}/files": {

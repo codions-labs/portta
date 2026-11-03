@@ -22,6 +22,7 @@ export * from './hostname.ts'
 export * from './metrics.ts'
 export * from './namespace.ts'
 export * from './pressure.ts'
+export * from './project-discovery.ts'
 export * from './project-order.ts'
 // Type only. `projects-home` classifies a directory by reading it, which the
 // browser cannot do; the vocabulary of that classification is a union, and

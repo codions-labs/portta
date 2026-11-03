@@ -75,3 +75,11 @@ export function useProjectFile(slug: string, environment: string | null, path: s
     retry: false,
   })
 }
+
+export function useDiscoveredFolders() {
+  return useQuery({ queryKey: keys.discoveredFolders(), queryFn: api.discoveredFolders, refetchInterval: 30_000 })
+}
+
+export function useFolderPlan(path: string) {
+  return useQuery({ queryKey: keys.folderPlan(path), queryFn: () => api.folderPlan(path), retry: false })
+}

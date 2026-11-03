@@ -29,6 +29,7 @@ import { configRoutes } from './routes/config.ts'
 import { crawlerRoutes } from './routes/crawlers.ts'
 import { databaseRoutes } from './routes/database.ts'
 import { developmentRoutes } from './routes/development.ts'
+import { discoveryRoutes } from './routes/discovery.ts'
 import { dockerRoutes } from './routes/docker.ts'
 import { environmentRoutes } from './routes/environments.ts'
 import { exposureRoutes } from './routes/exposure.ts'
@@ -175,6 +176,7 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', runnerRoutes(deps))
   api.route('/', overrideRoutes(deps))
   api.route('/', projectRoutes(deps))
+  api.route('/', discoveryRoutes(deps))
   api.route('/', projectFileRoutes(deps))
   api.route('/', serviceRoutes(deps))
   api.route('/', dockerRoutes(deps))
