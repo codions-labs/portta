@@ -13,7 +13,7 @@ import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Command } from 'commander'
-import { prepareEnvFile } from 'portta-core'
+import { parseEnv, prepareEnvFile, readEnvFile, writeApplied } from 'portta-core'
 import { confirm } from '../confirm.js'
 import { composeArguments, findGatewayRoot, gatewayContext } from '../context.js'
 import { ensureNetwork, requireDocker } from '../docker.js'
@@ -179,11 +179,18 @@ export async function setupCommand(options: SetupOptions, command: Command): Pro
     })
     record('images', 'ok', 'pinned images pulled')
   }
+  // The .env Compose reads, taken before it runs: what the panel then counts as applied.
+  const applied = parseEnv(readEnvFile(envFile))
   await runProcess('docker', ['compose', ...composeArguments(context), 'up', '-d', '--wait', '--wait-timeout', '180'], {
     cwd: target,
     env: context.env,
   })
   record('gateway', 'ok', `gateway up on ${profile}`)
+  try {
+    writeApplied(target, applied)
+  } catch (cause) {
+    record('applied', 'skipped', `could not record the applied settings: ${(cause as Error).message}`)
+  }
   const running = await runProcess(
     'docker',
     ['compose', ...composeArguments(context), 'ps', '--status', 'running', '--quiet'],
