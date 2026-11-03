@@ -6,8 +6,12 @@ import { writeHostSecurityReport } from '../environment/security/store.js'
 import { writeEnvironmentReport } from '../environment/store.js'
 import { spawnDetached } from '../process.js'
 import { collectSnapshot } from './collect.js'
+import { publishDiscovery } from './discovery.js'
 import { pidFile } from './paths.js'
 import { appendHistory, appendLog, writeAtomic, writeCurrent } from './store.js'
+
+/** How often the running collector looks for project folders again; the folders themselves are replanned on their own schedule. */
+const DISCOVERY_INTERVAL_MS = 60_000
 
 export function readCollectorPid(root: string): number | null {
   const path = pidFile(root)
@@ -98,6 +102,7 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
   appendLog(root, `collector started pid=${process.pid}`)
   let lastHistory = 0
   let lastEnvironment = 0
+  let lastDiscovery = 0
   let running = true
   const halt = () => {
     running = false
@@ -129,6 +134,10 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
       } catch (error) {
         appendLog(root, `environment collect failed: ${error instanceof Error ? error.message : String(error)}`)
       }
+    }
+    if (started - lastDiscovery >= DISCOVERY_INTERVAL_MS) {
+      lastDiscovery = started
+      await publishDiscovery(root, started)
     }
     const elapsed = Date.now() - started
     const wait = Math.max(0, COLLECT_INTERVAL_MS - elapsed)
