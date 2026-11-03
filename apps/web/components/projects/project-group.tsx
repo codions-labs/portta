@@ -147,7 +147,9 @@ function FolderBand({
   const { t } = useTranslation('projects', { keyPrefix: 'list' })
   const queryClient = useQueryClient()
   const toast = useToast()
-  const mayCreate = useCan('project:create') && useCan('project:update')
+  const mayCreateProject = useCan('project:create')
+  const mayUpdateProject = useCan('project:update')
+  const mayCreate = mayCreateProject && mayUpdateProject
   const name = projectNameOfFolder(folder)
   const gather = useMutation({
     mutationFn: async () => {
