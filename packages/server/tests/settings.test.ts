@@ -115,6 +115,15 @@ describe('the Settings view and its writes', () => {
     delete process.env.PORTTA_DOMAIN
   })
 
+  it('does not count the loopback bind address as pending on the public profile', () => {
+    writeFileSync(envFile, 'PORTTA_BIND_ADDRESS=127.0.0.1\n')
+    process.env.PORTTA_BIND_ADDRESS = '0.0.0.0'
+    const view = buildConfigView(testConfig({ envFile, profile: 'remote-public' }))
+    expect(view.fields.find((f) => f.key === 'PORTTA_BIND_ADDRESS')?.pending).toBe(false)
+    expect(view.pendingRestart).toBe(false)
+    delete process.env.PORTTA_BIND_ADDRESS
+  })
+
   it('puts the running value back when a pending change is discarded', () => {
     process.env.PORTTA_DOMAIN = 'localhost'
     process.env.PORTTA_LOG_LEVEL = 'INFO'

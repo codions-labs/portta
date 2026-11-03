@@ -117,7 +117,10 @@ export function buildConfigView(config: PanelConfig): ConfigView {
       }
     }
 
-    const desired = isSet ? stored : defaultValue
+    // The CLI forces the bind address to 0.0.0.0 on the public profile whatever .env says,
+    // so the saved loopback value never reaches the gateway and is not a pending change.
+    const forcedByProfile = spec.key === 'PORTTA_BIND_ADDRESS' && config.profile === 'remote-public'
+    const desired = forcedByProfile ? '0.0.0.0' : isSet ? stored : defaultValue
     const actual = runningValue ?? defaultValue
 
     return {
