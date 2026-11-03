@@ -76,8 +76,13 @@ export function useProjectFile(slug: string, environment: string | null, path: s
   })
 }
 
-export function useDiscoveredFolders() {
-  return useQuery({ queryKey: keys.discoveredFolders(), queryFn: api.discoveredFolders, refetchInterval: 30_000 })
+export function useDiscoveredFolders(enabled = true) {
+  return useQuery({
+    queryKey: keys.discoveredFolders(),
+    queryFn: api.discoveredFolders,
+    refetchInterval: 30_000,
+    enabled,
+  })
 }
 
 export function useFolderPlan(path: string) {

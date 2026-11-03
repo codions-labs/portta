@@ -187,7 +187,9 @@
     "openSite": "Abrir site",
     "unowned": "Sem projeto",
     "unownedHint": "Roda neste servidor e nenhum projeto adotou",
-    "adoptInto": "Adotar em"
+    "adoptInto": "Adotar em",
+    "sameFolder": "{{count}} ambientes rodam da mesma pasta",
+    "gather": "Reunir no projeto {{name}}"
   },
   "row": {
     "services": "{{running}}/{{total}} serviços",
