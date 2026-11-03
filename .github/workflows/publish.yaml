@@ -45,7 +45,10 @@ jobs:
     needs: version
     uses: ./.github/workflows/validation.yaml
     with:
-      mode: ${{ needs.version.outputs.channel == 'release' && 'release' || 'light' }}
+      # The pull request already ran the E2E the diff selected. A release re-runs
+      # static and unit, then the npm job smoke-tests the packed CLI; run
+      # Validate by hand with mode `release` for the full suite.
+      mode: light
 
   images:
     needs: [version, validation]

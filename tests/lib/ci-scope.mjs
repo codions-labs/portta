@@ -24,7 +24,7 @@ const gatewayRules = [
     ['lifecycle'],
   ],
   [/^(bin\/|docker\/compose\/(compose|profiles\/local)\.yaml$)/, ['lifecycle']],
-  [/^packages\/cli\/src\/commands\/(lifecycle|network)/, allGateway],
+  [/^packages\/cli\/src\/commands\/(lifecycle|network)/, ['lifecycle']],
   [/^docker\/images\/toolbox\//, ['tcp-access', 'tcp-routing']],
   [/^docker\/images\/apply\/|^packages\/core\/src\/apply/, ['apply']],
   [/^docker\/compose\/features\/web|^apps\/web\/Dockerfile$|^packages\/cli\/src\/commands\/web/, ['web-panel']],
@@ -63,7 +63,9 @@ export function ciScope(files, mode = 'pr', dependencyChanges = []) {
       const suite = /^tests\/e2e\/([\w-]+)\.test\.sh$/.exec(file)
       if (spec) browser.add(spec[1])
       if (suite) gateway.add(suite[1])
-      for (const [pattern, names] of gatewayRules) if (pattern.test(file)) add(gateway, names)
+      // A unit test file is run by the unit jobs; it does not change what a gateway suite exercises.
+      if (!/\.test\.(ts|tsx|mjs)$/.test(file) && !/(^|\/)tests\/tooling\//.test(file))
+        for (const [pattern, names] of gatewayRules) if (pattern.test(file)) add(gateway, names)
       if (
         /^(packages\/auth\/|apps\/auth\/|apps\/web\/lib\/.*auth|packages\/server\/src\/(api\/.*(?:auth|users|security)|realtime\/))/.test(
           file,
