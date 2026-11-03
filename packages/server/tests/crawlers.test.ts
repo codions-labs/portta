@@ -4,9 +4,10 @@
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { readProtectionStore } from 'portta-core'
+import { readProtectionStore, writeProtectionStore } from 'portta-core'
 import { describe, expect, it } from 'vitest'
 import { listAudit } from '../src/services/audit.ts'
+import { GATEWAY, PROJECT_A } from './fixtures.ts'
 import { makeApp, seededDatabase } from './helpers.ts'
 
 const OPEN = { search: true, train: false, live: false, preview: true }
@@ -17,7 +18,7 @@ async function panel() {
   await seeded.database.projects.setEnvironments(seeded.ids.project, ['alpha', 'alpha-issue182'])
   const dir = mkdtempSync(join(tmpdir(), 'portta-crawlers-'))
   const authStore = join(dir, 'protections.json')
-  const { app } = makeApp({}, { authStore, dynamicDir: dir }, seeded.database)
+  const { app } = makeApp({ containers: [...GATEWAY, ...PROJECT_A] }, { authStore, dynamicDir: dir }, seeded.database)
   const send = (method: string, path: string, body?: unknown) =>
     app.request(path, {
       method,
@@ -54,10 +55,16 @@ describe('crawler policy', () => {
     const { send, authStore } = await panel()
     const set = await send('PUT', '/api/projects/produto/crawlers', { policy: OPEN })
     expect(set.status).toBe(200)
-    expect(await set.json()).toMatchObject({ own: OPEN, effective: OPEN, default: NONE, mixed: false })
+    expect(await set.json()).toMatchObject({
+      own: OPEN,
+      effective: OPEN,
+      default: NONE,
+      mixed: false,
+      byEnvironment: { alpha: OPEN, 'alpha-issue182': OPEN },
+    })
     expect(readProtectionStore(authStore).environments).toEqual({ alpha: OPEN, 'alpha-issue182': OPEN })
     expect(((await (await send('GET', '/api/crawlers')).json()) as { exceptions: unknown[] }).exceptions).toEqual([
-      { project: 'produto', name: 'Produto', policy: OPEN },
+      { project: 'produto', name: 'Produto', policy: OPEN, mixed: false },
     ])
 
     const cleared = await send('PUT', '/api/projects/produto/crawlers', { policy: null })
@@ -69,7 +76,6 @@ describe('crawler policy', () => {
     const { send, authStore } = await panel()
     await send('PUT', '/api/projects/produto/crawlers', { policy: OPEN })
     const store = readProtectionStore(authStore)
-    const { writeProtectionStore } = await import('portta-core')
     writeProtectionStore(authStore, { ...store, environments: { alpha: OPEN } })
     const state = await (await send('GET', '/api/projects/produto/crawlers')).json()
     expect(state).toMatchObject({ own: null, mixed: true })
@@ -79,5 +85,45 @@ describe('crawler policy', () => {
     const { send } = await panel()
     expect((await send('GET', '/api/projects/nobody/crawlers')).status).toBe(404)
     expect((await send('PUT', '/api/projects/nobody/crawlers', { policy: null })).status).toBe(404)
+  })
+
+  it('lists a project whose environments disagree instead of hiding it', async () => {
+    const { send, authStore } = await panel()
+    await send('PUT', '/api/projects/produto/crawlers', { policy: OPEN })
+    writeProtectionStore(authStore, { ...readProtectionStore(authStore), environments: { alpha: OPEN } })
+    const listed = (await (await send('GET', '/api/crawlers')).json()) as { exceptions: unknown[] }
+    expect(listed.exceptions).toEqual([{ project: 'produto', name: 'Produto', policy: null, mixed: true }])
+    const state = await (await send('GET', '/api/projects/produto/crawlers')).json()
+    expect(state).toMatchObject({ byEnvironment: { alpha: OPEN, 'alpha-issue182': NONE } })
+  })
+
+  it('refuses an exception for a project that has no environment to apply it to, instead of saying it worked', async () => {
+    const seeded = await seededDatabase()
+    const dir = mkdtempSync(join(tmpdir(), 'portta-crawlers-'))
+    const { app } = makeApp({}, { authStore: join(dir, 'protections.json'), dynamicDir: dir }, seeded.database)
+    const response = await app.request('/api/projects/produto/crawlers', {
+      method: 'PUT',
+      body: JSON.stringify({ policy: OPEN }),
+      headers: { 'content-type': 'application/json', origin: 'http://localhost', host: 'localhost' },
+    })
+    expect(response.status).toBe(409)
+  })
+
+  it('does not hand an exception to the next project that adopts the environment', async () => {
+    const { send, authStore } = await panel()
+    await send('PUT', '/api/projects/produto/crawlers', { policy: OPEN })
+    expect(readProtectionStore(authStore).environments).toEqual({ alpha: OPEN, 'alpha-issue182': OPEN })
+    // The project lets go of one environment: the exception that was made for it goes too.
+    const kept = await send('PUT', '/api/projects/produto/environments', { environments: ['alpha'] })
+    expect(kept.status).toBe(200)
+    expect(readProtectionStore(authStore).environments).toEqual({ alpha: OPEN })
+  })
+
+  it('forgets the exception of an environment nobody has when any decision is saved', async () => {
+    const { send, authStore } = await panel()
+    const store = readProtectionStore(authStore)
+    writeProtectionStore(authStore, { ...store, environments: { ghost: OPEN } })
+    await send('PUT', '/api/crawlers', NONE)
+    expect(readProtectionStore(authStore).environments).toBeUndefined()
   })
 })

@@ -8,6 +8,7 @@ import { type Database, requireDatabase } from '../../db/index.ts'
 import type { AppDeps } from '../../deps.ts'
 import { projectScope, visible } from '../../services/access-control.ts'
 import { loadProjectCatalog, type ProjectCatalog, toProject, toProjectSummary } from '../../services/catalog.ts'
+import { releaseCrawlerExceptions } from '../../services/crawlers.ts'
 import type { Snapshot } from '../../services/inventory.ts'
 import { OverrideRefused } from '../../services/overrides.ts'
 import { record } from '../audit.ts'
@@ -346,7 +347,18 @@ export function projectRoutes(deps: AppDeps): Hono {
           throw new OverrideRefused(`no environment '${name}' is running`)
         }
       }
+      const before = new Set(
+        (await db.projects.listEnvironments())
+          .filter((row) => row.projectId === record.id)
+          .map((row) => row.composeProject),
+      )
       await db.projects.setEnvironments(record.id, body.environments)
+      // An exception was a decision about the project that had the environment, not about the environment.
+      const after = new Set(body.environments)
+      releaseCrawlerExceptions(deps.config, [
+        ...[...before].filter((name) => !after.has(name)),
+        ...[...after].filter((name) => !before.has(name)),
+      ])
 
       const catalog = await assemble(db, await deps.cache.get(true), deps.config)
       return c.json(

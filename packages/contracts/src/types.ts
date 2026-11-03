@@ -591,11 +591,14 @@ export const CrawlerSettings = named(
             .object({
               project: z.string().describe('The slug of the project'),
               name: z.string(),
-              policy: CrawlerPolicy,
+              policy: CrawlerPolicy.nullable().describe('Null when the environments of the project disagree'),
+              mixed: z
+                .boolean()
+                .describe('True when the environments of the project do not all follow the same exception'),
             })
             .strict(),
         )
-        .describe('Only the projects this caller may see'),
+        .describe('Only the projects this caller may see, including the ones whose environments disagree'),
     })
     .strict(),
   'CrawlerSettings',
@@ -609,6 +612,9 @@ export const ProjectCrawlers = named(
       own: CrawlerPolicy.nullable().describe('The exception set for this project, or null when it follows the default'),
       effective: CrawlerPolicy,
       mixed: z.boolean().describe('True when the environments of this project do not all have the same exception'),
+      byEnvironment: z
+        .record(z.string(), CrawlerPolicy)
+        .describe('What each environment follows, which decides the verdict of each of its addresses'),
     })
     .strict(),
   'ProjectCrawlers',

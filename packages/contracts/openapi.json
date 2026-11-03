@@ -4099,18 +4099,31 @@
                   "type": "string"
                 },
                 "policy": {
-                  "$ref": "#/components/schemas/CrawlerPolicy",
-                  "description": "Which kinds of crawler may read a hostname. true lets that kind in."
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CrawlerPolicy",
+                      "description": "Which kinds of crawler may read a hostname. true lets that kind in."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Null when the environments of the project disagree"
+                },
+                "mixed": {
+                  "type": "boolean",
+                  "description": "True when the environments of the project do not all follow the same exception"
                 }
               },
               "required": [
                 "project",
                 "name",
-                "policy"
+                "policy",
+                "mixed"
               ],
               "additionalProperties": false
             },
-            "description": "Only the projects this caller may see"
+            "description": "Only the projects this caller may see, including the ones whose environments disagree"
           }
         },
         "required": [
@@ -4142,13 +4155,24 @@
           "mixed": {
             "type": "boolean",
             "description": "True when the environments of this project do not all have the same exception"
+          },
+          "byEnvironment": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CrawlerPolicy"
+            },
+            "description": "What each environment follows, which decides the verdict of each of its addresses"
           }
         },
         "required": [
           "default",
           "own",
           "effective",
-          "mixed"
+          "mixed",
+          "byEnvironment"
         ],
         "additionalProperties": false
       },
@@ -13133,6 +13157,16 @@
           },
           "404": {
             "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The requested operation conflicts with the current runtime state.",
             "content": {
               "application/json": {
                 "schema": {

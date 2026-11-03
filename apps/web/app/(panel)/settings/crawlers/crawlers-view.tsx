@@ -117,8 +117,12 @@ export function CrawlersView() {
                   >
                     {exception.name}
                   </Link>
-                  <Badge tone={presetOf(exception.policy) === 'custom' ? 'warn' : 'info'}>
-                    {t(`state.${presetOf(exception.policy)}`)}
+                  <Badge
+                    tone={
+                      exception.policy === null ? 'warn' : presetOf(exception.policy) === 'custom' ? 'warn' : 'info'
+                    }
+                  >
+                    {t(`state.${exception.policy === null ? 'mixed' : presetOf(exception.policy)}`)}
                   </Badge>
                 </li>
               ))}

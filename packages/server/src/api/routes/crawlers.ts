@@ -7,6 +7,7 @@ import { requireDatabase } from '../../db/index.ts'
 import type { AppDeps } from '../../deps.ts'
 import { projectScope, visible } from '../../services/access-control.ts'
 import {
+  NoEnvironmentsToCover,
   projectCrawlers,
   readDefaultCrawlers,
   saveDefaultCrawlers,
@@ -35,6 +36,10 @@ export function crawlerRoutes(deps: AppDeps): Hono {
     return rows.filter((row) => row.projectId === projectId).map((row) => row.composeProject)
   }
 
+  async function adoptedEnvironments(): Promise<Set<string>> {
+    return new Set((await requireDatabase(deps.db).projects.listEnvironments()).map((row) => row.composeProject))
+  }
+
   app.get(
     '/crawlers',
     documentRoute({
@@ -49,10 +54,12 @@ export function crawlerRoutes(deps: AppDeps): Hono {
     }),
     async (c) => {
       const db = requireDatabase(deps.db)
-      const exceptions: Array<{ project: string; name: string; policy: CrawlerPolicy }> = []
+      const exceptions: Array<{ project: string; name: string; policy: CrawlerPolicy | null; mixed: boolean }> = []
       for (const project of visible(principalOf(c), await db.projects.list(), (row) => projectScope(row.id))) {
         const state = projectCrawlers(deps.config, await environmentsOf(project.id))
-        if (state.own) exceptions.push({ project: project.slug, name: project.name, policy: state.own })
+        if (state.own || state.mixed) {
+          exceptions.push({ project: project.slug, name: project.name, policy: state.own, mixed: state.mixed })
+        }
       }
       return c.json({ default: readDefaultCrawlers(deps.config), exceptions })
     },
@@ -72,7 +79,7 @@ export function crawlerRoutes(deps: AppDeps): Hono {
     }),
     async (c) => {
       const policy = CrawlerPolicy.parse(await c.req.json())
-      saveDefaultCrawlers(deps.config, policy)
+      saveDefaultCrawlers(deps.config, policy, await adoptedEnvironments())
       await record(deps, c, {
         action: 'crawlers.changed',
         resourceType: 'settings',
@@ -114,7 +121,7 @@ export function crawlerRoutes(deps: AppDeps): Hono {
       request: ProjectBody,
       response: ProjectCrawlers,
       parameters: [slugParameter],
-      errors: [400, 403, 404, 500, 503],
+      errors: [400, 403, 404, 409, 500, 503],
     }),
     async (c) => {
       const existing = await requireDatabase(deps.db).projects.find(c.req.param('slug'))
@@ -122,7 +129,12 @@ export function crawlerRoutes(deps: AppDeps): Hono {
       authorizeScope(c, projectScope(existing.id))
       const body = ProjectBody.parse(await c.req.json())
       const environments = await environmentsOf(existing.id)
-      saveProjectCrawlers(deps.config, environments, body.policy)
+      try {
+        saveProjectCrawlers(deps.config, environments, body.policy, await adoptedEnvironments())
+      } catch (error) {
+        if (error instanceof NoEnvironmentsToCover) throw new HTTPException(409, { message: error.message })
+        throw error
+      }
       await record(deps, c, {
         action: 'crawlers.changed',
         resourceType: 'project',

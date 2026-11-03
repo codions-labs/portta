@@ -460,7 +460,9 @@ that lies about what it is can still reach an address that is open to everybody.
 ask for a password never show their content to a crawler, and the sign-in pages carry
 `X-Robots-Tag: noindex`. The panel itself sends the same header and serves a `robots.txt` that
 disallows everything. A project's exception is stored per environment, so an environment adopted
-later follows the default until the project's setting is saved again.
+later follows the default until the project's setting is saved again, and an environment a
+project lets go of loses the exception that was made for it. A project with no environment cannot
+have an exception (`409`); a project whose environments disagree is listed as mixed.
 
 ## State and recovery
 

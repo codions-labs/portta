@@ -139,8 +139,11 @@ export function ProjectCrawlers({ project, mayEdit }: { project: Project; mayEdi
               <tbody className="divide-y divide-line">
                 {rows.map((entry) => {
                   const open = entry.mode === 'public'
-                  const search = open && policy.search
-                  const ai = open && (policy.train || policy.live)
+                  // What the address's own environment follows: a project whose environments
+                  // disagree shows each one's verdict, and a change not saved yet shows the draft.
+                  const own = dirty ? policy : (state.byEnvironment[entry.project ?? ''] ?? policy)
+                  const search = open && own.search
+                  const ai = open && (own.train || own.live)
                   return (
                     <tr key={entry.host}>
                       <td className="px-3.5 py-2">
