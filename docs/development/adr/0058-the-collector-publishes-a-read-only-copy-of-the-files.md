@@ -26,7 +26,8 @@ publishes a bounded copy of what is safe to show, and the panel reads the copy.
 * **What is copied.** The text of a regular file inside the folder, up to 64 KB, 400 files and 8 MB
   per project, the changed files first. A file is opened through a descriptor that does not follow a
   link and its real path must lie inside the folder, so a link out of the project reads nothing.
-  Binary and large files are listed and not copied.
+  Binary and large files are listed and not copied. A patch is kept only when every line it
+  keeps from the new version is a line of the text that was read, because git reads the path again.
 * **What is never copied.** A file that usually holds a secret, by name: `.env` and its variants
   (but not `.env.example`), keys and certificates, `.npmrc`, credentials and secrets files,
   Terraform state and variables, and anything under `.ssh`, `.aws`, `.gnupg`, `.kube` or `.docker`.

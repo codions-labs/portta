@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileKey, type PublishedFiles } from 'portta-core'
 import { describe, expect, it } from 'vitest'
-import { filesDir, publishFiles } from './files.js'
+import { filesDir, patchMatchesText, publishFiles } from './files.js'
 
 const identity = ['-c', 'user.name=Ada', '-c', 'user.email=ada@example.test']
 const run = (cwd: string, ...args: string[]) =>
@@ -170,5 +170,17 @@ describe('the copy of a project’s files the panel reads', () => {
     writeFileSync(join(folder, '.git/info/exclude'), `secret-draft.txt\n${'#'.repeat(80 * 1024)}\n`)
     await publishFiles(root, environment, folder, Date.now() + 5_000_000)
     expect(existsSync(join(filesDir(root), environment, 'index.json'))).toBe(false)
+  })
+})
+
+describe('a patch must be about the text that was read', () => {
+  const patch = '@@ -1 +1 @@\n-export const one = 1\n+export const one = 2\n'
+  it('accepts the patch of the file that was read', () => {
+    expect(patchMatchesText(patch, 'export const one = 2\n')).toBe(true)
+  })
+
+  it('refuses the patch of another file, as when the path was swapped after it was read', () => {
+    expect(patchMatchesText(patch, 'something else entirely\n')).toBe(false)
+    expect(patchMatchesText('@@ -1 +1 @@\n-a\n+TOKEN=leaked\n', 'export const one = 2\n')).toBe(false)
   })
 })

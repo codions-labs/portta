@@ -48,6 +48,29 @@ export function filesDir(root: string): string {
   return join(root, 'state/files')
 }
 
+/**
+ * Whether a patch describes the text that was read through the checked descriptor.
+ *
+ * git reads the file again by its path, so what it shows could be a different file if the path was
+ * swapped in between. Every line a patch keeps from the new version (added or unchanged) must be a
+ * line of the text that was read; a patch of anything else fails here.
+ */
+export function patchMatchesText(patch: string, text: string): boolean {
+  const known = new Set(text.split('\n'))
+  let inHunk = false
+  for (const line of patch.split('\n')) {
+    if (line.startsWith('@@')) {
+      inHunk = true
+      continue
+    }
+    if (!inHunk || line === '' || line.startsWith('\\')) continue
+    if (line.startsWith('+') || line.startsWith(' ')) {
+      if (!known.has(line.slice(1))) return false
+    }
+  }
+  return true
+}
+
 function splitNul(text: string | null): string[] {
   return (text ?? '').split('\0').filter((entry) => entry !== '')
 }
@@ -208,7 +231,10 @@ async function build(directory: string, environment: string, now: number): Promi
         // file, and a patch that is about this path and no other.
         const still = lstatSync(join(real, file.path), { throwIfNoEntry: false })
         const headers = (patch ?? '').split('\n').filter((line) => line.startsWith('diff --git '))
-        const aboutThisFile = headers.length === 1 && headers[0] === `diff --git a/${file.path} b/${file.path}`
+        const aboutThisFile =
+          headers.length === 1 &&
+          headers[0] === `diff --git a/${file.path} b/${file.path}` &&
+          patchMatchesText(patch ?? '', read.text)
         if (patch && patch.trim() !== '' && still?.isFile() && still.nlink === 1 && aboutThisFile) {
           diffs.set(file.path, patch.slice(0, FILES_MAX_DIFF_BYTES))
           total += Math.min(Buffer.byteLength(patch), FILES_MAX_DIFF_BYTES)
