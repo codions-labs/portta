@@ -57,6 +57,7 @@ import {
   useMetricsCurrent,
   useProjects,
 } from '@/lib/queries'
+import { useDiscoveredFolders } from '@/lib/queries/projects'
 
 export function ProjectsView({
   initialProjects,
@@ -89,6 +90,7 @@ export function ProjectsView({
   const mayCreate = useCan('project:create')
   const exposure = useExposure(useCan('access:read'))
   const metrics = useMetricsCurrent()
+  const discovered = useDiscoveredFolders(useCan('settings:read'))
 
   const catalogUnavailable = catalog.error instanceof ApiError && catalog.error.status === 503
 
@@ -308,7 +310,12 @@ export function ProjectsView({
               </section>
             ))}
             {filters.state === 'all' && unowned.length > 0 ? (
-              <UnownedGroup environments={unowned} projects={catalog.data ?? []} exposure={exposure.data} />
+              <UnownedGroup
+                environments={unowned}
+                projects={catalog.data ?? []}
+                exposure={exposure.data}
+                home={discovered.data?.home}
+              />
             ) : null}
           </div>
         )}

@@ -6,7 +6,7 @@
 // merges them once: the counts are null when the dashboard is unavailable, and
 // a component reads one object either way.
 
-import type { ProjectPulse, ProjectSummary, ProjectTag } from 'portta-contracts'
+import type { Environment, ProjectPulse, ProjectSummary, ProjectTag } from 'portta-contracts'
 import type { ProjectEnvironmentFacts } from '../components/entities/project-actions.tsx'
 
 export type ProjectState = 'archived' | 'unhealthy' | 'partial' | 'running' | 'idle'
@@ -246,4 +246,82 @@ export function groupProjects(
       .map(([value, list]) => ({ id: `${key}:${value}`, title: value, items: list })),
     ...(without.length > 0 ? [{ id: `${key}:`, title: labels.without(key), items: without }] : []),
   ]
+}
+
+export interface FolderGroup {
+  /** The folder the environments run from, or null for the ones that name none or are alone in theirs. */
+  folder: string | null
+  environments: Environment[]
+}
+
+/**
+ * The folder an environment runs from. Its labels say so when Compose started it; one that was started
+ * by hand has none, and then the folder is the one of another environment that holds every file the
+ * environment mounts from the host. Named volumes are not files of a folder, and nothing is guessed when
+ * two folders could be it or when the mounts reach outside all of them.
+ */
+function folderOf(environment: Environment, known: readonly string[]): string | null {
+  if (environment.workingDir) return environment.workingDir
+  const sources = environment.services
+    .flatMap((service) => service.mounts ?? [])
+    .map((mount) => mount.source)
+    .filter((source) => source.startsWith('/') && !source.startsWith('/var/lib/docker/'))
+  if (sources.length === 0) return null
+  const holders = known.filter((folder) =>
+    sources.every((source) => source.startsWith(`${folder}/`) || source === folder),
+  )
+  return holders.length === 1 ? (holders[0] ?? null) : null
+}
+
+/**
+ * Environments nobody adopted, with the ones that run from the same folder together.
+ *
+ * Docker names an environment by its Compose project, and one folder easily runs several: the one
+ * adopted for the branch it is on, one the tests start with `-p`, a container somebody started by hand.
+ * They are one product, and listing each by itself makes it look like three. A folder with a single
+ * environment is not a group, and an environment that names no folder stays where it is.
+ */
+export function groupByFolder(environments: readonly Environment[]): FolderGroup[] {
+  const named = [
+    ...new Set(environments.flatMap((environment) => (environment.workingDir ? [environment.workingDir] : []))),
+  ]
+  const folders = new Map<string, string | null>(
+    environments.map((environment) => [environment.name, folderOf(environment, named)]),
+  )
+  const byFolder = new Map<string, Environment[]>()
+  for (const environment of environments) {
+    const folder = folders.get(environment.name)
+    if (folder) byFolder.set(folder, [...(byFolder.get(folder) ?? []), environment])
+  }
+  const groups: FolderGroup[] = []
+  const placed = new Set<string>()
+  for (const environment of environments) {
+    const folder = folders.get(environment.name) ?? null
+    const together = folder ? (byFolder.get(folder) ?? []) : []
+    if (folder && together.length > 1) {
+      if (placed.has(folder)) continue
+      placed.add(folder)
+      groups.push({ folder, environments: together })
+    } else {
+      groups.push({ folder: null, environments: [environment] })
+    }
+  }
+  return groups
+}
+
+/** `/root/projects/tuttoria/tuttoria` becomes the folder's own name, `tuttoria`, to start from. */
+export function projectNameOfFolder(folder: string): string {
+  const last = folder.replace(/\/+$/, '').split('/').at(-1) ?? folder
+  return last
+    .split(/[-_.]+/)
+    .filter(Boolean)
+    .map((word) => word[0]?.toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+/** Where a folder sits under Projects Home, which is what lets a project adopt what runs there later. */
+export function relativeToHome(folder: string, home: string | null | undefined): string | null {
+  if (!home) return null
+  const base = home.replace(/\/+$/, '')
+  return folder.startsWith(`${base}/`) ? folder.slice(base.length + 1) : null
 }

@@ -29,12 +29,21 @@ const SKIPPED = new Set(['node_modules', 'lost+found', 'vendor', 'dist', 'build'
 const PLANS_PER_CYCLE = 8
 const REPLAN_MS = 5 * 60_000
 
-const SENSITIVE_ROOTS = ['/etc', '/proc', '/sys', '/dev', '/boot', '/root', '/var/lib/docker', '/var/run', '/run']
+/** Parts of the system that are never a place for projects, and anything under them. */
+const SYSTEM_ROOTS = ['/etc', '/proc', '/sys', '/dev', '/boot', '/var/lib/docker', '/var/run', '/run']
+/** Folders that hold a user's whole account: `/root`, `/home`, `/home/ada`, `/Users/ada`. Projects live in a folder inside them. */
+const ACCOUNT_FOLDER = /^\/(?:root|home|Users|home\/[^/]+|Users\/[^/]+)\/*$/
 
-/** A Projects Home the collector will walk: a folder somebody keeps projects in, never a part of the system. */
+/**
+ * A Projects Home the collector will walk: a folder somebody keeps projects in, never a part of the
+ * system and never a whole account. `/root/projects` is a place for projects; `/root` and `/root/.ssh`
+ * are not.
+ */
 export function isWalkableHome(home: string): boolean {
-  if (home.split('/').filter(Boolean).length < 2) return false
-  return !SENSITIVE_ROOTS.some((root) => home === root || home.startsWith(`${root}/`))
+  const parts = home.split('/').filter(Boolean)
+  if (parts.length < 2 || parts.some((part) => part.startsWith('.'))) return false
+  if (ACCOUNT_FOLDER.test(home)) return false
+  return !SYSTEM_ROOTS.some((root) => home === root || home.startsWith(`${root}/`))
 }
 
 /**

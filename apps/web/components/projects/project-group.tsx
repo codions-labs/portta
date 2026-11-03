@@ -4,8 +4,11 @@
 // a band, each environment under it with its address and its next action.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Folder } from 'lucide-react'
 import Link from 'next/link'
 import type { Environment, ExposureView, ProjectSummary } from 'portta-contracts'
+import { slug as slugify } from 'portta-core/browser'
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EnvironmentRow } from '@/components/entities/environment-row'
 import { ProjectActionsMenu, ProjectPrimaryAction } from '@/components/entities/project-actions'
@@ -18,7 +21,14 @@ import { Menu, MenuContent, MenuItem, MenuTrigger } from '@/components/ui/menu'
 import { useToast } from '@/components/ui/toast'
 import { api } from '@/lib/api'
 import { useCan } from '@/lib/permissions'
-import { type ProjectListItem, projectState, projectStateTone } from '@/lib/projects'
+import {
+  groupByFolder,
+  type ProjectListItem,
+  projectNameOfFolder,
+  projectState,
+  projectStateTone,
+  relativeToHome,
+} from '@/lib/projects'
 import { keys } from '@/lib/queries'
 
 export function ProjectGroup({
@@ -124,14 +134,68 @@ function AdoptMenu({ environment, projects }: { environment: Environment; projec
 }
 
 /** What this host runs and no Project adopted: it is still here, and one decision from belonging somewhere. */
+/** The environments of one folder, offered as one project: it is the same product under several names. */
+function FolderBand({
+  folder,
+  environments,
+  home,
+}: {
+  folder: string
+  environments: readonly Environment[]
+  home?: string | null
+}) {
+  const { t } = useTranslation('projects', { keyPrefix: 'list' })
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const mayCreateProject = useCan('project:create')
+  const mayUpdateProject = useCan('project:update')
+  const mayCreate = mayCreateProject && mayUpdateProject
+  const name = projectNameOfFolder(folder)
+  const gather = useMutation({
+    mutationFn: async () => {
+      const created = await api.createProject({
+        slug: slugify(name),
+        name,
+        description: null,
+        relativePath: relativeToHome(folder, home),
+      })
+      // By hand, so one started without a folder of its own, that only mounts files from this one, comes along.
+      await api.setProjectEnvironments(
+        created.slug,
+        environments.map((environment) => environment.name),
+      )
+    },
+    onSuccess: () => void queryClient.invalidateQueries(),
+    onError: (error) =>
+      toast.push({ tone: 'danger', title: name, description: error instanceof Error ? error.message : String(error) }),
+  })
+  return (
+    <li className="flex flex-wrap items-center gap-2.5 border-b border-line bg-surface-2/40 px-5 py-2">
+      <Folder className="size-4 shrink-0 text-subtle" aria-hidden />
+      <span className="min-w-0 flex-1 text-sm">
+        <b className="font-semibold text-ink">{t('sameFolder', { count: environments.length })}</b>{' '}
+        <span className="font-mono text-xs text-subtle">{folder}</span>
+      </span>
+      {mayCreate ? (
+        <Button size="sm" disabled={gather.isPending} onClick={() => gather.mutate()}>
+          {t('gather', { name })}
+        </Button>
+      ) : null}
+    </li>
+  )
+}
+
 export function UnownedGroup({
   environments,
   projects,
   exposure,
+  home,
 }: {
   environments: readonly Environment[]
   projects: readonly ProjectSummary[]
   exposure?: ExposureView
+  /** Projects Home, so a project made from a folder can adopt what runs there later. */
+  home?: string | null
 }) {
   const { t } = useTranslation('projects', { keyPrefix: 'list' })
   const mayUpdate = useCan('project:update')
@@ -144,15 +208,22 @@ export function UnownedGroup({
         <span className="text-xs text-muted">{t('unownedHint')}</span>
       </div>
       <ul>
-        {environments.map((environment) => (
-          <EnvironmentRow
-            key={environment.name}
-            environment={environment}
-            exposure={exposure}
-            extraAction={
-              mayUpdate && adoptable.length > 0 ? <AdoptMenu environment={environment} projects={adoptable} /> : null
-            }
-          />
+        {groupByFolder(environments).map((group) => (
+          <Fragment key={group.folder ?? group.environments[0]?.name}>
+            {group.folder ? <FolderBand folder={group.folder} environments={group.environments} home={home} /> : null}
+            {group.environments.map((environment) => (
+              <EnvironmentRow
+                key={environment.name}
+                environment={environment}
+                exposure={exposure}
+                extraAction={
+                  mayUpdate && adoptable.length > 0 ? (
+                    <AdoptMenu environment={environment} projects={adoptable} />
+                  ) : null
+                }
+              />
+            ))}
+          </Fragment>
         ))}
       </ul>
     </Card>

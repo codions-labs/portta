@@ -72,6 +72,12 @@ All notable changes to Portta are documented here. The format follows
 
 ### Fixed
 
+- Projects lists the environments nobody adopted that run from one folder together, with a button that
+  makes them a project: a folder easily runs the branch's environment, one the tests start and a container
+  started by hand, and each used to look like a project of its own. One with no folder in its labels joins
+  when every file it mounts is from that folder.
+- The host collector walks a Projects Home under `/root`, such as `/root/projects`, which its new guard had
+  refused along with `/root` itself; the Add project list was empty on a server run as root.
 - `portta setup` no longer deletes the plans and generated overlays of adopted projects. It replaced the
   whole `runtime/` folder, which is also where `portta adopt` keeps them, so every update removed files
   that running projects name.
