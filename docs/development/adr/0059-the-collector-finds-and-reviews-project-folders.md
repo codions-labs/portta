@@ -22,7 +22,7 @@ The collector finds the folders, analyses them and publishes the result. The pan
   a folder that already is one. It stops at 200.
 * **What it will walk.** Projects Home must be a folder somebody keeps projects in: at least two
   levels deep, not part of the system (`/etc`, `/proc`, `/sys`, `/dev`, `/boot`, Docker's own
-  directories), not a whole account (`/root`, `/home`) and not a hidden folder. `/root/projects` is a place for
+  directories), not a whole account (`/root`, `/home`, `/home/ada`) and not a hidden folder. `/root/projects` is a place for
   projects; `/root` and `/root/.ssh` are not. Anything else publishes nothing.
 * **Analysing.** For each it runs the same read-only analysis as `portta analyze` and publishes the
   plan: services, how each would be routed, the ports that would stop being published, fixed container

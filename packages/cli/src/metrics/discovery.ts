@@ -31,8 +31,8 @@ const REPLAN_MS = 5 * 60_000
 
 /** Parts of the system that are never a place for projects, and anything under them. */
 const SYSTEM_ROOTS = ['/etc', '/proc', '/sys', '/dev', '/boot', '/var/lib/docker', '/var/run', '/run']
-/** Folders that hold a user's whole account: projects live in a folder inside them, never in them. */
-const ACCOUNT_ROOTS = ['/root', '/home', '/Users']
+/** Folders that hold a user's whole account: `/root`, `/home`, `/home/ada`, `/Users/ada`. Projects live in a folder inside them. */
+const ACCOUNT_FOLDER = /^\/(?:root|home|Users|home\/[^/]+|Users\/[^/]+)\/*$/
 
 /**
  * A Projects Home the collector will walk: a folder somebody keeps projects in, never a part of the
@@ -42,7 +42,7 @@ const ACCOUNT_ROOTS = ['/root', '/home', '/Users']
 export function isWalkableHome(home: string): boolean {
   const parts = home.split('/').filter(Boolean)
   if (parts.length < 2 || parts.some((part) => part.startsWith('.'))) return false
-  if (ACCOUNT_ROOTS.includes(home.replace(/\/+$/, ''))) return false
+  if (ACCOUNT_FOLDER.test(home)) return false
   return !SYSTEM_ROOTS.some((root) => home === root || home.startsWith(`${root}/`))
 }
 
