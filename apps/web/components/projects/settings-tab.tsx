@@ -8,6 +8,7 @@ import type { Project } from 'portta-contracts'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
+import { ProjectCrawlers } from '@/components/projects/project-crawlers'
 import { Empty, ErrorBox } from '@/components/shell-bits'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
@@ -64,6 +65,9 @@ export function SettingsTab({ project, readOnly }: { project: Project; readOnly:
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="lg:col-span-2">
+        <ProjectCrawlers project={project} mayEdit={mayEdit} />
+      </div>
       {mayEdit ? (
         <Card>
           <CardHeader title={t('settings.title')} description={t('settings.description')} />

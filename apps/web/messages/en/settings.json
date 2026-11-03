@@ -557,7 +557,8 @@
       "project-access": "Site access",
       "tls": "Certificates and DNS",
       "panel": "Panel",
-      "traefik": "Traefik"
+      "traefik": "Traefik",
+      "crawlers": "Search engines and bots"
     }
   },
   "search": {
@@ -571,5 +572,93 @@
     "title_one": "{{count}} saved change is not in effect yet.",
     "title_other": "{{count}} saved changes are not in effect yet.",
     "body": "Apply from the terminal. The gateway's containers will be recreated."
+  },
+  "crawlers": {
+    "title": "Search engines and bots",
+    "description": "Whether search engines and AI crawlers may find and read your projects. Everything is blocked until you say otherwise.",
+    "defaultTitle": "Server default for search engines and bots",
+    "defaultDescription": "Every project follows this unless it has an exception of its own.",
+    "state": {
+      "all": "Everything blocked",
+      "noAi": "Search engines only",
+      "open": "Everything allowed",
+      "custom": "Custom",
+      "exception": "Exception active",
+      "mixed": "Mixed"
+    },
+    "presets": {
+      "all": {
+        "title": "Block all (recommended)",
+        "help": "No search engine or AI crawler finds or reads your projects."
+      },
+      "noAi": {
+        "title": "Allow search engines, block AI",
+        "help": "Google and Bing may index. AI crawlers are still refused."
+      },
+      "open": {
+        "title": "Allow all",
+        "help": "Any search engine and crawler may read addresses that are open to everybody."
+      }
+    },
+    "kinds": {
+      "search": {
+        "title": "Search engines",
+        "examples": "Googlebot, Bingbot, DuckDuckBot, YandexBot"
+      },
+      "train": {
+        "title": "AI that trains models",
+        "examples": "GPTBot, ClaudeBot, CCBot, Google-Extended"
+      },
+      "live": {
+        "title": "AI that reads when a person asks",
+        "examples": "ChatGPT-User, Claude-User, PerplexityBot"
+      },
+      "preview": {
+        "title": "Link previews in chats and social networks",
+        "examples": "Slackbot, facebookexternalhit, WhatsApp"
+      }
+    },
+    "allowed": "Allowed",
+    "blocked": "Blocked",
+    "allow": "Allow",
+    "block": "Block",
+    "howTitle": "How the block works.",
+    "howBody": "robots.txt is a request that polite crawlers respect, so Portta also refuses with a 403 anything that identifies itself as a blocked crawler. A client that lies about what it is cannot be stopped this way.",
+    "panelNote": "This panel and the sign-in pages of protected sites are never indexed, whatever you choose here.",
+    "effect": "Takes effect on the next request. Nothing is restarted.",
+    "discard": "Discard",
+    "save": "Save",
+    "exceptionsTitle": "Projects with an exception",
+    "exceptionsDescription": "These projects do not follow the default above.",
+    "noExceptions": "No project has an exception.",
+    "projectTitle": "Search engines and bots",
+    "projectDescription": "Whether crawlers may find and read the addresses of {{project}}.",
+    "choices": {
+      "default": {
+        "title": "Follow the server default",
+        "help": "Changes together with the default."
+      },
+      "block": {
+        "title": "Block all",
+        "help": "Keeps every crawler out of this project even if the default opens up."
+      },
+      "custom": {
+        "title": "Allow some",
+        "help": "Choose what may find and read this project."
+      }
+    },
+    "irreversible": "What you allow can show up in searches and in AI answers, and what was already read cannot be taken back. It only applies to addresses open to everybody.",
+    "confirm": "I understand this project will be visible to what I allow.",
+    "mixed": "This project's environments do not all have the same exception. Saving sets the same one on all of them.",
+    "table": {
+      "address": "Address",
+      "access": "Who may open",
+      "search": "Search engines",
+      "ai": "AI crawlers",
+      "everyone": "Everybody",
+      "password": "Password"
+    },
+    "serverDefault": "The server default is set in Settings.",
+    "changeDefault": "Change the default"
   }
 }

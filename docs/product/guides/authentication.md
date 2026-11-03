@@ -437,6 +437,31 @@ labels:
 Until that label exists the record does nothing, and removing the record while
 the label stays leaves the host closed.
 
+### Search engines and bots
+
+By default no search engine and no AI crawler may find or read a project. The default and
+the exceptions live in `state/auth/protections.json`, next to the decisions above, and apply on
+the next request. Settings > Search engines and bots sets the default
+(`PUT /api/crawlers`); a project's Settings tab sets an exception
+(`PUT /api/projects/{slug}/crawlers`, `null` returns it to the default). The audit log records
+both as `crawlers.changed`.
+
+Four kinds can be allowed on their own: search engines, AI that trains models, AI that reads
+when a person asks, and link previews in chats and social networks. Two things enforce the
+choice on every host that passes through ForwardAuth, protected or public:
+
+- `/robots.txt` is answered by `portta-auth` for any host that keeps a kind out, whatever the
+  application has there. A host that allows every kind keeps the application's own file.
+- A request that names itself as a blocked kind (`Googlebot`, `GPTBot`, `ClaudeBot`,
+  `ChatGPT-User`, `Slackbot` and the like) gets `403` before anything else is decided.
+
+`robots.txt` is a request and the `User-Agent` is whatever the client says it is, so a client
+that lies about what it is can still reach an address that is open to everybody. Addresses that
+ask for a password never show their content to a crawler, and the sign-in pages carry
+`X-Robots-Tag: noindex`. The panel itself sends the same header and serves a `robots.txt` that
+disallows everything. A project's exception is stored per environment, so an environment adopted
+later follows the default until the project's setting is saved again.
+
 ## State and recovery
 
 - `PORTTA_AUTH_SECRET` in `.env` signs the panel's sessions and tokens, and the
