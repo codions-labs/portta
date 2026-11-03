@@ -56,5 +56,13 @@
   "unavailableCard": "O prazo deste link pode ter acabado, ou o acesso foi alterado. Quem enviou pode criar outro em poucos segundos.",
   "unavailableHelp": "Não sabe quem enviou? Procure a mensagem em que recebeu este endereço.",
   "formHintPasswordOnly": "Use a senha que você recebeu.",
-  "invalidPasswordOnly": "Senha incorreta."
+  "invalidPasswordOnly": "Senha incorreta.",
+  "or": "ou",
+  "continueWithPanel": "Continuar com minha conta do Portta",
+  "panelHelp": "Se você está logado no painel Portta deste servidor e vê o projeto, não precisa da senha.",
+  "panelNotice": {
+    "signedOut": "Você não está logado no painel do Portta. Entre por lá primeiro e tente de novo.",
+    "denied": "Sua conta do Portta não pode abrir este projeto. Use a senha ou peça acesso.",
+    "expired": "Essa entrada acabou antes de ser usada. Tente de novo ou use a senha."
+  }
 }

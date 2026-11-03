@@ -56,5 +56,13 @@
   "unavailableCard": "This link's time may have ended, or the access was changed. Whoever sent it can create another in a few seconds.",
   "unavailableHelp": "Do not know who sent it? Look for the message where you got this address.",
   "formHintPasswordOnly": "Use the password you were given.",
-  "invalidPasswordOnly": "Wrong password."
+  "invalidPasswordOnly": "Wrong password.",
+  "or": "or",
+  "continueWithPanel": "Continue with my Portta account",
+  "panelHelp": "If you are signed in to this server's Portta panel and can see the project, you do not need the password.",
+  "panelNotice": {
+    "signedOut": "You are not signed in to the Portta panel. Sign in there first, then try again.",
+    "denied": "Your Portta account cannot open this project. Use the password, or ask for access.",
+    "expired": "That sign-in ended before it could be used. Try again, or use the password."
+  }
 }

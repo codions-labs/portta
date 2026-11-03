@@ -50,3 +50,4 @@ release.
 | [0055](0055-portta-routes-and-protects-agents-do-the-work.md) | Portta routes and protects; agents do the work | Accepted |
 | [0056](0056-the-collector-reads-where-the-code-stands.md) | The collector reads where a project's code stands, and only reads | Accepted; see 0001, 0030, 0055 |
 | [0058](0058-the-collector-publishes-a-read-only-copy-of-the-files.md) | The collector publishes a read-only copy of a project's files | Accepted; see 0001, 0030, 0056 |
+| [0057](0057-a-panel-session-opens-a-protected-site.md) | A panel session opens a protected site, by a token the panel hands over | Accepted; see 0027, 0035, 0038 |

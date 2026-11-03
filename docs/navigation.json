@@ -596,6 +596,11 @@
           "description": "Why the panel reads a bounded copy of a project's files that the host collector publishes."
         },
         {
+          "source": "docs/development/adr/0057-a-panel-session-opens-a-protected-site.md",
+          "slug": "adr/0057-a-panel-session-opens-a-protected-site",
+          "description": "How someone signed in to the panel opens a protected site without its password."
+        },
+        {
           "source": "docs/development/adr/README.md",
           "slug": "adr",
           "description": "Architecture decision records."

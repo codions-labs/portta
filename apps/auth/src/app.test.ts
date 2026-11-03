@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import {
   emptyProtectionStore,
   hashPassword,
+  issueEntryState,
+  issueSiteEntry,
   readProtectionStore,
   removeProtection,
   setDefaultCrawlers,
@@ -23,7 +25,9 @@ beforeAll(async () => {
   passwordHash = await hashPassword('correct')
 })
 
-function setup(options: { now?: () => number; limiter?: LoginLimiter; logs?: Record<string, unknown>[] } = {}) {
+function setup(
+  options: { now?: () => number; limiter?: LoginLimiter; logs?: Record<string, unknown>[]; panelUrl?: string } = {},
+) {
   const directory = mkdtempSync(join(tmpdir(), 'portta-auth-'))
   const storePath = join(directory, 'protections.json')
   writeProtectionStore(
@@ -48,6 +52,7 @@ function setup(options: { now?: () => number; limiter?: LoginLimiter; logs?: Rec
     secret,
     uiDir: directory,
     sessionSeconds: 43_200,
+    panelUrl: options.panelUrl ?? '',
   }
   const logs = options.logs ?? []
   const app = createAuthApp({
@@ -58,6 +63,11 @@ function setup(options: { now?: () => number; limiter?: LoginLimiter; logs?: Rec
     loadHtml: () => html,
   })
   return { app, logs, storePath }
+}
+
+function contextOf(body: string): Record<string, unknown> {
+  const match = /<script id="portta-auth-context" type="application\/json">(.*?)<\/script>/s.exec(body)
+  return JSON.parse(match?.[1] ?? '{}') as Record<string, unknown>
 }
 
 const forwarded = {
@@ -305,11 +315,6 @@ describe('ForwardAuth app', () => {
     expect(logs[0]?.address).toBe('203.0.113.4')
   })
 
-  function contextOf(body: string): Record<string, unknown> {
-    const match = /<script id="portta-auth-context" type="application\/json">(.*?)<\/script>/s.exec(body)
-    return JSON.parse(match?.[1] ?? '{}') as Record<string, unknown>
-  }
-
   describe('a host that asks for the password alone', () => {
     function passwordOnly() {
       const instance = setup()
@@ -420,6 +425,136 @@ describe('ForwardAuth app', () => {
   })
 })
 
+describe('a session of the panel', () => {
+  const PANEL = 'https://panel.example.com'
+  const STATE = issueEntryState('demo.example.com', 'https', secret)
+  const entry = (overrides: Partial<Parameters<typeof issueSiteEntry>[0]> = {}, at = Date.now()) =>
+    issueSiteEntry(
+      { host: 'demo.example.com', scope: 'share:a7f3', epoch: 1, user: 'ada@example.test', state: STATE, ...overrides },
+      secret,
+      Math.floor(at / 1000),
+    )
+  const arrive = (
+    app: ReturnType<typeof setup>['app'],
+    token: string,
+    next = '/orders',
+    cookie = `__Host-portta_entry=${STATE}`,
+  ) =>
+    app.request(`/__portta/auth/panel?token=${encodeURIComponent(token)}&next=${encodeURIComponent(next)}`, {
+      headers: { ...forwarded, ...(cookie ? { cookie } : {}) },
+    })
+
+  it('opens the site once, as the person the panel named', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const token = entry()
+    const response = await arrive(app, token)
+    expect(response.status).toBe(303)
+    expect(response.headers.get('location')).toBe('/orders')
+    const cookie = /__portta_session=[^;]+/.exec(response.headers.get('set-cookie') ?? '')?.[0] ?? ''
+    const verified = await app.request('/verify', { headers: { ...forwarded, cookie } })
+    expect(verified.status).toBe(200)
+    expect(verified.headers.get('x-forwarded-user')).toBe('ada@example.test')
+
+    const again = await arrive(app, token)
+    expect(again.status).toBe(302)
+    expect(again.headers.get('location')).toContain('panel=expired')
+  })
+
+  it.each([
+    ['another host', { host: 'other.example.com' }],
+    ['another decision', { scope: 'share:zzzz' }],
+    ['a password that has been rotated since', { epoch: 2 }],
+  ])('refuses a token made for %s', async (_name, overrides) => {
+    const { app } = setup({ panelUrl: PANEL })
+    const response = await arrive(app, entry(overrides))
+    expect(response.status).toBe(302)
+    expect(response.headers.get('set-cookie')).toBeNull()
+  })
+
+  it('refuses a token that is old, edited or signed with another secret', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    expect((await arrive(app, entry({}, Date.now() - 120_000))).headers.get('set-cookie')).toBeNull()
+    expect((await arrive(app, `${entry()}x`)).headers.get('set-cookie')).toBeNull()
+    const other = issueSiteEntry(
+      { host: 'demo.example.com', scope: 'share:a7f3', epoch: 1, user: 'Ada', state: STATE },
+      'cd'.repeat(32),
+      Math.floor(Date.now() / 1000),
+    )
+    expect((await arrive(app, other)).headers.get('set-cookie')).toBeNull()
+  })
+
+  it('opens nothing for a browser that did not ask, even with a token that is otherwise good', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const noCookie = await arrive(app, entry(), '/orders', '')
+    expect(noCookie.headers.get('location')).toContain('panel=expired')
+    expect(noCookie.headers.get('set-cookie') ?? '').not.toContain('__portta_session')
+    const otherBrowser = await arrive(
+      app,
+      entry(),
+      '/orders',
+      `__Host-portta_entry=${issueEntryState('demo.example.com', 'https', secret)}`,
+    )
+    expect(otherBrowser.headers.get('location')).toContain('panel=expired')
+    expect(otherBrowser.headers.get('set-cookie') ?? '').not.toContain('__portta_session')
+  })
+
+  it('spends a token even when it reached the wrong browser, so it cannot be tried again', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const token = entry()
+    const wrong = await arrive(
+      app,
+      token,
+      '/orders',
+      `__Host-portta_entry=${issueEntryState('demo.example.com', 'https', secret)}`,
+    )
+    expect(wrong.headers.get('location')).toContain('panel=expired')
+    const right = await arrive(app, token)
+    expect(right.headers.get('location')).toContain('panel=expired')
+    expect(right.headers.get('set-cookie') ?? '').not.toContain('__portta_session')
+  })
+
+  it('does not send a browser anywhere but a path on the site', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const response = await arrive(app, entry(), '/\t/evil.example')
+    expect(response.status).toBe(303)
+    expect(response.headers.get('location')).toBe('/')
+  })
+
+  it('opens nothing on a server that did not say where its panel is', async () => {
+    const { app } = setup()
+    expect((await arrive(app, entry())).headers.get('set-cookie')).toBeNull()
+    const login = await app.request('/__portta/auth/login', { headers: forwarded })
+    expect(contextOf(await login.text())).not.toHaveProperty('panel')
+  })
+
+  it('offers the panel on the login page, and sends a browser that used it before straight there', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const first = await app.request('/__portta/auth/login?next=%2Forders', { headers: forwarded })
+    expect(first.status).toBe(200)
+    const panel = contextOf(await first.text()).panel as { url: string }
+    expect(panel.url).toMatch(
+      new RegExp(`^${PANEL}/api/site-entry\\?host=demo\\.example\\.com&next=%2Forders&state=[A-Za-z0-9_.-]+$`),
+    )
+    const state = /state=([A-Za-z0-9_.-]+)$/.exec(panel.url)?.[1]
+    expect(first.headers.get('set-cookie')).toContain(`__Host-portta_entry=${state}`)
+
+    const returning = await app.request('/__portta/auth/login?next=%2Forders', {
+      headers: { ...forwarded, cookie: '__portta_panel=1' },
+    })
+    expect(returning.status).toBe(302)
+    expect(returning.headers.get('location')).toContain(`${PANEL}/api/site-entry?host=demo.example.com`)
+  })
+
+  it('says why the panel did not open the site, and shows the password form instead of sending the browser back', async () => {
+    const { app } = setup({ panelUrl: PANEL })
+    const denied = await app.request('/__portta/auth/login?panel=denied', {
+      headers: { ...forwarded, cookie: '__portta_panel=1' },
+    })
+    expect(denied.status).toBe(200)
+    expect(contextOf(await denied.text()).panel).toMatchObject({ notice: 'denied' })
+  })
+})
+
 describe('crawlers', () => {
   const googlebot = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
   const gptbot = 'Mozilla/5.0 AppleWebKit/537.36 (compatible; GPTBot/1.2)'
@@ -481,11 +616,16 @@ describe('crawlers', () => {
 })
 
 describe('safe redirects', () => {
-  it.each(['https://evil.example', '//evil.example', '/%2F/evil', '/%5cevil', '/ok\r\nLocation: evil'])(
-    'rejects %s',
-    (value) => {
-      expect(safeNext(value)).toBe('/')
-    },
-  )
+  it.each([
+    'https://evil.example',
+    '//evil.example',
+    '/%2F/evil',
+    '/%5cevil',
+    '/ok\r\nLocation: evil',
+    '/\t/evil.example',
+    '/%09/evil.example',
+  ])('rejects %s', (value) => {
+    expect(safeNext(value)).toBe('/')
+  })
   it('keeps an exact local path and query', () => expect(safeNext('/orders/42?tab=items')).toBe('/orders/42?tab=items'))
 })

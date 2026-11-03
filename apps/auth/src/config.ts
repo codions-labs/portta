@@ -5,6 +5,8 @@ export interface AuthConfig {
   secret: string
   uiDir: string
   sessionSeconds: number
+  /** Where a browser reaches the panel, or empty when a panel session cannot open a site. */
+  panelUrl: string
 }
 
 function env(key: string, fallback: string): string {
@@ -19,6 +21,7 @@ export function loadAuthConfig(overrides: Partial<AuthConfig> = {}): AuthConfig 
     secret: env('PORTTA_AUTH_SECRET', ''),
     uiDir: env('PORTTA_AUTH_UI_DIR', '/app/apps/auth/dist/ui'),
     sessionSeconds: Number(env('PORTTA_AUTH_SESSION_SECONDS', '43200')),
+    panelUrl: env('PORTTA_PANEL_URL', '').replace(/\/+$/, ''),
     ...overrides,
   }
 }
