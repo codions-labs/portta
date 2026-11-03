@@ -58,8 +58,10 @@ What is never done:
   (`com.docker.compose.project.config_files`), so a label that names some other folder
   without one is not followed. The overlay that `portta adopt` generates lives in Portta's own
   `runtime/compose/`, so it is accepted from that one place and from nowhere else, and at least one file
-  must still be in the folder, and a folder that two projects both name is given to
-  neither. These catch a label that is wrong or careless. They do not prove who wrote it:
+  must still be in the folder. Several Compose projects can run from one folder (the one adopted for
+  its branch, one the tests start with `-p`, one started by hand), and each gets it, because git is the
+  folder's: a project that only names a folder, without holding its Compose files, still fails that check.
+  These catch a label that is wrong or careless. They do not prove who wrote it:
   whoever can start a container on the host can write any label, and the collector has no
   record of its own to compare it with. What is left is metadata of repositories that user
   already owns, shown to people who may read the host's metrics.

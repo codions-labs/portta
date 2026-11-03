@@ -185,18 +185,30 @@ describe('which folder a project was started from', () => {
     expect(workingDirectories([labels('d', link)], root).has('d')).toBe(false)
   })
 
-  it('takes none for a folder that two projects both name', () => {
+  it("gives a folder to every project that runs from it, since git is the folder's and not the project's", () => {
     const both = workingDirectories([labels('j', mine), labels('k', mine)], root)
-    expect(both.has('j') || both.has('k')).toBe(false)
+    expect(both.get('j')).toBeTruthy()
+    expect(both.get('k')).toBe(both.get('j'))
   })
 
-  it('counts a folder by where its name leads, through a link or a trailing slash', () => {
+  it('does not give a folder to a project that only names it, with Compose files that are somewhere else', () => {
+    const elsewhere = mkdtempSync(join(tmpdir(), 'portta-elsewhere-'))
+    writeFileSync(join(elsewhere, 'compose.yaml'), 'services: {}\n')
+    const claimant = labels('liar', mine, [join(elsewhere, 'compose.yaml')])
+    const trusted = workingDirectories([labels('real', mine), claimant], root)
+    expect(trusted.has('real')).toBe(true)
+    expect(trusted.has('liar')).toBe(false)
+  })
+
+  it('gives the real folder to both, whether one names it through a link or with a trailing slash', () => {
     const alias = join(root, 'alias-of-mine')
     symlinkSync(mine, alias)
-    expect(workingDirectories([labels('l', mine), labels('m', alias, [join(mine, 'compose.yaml')])], root).size).toBe(0)
-    expect(
-      workingDirectories([labels('n', mine), labels('o', `${mine}/`, [join(mine, 'compose.yaml')])], root).size,
-    ).toBe(0)
+    const through = workingDirectories([labels('l', mine), labels('m', alias, [join(mine, 'compose.yaml')])], root)
+    expect(new Set(through.values()).size).toBe(1)
+    expect(through.size).toBe(2)
+    const slash = workingDirectories([labels('n', mine), labels('o', `${mine}/`, [join(mine, 'compose.yaml')])], root)
+    expect(new Set(slash.values()).size).toBe(1)
+    expect(slash.size).toBe(2)
   })
 
   it('takes none when Compose did not read a file in that folder', () => {
