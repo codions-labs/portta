@@ -13518,6 +13518,14 @@
                   "dryRun": {
                     "type": "boolean"
                   },
+                  "candidates": {
+                    "maxItems": 5000,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 300
+                    }
+                  },
                   "containers": {
                     "type": "boolean",
                     "description": "Stopped containers that are not Portta components"
@@ -15925,7 +15933,7 @@
           "Status"
         ],
         "summary": "Get the latest host and project metrics snapshot",
-        "description": "Reads state/metrics/current.json written by the CLI collector. The panel never collects. A missing file is an empty object, never an error.",
+        "description": "Reads state/metrics/current.json written by the host collector while it is writing. When it is not, and the panel can see the machine (a Linux host), the panel reads /proc and Docker itself and that reading is served instead, so the numbers are live after a reboot. A missing file is an empty object, never an error.",
         "responses": {
           "200": {
             "description": "Successful response.",

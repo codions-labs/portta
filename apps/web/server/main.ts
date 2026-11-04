@@ -12,6 +12,7 @@ import {
   type AppDeps,
   consoleRoute,
   createApp,
+  createLiveMetrics,
   createMaintenance,
   createSnapshotCache,
   createUpgradeHandler,
@@ -89,7 +90,9 @@ const app = next({ dev: development, turbopack: development, dir: process.cwd() 
 await app.prepare()
 
 // The hourly housekeeping: expired tokens and old audit entries are pruned.
-const jobs: Startable[] = [hub, createMaintenance(db)]
+// The server's own health, read by the panel where it can see the machine, so it stays live
+// after a reboot without anything started on the host.
+const jobs: Startable[] = [hub, createMaintenance(db), createLiveMetrics(client, config)]
 
 // The WebSocket half of the panel. One server, no port of its own: it never
 // listens, it only takes sockets the upgrade handler has already authorised.

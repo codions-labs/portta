@@ -92,9 +92,9 @@ export function useConfig(enabled = true) {
   return useQuery({ queryKey: keys.config(), queryFn: api.config, enabled })
 }
 
-/** The collector writes every five seconds; the panel reads at the same pace. */
+/** The panel's own reading refreshes every three seconds, and the collector's file every five. */
 export function useMetricsCurrent(enabled = true) {
-  return useQuery({ queryKey: keys.metricsCurrent(), queryFn: api.metricsCurrent, refetchInterval: 5_000, enabled })
+  return useQuery({ queryKey: keys.metricsCurrent(), queryFn: api.metricsCurrent, refetchInterval: 3_000, enabled })
 }
 
 export function useMetricsHistory(window = '30m') {

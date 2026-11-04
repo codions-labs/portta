@@ -297,9 +297,14 @@ export class DockerClient {
     })
   }
 
-  async stats(id: string): Promise<DockerStats> {
+  /**
+   * One sample. `one-shot` answers at once but without a previous reading to take
+   * a CPU difference against; without it Docker waits a second and includes one.
+   */
+  async stats(id: string, options: { oneShot?: boolean } = {}): Promise<DockerStats> {
+    const oneShot = options.oneShot ?? true
     return this.json<DockerStats>('GET', `/containers/${assertValidId(id)}/stats`, {
-      query: { stream: 'false', 'one-shot': 'true' },
+      query: { stream: 'false', ...(oneShot ? { 'one-shot': 'true' } : {}) },
     })
   }
 

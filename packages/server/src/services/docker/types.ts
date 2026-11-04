@@ -114,6 +114,8 @@ export interface DockerStats {
     system_cpu_usage?: number
   }
   memory_stats?: { usage?: number; limit?: number; stats?: Record<string, number> }
+  networks?: Record<string, { rx_bytes?: number; tx_bytes?: number }>
+  pids_stats?: { current?: number }
 }
 
 /**
@@ -136,6 +138,8 @@ export interface DockerDiskImage {
 
 export interface DockerDiskContainer {
   Id: string
+  /** The container's own writable layer. */
+  SizeRw?: number
   Names?: string[]
   ImageID: string
   State: string
