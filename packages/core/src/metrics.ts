@@ -625,7 +625,9 @@ export function normalizeContainerStats(
     id: identity.id,
     name: identity.name,
     service: identity.service,
-    cpuUtilisation: percentToUnit(cpuPercent),
+    // Cores, not a share of one: a container that keeps four busy reads 4, and the project and the
+    // server's own CPU only add up when nothing is clamped to a single core.
+    cpuUtilisation: cpuPercent === null ? null : Math.max(0, cpuPercent / 100),
     memoryUsedBytes,
     memoryLimitBytes: memoryLimitBytes !== null && memoryLimitBytes > 0 ? memoryLimitBytes : null,
     memoryUsedPercent: memoryPercent !== null ? percentToUnit(memoryPercent) : ratio(memoryUsedBytes, memoryLimitBytes),
