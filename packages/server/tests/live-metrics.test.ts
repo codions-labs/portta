@@ -290,6 +290,16 @@ describe('what the panel serves', () => {
     expect(current.host?.model).toBe('QEMU')
   })
 
+  it('does not call a reading live that the sampler stopped refreshing', async () => {
+    const live = await started()
+    const registered = createLiveMetrics({} as never, testConfig())
+    // Its newest reading is the machine's clock of 2027-01-15; the panel's is a day later.
+    Object.assign(registered, { latest: live.snapshot() })
+    const later = (live.snapshot()?.collectedAt ?? 0) * 1000 + 24 * 3600 * 1000
+    const current = readCurrentMetrics(config(collected, 7200), later)
+    expect(current).toMatchObject({ stale: true, collectorActive: false })
+  })
+
   it('serves the panel’s reading when no file was ever written', async () => {
     const live = await started()
     const registered = createLiveMetrics({} as never, testConfig())

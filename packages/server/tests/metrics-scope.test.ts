@@ -1,6 +1,6 @@
-import type { MetricsCurrent } from 'portta-contracts'
+import type { MetricsCurrent, MetricsHistory } from 'portta-contracts'
 import { describe, expect, it } from 'vitest'
-import { metricsFor } from '../src/services/metrics.ts'
+import { historyFor, metricsFor } from '../src/services/metrics.ts'
 
 const project = (composeProject: string, own?: true) =>
   ({ id: composeProject, name: composeProject, composeProject, own, containers: [], containerCount: 1 }) as never
@@ -27,5 +27,29 @@ describe('what a person who sees some projects reads of the metrics', () => {
   })
   it('leaves a missing disk reading missing', () => {
     expect(metricsFor({ ...metrics, dockerStorage: null }, () => false).dockerStorage).toBeNull()
+  })
+})
+
+describe('what a person who sees some projects reads of the history', () => {
+  const history = {
+    windowSeconds: 900,
+    points: [
+      {
+        timestamp: 1,
+        host: { cpuUtilisation: 0.5 },
+        projects: [
+          { id: 'mine', cpuUtilisation: 1, memoryUsedBytes: 1 },
+          { id: 'theirs', cpuUtilisation: 2, memoryUsedBytes: 9 },
+        ],
+        containers: [{ id: 'abc', cpuUtilisation: 2, memoryUsedBytes: 9 }],
+      },
+    ],
+  } as unknown as MetricsHistory
+
+  it('keeps the host and their projects, and no container of anybody', () => {
+    const [point] = historyFor(history, (id) => id === 'mine').points
+    expect(point?.host).toEqual({ cpuUtilisation: 0.5 })
+    expect(point?.projects.map((entry) => entry.id)).toEqual(['mine'])
+    expect(point?.containers).toEqual([])
   })
 })

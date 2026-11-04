@@ -5,7 +5,13 @@ import type { AppDeps } from '../../deps.ts'
 import { adoptions, visible } from '../../services/access-control.ts'
 import { readEnvironmentReport } from '../../services/environment.ts'
 import { readHostSecurityReport } from '../../services/host-security.ts'
-import { historyWindowSeconds, metricsFor, readCurrentMetrics, readMetricsHistory } from '../../services/metrics.ts'
+import {
+  historyFor,
+  historyWindowSeconds,
+  metricsFor,
+  readCurrentMetrics,
+  readMetricsHistory,
+} from '../../services/metrics.ts'
 import { documentRoute } from '../openapi.ts'
 
 export function hostRoutes(deps: AppDeps): Hono {
@@ -81,7 +87,8 @@ export function hostRoutes(deps: AppDeps): Hono {
       permission: 'metrics:read',
       summary: 'Get the short host metrics history',
       response: MetricsHistory,
-      description: 'Reads state/metrics/history.jsonl. window is 15m, 30m or 60m.',
+      description:
+        'Reads state/metrics/history.jsonl, then the panel\u2019s own readings for the time the collector was not writing. window is 15m, 30m or 60m. Somebody who sees only some projects gets the host series and those projects, never a container.',
       errors: [500],
       parameters: [
         {
@@ -92,9 +99,28 @@ export function hostRoutes(deps: AppDeps): Hono {
         },
       ],
     }),
-    (c) => {
+    async (c) => {
       const windowSeconds = historyWindowSeconds(c.req.query('window'))
-      return c.json(readMetricsHistory(deps.config, windowSeconds))
+      const history = readMetricsHistory(deps.config, windowSeconds)
+      const principal = principalOf(c)
+      if (principal.scope === 'all') return c.json(history)
+      // The same rule as the current reading: a project is theirs through who adopted it,
+      // and Portta's own is everybody's.
+      const owners = await adoptions(deps.db)
+      const own = new Set(
+        readCurrentMetrics(deps.config)
+          .projects.filter((project) => project.own)
+          .map((project) => project.composeProject),
+      )
+      const ids = [...new Set(history.points.flatMap((point) => point.projects.map((project) => project.id)))]
+      const seen = new Set(
+        visible(
+          principal,
+          ids.map((composeProject) => ({ composeProject })),
+          (row) => owners.get(row.composeProject) ?? null,
+        ).map((row) => row.composeProject),
+      )
+      return c.json(historyFor(history, (id) => own.has(id) || seen.has(id)))
     },
   )
 

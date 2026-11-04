@@ -15974,7 +15974,7 @@
           "Status"
         ],
         "summary": "Get the short host metrics history",
-        "description": "Reads state/metrics/history.jsonl. window is 15m, 30m or 60m.",
+        "description": "Reads state/metrics/history.jsonl, then the panel’s own readings for the time the collector was not writing. window is 15m, 30m or 60m. Somebody who sees only some projects gets the host series and those projects, never a container.",
         "parameters": [
           {
             "name": "window",
