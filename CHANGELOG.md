@@ -16,8 +16,8 @@ All notable changes to Portta are documented here. The format follows
   (`state/logs/host-metrics.log`).
 - The running collector publishes the project folders every minute, in the background, so Add project follows a new
   folder at once and a slow one never delays the host's metrics. A stop waits briefly for a discovery under way.
-- Folder discovery runs without interpolation, with a 20-second deadline after which Compose is killed, so no variable
-  of the host or of a `.env` reaches the plan. A port published through a variable, such as `${PORT}:80`, counts as
+- Folder discovery runs without interpolation, with a 20-second deadline after which Compose is ended, so no variable
+  of the host or of a `.env` reaches the plan. A port whose host part is a variable or a range, such as `${PORT}:80`, counts as
   published. The review shows variables as written.
 - The collector reads `.env` through one descriptor and does not review a folder whose `.env` it refuses (a link, a
   pipe or over 64 KB). `portta envs analyze` fails with a message for such a `.env` instead of naming the namespace

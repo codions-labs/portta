@@ -32,7 +32,7 @@ The collector finds the folders, analyses them and publishes the result. The pan
   a folder when its Compose file changes or every five minutes, at most eight a cycle. The running
   collector publishes every minute, in the background: a slow folder never delays the host's metrics.
   Unlike the command, the analysis is unattended: Compose is run with `--no-interpolate` and a
-  20-second deadline (killed, not asked), so no variable of the host or of a `.env` reaches the plan.
+  20-second deadline (ended with SIGTERM, which `docker` hands on to Compose), so no variable of the host or of a `.env` reaches the plan.
   The Compose file and the `.env` are read through one descriptor and refused when they are a link, a pipe or
   too large (1 MB, 64 KB); an `include` or `extends` that leaves the folder is treated like one that fetches.
   Such a folder is listed with no plan and the reason goes to the collector log.

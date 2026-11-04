@@ -187,15 +187,37 @@ function classifyCompose(image: string, name: string): 'datastore' | 'http' | 'w
   return 'unknown'
 }
 
+/** Splits a short port on the colons that are not inside `${...}`: `127.0.0.1:${PORT:-80}:80` has three parts. */
+function portParts(port: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let current = ''
+  for (const char of port) {
+    if (char === '{') depth += 1
+    if (char === '}') depth = Math.max(0, depth - 1)
+    if (char === ':' && depth === 0) {
+      parts.push(current)
+      current = ''
+    } else current += char
+  }
+  parts.push(current)
+  return parts
+}
+
+/**
+ * The ports a service publishes on the host. A short port with a host part that cannot be classified (a
+ * variable, a range) still counts as published: the review would otherwise say a port is private when it is not.
+ */
 export function publishedPorts(service: ComposeService): Array<{ host: string; container: string }> {
   return (service.ports ?? []).flatMap((port) => {
     if (typeof port === 'object' && port.published !== undefined)
       return [{ host: String(port.published), container: String(port.target ?? '') }]
-    if (typeof port === 'string') {
-      const match = /^(?:[^:]+:)?(\d+|\$\{[^}]*\}):(\d+)(?:\/\w+)?$/.exec(port)
-      return match ? [{ host: match[1]!, container: match[2]! }] : []
-    }
-    return []
+    if (typeof port !== 'string') return []
+    const parts = portParts(port)
+    if (parts.length < 2) return []
+    const host = parts[parts.length - 2]!.trim()
+    const container = parts[parts.length - 1]!.replace(/\/\w+$/, '').trim()
+    return host === '' ? [] : [{ host, container }]
   })
 }
 
@@ -338,8 +360,8 @@ export async function analyze(pathValue: string, options: AnalyzeOptions = {}, c
   let result = unattended
     ? await runProcess('docker', ['compose', '-f', composeFile, 'config', '--format', 'json', '--no-interpolate'], {
         cwd: path,
+        // SIGTERM, which `docker` hands on to the Compose plugin; execa ends it with SIGKILL after five seconds.
         timeout: 20_000,
-        killSignal: 'SIGKILL',
       })
     : await runProcess('docker', ['compose', '-f', composeFile, 'config', '--format', 'json'], {
         cwd: path,

@@ -260,7 +260,7 @@ describe('an unattended analysis', () => {
     mocks.inspectContainers.mockResolvedValue([])
     await analyze(dir, { unattended: true })
     expect(mocks.runProcess.mock.calls[0]![1]).toContain('--no-interpolate')
-    expect(mocks.runProcess.mock.calls[0]![2]).toMatchObject({ timeout: 20_000, killSignal: 'SIGKILL' })
+    expect(mocks.runProcess.mock.calls[0]![2]).toMatchObject({ timeout: 20_000 })
 
     writeFileSync(join(dir, 'shared.env'), 'COMPOSE_PROJECT_NAME=other\n')
     symlinkSync(join(dir, 'shared.env'), join(dir, '.env'))
@@ -272,9 +272,25 @@ describe('an unattended analysis', () => {
   })
 
   it('counts a port published through a variable', () => {
-    expect(publishedPorts({ ports: ['${PORT}:80', '8080:80', '80'] } as never)).toEqual([
+    expect(
+      publishedPorts({
+        ports: [
+          '${PORT}:80',
+          '8080:80',
+          '80',
+          '127.0.0.1:${PORT:-5432}:5432',
+          '$PORT:80/tcp',
+          '8000-8010:8000-8010',
+          '[::1]:9000:80',
+        ],
+      } as never),
+    ).toEqual([
       { host: '${PORT}', container: '80' },
       { host: '8080', container: '80' },
+      { host: '${PORT:-5432}', container: '5432' },
+      { host: '$PORT', container: '80' },
+      { host: '8000-8010', container: '8000-8010' },
+      { host: '9000', container: '80' },
     ])
   })
 })
