@@ -54,6 +54,22 @@ describe('collector lifecycle', () => {
     }
   })
 
+  it('replaces a collector that was started by another build, so an upgrade takes effect', () => {
+    const root = tree()
+    const running = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1_000)', 'host', 'watch'], {
+      stdio: 'ignore',
+    })
+    if (!running.pid) throw new Error('the collector fixture did not start')
+    try {
+      writePid(root, running.pid, '0.0.1-older')
+      mocks.spawnDetached.mockReturnValue(5151)
+      expect(startCollector(root)).toEqual({ pid: 5151, started: true })
+      expect(mocks.spawnDetached).toHaveBeenCalledTimes(1)
+    } finally {
+      running.kill()
+    }
+  })
+
   it('starts once after clearing a stale pid', () => {
     const root = tree()
     writePid(root, 888_888_888)
