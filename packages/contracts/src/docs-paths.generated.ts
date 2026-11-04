@@ -101,6 +101,7 @@ export const DOC_PATHS: Record<string, string> = {
   "docs/development/adr/0058-the-collector-publishes-a-read-only-copy-of-the-files.md": "adr/0058-the-collector-publishes-a-read-only-copy-of-the-files",
   "docs/development/adr/0059-the-collector-finds-and-reviews-project-folders.md": "adr/0059-the-collector-finds-and-reviews-project-folders",
   "docs/development/adr/0060-the-panel-cleans-networks-images-and-volumes.md": "adr/0060-the-panel-cleans-networks-images-and-volumes",
+  "docs/development/adr/0061-the-panel-reads-the-server-it-runs-on.md": "adr/0061-the-panel-reads-the-server-it-runs-on",
   "docs/development/adr/0057-a-panel-session-opens-a-protected-site.md": "adr/0057-a-panel-session-opens-a-protected-site",
   "docs/development/adr/README.md": "adr"
 }

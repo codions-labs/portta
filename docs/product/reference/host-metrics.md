@@ -61,6 +61,15 @@ never an error.
 Readiness changes more slowly and is collected every five minutes. Use
 `portta envs report` to refresh only that report.
 
+The collector is a process on the host, so a reboot stops it and nothing starts it again until
+`portta up`, `portta web up` or `portta host watch` does. That no longer leaves the Server page
+showing old numbers on **Linux**: while the collector is not writing, the panel reads the server
+itself, every three seconds (see [The panel's own reading](#the-panels-own-reading)). Where it
+cannot (a Mac, behind Docker Desktop or OrbStack), the page keeps the last file, says how old it
+is and that it is not the machine's state now, and dims it. After an upgrade the same commands
+replace a collector that was started by an older build, so the new way of reading the machine takes
+effect.
+
 `portta up` and `portta web up` start the watcher. `portta down` and
 `portta web down` stop it. If the gateway stays up after `web down`, the
 Overview goes stale until the next `up`.
@@ -74,8 +83,38 @@ short history. Every snapshot uses the current metrics schema.
 The Overview polls current every 5 seconds and history every 15. The project
 page shows that project's containers from the same snapshot.
 
-## Why it is not in the panel
+## The panel's own reading
 
-The same refusals as Git: the panel mounts no project directory, ships no
-host inventory library, and must not need `--privileged` to tell the truth
-about the machine it is sitting on.
+On a Linux host the panel's container shares the kernel's view of memory, CPU, load and uptime
+(`/proc/meminfo`, `/proc/stat`, `/proc/loadavg` and `/proc/uptime` are not namespaced), the state
+folder it mounts is on the host's disk, and Docker answers for the machine (`/info`) and for each
+container (`stats`, `system/df`) through the proxy the panel already owns. So the panel reads them
+itself, with no new mount, no extra permission and no process on the host:
+
+| What | Source | How often |
+|---|---|---|
+| Memory | `MemAvailable` in `/proc/meminfo` (what a program could still get, as `htop` counts it, not what is empty) | 3 s |
+| CPU | the difference between two readings of `/proc/stat`, never the average since boot | 3 s |
+| Load, uptime | `/proc/loadavg`, `/proc/uptime` | 3 s |
+| Disk | the filesystem under the mounted state folder, read as `df` does | 3 s |
+| Machine | Docker `/info`: name, distribution, kernel, architecture, cores | 60 s |
+| Projects | Docker `stats` of each running container, in cores (a container on four of them reads 4), memory without the file cache | 10 s |
+| Project disk | volumes and writable layers from Docker `system/df` | 5 min |
+
+It is the floor under the collector, not a second opinion: while the collector writes (fresh within
+30 seconds) its file is what the panel serves, because it reads what only the host can (git, project
+files, a GPU, a battery) and the time zone. When it stops, the panel's reading takes over and keeps
+those from the last file. The panel does **not** read where its container runs in a VM (Docker
+Desktop, OrbStack, a Mac): there `/proc` is the VM's, and calling it the machine is the mistake this
+whole design exists to avoid. Nothing here needs to be started again after a reboot, because Docker
+brings the panel back.
+
+The panel also keeps the last hour of its own readings in memory, so the charts are not empty after
+the collector stopped. They are lost when the panel restarts.
+
+## Why the collector still exists
+
+The panel mounts no project directory, ships no host inventory library, and must not need
+`--privileged` to tell the truth about the machine it is sitting on. What needs the host (git, the
+files of a project, the folders to adopt, a GPU, a battery, a Mac) stays with the collector, the same
+way Git does.
