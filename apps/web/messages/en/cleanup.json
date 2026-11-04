@@ -1,0 +1,180 @@
+{
+  "protection": {
+    "portta": "Portta",
+    "docker": "Docker default",
+    "in-use": "In use",
+    "why": {
+      "portta": "Part of Portta. Removing it could take the panel or the gateway down.",
+      "docker": "One of Docker's default networks.",
+      "in-use": "A container still uses it (running or stopped). Remove the container first."
+    }
+  },
+  "selectAll": "Select everything that can be removed",
+  "select": "Select {{name}}",
+  "lockedName": "{{name}} is protected and cannot be selected",
+  "remove": "Remove",
+  "clear": "Clear selection",
+  "freed": "{{size}} freed",
+  "result": {
+    "removed_one": "{{count}} item removed",
+    "removed_other": "{{count}} items removed",
+    "more_one": "and {{count}} more",
+    "more_other": "and {{count}} more"
+  },
+  "confirm": {
+    "typed": "remove {{count}}",
+    "typedHint": "Type {{typed}} to confirm"
+  },
+  "kinds": {
+    "container": "Container",
+    "network": "Network",
+    "image": "Image",
+    "volume": "Volume"
+  },
+  "networks": {
+    "bulkAria": "Actions on the selected networks",
+    "selected_one": "{{count}} network selected",
+    "selected_other": "{{count}} networks selected",
+    "selectAllLabel": "Select all",
+    "footnote": "Select all leaves out Portta's networks, Docker's defaults and any a container still uses. Removing the network of a stopped project keeps it from starting until the network is recreated.",
+    "confirm": {
+      "title_one": "Remove {{count}} network?",
+      "title_other": "Remove {{count}} networks?",
+      "effect": "A project that used the network recreates it the next time it starts.",
+      "action_one": "Remove {{count}} network",
+      "action_other": "Remove {{count}} networks"
+    }
+  },
+  "images": {
+    "title": "Images",
+    "searchPlaceholder": "Search image or tag",
+    "searchAria": "Search images",
+    "chips": {
+      "all": "All {{count}}",
+      "unused": "Unused {{count}}",
+      "dangling": "Untagged {{count}}",
+      "used": "In use {{count}}"
+    },
+    "total_one": "{{size}} in {{count}} image",
+    "total_other": "{{size}} in {{count}} images",
+    "reclaimable": "up to {{size}} can be freed",
+    "columns": {
+      "image": "Image",
+      "size": "Size",
+      "created": "Created",
+      "containers": "Containers",
+      "status": "Status"
+    },
+    "empty": "No image matches the filters",
+    "moreTags_one": "{{count}} more tag",
+    "moreTags_other": "{{count}} more tags",
+    "uniqueHint": "Removing frees {{size}}: the rest is shared with other images",
+    "containerCount_zero": "none",
+    "containerCount_one": "{{count}} container",
+    "containerCount_other": "{{count}} containers",
+    "dangling": "untagged",
+    "footnote": "Select all follows the current filter and leaves out Portta's images and any a container was created from. The size shown is the whole image; removing frees only what other images do not share.",
+    "bulkAria": "Actions on the selected images",
+    "selected_one": "{{count}} image selected",
+    "selected_other": "{{count}} images selected",
+    "confirm": {
+      "title_one": "Remove {{count}} image?",
+      "title_other": "Remove {{count}} images?",
+      "effect": "A removed image is pulled or built again the next time a container needs it.",
+      "action_one": "Remove {{count}} image",
+      "action_other": "Remove {{count}} images"
+    }
+  },
+  "volumes": {
+    "title": "Volumes",
+    "searchPlaceholder": "Search volume or project",
+    "searchAria": "Search volumes",
+    "chips": {
+      "all": "All {{count}}",
+      "unused": "Unused {{count}}",
+      "used": "In use {{count}}"
+    },
+    "total_one": "{{size}} in {{count}} volume",
+    "total_other": "{{size}} in {{count}} volumes",
+    "reclaimable": "{{size}} unused and removable",
+    "columns": {
+      "volume": "Volume",
+      "size": "Size",
+      "project": "Project",
+      "created": "Created",
+      "status": "Status"
+    },
+    "empty": "No volume matches the filters",
+    "mountedBy_zero": "no container mounts this volume",
+    "mountedBy_one": "mounted by {{count}} container",
+    "mountedBy_other": "mounted by {{count}} containers",
+    "sizeUnknown": "not reported",
+    "anonymous": "anonymous",
+    "footnote": "A volume is data, often a database, and it does not come back. Select all leaves out Portta's volumes and any a container mounts, stopped or not.",
+    "bulkAria": "Actions on the selected volumes",
+    "selected_one": "{{count}} volume selected",
+    "selected_other": "{{count}} volumes selected",
+    "confirm": {
+      "title_one": "Delete {{count}} volume?",
+      "title_other": "Delete {{count}} volumes?",
+      "effect": "What is inside them is erased from disk and cannot be recovered.",
+      "action_one": "Delete {{count}} volume",
+      "action_other": "Delete {{count}} volumes"
+    }
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "stats": {
+      "containers": "Stopped containers",
+      "containersHint": "of {{total}} on the server",
+      "networks": "Unused networks",
+      "networksHint": "of {{total}} on the server",
+      "images": "Unused images",
+      "imagesHint": "{{unused}} unused, {{dangling}} untagged · {{total}} in all",
+      "volumes": "Unused volumes",
+      "volumesHint": "{{unused}} unused, {{anonymous}} anonymous · {{total}} in all"
+    },
+    "plan": {
+      "title": "What to clean",
+      "description": "A cleanup removes only what nothing uses. Portta, Docker's default networks and anything a container references always stay.",
+      "containers": "Stopped containers",
+      "containersHint": "Those that finished or never started. Portta's components stay. Frees the networks, images and volumes they were holding.",
+      "networks": "Networks with no container",
+      "networksHint": "Networks of projects that were already removed.",
+      "images": "Images",
+      "imagesHint": "Unused is every image no container was created from, and it is pulled again when somebody needs it.",
+      "imagesOptions": {
+        "none": "Do not clean",
+        "dangling": "Untagged only",
+        "unused": "Every unused image"
+      },
+      "volumes": "Volumes",
+      "volumesHint": "Anonymous ones are those Docker named for a container. Named ones are usually databases.",
+      "volumesOptions": {
+        "none": "Do not clean",
+        "anonymous": "Unused anonymous only",
+        "unused": "Every unused one, named too"
+      },
+      "volumesWarning": "Unused named volumes are usually the database of a project that was removed. Deleting them cannot be undone."
+    },
+    "previewAction": "See what will be removed",
+    "clean": "Clean now",
+    "reset": "Back to the default",
+    "preview": {
+      "title_one": "{{count}} item will be removed",
+      "title_other": "{{count}} items will be removed",
+      "frees": "Frees up to {{size}}",
+      "nothing": "There is nothing to remove with these choices."
+    },
+    "buildCache": "The build cache takes {{size}} and the panel does not clean it. On the server:",
+    "confirm": {
+      "title_one": "Remove {{count}} item?",
+      "title_other": "Remove {{count}} items?",
+      "frees": "Frees up to {{size}} of disk.",
+      "effect": "Each item is removed one by one; what cannot go is listed afterwards.",
+      "withVolumes": "This cleanup deletes named volumes, with what is inside them. Each item is removed one by one; what cannot go is listed afterwards.",
+      "typed": "clean",
+      "action": "Clean now"
+    }
+  }
+}

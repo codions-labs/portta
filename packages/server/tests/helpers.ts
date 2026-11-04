@@ -16,6 +16,7 @@ import type { DockerClient, LogLine } from '../src/services/docker/client.ts'
 import type {
   DockerContainerInspect,
   DockerContainerListItem,
+  DockerDiskUsage,
   DockerInfo,
   DockerNetwork,
   DockerVersion,
@@ -109,6 +110,10 @@ export interface FakeDockerOptions {
   /** Per container: lines to return, or an Error the read should reject with. */
   logsByContainer?: Record<string, LogLine[] | Error>
   failInspect?: string[]
+  /** What `GET /system/df` answers. Images and volumes come from here, with their sizes. */
+  disk?: DockerDiskUsage
+  /** Ids, tags or names whose removal Docker refuses. */
+  failRemove?: string[]
   fail?: Partial<Record<'start' | 'stop' | 'restart', string[]>>
 }
 
@@ -141,6 +146,12 @@ export function fakeDocker(options: FakeDockerOptions = {}): FakeDocker {
     Labels: network.Labels ?? {},
     Containers: network.Containers ?? {},
   }))
+
+  // What the host holds changes as things are removed, as it does on a real one.
+  const df: DockerDiskUsage = structuredClone(
+    options.disk ?? { LayersSize: 0, Images: [], Containers: [], Volumes: [], BuildCache: [] },
+  )
+  const bareId = (id: string) => id.replace(/^sha256:/, '')
 
   const client = {
     async ping() {
@@ -196,6 +207,32 @@ export function fakeDocker(options: FakeDockerOptions = {}): FakeDocker {
     async remove(id: string, force: boolean) {
       record('remove', id, force)
       removed.push(id)
+      df.Containers = (df.Containers ?? []).filter((entry) => entry.Id !== id)
+    },
+    async diskUsage() {
+      return structuredClone(df)
+    },
+    async removeNetwork(id: string) {
+      record('removeNetwork', id)
+      if ((options.failRemove ?? []).includes(id)) throw new Error(`network ${id} has active endpoints`)
+      const at = networks.findIndex((network) => network.Id === id)
+      if (at >= 0) networks.splice(at, 1)
+    },
+    async removeImage(ref: string) {
+      record('removeImage', ref)
+      if ((options.failRemove ?? []).includes(ref)) throw new Error(`conflict: unable to delete ${ref}`)
+      const images = df.Images ?? []
+      const image = images.find((entry) => bareId(entry.Id) === bareId(ref) || (entry.RepoTags ?? []).includes(ref))
+      if (!image) return
+      image.RepoTags = (image.RepoTags ?? []).filter((tag) => tag !== ref)
+      if (bareId(image.Id) === bareId(ref) || image.RepoTags.length === 0) {
+        images.splice(images.indexOf(image), 1)
+      }
+    },
+    async removeVolume(name: string) {
+      record('removeVolume', name)
+      if ((options.failRemove ?? []).includes(name)) throw new Error(`volume ${name} is in use`)
+      df.Volumes = (df.Volumes ?? []).filter((volume) => volume.Name !== name)
     },
     async stats() {
       return {

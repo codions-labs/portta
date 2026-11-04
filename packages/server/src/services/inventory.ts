@@ -333,7 +333,7 @@ export function groupEnvironments(containers: ContainerSummary[], now: number): 
   return environments
 }
 
-function networkRole(name: string, config: PanelConfig): NetworkSummary['role'] {
+export function networkRole(name: string, config: PanelConfig): NetworkSummary['role'] {
   if (name === config.network) return 'shared'
   if (name === config.controlNetwork || name === config.webNetwork) return 'control'
   if (name === config.accessNetwork) return 'access'

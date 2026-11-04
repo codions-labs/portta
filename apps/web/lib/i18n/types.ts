@@ -1,5 +1,6 @@
 import type access from '../../messages/en/access.json'
 import type auth from '../../messages/en/auth.json'
+import type cleanup from '../../messages/en/cleanup.json'
 import type common from '../../messages/en/common.json'
 import type diagnostics from '../../messages/en/diagnostics.json'
 import type docker from '../../messages/en/docker.json'
@@ -25,6 +26,7 @@ declare module 'i18next' {
       environments: typeof environments
       services: typeof services
       docker: typeof docker
+      cleanup: typeof cleanup
       host: typeof host
       network: typeof network
       access: typeof access

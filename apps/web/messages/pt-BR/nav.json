@@ -53,8 +53,11 @@
   "hostSections": {
     "health": "Saúde",
     "containers": "Contêineres",
+    "images": "Imagens",
+    "volumes": "Volumes",
     "network": "Rede",
-    "gateway": "Gateway"
+    "gateway": "Gateway",
+    "maintenance": "Manutenção"
   },
   "projectSections": {
     "label": "Visualização",

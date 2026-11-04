@@ -1,0 +1,180 @@
+{
+  "protection": {
+    "portta": "Portta",
+    "docker": "Padrão do Docker",
+    "in-use": "Em uso",
+    "why": {
+      "portta": "Faz parte do Portta. Removê-lo pode tirar o painel ou o gateway do ar.",
+      "docker": "É uma das redes padrão do Docker.",
+      "in-use": "Um contêiner ainda usa (rodando ou parado). Remova o contêiner antes."
+    }
+  },
+  "selectAll": "Selecionar tudo o que pode ser removido",
+  "select": "Selecionar {{name}}",
+  "lockedName": "{{name}} está protegido e não pode ser selecionado",
+  "remove": "Remover",
+  "clear": "Limpar seleção",
+  "freed": "{{size}} liberados",
+  "result": {
+    "removed_one": "{{count}} item removido",
+    "removed_other": "{{count}} itens removidos",
+    "more_one": "e mais {{count}}",
+    "more_other": "e mais {{count}}"
+  },
+  "confirm": {
+    "typed": "remover {{count}}",
+    "typedHint": "Digite {{typed}} para confirmar"
+  },
+  "kinds": {
+    "container": "Contêiner",
+    "network": "Rede",
+    "image": "Imagem",
+    "volume": "Volume"
+  },
+  "networks": {
+    "bulkAria": "Ações nas redes selecionadas",
+    "selected_one": "{{count}} rede selecionada",
+    "selected_other": "{{count}} redes selecionadas",
+    "selectAllLabel": "Selecionar todas",
+    "footnote": "Selecionar tudo deixa de fora as redes do Portta, as padrão do Docker e as que algum contêiner ainda usa. Remover uma rede de um projeto parado impede que ele suba até a rede ser recriada.",
+    "confirm": {
+      "title_one": "Remover {{count}} rede?",
+      "title_other": "Remover {{count}} redes?",
+      "effect": "Um projeto que usava a rede a recria na próxima vez que subir.",
+      "action_one": "Remover {{count}} rede",
+      "action_other": "Remover {{count}} redes"
+    }
+  },
+  "images": {
+    "title": "Imagens",
+    "searchPlaceholder": "Buscar imagem ou tag",
+    "searchAria": "Buscar imagens",
+    "chips": {
+      "all": "Todas {{count}}",
+      "unused": "Sem uso {{count}}",
+      "dangling": "Sem tag {{count}}",
+      "used": "Em uso {{count}}"
+    },
+    "total_one": "{{size}} em {{count}} imagem",
+    "total_other": "{{size}} em {{count}} imagens",
+    "reclaimable": "até {{size}} podem ser liberados",
+    "columns": {
+      "image": "Imagem",
+      "size": "Tamanho",
+      "created": "Criada",
+      "containers": "Contêineres",
+      "status": "Situação"
+    },
+    "empty": "Nenhuma imagem corresponde aos filtros",
+    "moreTags_one": "mais {{count}} tag",
+    "moreTags_other": "mais {{count}} tags",
+    "uniqueHint": "Remover libera {{size}}: o resto é compartilhado com outras imagens",
+    "containerCount_zero": "nenhum",
+    "containerCount_one": "{{count}} contêiner",
+    "containerCount_other": "{{count}} contêineres",
+    "dangling": "sem tag",
+    "footnote": "Selecionar tudo respeita o filtro atual e deixa de fora as imagens do Portta e as de que algum contêiner foi criado. O tamanho mostrado é da imagem inteira; ao remover, só se libera o que outras imagens não compartilham.",
+    "bulkAria": "Ações nas imagens selecionadas",
+    "selected_one": "{{count}} imagem selecionada",
+    "selected_other": "{{count}} imagens selecionadas",
+    "confirm": {
+      "title_one": "Remover {{count}} imagem?",
+      "title_other": "Remover {{count}} imagens?",
+      "effect": "Uma imagem removida é baixada ou construída de novo na próxima vez que um contêiner precisar dela.",
+      "action_one": "Remover {{count}} imagem",
+      "action_other": "Remover {{count}} imagens"
+    }
+  },
+  "volumes": {
+    "title": "Volumes",
+    "searchPlaceholder": "Buscar volume ou projeto",
+    "searchAria": "Buscar volumes",
+    "chips": {
+      "all": "Todos {{count}}",
+      "unused": "Sem uso {{count}}",
+      "used": "Em uso {{count}}"
+    },
+    "total_one": "{{size}} em {{count}} volume",
+    "total_other": "{{size}} em {{count}} volumes",
+    "reclaimable": "{{size}} sem uso e removíveis",
+    "columns": {
+      "volume": "Volume",
+      "size": "Tamanho",
+      "project": "Projeto",
+      "created": "Criado",
+      "status": "Situação"
+    },
+    "empty": "Nenhum volume corresponde aos filtros",
+    "mountedBy_zero": "nenhum contêiner monta este volume",
+    "mountedBy_one": "montado por {{count}} contêiner",
+    "mountedBy_other": "montado por {{count}} contêineres",
+    "sizeUnknown": "não informado",
+    "anonymous": "anônimo",
+    "footnote": "Um volume é dado, muitas vezes um banco de dados, e não volta. Selecionar tudo deixa de fora os volumes do Portta e os que algum contêiner monta, parado ou não.",
+    "bulkAria": "Ações nos volumes selecionados",
+    "selected_one": "{{count}} volume selecionado",
+    "selected_other": "{{count}} volumes selecionados",
+    "confirm": {
+      "title_one": "Apagar {{count}} volume?",
+      "title_other": "Apagar {{count}} volumes?",
+      "effect": "O que está dentro deles é apagado do disco e não pode ser recuperado.",
+      "action_one": "Apagar {{count}} volume",
+      "action_other": "Apagar {{count}} volumes"
+    }
+  },
+  "maintenance": {
+    "title": "Manutenção",
+    "stats": {
+      "containers": "Contêineres parados",
+      "containersHint": "de {{total}} no servidor",
+      "networks": "Redes sem uso",
+      "networksHint": "de {{total}} no servidor",
+      "images": "Imagens sem uso",
+      "imagesHint": "{{unused}} sem uso, {{dangling}} sem tag · {{total}} no total",
+      "volumes": "Volumes sem uso",
+      "volumesHint": "{{unused}} sem uso, {{anonymous}} anônimos · {{total}} no total"
+    },
+    "plan": {
+      "title": "O que limpar",
+      "description": "A limpeza remove só o que ninguém usa. O Portta, as redes padrão do Docker e tudo o que algum contêiner referencia ficam sempre.",
+      "containers": "Contêineres parados",
+      "containersHint": "Os que terminaram ou nunca subiram. Os componentes do Portta ficam. Libera as redes, imagens e volumes que eles seguravam.",
+      "networks": "Redes sem contêiner",
+      "networksHint": "Redes de projetos que já foram removidos.",
+      "images": "Imagens",
+      "imagesHint": "Sem uso é toda imagem de que nenhum contêiner foi criado, e ela é baixada de novo quando alguém precisar.",
+      "imagesOptions": {
+        "none": "Não limpar",
+        "dangling": "Só as sem tag",
+        "unused": "Todas as sem uso"
+      },
+      "volumes": "Volumes",
+      "volumesHint": "Anônimos são os que o Docker nomeou para um contêiner. Os nomeados são, em geral, bancos de dados.",
+      "volumesOptions": {
+        "none": "Não limpar",
+        "anonymous": "Só os anônimos sem uso",
+        "unused": "Todos os sem uso, nomeados também"
+      },
+      "volumesWarning": "Volumes nomeados sem uso costumam ser o banco de dados de um projeto removido. Apagá-los não tem volta."
+    },
+    "previewAction": "Ver o que será removido",
+    "clean": "Limpar agora",
+    "reset": "Voltar ao padrão",
+    "preview": {
+      "title_one": "{{count}} item será removido",
+      "title_other": "{{count}} itens serão removidos",
+      "frees": "Libera até {{size}}",
+      "nothing": "Não há nada a remover com estas escolhas."
+    },
+    "buildCache": "O cache de build ocupa {{size}} e não é limpo pelo painel. No servidor:",
+    "confirm": {
+      "title_one": "Remover {{count}} item?",
+      "title_other": "Remover {{count}} itens?",
+      "frees": "Libera até {{size}} em disco.",
+      "effect": "Cada item é removido um a um; o que não puder sair é listado depois.",
+      "withVolumes": "Esta limpeza apaga volumes nomeados, com o que há dentro deles. Cada item é removido um a um; o que não puder sair é listado depois.",
+      "typed": "limpar",
+      "action": "Limpar agora"
+    }
+  }
+}

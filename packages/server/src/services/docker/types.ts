@@ -114,4 +114,53 @@ export interface DockerStats {
     system_cpu_usage?: number
   }
   memory_stats?: { usage?: number; limit?: number; stats?: Record<string, number> }
+  networks?: Record<string, { rx_bytes?: number; tx_bytes?: number }>
+  pids_stats?: { current?: number }
+}
+
+/**
+ * `GET /system/df`: what Docker holds on disk, by kind. It is the only call
+ * that reports sizes, so the Host lists for images and volumes read it, and the
+ * list of containers inside it says what uses what.
+ */
+export interface DockerDiskImage {
+  Id: string
+  RepoTags?: string[] | null
+  Created: number
+  /** The whole image, shared layers included. */
+  Size: number
+  /** Bytes shared with other images; -1 when Docker did not compute it. */
+  SharedSize: number
+  /** Containers created from it; -1 when Docker did not compute it. */
+  Containers: number
+  Labels?: Record<string, string> | null
+}
+
+export interface DockerDiskContainer {
+  Id: string
+  /** The container's own writable layer. */
+  SizeRw?: number
+  Names?: string[]
+  ImageID: string
+  State: string
+  Labels?: Record<string, string> | null
+  Mounts?: DockerMount[] | null
+  NetworkSettings?: { Networks?: Record<string, unknown> | null }
+}
+
+export interface DockerDiskVolume {
+  Name: string
+  Driver: string
+  CreatedAt?: string
+  Labels?: Record<string, string> | null
+  /** Size is -1 when the driver cannot say; RefCount is -1 when Docker did not compute it. */
+  UsageData?: { Size: number; RefCount: number } | null
+}
+
+export interface DockerDiskUsage {
+  LayersSize?: number
+  Images?: DockerDiskImage[] | null
+  Containers?: DockerDiskContainer[] | null
+  Volumes?: DockerDiskVolume[] | null
+  BuildCache?: { Size?: number }[] | null
 }

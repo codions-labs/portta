@@ -15,6 +15,8 @@ import { usePrincipal } from '@/lib/principal'
 import {
   useContainers,
   useDevelopmentOverview,
+  useDockerImages,
+  useDockerVolumes,
   useEnvironmentReport,
   useGateway,
   useMetricsCurrent,
@@ -45,12 +47,19 @@ export function HostSections() {
   const sections = visibleHostSections(usePrincipal().permissions)
   const opens = (id: string) => sections.some((section) => section.id === id)
   const [restarted, setRestarted] = useState<GatewayRestart | null>(null)
+  // `/host` is a prefix of every other section, so the longest match is the page.
+  const active = [...sections]
+    .sort((a, b) => b.href.length - a.href.length)
+    .find((section) => pathname === section.href || pathname.startsWith(`${section.href}/`))
 
   const metrics = useMetricsCurrent()
   const overview = useDevelopmentOverview()
   const gateway = useGateway(opens('gateway'))
   const containers = useContainers({}, opens('containers'))
   const network = useNetwork(opens('network'))
+  // Their counts cost a disk-usage report each, so they are asked for only when the tab is the open one.
+  const images = useDockerImages(active?.id === 'images')
+  const volumes = useDockerVolumes(active?.id === 'volumes')
   const report = useEnvironmentReport(opens('health'))
 
   const host = metrics.data?.host ?? null
@@ -68,13 +77,11 @@ export function HostSections() {
     // Only what needs somebody counts here: a green list is not a number to read.
     health: report.data?.summary.problems || undefined,
     containers: containers.data?.total,
+    images: images.data?.images.length,
+    volumes: volumes.data?.volumes.length,
     network: network.data?.networks.length,
     gateway: GATEWAY_COMPONENT_COUNT,
   }
-  // `/host` is a prefix of every other section, so the longest match is the page.
-  const active = [...sections]
-    .sort((a, b) => b.href.length - a.href.length)
-    .find((section) => pathname === section.href || pathname.startsWith(`${section.href}/`))
 
   return (
     <>

@@ -11,10 +11,11 @@
 
 import { request as httpRequest } from 'node:http'
 import type { Duplex } from 'node:stream'
-import { assertAllowed, assertValidId } from './allowlist.ts'
+import { assertAllowed, assertValidId, assertValidImageRef } from './allowlist.ts'
 import type {
   DockerContainerInspect,
   DockerContainerListItem,
+  DockerDiskUsage,
   DockerEvent,
   DockerInfo,
   DockerNetwork,
@@ -76,12 +77,17 @@ export class DockerClient {
   ): Promise<Response> {
     assertAllowed(method, path)
 
-    // The only write that carries a query today is the removal, and it must
-    // never ask Docker to take volumes or links with it.
+    // A removal must never ask Docker to take volumes or links with a container,
+    // and never to force a network, an image or a volume: Docker's own refusal
+    // ("in use") is the last line of defence and has to stay in force.
     if (method === 'DELETE') {
       const q = options.query ?? {}
-      if (q.v === '1' || q.v === 'true' || q.link === '1' || q.link === 'true') {
+      const on = (value: string | undefined) => value === '1' || value === 'true'
+      if (on(q.v) || on(q.link)) {
         throw new Error('the panel never removes volumes or links alongside a container')
+      }
+      if (!path.startsWith('/containers/') && on(q.force)) {
+        throw new Error('the panel never forces the removal of a network, an image or a volume')
       }
     }
 
@@ -162,6 +168,28 @@ export class DockerClient {
 
   inspectNetwork(id: string): Promise<DockerNetwork> {
     return this.json<DockerNetwork>('GET', `/networks/${assertValidId(id)}`)
+  }
+
+  diskUsage(): Promise<DockerDiskUsage> {
+    return this.json<DockerDiskUsage>('GET', '/system/df')
+  }
+
+  async removeNetwork(id: string): Promise<void> {
+    await this.request('DELETE', `/networks/${assertValidId(id)}`)
+  }
+
+  /**
+   * One tag or one id, never forced and never pruning parents: Docker refuses
+   * an image a container was created from, and that refusal is kept.
+   */
+  async removeImage(ref: string): Promise<void> {
+    await this.request('DELETE', `/images/${assertValidImageRef(ref)}`, {
+      query: { force: '0', noprune: '0' },
+    })
+  }
+
+  async removeVolume(name: string): Promise<void> {
+    await this.request('DELETE', `/volumes/${assertValidId(name)}`, { query: { force: '0' } })
   }
 
   async start(id: string): Promise<void> {
@@ -269,9 +297,14 @@ export class DockerClient {
     })
   }
 
-  async stats(id: string): Promise<DockerStats> {
+  /**
+   * One sample. `one-shot` answers at once but without a previous reading to take
+   * a CPU difference against; without it Docker waits a second and includes one.
+   */
+  async stats(id: string, options: { oneShot?: boolean } = {}): Promise<DockerStats> {
+    const oneShot = options.oneShot ?? true
     return this.json<DockerStats>('GET', `/containers/${assertValidId(id)}/stats`, {
-      query: { stream: 'false', 'one-shot': 'true' },
+      query: { stream: 'false', ...(oneShot ? { 'one-shot': 'true' } : {}) },
     })
   }
 

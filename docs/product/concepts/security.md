@@ -183,16 +183,21 @@ deliberately.
   password is generated, shown once and stored only as a hash. See
   [Share a service](../guides/sharing.md).
 - **Docker.** Its own socket proxy, not Traefik's, which stays read-only. It
-  grants the read endpoints, container lifecycle and the four fixed exec
-  endpoints used by the scoped console, and denies images, volumes, arbitrary
-  exec, build, swarm, secrets, plugins and the system endpoints. The panel then
-  refuses to emit any call outside its own allowlist, so `prune`, arbitrary
+  grants the read endpoints, container lifecycle, the four fixed exec
+  endpoints used by the scoped console, and the removal of networks, images and
+  volumes with the disk usage report that gives their sizes. It denies arbitrary
+  exec, build, swarm, secrets and plugins. The panel then refuses to emit any
+  call outside its own allowlist, so every `prune`, image pull, arbitrary
   `exec`, `archive` and `attach` are denied even where the proxy would forward
-  them. See [ADR 0008](../../development/adr/0008-web-panel-socket-proxy.md).
-- **Blast radius.** A removal always sends `v=0&link=0`: volumes, networks and
-  images outlive the container. The only container the panel can create is the
-  socat TCP bridge, with a fixed image and no host access at all. Gateway
-  components cannot be removed from it.
+  them. See [ADR 0008](../../development/adr/0008-web-panel-socket-proxy.md) and
+  [ADR 0060](../../development/adr/0060-the-panel-cleans-networks-images-and-volumes.md).
+- **Blast radius.** A container removal always sends `v=0&link=0`: volumes,
+  networks and images outlive the container. Networks, images and volumes are
+  removed only by an owner or an administrator (`docker:destroy`), one resource
+  at a time and never forced, and the server refuses Portta's own, Docker's
+  default networks and anything a container still references. The only
+  container the panel can create is the socat TCP bridge, with a fixed image and
+  no host access at all. Gateway components cannot be removed from it.
 
 A mutating request and every browser WebSocket upgrade must come from the
 panel's own origin, so a page on another site cannot drive it through

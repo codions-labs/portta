@@ -1,6 +1,6 @@
 # 0008. The web panel gets its own Docker socket proxy
 
-**Status:** Accepted; see [0043](0043-container-console-over-docker-exec.md)
+**Status:** Accepted; see [0043](0043-container-console-over-docker-exec.md), [0060](0060-the-panel-cleans-networks-images-and-volumes.md)
 
 ## Context
 
@@ -48,7 +48,8 @@ The two layers together are what the panel is allowed to do:
 | Create a container | allowed | one shape only: the socat TCP bridge |
 | `exec` (create, start, resize, inspect) | allowed (`EXEC: "1"`) | four paths only, for the console ([ADR 0043](0043-container-console-over-docker-exec.md)) |
 | `prune`, `archive`, `attach` | partly reachable | **denied** |
-| Images, volumes, build, swarm, secrets | denied | denied |
+| Remove one network, image or volume; read sizes (`/system/df`) | allowed ([0060](0060-the-panel-cleans-networks-images-and-volumes.md)) | allowed, never forced |
+| Pull, build, create, any prune, build cache, swarm, secrets | denied or unreachable | denied |
 
 `exec` deserves a note: the proxy forwards every exec path, so the allowlist is
 what keeps the surface at the four the console uses. A user, a command or a

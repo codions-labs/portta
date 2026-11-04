@@ -30,6 +30,24 @@ export function useDockerHost(enabled = true) {
   return useQuery({ queryKey: keys.dockerHost(), queryFn: api.host, enabled })
 }
 
+export function useDockerNetworks(enabled = true) {
+  return useQuery({ queryKey: keys.dockerNetworks(), queryFn: api.dockerNetworks, enabled })
+}
+
+// Images and volumes read Docker's disk usage, which can take seconds on a big
+// host: they are fetched when the page opens, not on a timer.
+export function useDockerImages(enabled = true) {
+  return useQuery({ queryKey: keys.dockerImages(), queryFn: api.dockerImages, enabled })
+}
+
+export function useDockerVolumes(enabled = true) {
+  return useQuery({ queryKey: keys.dockerVolumes(), queryFn: api.dockerVolumes, enabled })
+}
+
+export function useDockerUsage(enabled = true) {
+  return useQuery({ queryKey: keys.dockerUsage(), queryFn: api.dockerUsage, enabled })
+}
+
 export function useContainers(filters: { ownership?: string; state?: string; q?: string } = {}, enabled = true) {
   return useQuery({ queryKey: keys.containers(filters), queryFn: () => api.containers(filters), enabled })
 }
@@ -74,9 +92,9 @@ export function useConfig(enabled = true) {
   return useQuery({ queryKey: keys.config(), queryFn: api.config, enabled })
 }
 
-/** The collector writes every five seconds; the panel reads at the same pace. */
+/** The panel's own reading refreshes every three seconds, and the collector's file every five. */
 export function useMetricsCurrent(enabled = true) {
-  return useQuery({ queryKey: keys.metricsCurrent(), queryFn: api.metricsCurrent, refetchInterval: 5_000, enabled })
+  return useQuery({ queryKey: keys.metricsCurrent(), queryFn: api.metricsCurrent, refetchInterval: 3_000, enabled })
 }
 
 export function useMetricsHistory(window = '30m') {

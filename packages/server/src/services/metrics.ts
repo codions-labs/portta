@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import type { MetricsCurrent, MetricsHistory } from 'portta-contracts'
 import { type MetricsHistoryPoint, type MetricsSnapshot, parseHistoryLines } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
+import { liveMetrics } from './live-metrics.ts'
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024
 
@@ -33,22 +34,77 @@ export function emptyMetrics(): MetricsCurrent {
   }
 }
 
+/**
+ * The newest reading the panel has of the server.
+ *
+ * The host collector's file when it is being written, since it reads what only the host
+ * can (git, project files, a GPU, a battery). When it is not (a reboot stopped it and
+ * nothing started it again) the panel's own reading takes over where it can see the
+ * machine, so the numbers are live instead of hours old. Where it cannot, the stale file is
+ * still returned and says it is stale.
+ */
 export function readCurrentMetrics(config: PanelConfig, now = Date.now()): MetricsCurrent {
   const parsed = readJsonFile(join(config.metricsDir, 'current.json')) as MetricsSnapshot | null
-  if (parsed?.version !== 1 || !parsed.host) return emptyMetrics()
-  const collectedAt = typeof parsed.collectedAt === 'number' && parsed.collectedAt > 0 ? parsed.collectedAt : null
+  const file = parsed?.version === 1 && parsed.host ? parsed : null
+  const collectedAt = file && typeof file.collectedAt === 'number' && file.collectedAt > 0 ? file.collectedAt : null
   const ageSeconds = collectedAt !== null ? Math.max(0, Math.floor(now / 1000) - collectedAt) : null
+  const fresh = ageSeconds !== null && ageSeconds <= config.metricsStaleSeconds
+
+  if (!fresh) {
+    const live = liveMetrics()?.snapshot() ?? null
+    if (live) return fromLive(live, file, now)
+  }
+  if (!file) return emptyMetrics()
   return {
     version: 1,
-    instance: parsed.instance ?? { id: '', name: null, hostname: null },
+    instance: file.instance ?? { id: '', name: null, hostname: null },
     collectedAt,
     ageSeconds,
-    stale: ageSeconds === null || ageSeconds > config.metricsStaleSeconds,
-    collectorActive: ageSeconds !== null && ageSeconds <= config.metricsStaleSeconds,
-    host: parsed.host,
-    runtime: parsed.runtime ?? null,
-    projects: parsed.projects ?? [],
-    dockerStorage: parsed.dockerStorage ?? null,
+    stale: !fresh,
+    collectorActive: fresh,
+    host: file.host,
+    runtime: file.runtime ?? null,
+    projects: file.projects ?? [],
+    dockerStorage: file.dockerStorage ?? null,
+  }
+}
+
+/** What only the host knows stays from the last file; what changes comes from the panel. */
+function fromLive(live: MetricsSnapshot, file: MetricsSnapshot | null, now: number): MetricsCurrent {
+  const old = file?.host
+  const host = old
+    ? {
+        ...live.host,
+        manufacturer: old.manufacturer,
+        model: old.model,
+        productName: old.productName,
+        kind: old.kind,
+        virtual: old.virtual,
+        timezone: old.timezone ?? null,
+        utcOffsetMinutes: old.utcOffsetMinutes ?? null,
+        cpu: { ...old.cpu, logicalCores: live.host.cpu.logicalCores ?? old.cpu.logicalCores },
+        gpu: old.gpu,
+      }
+    : live.host
+  // The collector adds where a project's code stands to what core describes.
+  type Git = MetricsCurrent['projects'][number]['git']
+  const git = new Map<string, Git>(
+    (file?.projects ?? []).map((project) => [project.composeProject, (project as { git?: Git }).git]),
+  )
+  return {
+    version: 1,
+    instance: file?.instance ?? live.instance,
+    collectedAt: live.collectedAt,
+    ageSeconds: Math.max(0, Math.floor(now / 1000) - live.collectedAt),
+    stale: false,
+    collectorActive: true,
+    host,
+    runtime: live.runtime,
+    projects: live.projects.map((project) => {
+      const last = git.get(project.composeProject)
+      return last ? { ...project, git: last } : project
+    }),
+    dockerStorage: live.dockerStorage ?? file?.dockerStorage ?? null,
   }
 }
 
@@ -87,13 +143,20 @@ export function historyWindowSeconds(value: string | undefined): number {
 
 export function readMetricsHistory(config: PanelConfig, windowSeconds: number, now = Date.now()): MetricsHistory {
   const path = join(config.metricsDir, 'history.jsonl')
-  if (!existsSync(path)) return { windowSeconds, points: [] }
+  if (!existsSync(path)) return { windowSeconds, points: withLive([], Math.floor(now / 1000) - windowSeconds) }
   try {
     if (statSync(path).size > MAX_FILE_BYTES) return { windowSeconds, points: [] }
     const since = Math.floor(now / 1000) - windowSeconds
     const points = parseHistoryLines(readFileSync(path, 'utf8'), since) as MetricsHistoryPoint[]
-    return { windowSeconds, points }
+    return { windowSeconds, points: withLive(points, since) }
   } catch {
     return { windowSeconds, points: [] }
   }
+}
+
+/** The collector's points, then the panel's own for the time the collector was not writing. */
+function withLive(points: MetricsHistoryPoint[], since: number): MetricsHistoryPoint[] {
+  const last = points.at(-1)?.timestamp ?? 0
+  const own = liveMetrics()?.history(Math.max(since, last + 1)) ?? []
+  return own.length === 0 ? points : [...points, ...own]
 }

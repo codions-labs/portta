@@ -119,6 +119,29 @@ function UsageCard({ kind, split, points }: { kind: UsageKind; split: UsageSplit
 /** What is read on top of the three that are split: how busy it is, and what only some machines have. */
 const SPLIT = new Set(['cpu', 'memory', 'storage'])
 
+/**
+ * Says so when what is on the page is not what the machine is doing.
+ *
+ * The collector is a process on the host, and a reboot or an upgrade stops it;
+ * the panel then keeps reading the last file it wrote. Without this the numbers
+ * look live and are hours old, which is worse than showing nothing.
+ */
+export function FreshnessNotice() {
+  const { t } = useTranslation('host', { keyPrefix: 'health.stale' })
+  const { relativeTime } = useFormat()
+  const metrics = useMetricsCurrent()
+  const data = metrics.data
+  if (!data?.host || !data.stale) return null
+  return (
+    <Callout tone="warn">
+      <b className="font-semibold">{t('title', { when: relativeTime(data.collectedAt) })}</b>
+      <span className="block">
+        {t('hint')} <code className="font-mono">portta host watch</code>
+      </span>
+    </Callout>
+  )
+}
+
 export function UsageCards() {
   const { t } = useTranslation('host', { keyPrefix: 'health' })
   const { t: to } = useTranslation('overview', { keyPrefix: 'host' })
@@ -135,7 +158,10 @@ export function UsageCards() {
   const gpu = usageSplit('gpu', host, projects)
   const others = readingsFor(host, history.data, format, to as never).filter((reading) => !SPLIT.has(reading.id))
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label={t('resources')}>
+    <section
+      className={cn('grid gap-4 sm:grid-cols-2 xl:grid-cols-3', metrics.data?.stale && 'opacity-60')}
+      aria-label={t('resources')}
+    >
       {memory ? <UsageCard kind="memory" split={memory} points={points.map((p) => p.host.memoryUsedPercent)} /> : null}
       {cpu ? <UsageCard kind="cpu" split={cpu} points={points.map((p) => p.host.cpuUtilisation)} /> : null}
       {disk ? <UsageCard kind="disk" split={disk} points={points.map((p) => p.host.storageUsedPercent)} /> : null}

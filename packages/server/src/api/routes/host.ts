@@ -50,7 +50,7 @@ export function hostRoutes(deps: AppDeps): Hono {
       summary: 'Get the latest host and project metrics snapshot',
       response: MetricsCurrent,
       description:
-        'Reads state/metrics/current.json written by the CLI collector. The panel never collects. A missing file is an empty object, never an error.',
+        'Reads state/metrics/current.json written by the host collector while it is writing. When it is not, and the panel can see the machine (a Linux host), the panel reads /proc and Docker itself and that reading is served instead, so the numbers are live after a reboot. A missing file is an empty object, never an error.',
       errors: [500],
     }),
     async (c) => {

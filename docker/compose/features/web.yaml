@@ -27,9 +27,13 @@ services:
   # --------------------------------------------------------------------------
   # The panel's Docker socket proxy
   # --------------------------------------------------------------------------
-  # Write access is limited to container lifecycle and interactive exec.
-  # Images, volumes, build, swarm and system endpoints (where prune lives) stay
-  # denied, and the panel enforces its narrower path allowlist on top.
+  # Write access is limited to the container lifecycle, interactive exec and the
+  # removal of networks, images and volumes (ADR 0060). Build, swarm, secrets and
+  # plugins stay denied. `IMAGES`, `VOLUMES` and `SYSTEM` are category switches:
+  # the proxy cannot tell a removal from a pull or a prune, so the panel's own
+  # path allowlist (packages/server/src/services/docker/allowlist.ts) is what
+  # keeps it to `GET /system/df` and three DELETEs, and a prune is never one of
+  # them.
   web-socket-proxy:
     image: tecnativa/docker-socket-proxy:v0.5.0
     restart: unless-stopped
@@ -59,16 +63,19 @@ services:
       # resize and inspect. Traefik's separate proxy remains read-only.
       EXEC: "1"
       GRPC: "0"
-      IMAGES: "0"
+      # DELETE /images/{id}: one image, never forced (ADR 0060).
+      IMAGES: "1"
       NODES: "0"
       PLUGINS: "0"
       SECRETS: "0"
       SERVICES: "0"
       SESSION: "0"
       SWARM: "0"
-      SYSTEM: "0"
+      # GET /system/df: the only call that reports sizes (ADR 0060).
+      SYSTEM: "1"
       TASKS: "0"
-      VOLUMES: "0"
+      # DELETE /volumes/{name}: one volume, never forced (ADR 0060).
+      VOLUMES: "1"
       LOG_LEVEL: warning
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

@@ -145,6 +145,8 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 - [0056. The collector reads where a project's code stands, and only reads](development/adr/0056-the-collector-reads-where-the-code-stands.md) — Why the host collector reads where a project's code stands, and only reads.
 - [0058. The collector publishes a read-only copy of a project's files](development/adr/0058-the-collector-publishes-a-read-only-copy-of-the-files.md) — Why the panel reads a bounded copy of a project's files that the host collector publishes.
 - [0059. The collector finds and reviews project folders](development/adr/0059-the-collector-finds-and-reviews-project-folders.md) — Why the Add project pages read folders and plans that the host collector publishes.
+- [0060. The panel cleans networks, images and volumes, one resource at a time](development/adr/0060-the-panel-cleans-networks-images-and-volumes.md) — Why the panel may remove networks, images and volumes, and what it never touches.
+- [0061. The panel reads the server's health itself where it can see the machine](development/adr/0061-the-panel-reads-the-server-it-runs-on.md) — Why the panel reads the server's health itself where it can see the machine.
 - [57. A panel session opens a protected site, by a token the panel hands over](development/adr/0057-a-panel-session-opens-a-protected-site.md) — How someone signed in to the panel opens a protected site without its password.
 - [Architecture decision records](development/adr/README.md)
 

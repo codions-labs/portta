@@ -16,18 +16,41 @@ describe('the Docker allowlist', () => {
     expect(isAllowed('DELETE', '/containers/abc123')).toBe(true)
   })
 
+  it('permits the cleaning of networks, images and volumes, one resource at a time', () => {
+    expect(isAllowed('GET', '/system/df')).toBe(true)
+    expect(isAllowed('DELETE', '/networks/abc123')).toBe(true)
+    expect(isAllowed('DELETE', '/volumes/shop_data')).toBe(true)
+    expect(isAllowed('DELETE', '/images/0123456789ab')).toBe(true)
+    expect(isAllowed('DELETE', '/images/ghcr.io/acme/app:1.2')).toBe(true)
+    expect(isAllowed('DELETE', '/images/localhost:5000/acme/app:1.2')).toBe(true)
+  })
+
+  it('never lets a prune through, which would sweep what the panel did not choose', () => {
+    for (const [method, path] of [
+      ['POST', '/containers/prune'],
+      ['POST', '/images/prune'],
+      ['POST', '/volumes/prune'],
+      ['POST', '/networks/prune'],
+      ['POST', '/build/prune'],
+      ['POST', '/system/prune'],
+      ['POST', '/images/create'],
+      ['POST', '/volumes/create'],
+      ['DELETE', '/system/df'],
+      ['GET', '/system/events'],
+    ] as const) {
+      expect(isAllowed(method, path), `${method} ${path}`).toBe(false)
+    }
+  })
+
   it('refuses everything else, including endpoints the proxy would forward', () => {
     for (const [method, path] of [
       ['POST', '/containers/prune'],
       ['GET', '/containers/abc/archive'],
       ['POST', '/containers/abc/attach'],
       ['GET', '/images/json'],
-      ['DELETE', '/images/nginx'],
       ['GET', '/volumes'],
-      ['DELETE', '/volumes/data'],
       ['POST', '/networks/create'],
       ['POST', '/networks/abc/connect'],
-      ['DELETE', '/networks/abc'],
       ['POST', '/build'],
       ['DELETE', '/exec/abc/start'],
       ['GET', '/exec/abc/start'],
@@ -51,6 +74,9 @@ describe('the Docker allowlist', () => {
     expect(isAllowed('GET', '/containers/../images/json')).toBe(false)
     expect(isAllowed('GET', '/containers//json')).toBe(false)
     expect(isAllowed('GET', '/containers/%2e%2e/json')).toBe(false)
+    expect(isAllowed('DELETE', '/images/acme/../../containers/abc')).toBe(false)
+    expect(isAllowed('DELETE', '/images/acme//app')).toBe(false)
+    expect(isAllowed('DELETE', '/volumes/%2e%2e')).toBe(false)
   })
 
   it('throws with the offending call in the message', () => {

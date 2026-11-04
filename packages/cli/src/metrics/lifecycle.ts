@@ -5,6 +5,7 @@ import { collectHostSecurityReport, hostSecurityContext } from '../environment/s
 import { writeHostSecurityReport } from '../environment/security/store.js'
 import { writeEnvironmentReport } from '../environment/store.js'
 import { spawnDetached } from '../process.js'
+import { CLI_BUILD_DATE, CLI_VERSION } from '../version.js'
 import { collectSnapshot } from './collect.js'
 import { publishDiscovery } from './discovery.js'
 import { pidFile } from './paths.js'
@@ -16,8 +17,24 @@ const DISCOVERY_INTERVAL_MS = 60_000
 export function readCollectorPid(root: string): number | null {
   const path = pidFile(root)
   if (!existsSync(path)) return null
-  const parsed = Number(readFileSync(path, 'utf8').trim())
+  const parsed = Number(readFileSync(path, 'utf8').split('\n')[0]?.trim())
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null
+}
+
+/**
+ * Which build of the CLI the collector runs. A collector is a long-lived process:
+ * after an upgrade it would go on measuring with the code it started with, and
+ * the panel would show the old way of reading the machine until somebody
+ * restarted it by hand.
+ */
+export function currentBuild(): string {
+  return `${CLI_VERSION}${CLI_BUILD_DATE ? `+${CLI_BUILD_DATE}` : ''}`
+}
+
+export function readCollectorBuild(root: string): string | null {
+  const path = pidFile(root)
+  if (!existsSync(path)) return null
+  return readFileSync(path, 'utf8').split('\n')[1]?.trim() || null
 }
 
 export function pidAlive(pid: number): boolean {
@@ -58,8 +75,8 @@ export function clearPid(root: string): void {
   if (existsSync(path)) unlinkSync(path)
 }
 
-export function writePid(root: string, pid: number): void {
-  writeAtomic(pidFile(root), `${pid}\n`)
+export function writePid(root: string, pid: number, build = currentBuild()): void {
+  writeAtomic(pidFile(root), `${pid}\n${build}\n`)
 }
 
 export function cliInvocation(): { file: string; args: string[] } {
@@ -69,7 +86,11 @@ export function cliInvocation(): { file: string; args: string[] } {
 
 export function startCollector(root: string, profile?: string): { pid: number | null; started: boolean } {
   const existing = collectorRunning(root)
-  if (existing !== null) return { pid: existing, started: false }
+  if (existing !== null) {
+    // The same build keeps running; an older one is replaced, so an upgrade takes effect.
+    if (readCollectorBuild(root) === currentBuild()) return { pid: existing, started: false }
+    stopCollector(root)
+  }
   const { file, args } = cliInvocation()
   const profileArgs = profile ? ['--profile', profile] : []
   const pid = spawnDetached(file, [...args, ...profileArgs, 'host', 'watch', '--loop'], {
@@ -152,6 +173,7 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
   }
   // A discovery that is still running writes atomically, but wait a little so the stop is clean.
   if (pendingDiscovery) await Promise.race([pendingDiscovery, sleep(5_000)])
-  clearPid(root)
+  // A collector that was replaced must not delete the pid of the one that replaced it.
+  if (readCollectorPid(root) === process.pid) clearPid(root)
   appendLog(root, 'collector stopped')
 }

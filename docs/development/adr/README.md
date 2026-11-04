@@ -14,7 +14,7 @@ release.
 | [0005](0005-hostname-convention.md) | Hostnames are derived from the labels Compose already injects | Accepted; see 0023 |
 | [0006](0006-compose-project-name-as-namespace.md) | `COMPOSE_PROJECT_NAME` is the namespace for parallel environments | Accepted |
 | [0007](0007-tailscale-sidecar.md) | Traefik runs inside the Tailscale container's network namespace | Accepted |
-| [0008](0008-web-panel-socket-proxy.md) | The web panel gets its own Docker socket proxy | Accepted; see 0043 |
+| [0008](0008-web-panel-socket-proxy.md) | The web panel gets its own Docker socket proxy | Accepted; see 0043, 0060 |
 | [0009](0009-tcp-routing-by-hostname.md) | Databases are told apart by hostname, with TLS terminated at the gateway | Accepted |
 | [0011](0011-bounded-traefik-write-surface.md) | The panel has a bounded Traefik write surface | Accepted|
 | [0012](0012-routed-panel-access-requires-authentication.md) | Routed panel access requires authentication | Accepted; see 0035, 0051 |
@@ -51,4 +51,6 @@ release.
 | [0056](0056-the-collector-reads-where-the-code-stands.md) | The collector reads where a project's code stands, and only reads | Accepted; see 0001, 0030, 0055 |
 | [0058](0058-the-collector-publishes-a-read-only-copy-of-the-files.md) | The collector publishes a read-only copy of a project's files | Accepted; see 0001, 0030, 0056 |
 | [0059](0059-the-collector-finds-and-reviews-project-folders.md) | The collector finds and reviews project folders | Accepted; see 0001, 0031, 0056, 0058 |
+| [0060](0060-the-panel-cleans-networks-images-and-volumes.md) | The panel cleans networks, images and volumes, one resource at a time | Accepted; see 0008 |
+| [0061](0061-the-panel-reads-the-server-it-runs-on.md) | The panel reads the server's health itself where it can see the machine | Accepted; see 0056 |
 | [0057](0057-a-panel-session-opens-a-protected-site.md) | A panel session opens a protected site, by a token the panel hands over | Accepted; see 0027, 0035, 0038 |
