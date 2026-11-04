@@ -24,9 +24,9 @@
     },
     "usage": {
       "note": "Estes números são do servidor inteiro, não só dos projetos. Cada barra divide o que está em uso entre os projetos, o Portta e o sistema com tudo o mais que roda no servidor.",
-      "memory": "Memória do servidor",
-      "cpu": "CPU do servidor",
-      "disk": "Disco do servidor",
+      "memory": "Memória",
+      "cpu": "CPU",
+      "disk": "Disco",
       "inUse": "em uso",
       "ofTotal": "{{used}} de {{total}}",
       "ofCores": "{{used}} de {{total}} núcleos",
@@ -63,7 +63,7 @@
         "unmeasured": "O servidor não informa este recurso.",
         "diskScope": "Conta para o projeto: os volumes e a camada de escrita dos contêineres. Imagens, arquivos nas pastas dos projetos e o resto do disco entram como sistema."
       },
-      "gpu": "Memória de GPU do servidor"
+      "gpu": "Memória de GPU"
     },
     "clock": {
       "title": "Hora e fuso",

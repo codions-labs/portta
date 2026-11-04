@@ -106,13 +106,13 @@ beforeEach(() =>
 describe('the server page', () => {
   it('reads memory, CPU and disk as the whole server, in percent', async () => {
     renderWithQuery(<HostHealthView />, 'en')
-    const memory = await screen.findByRole('group', { name: 'Server memory' })
+    const memory = await screen.findByRole('group', { name: 'Memory' })
     expect(within(memory).getByText('38%')).toBeInTheDocument()
     expect(within(memory).getByText(/12 GB of 32 GB/)).toBeInTheDocument()
-    const disk = screen.getByRole('group', { name: 'Server disk' })
+    const disk = screen.getByRole('group', { name: 'Disk' })
     expect(within(disk).getByText('41%')).toBeInTheDocument()
     expect(within(disk).getByText(/208 GB of 512 GB/)).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Server CPU' })).toHaveTextContent('20%')
+    expect(screen.getByRole('group', { name: 'CPU' })).toHaveTextContent('20%')
   })
 
   it('says how much of what is in use belongs to the projects', async () => {
@@ -134,7 +134,7 @@ describe('the server page', () => {
 
   it('splits the GPU memory when the server has one', async () => {
     renderWithQuery(<HostHealthView />, 'en')
-    expect(await screen.findByRole('group', { name: 'Server GPU memory' })).toHaveTextContent('42%')
+    expect(await screen.findByRole('group', { name: 'GPU memory' })).toHaveTextContent('42%')
     await userEvent.click(screen.getByRole('button', { name: 'GPU' }))
     expect(await screen.findByText('Projects hold 60% of the GPU memory in use.')).toBeInTheDocument()
   })
@@ -151,6 +151,6 @@ describe('the server page', () => {
     renderWithQuery(<HostHealthView />, 'pt-BR')
     expect(await screen.findAllByText(/America\/Sao_Paulo/)).not.toHaveLength(0)
     expect(screen.getByText('Fuso horário')).toBeInTheDocument()
-    expect(screen.getByText('Memória do servidor')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Memória' })).toBeInTheDocument()
   })
 })

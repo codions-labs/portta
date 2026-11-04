@@ -24,9 +24,9 @@
     },
     "usage": {
       "note": "These numbers are for the whole server, not only the projects. Each bar splits what is in use between the projects, Portta, and the system and everything else running there.",
-      "memory": "Server memory",
-      "cpu": "Server CPU",
-      "disk": "Server disk",
+      "memory": "Memory",
+      "cpu": "CPU",
+      "disk": "Disk",
       "inUse": "in use",
       "ofTotal": "{{used}} of {{total}}",
       "ofCores": "{{used}} of {{total}} cores",
@@ -63,7 +63,7 @@
         "unmeasured": "The server does not report this resource.",
         "diskScope": "Counted for a project: its volumes and the writable layer of its containers. Images, files in project folders and everything else on the disk count as the system."
       },
-      "gpu": "Server GPU memory"
+      "gpu": "GPU memory"
     },
     "clock": {
       "title": "Time and time zone",
