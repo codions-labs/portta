@@ -21,7 +21,7 @@ import {
   normalizeProjectsHome,
   parseEnv,
 } from 'portta-core'
-import { parseDocument } from 'yaml'
+import { isScalar, parseDocument, visit } from 'yaml'
 import { analyze, readSmallFile } from '../commands/projects.js'
 import { appendLog, writeAtomic } from './store.js'
 
@@ -63,14 +63,26 @@ export function reachesOut(composeText: string): boolean {
  * reads it, so the collector must not hand it a file that is not the project's. A `file:` of a secret or a
  * config is not read by `config`, and is not looked at. The file is read as Compose reads it, with merge keys
  * (`<<: *base`) applied. Whatever the two readers could take differently counts as reaching outside: a file
- * that does not parse, a tag this reader does not know (`!!binary` is bytes here and a string to Compose), and
- * a path that is not plain text. Compose would refuse most of those anyway, so little is lost by not reviewing.
+ * that does not parse, any explicit tag (`!!binary` is bytes here and a string to Compose), a key that is not
+ * plain text, and a path that is not plain text. Compose would refuse most of those anyway, so little is lost by not reviewing.
  */
 export function includesOutside(composeText: string, directory: string): boolean {
   let document: unknown
   try {
     const parsed = parseDocument(composeText, { merge: true })
     if (parsed.errors.length > 0 || parsed.warnings.length > 0) return true
+    // An explicit tag, or a key that is not plain text, makes a value something else to the other reader.
+    let odd = false
+    visit(parsed, {
+      Node: (_key, node) => {
+        if ('tag' in node && node.tag) odd = true
+      },
+      Pair: (_key, pair) => {
+        if (!isScalar(pair.key) || (typeof pair.key.value !== 'string' && typeof pair.key.value !== 'symbol'))
+          odd = true
+      },
+    })
+    if (odd) return true
     document = parsed.toJS()
   } catch {
     return true

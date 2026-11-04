@@ -154,6 +154,13 @@ describe('a Compose file that reaches outside its folder', () => {
       ),
     ).toBe(true)
     expect(includesOutside('x-inc: &inc\n  - path: ../other.yaml\ninclude: *inc\n', directory)).toBe(true)
+    // A merge key that brings nothing from outside is an ordinary file.
+    expect(
+      includesOutside(
+        'x-base: &base\n  restart: always\nservices:\n  a:\n    <<: *base\n    image: nginx\n',
+        directory,
+      ),
+    ).toBe(false)
     // A file that does not parse is not handed to Compose either.
     expect(includesOutside('services: [unclosed', directory)).toBe(true)
     expect(includesOutside('a: 1\n---\nb: 2\n', directory)).toBe(true)
@@ -161,6 +168,9 @@ describe('a Compose file that reaches outside its folder', () => {
     expect(includesOutside('include:\n  - path: !!binary Li4vb3RoZXIueWFtbA==\n', directory)).toBe(true)
     expect(includesOutside('include:\n  - path: !custom ../other.yaml\n', directory)).toBe(true)
     expect(includesOutside('include:\n  - path: 12\n', directory)).toBe(true)
+    expect(includesOutside('!!binary aW5jbHVkZQ==:\n  - path: ../other.yaml\n', directory)).toBe(true)
+    expect(includesOutside('? [a, b]\n: 1\n', directory)).toBe(true)
+    expect(includesOutside('include:\n  - path: !!str ./inside.yaml\n', directory)).toBe(true)
   })
 
   it('is listed and not reviewed, and the reason is in the collector log', async () => {
