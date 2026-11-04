@@ -6,6 +6,18 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-04
+
+### Fixed
+
+- The metrics history is scoped like the current reading: somebody who sees only some projects gets the host series
+  and their projects, never the containers of others. The history had no such scoping before, and the panel's own
+  readings (0.5.0) extended what it carried.
+- The panel's own reading of the server is served as live only while it is recent. When the sampler stops
+  refreshing it, the page says the numbers are old, as it does for a collector that stopped, instead of showing a
+  frozen reading as current. Each call the sampler makes to Docker gives up after a few seconds, so one request
+  that never answers cannot hold it.
+
 ## [0.5.0] - 2026-11-04
 
 ### Added
@@ -406,7 +418,8 @@ baseline was regenerated.
   all three from the repository root, rewriting the README's relative links to
   absolute GitHub URLs.
 
-[Unreleased]: https://github.com/codions-labs/portta/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/codions-labs/portta/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/codions-labs/portta/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/codions-labs/portta/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/codions-labs/portta/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/codions-labs/portta/compare/v0.4.3...v0.4.4
