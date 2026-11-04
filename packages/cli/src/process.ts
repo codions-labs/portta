@@ -24,6 +24,8 @@ export interface RunOptions {
   stdio?: Stdio
   /** Kill the process after this many milliseconds. Used for optional probes. */
   timeout?: number
+  /** Signal sent when the timeout ends the process. Execa escalates to SIGKILL after five seconds by default. */
+  killSignal?: NodeJS.Signals
 }
 
 export interface ProcessResult {
@@ -180,6 +182,7 @@ export async function runProcess(
     reject: options.reject ?? true,
     shell: false,
     timeout: options.timeout,
+    killSignal: options.killSignal,
     ...outputTargets(mode),
   }
 

@@ -8,7 +8,7 @@
 
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join, relative } from 'node:path'
+import { join, relative, resolve, sep } from 'node:path'
 import {
   DISCOVERY_MAX_DEPTH,
   DISCOVERY_MAX_FOLDERS,
@@ -21,8 +21,8 @@ import {
   normalizeProjectsHome,
   parseEnv,
 } from 'portta-core'
-import { analyze } from '../commands/projects.js'
-import { writeAtomic } from './store.js'
+import { analyze, readSmallFile } from '../commands/projects.js'
+import { appendLog, writeAtomic } from './store.js'
 
 const COMPOSE_NAMES = ['compose.yaml', 'compose.yml', 'docker-compose.yaml', 'docker-compose.yml']
 const SKIPPED = new Set(['node_modules', 'lost+found', 'vendor', 'dist', 'build'])
@@ -55,6 +55,20 @@ export function reachesOut(composeText: string): boolean {
   return /(oci:\/\/|git\+[a-z]+:\/\/|git@[\w.-]+:|\b(?:file|path|extends):\s*['"]?https?:\/\/|^\s*-\s*['"]?https?:\/\/)/im.test(
     composeText,
   )
+}
+
+/**
+ * Whether an `include:` or `extends: file:` names a path that leaves the folder: Compose reads it, so the
+ * collector must not hand it a file that is not the project's. Only plain relative and absolute paths count.
+ */
+export function includesOutside(composeText: string, directory: string): boolean {
+  const paths = [...composeText.matchAll(/^\s*(?:-\s*)?(?:path|file|extends):[ \t]*['"]?([^'"\s#]+)/gim)].map(
+    (match) => match[1]!,
+  )
+  return paths.some((value) => {
+    const target = resolve(directory, value)
+    return target !== directory && !target.startsWith(`${directory}${sep}`)
+  })
 }
 
 export function discoveryDir(root: string): string {
@@ -110,18 +124,27 @@ export function findComposeFolders(home: string): Array<{ path: string; composeF
 const planned = new Map<string, { at: number; modifiedAt: number; plan: FolderPlan | null }>()
 
 async function planFolder(
+  root: string,
   home: string,
   folder: { path: string; composeFile: string; modifiedAt: number },
-  now: number,
 ): Promise<FolderPlan | null> {
-  let text = ''
-  try {
-    text = readFileSync(join(home, folder.path, folder.composeFile), 'utf8')
-  } catch {
+  const directory = join(home, folder.path)
+  const text = readSmallFile(join(directory, folder.composeFile), 1024 * 1024)
+  if (text === 'absent' || text === 'refused') {
+    appendLog(root, `discovery: ${folder.path} not reviewed: its Compose file is a link, a pipe or over 1 MB`)
     return null
   }
-  if (reachesOut(text)) return null
-  const report = await analyze(join(home, folder.path), { unattended: true }).catch(() => null)
+  if (reachesOut(text) || includesOutside(text, directory)) {
+    appendLog(root, `discovery: ${folder.path} not reviewed: its Compose file reaches outside the folder`)
+    return null
+  }
+  const report = await analyze(directory, { unattended: true }).catch((error: unknown) => {
+    appendLog(
+      root,
+      `discovery: ${folder.path} not reviewed: ${error instanceof Error ? error.message.split('\n')[0] : String(error)}`,
+    )
+    return null
+  })
   if (!report) return null
   return {
     version: 1,
@@ -158,7 +181,7 @@ async function planFolder(
           }
         : null,
     },
-    collectedAt: Math.floor(now / 1000),
+    collectedAt: Math.floor(Date.now() / 1000),
   }
 }
 
@@ -180,7 +203,7 @@ export async function publishDiscovery(root: string, now = Date.now()): Promise<
       const due = !known || known.modifiedAt !== folder.modifiedAt || now - known.at >= REPLAN_MS
       if (due && budget > 0) {
         budget -= 1
-        planned.set(folder.path, { at: now, modifiedAt: folder.modifiedAt, plan: await planFolder(home, folder, now) })
+        planned.set(folder.path, { at: now, modifiedAt: folder.modifiedAt, plan: await planFolder(root, home, folder) })
       }
     }
 

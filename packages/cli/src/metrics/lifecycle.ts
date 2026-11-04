@@ -104,6 +104,7 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
   let lastEnvironment = 0
   let lastDiscovery = 0
   let discovering = false
+  let pendingDiscovery: Promise<void> | undefined
   let running = true
   const halt = () => {
     running = false
@@ -140,7 +141,7 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
       // Not awaited: folders are the projects' and a slow one must not stop the host's metrics.
       lastDiscovery = started
       discovering = true
-      void publishDiscovery(root, started).finally(() => {
+      pendingDiscovery = publishDiscovery(root, started).finally(() => {
         discovering = false
       })
     }
@@ -149,6 +150,8 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
     if (!running) break
     await sleep(wait)
   }
+  // A discovery that is still running writes atomically, but wait a little so the stop is clean.
+  if (pendingDiscovery) await Promise.race([pendingDiscovery, sleep(5_000)])
   clearPid(root)
   appendLog(root, 'collector stopped')
 }
