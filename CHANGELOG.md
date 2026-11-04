@@ -6,6 +6,39 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-04
+
+### Added
+
+- Server cleans the Docker host. **Images** and **Volumes** list what each takes on disk (an image also says how
+  much removing it frees), the Docker networks in **Network** can be selected and removed, and **Maintenance**
+  sweeps what nothing uses: it shows what would be freed, lists exactly what would go, and asks for a typed
+  confirmation. The sweep is made by the panel one resource at a time, never with Docker's `prune`. Portta's own
+  networks, images and volumes, Docker's default networks and anything a container (running or stopped) still
+  references are refused by the server, whatever the request says, and nothing is forced. Only an owner and an
+  administrator (`docker:destroy`) can remove; each removal and sweep is in the audit log. The build cache is
+  shown, not cleaned. See [ADR 0060](docs/development/adr/0060-the-panel-cleans-networks-images-and-volumes.md).
+- On a Linux host the panel reads the server's health itself every three seconds (memory as `htop` counts it,
+  CPU between two readings, load, uptime, disk, and each container through Docker), so the Server page is live
+  after a reboot with nothing started on the host. The host collector still wins while it writes. See
+  [ADR 0061](docs/development/adr/0061-the-panel-reads-the-server-it-runs-on.md).
+
+### Changed
+
+- The panel's Docker socket proxy enables `IMAGES`, `VOLUMES` and `SYSTEM`, and the panel's allowlist admits only
+  `GET /system/df` and the removal of one network, image or volume. Every `prune`, pull and creation stays denied.
+  Traefik's proxy is unchanged. **Recreate the panel** (`portta web up`) for it to apply; setting the three back to
+  `"0"` returns to the old boundary.
+- The Server page says when its numbers are old, with their age, and dims them. The free disk is what `df` calls
+  available. The memory, CPU and disk cards are named Memory, CPU and Disk.
+
+### Fixed
+
+- A container's CPU is read in cores. It was limited to one core, so a project on a loaded server could read 0.07
+  cores against a host at 99 %.
+- `portta up` and `portta host watch` replace a collector that an older build started, so an upgrade takes effect
+  instead of leaving the old way of reading the machine running.
+
 ## [0.4.5] - 2026-11-04
 
 ### Fixed
@@ -373,7 +406,8 @@ baseline was regenerated.
   all three from the repository root, rewriting the README's relative links to
   absolute GitHub URLs.
 
-[Unreleased]: https://github.com/codions-labs/portta/compare/v0.4.5...HEAD
+[Unreleased]: https://github.com/codions-labs/portta/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/codions-labs/portta/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/codions-labs/portta/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/codions-labs/portta/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/codions-labs/portta/compare/v0.4.2...v0.4.3
