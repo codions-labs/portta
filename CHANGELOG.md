@@ -6,6 +6,64 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-11-04
+
+### Fixed
+
+- The collector reads every file it opens through one bounded descriptor. A Compose file that is a link, a pipe or
+  over 1 MB is refused like a `.env` already was, and an `include` or `extends` that leaves the folder is not handed
+  to Compose. A folder it refuses stays listed with no review, and the reason is in the collector log
+  (`state/logs/host-metrics.log`).
+- The running collector publishes the project folders every minute, in the background, so Add project follows a new
+  folder at once and a slow one never delays the host's metrics. A stop waits briefly for a discovery under way.
+- Folder discovery runs without interpolation, with a 20-second deadline after which Compose is killed, so no variable
+  of the host or of a `.env` reaches the plan. A port published through a variable, such as `${PORT}:80`, counts as
+  published. The review shows variables as written.
+- The collector reads `.env` through one descriptor and does not review a folder whose `.env` it refuses (a link, a
+  pipe or over 64 KB). `portta envs analyze` fails with a message for such a `.env` instead of naming the namespace
+  from another source, and still follows a link, as Compose does, when a person runs it.
+- The documentation names `portta envs analyze`, which is the command, and says what the unattended collector does
+  not read.
+
+## [0.4.4] - 2026-11-03
+
+### Fixed
+
+- The host collector publishes the folders under Projects Home from its running loop, not only from
+  `portta host collect`, so Add project lists them on a server that runs `portta host watch`.
+- Several Compose projects that run from one folder each get the folder's git state. The collector gave
+  the folder to none of them, so a product with an environment for its branch and one for its tests
+  showed no branch or commits at all.
+
+## [0.4.3] - 2026-11-03
+
+### Fixed
+
+- Projects lists the environments nobody adopted that run from one folder together, with a button that
+  makes them a project: a folder easily runs the branch's environment, one the tests start and a container
+  started by hand, and each used to look like a project of its own. One with no folder in its labels joins
+  when every file it mounts is from that folder.
+- The host collector walks a Projects Home under `/root`, such as `/root/projects`, which its new guard had
+  refused along with `/root` itself; the Add project list was empty on a server run as root.
+
+## [0.4.2] - 2026-11-03
+
+### Fixed
+
+- `portta setup` no longer deletes the plans and generated overlays of adopted projects. It replaced the
+  whole `runtime/` folder, which is also where `portta adopt` keeps them, so every update removed files
+  that running projects name.
+
+## [0.4.1] - 2026-11-03
+
+### Fixed
+
+- A project that was adopted is no longer refused by the host collector: its branch, commits and
+  files show in the panel. The overlay `portta adopt` writes is not in the project's folder, and the
+  check that every Compose file is there refused every adopted project.
+
+## [0.4.0] - 2026-11-03
+
 ### Added
 
 - Add project lists the folders with Compose under Projects Home and opens a review of each: the
@@ -25,6 +83,27 @@ All notable changes to Portta are documented here. The format follows
 - Someone signed in to the panel who may see a project opens its protected site without the
   password: the login page offers "Continue with my Portta account", and a browser that has done
   it once goes there by itself. A signed token of one minute and one use carries the session.
+
+## [0.3.2] - 2026-11-02
+
+### Fixed
+
+- "A saved setting is not in effect yet" no longer stays on after `portta up`. A setting
+  is pending when it was saved after the last `up`, which records the `.env` it applied,
+  so values the CLI derives (the domain, the bind address, the profile) stop counting as
+  pending on a public host.
+
+## [0.3.1] - 2026-11-02
+
+### Changed
+
+- Dev tooling and the minor-and-patch dependency group were updated, and the end-to-end tests follow the new Home,
+  the setup button and the Settings section titles.
+
+## [0.3.0] - 2026-11-02
+
+### Added
+
 - An environment's page shows where its code stands: branch, last commit, what is not
   committed or pushed and when it last changed. The host collector reads it, read-only and
   without asking any remote.
@@ -72,33 +151,12 @@ All notable changes to Portta are documented here. The format follows
 
 ### Fixed
 
-- The host collector publishes the folders under Projects Home from its running loop, not only from
-  `portta host collect`, so Add project lists them on a server that runs `portta host watch`.
-- Several Compose projects that run from one folder each get the folder's git state. The collector gave
-  the folder to none of them, so a product with an environment for its branch and one for its tests
-  showed no branch or commits at all.
-- Projects lists the environments nobody adopted that run from one folder together, with a button that
-  makes them a project: a folder easily runs the branch's environment, one the tests start and a container
-  started by hand, and each used to look like a project of its own. One with no folder in its labels joins
-  when every file it mounts is from that folder.
-- The host collector walks a Projects Home under `/root`, such as `/root/projects`, which its new guard had
-  refused along with `/root` itself; the Add project list was empty on a server run as root.
-- `portta setup` no longer deletes the plans and generated overlays of adopted projects. It replaced the
-  whole `runtime/` folder, which is also where `portta adopt` keeps them, so every update removed files
-  that running projects name.
-- A project that was adopted is no longer refused by the host collector: its branch, commits and
-  files show in the panel. The overlay `portta adopt` writes is not in the project's folder, and the
-  check that every Compose file is there refused every adopted project.
-- "A saved setting is not in effect yet" no longer stays on after `portta up`. A setting
-  is pending when it was saved after the last `up`, which records the `.env` it applied,
-  so values the CLI derives (the domain, the bind address, the profile) stop counting as
-  pending on a public host.
 - The panel reads Traefik labels the way Traefik does: keys in any case, every boolean
   `traefik.enable` accepts, `Host` in double quotes or with several values, and a rule
   as an expression. A router with a regexp, a wildcard or no `Host` no longer gets an
   invented address; on a public host, if it has no login, Access and Home name it.
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-11-02
 
 Portta now does one thing: many Docker projects on one host, each at
 `project-service.<domain>`, with no published ports, private databases, a
@@ -315,5 +373,15 @@ baseline was regenerated.
   all three from the repository root, rewriting the README's relative links to
   absolute GitHub URLs.
 
-[Unreleased]: https://github.com/codions-labs/portta/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/codions-labs/portta/compare/v0.4.5...HEAD
+[0.4.5]: https://github.com/codions-labs/portta/compare/v0.4.4...v0.4.5
+[0.4.4]: https://github.com/codions-labs/portta/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/codions-labs/portta/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/codions-labs/portta/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/codions-labs/portta/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/codions-labs/portta/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/codions-labs/portta/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/codions-labs/portta/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/codions-labs/portta/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/codions-labs/portta/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/codions-labs/portta/releases/tag/v0.1.0
