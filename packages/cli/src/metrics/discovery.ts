@@ -21,7 +21,7 @@ import {
   normalizeProjectsHome,
   parseEnv,
 } from 'portta-core'
-import { parse as parseYaml } from 'yaml'
+import { parseDocument } from 'yaml'
 import { analyze, readSmallFile } from '../commands/projects.js'
 import { appendLog, writeAtomic } from './store.js'
 
@@ -62,13 +62,16 @@ export function reachesOut(composeText: string): boolean {
  * Whether an `include:` entry or a service's `extends.file` names a path that leaves the folder: Compose
  * reads it, so the collector must not hand it a file that is not the project's. A `file:` of a secret or a
  * config is not read by `config`, and is not looked at. The file is read as Compose reads it, with merge keys
- * (`<<: *base`) applied, and a file that does not parse counts as reaching outside: Compose would refuse it
- * too, so nothing is lost by not reviewing it.
+ * (`<<: *base`) applied. Whatever the two readers could take differently counts as reaching outside: a file
+ * that does not parse, a tag this reader does not know (`!!binary` is bytes here and a string to Compose), and
+ * a path that is not plain text. Compose would refuse most of those anyway, so little is lost by not reviewing.
  */
 export function includesOutside(composeText: string, directory: string): boolean {
   let document: unknown
   try {
-    document = parseYaml(composeText, { merge: true })
+    const parsed = parseDocument(composeText, { merge: true })
+    if (parsed.errors.length > 0 || parsed.warnings.length > 0) return true
+    document = parsed.toJS()
   } catch {
     return true
   }
@@ -89,7 +92,9 @@ export function includesOutside(composeText: string, directory: string): boolean
     if (typeof extended === 'object' && extended !== null) paths.push((extended as { file?: unknown }).file)
   }
   return paths.some((value) => {
-    if (typeof value !== 'string' || value === '') return false
+    if (value === undefined || value === null) return false
+    if (typeof value !== 'string') return true
+    if (value === '') return false
     const target = resolve(directory, value)
     return target !== directory && !target.startsWith(`${directory}${sep}`)
   })
