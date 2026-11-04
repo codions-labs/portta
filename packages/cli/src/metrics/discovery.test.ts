@@ -146,7 +146,17 @@ describe('a Compose file that reaches outside its folder', () => {
     // A secret or a config names a file Compose does not read when it prints the model.
     expect(includesOutside('secrets:\n  pw:\n    file: ../secrets/pw\n', directory)).toBe(false)
     expect(includesOutside('services: {}\n', directory)).toBe(false)
-    expect(includesOutside('services: [unclosed', directory)).toBe(false)
+    // Compose applies merge keys, so an extends that comes through one is read like any other.
+    expect(
+      includesOutside(
+        'x-base: &base\n  extends:\n    file: ../other.yaml\n    service: s\nservices:\n  a:\n    <<: *base\n',
+        directory,
+      ),
+    ).toBe(true)
+    expect(includesOutside('x-inc: &inc\n  - path: ../other.yaml\ninclude: *inc\n', directory)).toBe(true)
+    // A file that does not parse is not handed to Compose either.
+    expect(includesOutside('services: [unclosed', directory)).toBe(true)
+    expect(includesOutside('a: 1\n---\nb: 2\n', directory)).toBe(true)
   })
 
   it('is listed and not reviewed, and the reason is in the collector log', async () => {

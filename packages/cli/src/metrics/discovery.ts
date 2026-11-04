@@ -61,19 +61,22 @@ export function reachesOut(composeText: string): boolean {
 /**
  * Whether an `include:` entry or a service's `extends.file` names a path that leaves the folder: Compose
  * reads it, so the collector must not hand it a file that is not the project's. A `file:` of a secret or a
- * config is not read by `config`, and is not looked at. A file that does not parse says nothing here.
+ * config is not read by `config`, and is not looked at. The file is read as Compose reads it, with merge keys
+ * (`<<: *base`) applied, and a file that does not parse counts as reaching outside: Compose would refuse it
+ * too, so nothing is lost by not reviewing it.
  */
 export function includesOutside(composeText: string, directory: string): boolean {
   let document: unknown
   try {
-    document = parseYaml(composeText)
+    document = parseYaml(composeText, { merge: true })
   } catch {
-    return false
+    return true
   }
   if (typeof document !== 'object' || document === null) return false
   const root = document as { include?: unknown; services?: unknown }
   const paths: unknown[] = []
-  for (const entry of Array.isArray(root.include) ? root.include : []) {
+  const included = typeof root.include === 'string' ? [root.include] : Array.isArray(root.include) ? root.include : []
+  for (const entry of included) {
     if (typeof entry === 'string') paths.push(entry)
     else if (typeof entry === 'object' && entry !== null) {
       const path = (entry as { path?: unknown }).path
