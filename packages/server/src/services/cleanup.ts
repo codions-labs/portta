@@ -48,7 +48,8 @@ const PORTTA_IMAGE_REPOS = new Set([
 ])
 
 const ANONYMOUS_VOLUME = /^[a-f0-9]{64}$/
-const STOPPED = new Set(['exited', 'dead', 'created'])
+// `created` is left out: a container that was created and not started yet may be about to be.
+const STOPPED = new Set(['exited', 'dead'])
 
 interface HostView {
   config: PanelConfig
@@ -412,8 +413,9 @@ export async function prune(
   client: DockerClient,
   config: PanelConfig,
   body: Omit<DockerPruneBody, 'confirm'>,
+  /** Filled as it goes, so a caller that records what happened still has it when a phase throws. */
+  items: DockerResourceOutcome[] = [],
 ): Promise<DockerPruneResult> {
-  const items: DockerResourceOutcome[] = []
   const planned = (host: HostView) => new Set(body.containers ? stoppedContainers(host).map((entry) => entry.Id) : [])
 
   if (body.dryRun) {
@@ -426,36 +428,47 @@ export async function prune(
     return summary(true, items)
   }
 
+  // What the person was shown is all that may go. Something that became removable
+  // after the preview (a volume whose container stopped meanwhile) is reported and left.
+  const previewed = body.candidates === undefined ? null : new Set(body.candidates)
+  const allowed = (kind: DockerResourceKind, id: string) => previewed === null || previewed.has(`${kind}:${id}`)
+  const sweep = async (
+    kind: DockerResourceKind,
+    id: string,
+    name: string,
+    sizeBytes: number | null,
+    run: () => Promise<void>,
+  ) => {
+    items.push(
+      allowed(kind, id)
+        ? await attempt(kind, id, name, sizeBytes, run)
+        : outcome(kind, id, name, { ok: false, skipped: true, reason: 'it was not in the list that was previewed' }),
+    )
+  }
+
   if (body.containers) {
     const host = await readHost(client, config)
     for (const container of stoppedContainers(host)) {
-      items.push(
-        await attempt('container', container.Id, containerName(container), null, () =>
-          client.remove(container.Id, false),
-        ),
-      )
+      await sweep('container', container.Id, containerName(container), null, () => client.remove(container.Id, false))
     }
   }
   if (body.networks) {
     const host = await readHost(client, config)
     for (const network of networkItems(host).filter((entry) => entry.protection === null)) {
-      items.push(await attempt('network', network.id, network.name, null, () => client.removeNetwork(network.id)))
+      await sweep('network', network.id, network.name, null, () => client.removeNetwork(network.id))
     }
   }
   if (body.images !== 'none') {
     const host = await readHost(client, config)
-    const found = imageItems(host).filter((image) => pickImage(image, body.images))
-    for (const image of found) {
+    for (const image of imageItems(host).filter((entry) => pickImage(entry, body.images))) {
       const label = image.tags[0] ?? image.id.slice(0, 12)
-      items.push(await attempt('image', image.id, label, image.uniqueBytes, () => dropImage(client, image)))
+      await sweep('image', image.id, label, image.uniqueBytes, () => dropImage(client, image))
     }
   }
   if (body.volumes !== 'none') {
     const host = await readHost(client, config)
     for (const volume of volumeItems(host).filter((entry) => pickVolume(entry, body.volumes))) {
-      items.push(
-        await attempt('volume', volume.name, volume.name, volume.sizeBytes, () => client.removeVolume(volume.name)),
-      )
+      await sweep('volume', volume.name, volume.name, volume.sizeBytes, () => client.removeVolume(volume.name))
     }
   }
   return summary(false, items)

@@ -45,7 +45,13 @@ export function MaintenanceView() {
     onSuccess: setPreview,
   })
   const sweep = useMutation({
-    mutationFn: () => api.pruneDocker({ ...plan, dryRun: false }),
+    // Only what the preview listed may go: whatever became removable since is left.
+    mutationFn: () =>
+      api.pruneDocker({
+        ...plan,
+        dryRun: false,
+        candidates: (preview?.items ?? []).map((item) => `${item.kind}:${item.id}`),
+      }),
     onSuccess: (result) => {
       setConfirming(false)
       setPreview(null)

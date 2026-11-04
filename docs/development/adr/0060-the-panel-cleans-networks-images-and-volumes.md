@@ -38,7 +38,7 @@ remains in force as the last line of defence.
 **A prune is not Docker's prune.** The panel reads the host, works out what
 nothing uses, drops what is protected and removes the rest one at a time. That
 keeps the allowlist narrow, lets one stubborn resource be reported while the
-others go, and makes the preview (`dryRun`) the same computation as the run.
+others go, and makes the preview (`dryRun`) the same computation as the run. A real sweep must send back the items its preview listed (`candidates`) and removes only those: whatever became removable in between is reported as skipped. Stopped containers in the `created` state are never swept, and the audit line is written even when a phase fails half way, with the names of what already went.
 
 **What is protected.** The server decides on a fresh read of the host, whatever
 the request says, and reports a refusal as `skipped` rather than failing:

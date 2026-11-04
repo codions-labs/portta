@@ -149,7 +149,9 @@ describe('Host > Maintenance', () => {
     expect(confirm).toBeDisabled()
     await userEvent.type(within(dialog).getByRole('textbox'), 'clean', { delay: null })
     await userEvent.click(confirm)
-    await waitFor(() => expect(pruneDocker).toHaveBeenCalledWith(expect.objectContaining({ dryRun: false })))
+    await waitFor(() =>
+      expect(pruneDocker).toHaveBeenCalledWith(expect.objectContaining({ dryRun: false, candidates: ['image:a2'] })),
+    )
   })
 
   it('warns that unused named volumes are data before it offers to delete them', async () => {

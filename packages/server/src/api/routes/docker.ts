@@ -9,6 +9,7 @@ import {
   DockerNetworkList,
   DockerPruneBody,
   DockerPruneResult,
+  type DockerResourceOutcome,
   DockerResourceRemoveBody,
   DockerResourceRemoveResult,
   DockerVolumeList,
@@ -454,24 +455,41 @@ export function dockerRoutes(deps: AppDeps): Hono {
         })
       }
       const { confirm: _confirm, ...plan } = parsed.data
-      const result = await cleanup.prune(deps.client, deps.config, plan)
-      if (!plan.dryRun) {
-        deps.cache.invalidate()
-        await record(deps, c, {
-          action: 'docker.pruned',
-          resourceType: 'docker',
-          metadata: {
-            containers: plan.containers,
-            networks: plan.networks,
-            images: plan.images,
-            volumes: plan.volumes,
-            removed: result.removed,
-            failed: result.failed,
-            freedBytes: result.freedBytes,
-          },
+      if (!plan.dryRun && plan.candidates === undefined) {
+        throw new HTTPException(400, {
+          message: 'a sweep removes only what a preview listed: send the preview\'s items as "candidates"',
         })
       }
-      return c.json(result)
+      const done: DockerResourceOutcome[] = []
+      try {
+        return c.json(await cleanup.prune(deps.client, deps.config, plan, done))
+      } finally {
+        // Also when a phase fails half way: what already went is what the log must say.
+        if (!plan.dryRun) {
+          deps.cache.invalidate()
+          const gone = done.filter((item) => item.ok)
+          await record(deps, c, {
+            action: 'docker.pruned',
+            resourceType: 'docker',
+            resourceName:
+              gone
+                .map((item) => `${item.kind}:${item.name}`)
+                .join(', ')
+                .slice(0, 500) || null,
+            metadata: {
+              containers: plan.containers,
+              networks: plan.networks,
+              images: plan.images,
+              volumes: plan.volumes,
+              removed: gone.length,
+              failed: done.filter((item) => !item.ok && !item.skipped).length,
+              skipped: done.filter((item) => item.skipped).length,
+              freedBytes: gone.reduce((sum, item) => sum + (item.sizeBytes ?? 0), 0),
+              removedItems: gone.slice(0, 100).map((item) => `${item.kind}:${item.name}`),
+            },
+          })
+        }
+      }
     },
   )
 

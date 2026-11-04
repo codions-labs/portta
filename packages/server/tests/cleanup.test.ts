@@ -273,6 +273,16 @@ describe('the volumes', () => {
   })
 })
 
+type App = ReturnType<typeof makeApp>['app']
+/** What the interface does: preview, then sweep exactly what the preview listed. */
+async function previewThenSweep(app: App, body: Record<string, unknown>) {
+  const preview = (await (
+    await post(app, '/api/docker/prune', { confirm: true, ...body, dryRun: true })
+  ).json()) as DockerPruneResult
+  const candidates = preview.items.map((item) => `${item.kind}:${item.id}`)
+  return post(app, '/api/docker/prune', { confirm: true, ...body, dryRun: false, candidates })
+}
+
 describe('the prune', () => {
   const sweep = { confirm: true, containers: false, networks: false, images: 'none', volumes: 'none' } as const
 
@@ -295,7 +305,11 @@ describe('the prune', () => {
     ).json()) as DockerPruneResult
     expect(docker.calls.some((call) => /^remove/.test(call.method))).toBe(false)
     const real = (await (
-      await post(app, '/api/docker/prune', { ...request, dryRun: false })
+      await post(app, '/api/docker/prune', {
+        ...request,
+        dryRun: false,
+        candidates: preview.items.map((item) => `${item.kind}:${item.id}`),
+      })
     ).json()) as DockerPruneResult
     expect(real.items.map((item) => `${item.kind}:${item.id}`).sort()).toEqual(
       preview.items.map((item) => `${item.kind}:${item.id}`).sort(),
@@ -305,7 +319,7 @@ describe('the prune', () => {
   it('sweeps stopped containers first, and then what they were holding', async () => {
     const { app, docker } = host()
     const body = (await (
-      await post(app, '/api/docker/prune', {
+      await previewThenSweep(app, {
         ...sweep,
         dryRun: false,
         containers: true,
@@ -331,9 +345,7 @@ describe('the prune', () => {
 
   it('never sweeps what is Portta’s, Docker’s or in use', async () => {
     const { app, docker } = host()
-    await post(app, '/api/docker/prune', {
-      confirm: true,
-      dryRun: false,
+    await previewThenSweep(app, {
       containers: true,
       networks: true,
       images: 'unused',
@@ -365,10 +377,32 @@ describe('the prune', () => {
 
   it('leaves named volumes alone unless the sweep asks for them', async () => {
     const { app, docker } = host()
-    await post(app, '/api/docker/prune', { ...sweep, dryRun: false, volumes: 'anonymous' })
+    await previewThenSweep(app, { ...sweep, volumes: 'anonymous' })
     expect(docker.calls.filter((call) => call.method === 'removeVolume').map((call) => call.args[0])).not.toContain(
       'old_db',
     )
+  })
+
+  it('removes only what the preview listed, and says what it left', async () => {
+    const { app, docker } = host()
+    const response = await post(app, '/api/docker/prune', {
+      ...sweep,
+      networks: true,
+      volumes: 'unused',
+      dryRun: false,
+      candidates: ['volume:old_db'],
+    })
+    const body = (await response.json()) as DockerPruneResult
+    expect(docker.calls.filter((call) => call.method.startsWith('remove')).map((call) => call.args[0])).toEqual([
+      'old_db',
+    ])
+    expect(body.items.filter((item) => item.skipped).length).toBeGreaterThan(0)
+  })
+
+  it('refuses a sweep that does not say which preview it follows', async () => {
+    const { app, docker } = host()
+    expect((await post(app, '/api/docker/prune', { ...sweep, volumes: 'unused', dryRun: false })).status).toBe(400)
+    expect(docker.calls.some((call) => call.method.startsWith('remove'))).toBe(false)
   })
 
   it('does nothing without a confirmation', async () => {

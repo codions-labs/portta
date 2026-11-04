@@ -189,6 +189,8 @@ export const DockerPruneBody = named(
       confirm: z.literal(true),
       /** True lists what would go and removes nothing. */
       dryRun: z.boolean(),
+      /** The `kind:id` of each item a preview listed. A real run removes only these; it is required there. */
+      candidates: z.array(z.string().max(300)).max(5000).optional(),
       containers: z.boolean().describe('Stopped containers that are not Portta components'),
       networks: z.boolean().describe('Networks no container references'),
       images: z
