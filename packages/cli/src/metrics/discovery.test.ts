@@ -4,7 +4,8 @@ import { join } from 'node:path'
 import { fileKey } from 'portta-core'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('../commands/projects.js', () => ({
+vi.mock('../commands/projects.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../commands/projects.js')>()),
   analyze: vi.fn(async (path: string) => ({
     path,
     compose_file: 'compose.yaml',
@@ -42,9 +43,8 @@ vi.mock('../commands/projects.js', () => ({
   })),
 }))
 
-const { discoveryDir, findComposeFolders, isWalkableHome, publishDiscovery, reachesOut } = await import(
-  './discovery.js'
-)
+const { discoveryDir, findComposeFolders, includesOutside, isWalkableHome, publishDiscovery, reachesOut } =
+  await import('./discovery.js')
 
 function home() {
   const root = mkdtempSync(join(tmpdir(), 'portta-discovery-root-'))
@@ -129,5 +129,57 @@ describe('what the collector will walk and read on its own', () => {
     const named = (path: string) => index.folders.find((folder: { path: string }) => folder.path === path)
     expect(named('remoto')).toMatchObject({ planned: false })
     expect(named('loja-nova')).toMatchObject({ planned: true })
+  })
+})
+
+describe('a Compose file that reaches outside its folder', () => {
+  it('is recognised for includes and extends that leave the folder, and not for ones that stay', () => {
+    const directory = '/srv/projects/loja'
+    expect(includesOutside('include:\n  - path: ../other/compose.yaml\n', directory)).toBe(true)
+    expect(includesOutside('include:\n  - /etc/compose.yaml\n', directory)).toBe(true)
+    expect(includesOutside('include:\n  - path:\n      - ./a.yaml\n      - ../b.yaml\n', directory)).toBe(true)
+    expect(
+      includesOutside('services:\n  a:\n    extends:\n      file: /etc/shared.yaml\n      service: x\n', directory),
+    ).toBe(true)
+    expect(includesOutside('include:\n  - path: ./base/compose.yaml\n', directory)).toBe(false)
+    expect(includesOutside('services:\n  a:\n    extends: b\n  b: {}\n', directory)).toBe(false)
+    // A secret or a config names a file Compose does not read when it prints the model.
+    expect(includesOutside('secrets:\n  pw:\n    file: ../secrets/pw\n', directory)).toBe(false)
+    expect(includesOutside('services: {}\n', directory)).toBe(false)
+    // Compose applies merge keys, so an extends that comes through one is read like any other.
+    expect(
+      includesOutside(
+        'x-base: &base\n  extends:\n    file: ../other.yaml\n    service: s\nservices:\n  a:\n    <<: *base\n',
+        directory,
+      ),
+    ).toBe(true)
+    expect(includesOutside('x-inc: &inc\n  - path: ../other.yaml\ninclude: *inc\n', directory)).toBe(true)
+    // A merge key that brings nothing from outside is an ordinary file.
+    expect(
+      includesOutside(
+        'x-base: &base\n  restart: always\nservices:\n  a:\n    <<: *base\n    image: nginx\n',
+        directory,
+      ),
+    ).toBe(false)
+    // A file that does not parse is not handed to Compose either.
+    expect(includesOutside('services: [unclosed', directory)).toBe(true)
+    expect(includesOutside('a: 1\n---\nb: 2\n', directory)).toBe(true)
+    // A tag changes what a value is: `!!binary` is bytes to one reader and the string it spells to the other.
+    expect(includesOutside('include:\n  - path: !!binary Li4vb3RoZXIueWFtbA==\n', directory)).toBe(true)
+    expect(includesOutside('include:\n  - path: !custom ../other.yaml\n', directory)).toBe(true)
+    expect(includesOutside('include:\n  - path: 12\n', directory)).toBe(true)
+    expect(includesOutside('!!binary aW5jbHVkZQ==:\n  - path: ../other.yaml\n', directory)).toBe(true)
+    expect(includesOutside('? [a, b]\n: 1\n', directory)).toBe(true)
+    expect(includesOutside('include:\n  - path: !!str ./inside.yaml\n', directory)).toBe(true)
+  })
+
+  it('is listed and not reviewed, and the reason is in the collector log', async () => {
+    const { root, projects } = home()
+    mkdirSync(join(projects, 'fora'), { recursive: true })
+    writeFileSync(join(projects, 'fora/compose.yaml'), 'include:\n  - path: ../loja-nova/compose.yaml\n')
+    await publishDiscovery(root, Date.now())
+    const index = JSON.parse(readFileSync(join(discoveryDir(root), 'folders.json'), 'utf8'))
+    expect(index.folders.find((folder: { path: string }) => folder.path === 'fora')?.planned).toBe(false)
+    expect(readFileSync(join(root, 'state/logs/host-metrics.log'), 'utf8')).toContain('fora not reviewed')
   })
 })

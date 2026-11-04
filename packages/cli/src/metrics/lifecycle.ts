@@ -6,8 +6,12 @@ import { writeHostSecurityReport } from '../environment/security/store.js'
 import { writeEnvironmentReport } from '../environment/store.js'
 import { spawnDetached } from '../process.js'
 import { collectSnapshot } from './collect.js'
+import { publishDiscovery } from './discovery.js'
 import { pidFile } from './paths.js'
 import { appendHistory, appendLog, writeAtomic, writeCurrent } from './store.js'
+
+/** How often the running collector looks for project folders again; the folders themselves are replanned on their own schedule. */
+const DISCOVERY_INTERVAL_MS = 60_000
 
 export function readCollectorPid(root: string): number | null {
   const path = pidFile(root)
@@ -98,6 +102,9 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
   appendLog(root, `collector started pid=${process.pid}`)
   let lastHistory = 0
   let lastEnvironment = 0
+  let lastDiscovery = 0
+  let discovering = false
+  let pendingDiscovery: Promise<void> | undefined
   let running = true
   const halt = () => {
     running = false
@@ -130,11 +137,21 @@ export async function runCollectorLoop(root: string, profile?: string): Promise<
         appendLog(root, `environment collect failed: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
+    if (!discovering && started - lastDiscovery >= DISCOVERY_INTERVAL_MS) {
+      // Not awaited: folders are the projects' and a slow one must not stop the host's metrics.
+      lastDiscovery = started
+      discovering = true
+      pendingDiscovery = publishDiscovery(root, started).finally(() => {
+        discovering = false
+      })
+    }
     const elapsed = Date.now() - started
     const wait = Math.max(0, COLLECT_INTERVAL_MS - elapsed)
     if (!running) break
     await sleep(wait)
   }
+  // A discovery that is still running writes atomically, but wait a little so the stop is clean.
+  if (pendingDiscovery) await Promise.race([pendingDiscovery, sleep(5_000)])
   clearPid(root)
   appendLog(root, 'collector stopped')
 }

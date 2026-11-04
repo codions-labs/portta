@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -22,7 +22,7 @@ vi.mock('../context.js', () => ({
   }),
 }))
 
-import { analyzeCommand } from './projects.js'
+import { analyze, analyzeCommand, publishedPorts, readSmallFile } from './projects.js'
 
 const dirs: string[] = []
 afterEach(() => {
@@ -234,5 +234,63 @@ describe('portta analyze reads .portta/project.yaml', () => {
     expect(result.project_config.config).toBeNull()
     expect(result.project_config.issues.length).toBeGreaterThan(0)
     expect(result.compose_file).toBe('compose.yaml')
+  })
+})
+
+describe('reading a small file', () => {
+  it('refuses a link, a pipe and a file over the limit, and says a missing one is absent', () => {
+    const dir = temp()
+    writeFileSync(join(dir, 'real'), 'A=1\n')
+    symlinkSync(join(dir, 'real'), join(dir, 'link'))
+    writeFileSync(join(dir, 'big'), 'x'.repeat(100))
+    expect(readSmallFile(join(dir, 'real'), 64)).toBe('A=1\n')
+    expect(readSmallFile(join(dir, 'link'), 64)).toBe('refused')
+    expect(readSmallFile(join(dir, 'link'), 64, true)).toBe('A=1\n')
+    expect(readSmallFile(join(dir, 'big'), 64)).toBe('refused')
+    expect(readSmallFile(dir, 64)).toBe('refused')
+    expect(readSmallFile(join(dir, 'none'), 64)).toBe('absent')
+  })
+})
+
+describe('an unattended analysis', () => {
+  it('interpolates nothing, has a deadline, and refuses a .env that is a link', async () => {
+    const dir = temp()
+    writeFileSync(join(dir, 'compose.yaml'), COMPOSE)
+    mocks.runProcess.mockResolvedValue(composeConfig('shop'))
+    mocks.inspectContainers.mockResolvedValue([])
+    await analyze(dir, { unattended: true })
+    expect(mocks.runProcess.mock.calls[0]![1]).toContain('--no-interpolate')
+    expect(mocks.runProcess.mock.calls[0]![2]).toMatchObject({ timeout: 20_000 })
+
+    writeFileSync(join(dir, 'shared.env'), 'COMPOSE_PROJECT_NAME=other\n')
+    symlinkSync(join(dir, 'shared.env'), join(dir, '.env'))
+    await expect(analyze(dir, { unattended: true })).rejects.toThrow('not read')
+    // A person watching has Compose follow the link, so the namespace comes from the file it names.
+    mocks.runProcess.mockResolvedValue(composeConfig('shop'))
+    const attended = await analyze(dir, {}, [])
+    expect(attended.project).toEqual({ name: 'other', source: '.env' })
+  })
+
+  it('counts a port published through a variable', () => {
+    expect(
+      publishedPorts({
+        ports: [
+          '${PORT}:80',
+          '8080:80',
+          '80',
+          '127.0.0.1:${PORT:-5432}:5432',
+          '$PORT:80/tcp',
+          '8000-8010:8000-8010',
+          '[::1]:9000:80',
+        ],
+      } as never),
+    ).toEqual([
+      { host: '${PORT}', container: '80' },
+      { host: '8080', container: '80' },
+      { host: '${PORT:-5432}', container: '5432' },
+      { host: '$PORT', container: '80' },
+      { host: '8000-8010', container: '8000-8010' },
+      { host: '9000', container: '80' },
+    ])
   })
 })

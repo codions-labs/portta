@@ -24,12 +24,18 @@ The collector finds the folders, analyses them and publishes the result. The pan
   levels deep, not part of the system (`/etc`, `/proc`, `/sys`, `/dev`, `/boot`, Docker's own
   directories), not a whole account (`/root`, `/home`, `/home/ada`) and not a hidden folder. `/root/projects` is a place for
   projects; `/root` and `/root/.ssh` are not. Anything else publishes nothing.
-* **Analysing.** For each it runs the same read-only analysis as `portta analyze` and publishes the
+* **Analysing.** For each it runs the same read-only analysis as `portta envs analyze` and publishes the
   plan: services, how each would be routed, the ports that would stop being published, fixed container
   names and who on the host already holds them, and a namespace in use by another folder. A Compose file that makes Compose fetch something (`oci://`,
   `git+`, a URL in `include` or `extends`) is listed and not analysed, because the collector does this on
   its own and must not download anything. It re-analyses
-  a folder when its Compose file changes or every five minutes, at most eight a cycle.
+  a folder when its Compose file changes or every five minutes, at most eight a cycle. The running
+  collector publishes every minute, in the background: a slow folder never delays the host's metrics.
+  Unlike the command, the analysis is unattended: Compose is run with `--no-interpolate` and a
+  20-second deadline (ended with SIGTERM, which `docker` hands on to Compose), so no variable of the host or of a `.env` reaches the plan.
+  The Compose file and the `.env` are read through one descriptor and refused when they are a link, a pipe or
+  too large (1 MB, 64 KB); an `include` or `extends` that leaves the folder is treated like one that fetches.
+  Such a folder is listed with no plan and the reason goes to the collector log.
 * **Where.** `state/discovery/folders.json` and `state/discovery/plans/<hash of the path>`, mounted
   into the panel read-only. No path from a request is ever opened: the panel answers only for a folder
   that is in the collector's list, and refuses anything that is not a relative path of plain names.
@@ -46,7 +52,9 @@ The collector finds the folders, analyses them and publishes the result. The pan
 * **Adopting is still done in the terminal.** The panel cannot start a project it did not create, and
   giving it that would mean a new runner verb and a way to hand it a folder. That is a separate
   decision; this one only makes the review and the registration possible from the panel.
-* The list is as fresh as the last collector cycle. A folder just created appears within minutes, and
+* A folder listed without a plan says nothing about why in the panel; the reason is only in the
+  collector log. Showing it needs a field in the contract.
+* The list is as fresh as the last collector cycle. A folder just created appears within a minute, and
   one that was just edited keeps its old plan for up to five.
 * Typing a path that is not in the list leaves the commands of the old page: the panel does not look.
 * The plan is read from the project's own Compose file, so it is as trustworthy as that file. It is

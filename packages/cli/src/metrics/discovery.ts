@@ -8,7 +8,7 @@
 
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join, relative } from 'node:path'
+import { join, relative, resolve, sep } from 'node:path'
 import {
   DISCOVERY_MAX_DEPTH,
   DISCOVERY_MAX_FOLDERS,
@@ -21,8 +21,9 @@ import {
   normalizeProjectsHome,
   parseEnv,
 } from 'portta-core'
-import { analyze } from '../commands/projects.js'
-import { writeAtomic } from './store.js'
+import { isScalar, parseDocument, visit } from 'yaml'
+import { analyze, readSmallFile } from '../commands/projects.js'
+import { appendLog, writeAtomic } from './store.js'
 
 const COMPOSE_NAMES = ['compose.yaml', 'compose.yml', 'docker-compose.yaml', 'docker-compose.yml']
 const SKIPPED = new Set(['node_modules', 'lost+found', 'vendor', 'dist', 'build'])
@@ -55,6 +56,60 @@ export function reachesOut(composeText: string): boolean {
   return /(oci:\/\/|git\+[a-z]+:\/\/|git@[\w.-]+:|\b(?:file|path|extends):\s*['"]?https?:\/\/|^\s*-\s*['"]?https?:\/\/)/im.test(
     composeText,
   )
+}
+
+/**
+ * Whether an `include:` entry or a service's `extends.file` names a path that leaves the folder: Compose
+ * reads it, so the collector must not hand it a file that is not the project's. A `file:` of a secret or a
+ * config is not read by `config`, and is not looked at. The file is read as Compose reads it, with merge keys
+ * (`<<: *base`) applied. Whatever the two readers could take differently counts as reaching outside: a file
+ * that does not parse, any explicit tag (`!!binary` is bytes here and a string to Compose), a key that is not
+ * plain text, and a path that is not plain text. Compose would refuse most of those anyway, so little is lost by not reviewing.
+ */
+export function includesOutside(composeText: string, directory: string): boolean {
+  let document: unknown
+  try {
+    const parsed = parseDocument(composeText, { merge: true })
+    if (parsed.errors.length > 0 || parsed.warnings.length > 0) return true
+    // An explicit tag, or a key that is not plain text, makes a value something else to the other reader.
+    let odd = false
+    visit(parsed, {
+      Node: (_key, node) => {
+        if ('tag' in node && node.tag) odd = true
+      },
+      Pair: (_key, pair) => {
+        if (!isScalar(pair.key) || (typeof pair.key.value !== 'string' && typeof pair.key.value !== 'symbol'))
+          odd = true
+      },
+    })
+    if (odd) return true
+    document = parsed.toJS()
+  } catch {
+    return true
+  }
+  if (typeof document !== 'object' || document === null) return false
+  const root = document as { include?: unknown; services?: unknown }
+  const paths: unknown[] = []
+  const included = typeof root.include === 'string' ? [root.include] : Array.isArray(root.include) ? root.include : []
+  for (const entry of included) {
+    if (typeof entry === 'string') paths.push(entry)
+    else if (typeof entry === 'object' && entry !== null) {
+      const path = (entry as { path?: unknown }).path
+      paths.push(...(Array.isArray(path) ? path : [path]))
+    }
+  }
+  const services = typeof root.services === 'object' && root.services !== null ? Object.values(root.services) : []
+  for (const service of services) {
+    const extended = (service as { extends?: unknown } | null)?.extends
+    if (typeof extended === 'object' && extended !== null) paths.push((extended as { file?: unknown }).file)
+  }
+  return paths.some((value) => {
+    if (value === undefined || value === null) return false
+    if (typeof value !== 'string') return true
+    if (value === '') return false
+    const target = resolve(directory, value)
+    return target !== directory && !target.startsWith(`${directory}${sep}`)
+  })
 }
 
 export function discoveryDir(root: string): string {
@@ -110,18 +165,27 @@ export function findComposeFolders(home: string): Array<{ path: string; composeF
 const planned = new Map<string, { at: number; modifiedAt: number; plan: FolderPlan | null }>()
 
 async function planFolder(
+  root: string,
   home: string,
   folder: { path: string; composeFile: string; modifiedAt: number },
-  now: number,
 ): Promise<FolderPlan | null> {
-  let text = ''
-  try {
-    text = readFileSync(join(home, folder.path, folder.composeFile), 'utf8')
-  } catch {
+  const directory = join(home, folder.path)
+  const text = readSmallFile(join(directory, folder.composeFile), 1024 * 1024)
+  if (text === 'absent' || text === 'refused') {
+    appendLog(root, `discovery: ${folder.path} not reviewed: its Compose file is a link, a pipe or over 1 MB`)
     return null
   }
-  if (reachesOut(text)) return null
-  const report = await analyze(join(home, folder.path)).catch(() => null)
+  if (reachesOut(text) || includesOutside(text, directory)) {
+    appendLog(root, `discovery: ${folder.path} not reviewed: its Compose file reaches outside the folder`)
+    return null
+  }
+  const report = await analyze(directory, { unattended: true }).catch((error: unknown) => {
+    appendLog(
+      root,
+      `discovery: ${folder.path} not reviewed: ${error instanceof Error ? error.message.split('\n')[0] : String(error)}`,
+    )
+    return null
+  })
   if (!report) return null
   return {
     version: 1,
@@ -158,7 +222,7 @@ async function planFolder(
           }
         : null,
     },
-    collectedAt: Math.floor(now / 1000),
+    collectedAt: Math.floor(Date.now() / 1000),
   }
 }
 
@@ -180,7 +244,7 @@ export async function publishDiscovery(root: string, now = Date.now()): Promise<
       const due = !known || known.modifiedAt !== folder.modifiedAt || now - known.at >= REPLAN_MS
       if (due && budget > 0) {
         budget -= 1
-        planned.set(folder.path, { at: now, modifiedAt: folder.modifiedAt, plan: await planFolder(home, folder, now) })
+        planned.set(folder.path, { at: now, modifiedAt: folder.modifiedAt, plan: await planFolder(root, home, folder) })
       }
     }
 

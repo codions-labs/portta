@@ -1,4 +1,14 @@
-import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import {
+  closeSync,
+  constants,
+  existsSync,
+  fstatSync,
+  lstatSync,
+  openSync,
+  readFileSync,
+  readSync,
+  realpathSync,
+} from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import type { Command } from 'commander'
 import {
@@ -177,15 +187,37 @@ function classifyCompose(image: string, name: string): 'datastore' | 'http' | 'w
   return 'unknown'
 }
 
-function publishedPorts(service: ComposeService): Array<{ host: string; container: string }> {
+/** Splits a short port on the colons that are not inside `${...}`: `127.0.0.1:${PORT:-80}:80` has three parts. */
+function portParts(port: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let current = ''
+  for (const char of port) {
+    if (char === '{') depth += 1
+    if (char === '}') depth = Math.max(0, depth - 1)
+    if (char === ':' && depth === 0) {
+      parts.push(current)
+      current = ''
+    } else current += char
+  }
+  parts.push(current)
+  return parts
+}
+
+/**
+ * The ports a service publishes on the host. A short port with a host part that cannot be classified (a
+ * variable, a range) still counts as published: the review would otherwise say a port is private when it is not.
+ */
+export function publishedPorts(service: ComposeService): Array<{ host: string; container: string }> {
   return (service.ports ?? []).flatMap((port) => {
     if (typeof port === 'object' && port.published !== undefined)
       return [{ host: String(port.published), container: String(port.target ?? '') }]
-    if (typeof port === 'string') {
-      const match = /^(?:[^:]+:)?(\d+):(\d+)(?:\/\w+)?$/.exec(port)
-      return match ? [{ host: match[1]!, container: match[2]! }] : []
-    }
-    return []
+    if (typeof port !== 'string') return []
+    const parts = portParts(port)
+    if (parts.length < 2) return []
+    const host = parts[parts.length - 2]!.trim()
+    const container = parts[parts.length - 1]!.replace(/\/\w+$/, '').trim()
+    return host === '' ? [] : [{ host, container }]
   })
 }
 
@@ -235,17 +267,19 @@ function safeRealpath(path: string): string {
 
 /** A top-level `name:` written in the file itself. `docker compose config` always prints one, so it cannot tell. */
 function declaredComposeName(file: string): string | null {
-  try {
-    const match = /^name:[ \t]*["']?([^"'\s#]+)/m.exec(readFileSync(file, 'utf8'))
-    return match?.[1] ?? null
-  } catch {
-    return null
-  }
+  const text = readSmallFile(file, COMPOSE_MAX_BYTES, true)
+  if (text === 'absent' || text === 'refused') return null
+  return /^name:[ \t]*["']?([^"'\s#]+)/m.exec(text)?.[1] ?? null
 }
 
 export interface AnalyzeOptions {
   /** The Compose file, relative to the directory argument or absolute. Without it the usual names are tried. */
   file?: string
+  /**
+   * Run without a person watching (the collector): nothing is interpolated, so no variable of the host
+   * or of a `.env` ends up in the result, and Compose is given a deadline.
+   */
+  unattended?: boolean
 }
 
 /** What the project declares about itself, or the defaults when it declares
@@ -275,6 +309,39 @@ function readProjectConfig(root: string): {
     : { source: 'file', path: PROJECT_CONFIG_PATH, config: null, issues: parsed.issues }
 }
 
+/**
+ * A small file read through one descriptor: a pipe, a device or anything over `max` bytes is refused, not
+ * read. A link is refused unless `followLinks` (a person is watching and Compose would follow it too).
+ */
+export function readSmallFile(file: string, max: number, followLinks = false): string | 'absent' | 'refused' {
+  if (lstatSync(file, { throwIfNoEntry: false }) === undefined) return 'absent'
+  let fd: number | undefined
+  try {
+    const noFollow = followLinks ? 0 : constants.O_NOFOLLOW
+    fd = openSync(file, constants.O_RDONLY | noFollow | constants.O_NONBLOCK)
+    const info = fstatSync(fd)
+    if (!info.isFile() || info.size > max) return 'refused'
+    const buffer = Buffer.alloc(info.size)
+    let read = 0
+    while (read < buffer.length) {
+      const count = readSync(fd, buffer, read, buffer.length - read, read)
+      if (count === 0) break
+      read += count
+    }
+    return buffer.subarray(0, read).toString('utf8')
+  } catch {
+    return 'refused'
+  } finally {
+    if (fd !== undefined) closeSync(fd)
+  }
+}
+
+const ENV_MAX_BYTES = 64 * 1024
+function readSmallEnv(file: string, followLinks = false): string | 'absent' | 'refused' {
+  return readSmallFile(file, ENV_MAX_BYTES, followLinks)
+}
+const COMPOSE_MAX_BYTES = 1024 * 1024
+
 export async function analyze(pathValue: string, options: AnalyzeOptions = {}, containers?: ContainerRecord[]) {
   const base = resolve(pathValue)
   let composeFile: string
@@ -289,11 +356,18 @@ export async function analyze(pathValue: string, options: AnalyzeOptions = {}, c
   // The project directory is the file's: that is where Compose reads .env and
   // where the overlay goes, whether the file was named or found.
   const path = dirname(composeFile)
-  let result = await runProcess('docker', ['compose', '-f', composeFile, 'config', '--format', 'json'], {
-    cwd: path,
-    reject: false,
-  })
-  if (result.exitCode !== 0)
+  const unattended = options.unattended === true
+  let result = unattended
+    ? await runProcess('docker', ['compose', '-f', composeFile, 'config', '--format', 'json', '--no-interpolate'], {
+        cwd: path,
+        // SIGTERM, which `docker` hands on to the Compose plugin; execa ends it with SIGKILL after five seconds.
+        timeout: 20_000,
+      })
+    : await runProcess('docker', ['compose', '-f', composeFile, 'config', '--format', 'json'], {
+        cwd: path,
+        reject: false,
+      })
+  if (!unattended && result.exitCode !== 0)
     result = await runProcess(
       'docker',
       ['compose', '-f', composeFile, 'config', '--format', 'json', '--no-interpolate'],
@@ -306,9 +380,15 @@ export async function analyze(pathValue: string, options: AnalyzeOptions = {}, c
       .find((file) => existsSync(join(path, file))) ??
     ['compose.portta.yaml', 'compose.portta.yml'].find((file) => existsSync(join(path, file))) ??
     null
-  const projectFromEnv = existsSync(join(path, '.env'))
-    ? parseEnv(readFileSync(join(path, '.env'), 'utf8')).get('COMPOSE_PROJECT_NAME')
-    : undefined
+  // Unattended, a link is not followed; a person watching has Compose follow it, so the read does too.
+  const envText = readSmallEnv(join(path, '.env'), !unattended)
+  // Compose would read a .env we refuse, and the namespace is its answer: say so rather than guess another.
+  if (envText === 'refused')
+    throw new UsageError(
+      `${join(path, '.env')} is not read: ${unattended ? 'a link, a pipe' : 'a pipe'} or a file over 64 KB`,
+    )
+  const projectFromEnv =
+    envText === 'absent' || envText === 'refused' ? undefined : parseEnv(envText).get('COMPOSE_PROJECT_NAME')
   const declaredName = declaredComposeName(composeFile)
   const project = projectFromEnv || composeNamespace(declaredName ?? model.name ?? basename(path))
   const services = Object.entries(model.services).map(([name, service]) => ({

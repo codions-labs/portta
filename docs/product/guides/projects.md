@@ -3,9 +3,16 @@
 ## Adding from the panel
 
 Settings readers (owners and administrators) see **Add project** list the folders the host collector
-found under Projects Home. **Analyze** opens the same report as `portta analyze`; choose who may open
+found under Projects Home. **Analyze** opens the same report as `portta envs analyze`; choose who may open
 each site and register the project, then run the `portta adopt` command the page prepares. The
-collector refreshes the list every few minutes, and the panel never opens the folders itself.
+collector refreshes the list every minute, and the panel never opens the folders itself.
+
+A folder can be listed without a review. The collector does not review a folder whose Compose file or
+`.env` is a link, a pipe or too large (over 1 MB and 64 KB), whose Compose file includes or extends a
+file outside the folder or fetches something, or that Compose cannot read within 20 seconds. The reason
+is in `state/logs/host-metrics.log`. The review is made without resolving variables, so a value that
+comes from `.env` or the host shows as written, such as `${PORT}`; `portta envs analyze` on the host
+resolves them.
 
 ## Projects
 
