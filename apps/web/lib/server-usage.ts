@@ -47,9 +47,12 @@ function diskSplit(
   storage: DockerStorageInfo | null | undefined,
 ): UsageSplit | null {
   if (!host.storage) return null
-  const { totalBytes, usedBytes } = host.storage
+  const { totalBytes, usedBytes, availableBytes } = host.storage
   const used = Math.min(totalBytes, Math.max(0, usedBytes))
-  const base = { kind: 'disk' as const, total: totalBytes, used, free: totalBytes - used }
+  // What `df` calls Avail: a Linux filesystem keeps some blocks for root, so total minus used
+  // is more than anybody who is not root can write.
+  const free = finite(availableBytes) ? Math.min(Math.max(0, availableBytes), totalBytes - used) : totalBytes - used
+  const base = { kind: 'disk' as const, total: totalBytes, used, free }
   // Without a reading of the Docker disk the whole disk is all that can be said.
   if (!storage) return { ...base, projects: null, portta: null, system: null, shares: [] }
 

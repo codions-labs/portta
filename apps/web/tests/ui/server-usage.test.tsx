@@ -104,6 +104,24 @@ beforeEach(() =>
 )
 
 describe('the server page', () => {
+  it('says the numbers are old when the collector stopped, and keeps quiet while it is live', async () => {
+    renderWithQuery(<HostHealthView />, 'en')
+    await screen.findByRole('group', { name: 'Memory' })
+    expect(screen.queryByText(/not the server's state right now/)).toBeNull()
+
+    const live = await metricsCurrent()
+    metricsCurrent.mockResolvedValue({
+      ...live,
+      stale: true,
+      collectorActive: false,
+      ageSeconds: 7200,
+      collectedAt: Math.floor(Date.now() / 1000) - 7200,
+    })
+    renderWithQuery(<HostHealthView />, 'en')
+    expect(await screen.findByText(/from 2h .* not the server's state right now/)).toBeInTheDocument()
+    expect(screen.getByText('portta host watch')).toBeInTheDocument()
+  })
+
   it('reads memory, CPU and disk as the whole server, in percent', async () => {
     renderWithQuery(<HostHealthView />, 'en')
     const memory = await screen.findByRole('group', { name: 'Memory' })

@@ -7,7 +7,14 @@ import type { Diagnostic } from 'portta-contracts'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
-import { ServerClock, ServerDetails, UsageCards, WholeServerNote, WhoUsesServer } from '@/components/host/server-panels'
+import {
+  FreshnessNotice,
+  ServerClock,
+  ServerDetails,
+  UsageCards,
+  WholeServerNote,
+  WhoUsesServer,
+} from '@/components/host/server-panels'
 import { LearnMore } from '@/components/settings/learn-more'
 import { Empty, ErrorBox, Loading } from '@/components/shell-bits'
 import { StatusDot } from '@/components/ui/badge'
@@ -129,6 +136,7 @@ export function HostHealthView() {
   const [kind, setKind] = useState<UsageKind>('memory')
   return (
     <div className="space-y-5">
+      <FreshnessNotice />
       <WholeServerNote />
       <UsageCards />
       <WhoUsesServer kind={kind} onKind={setKind} />

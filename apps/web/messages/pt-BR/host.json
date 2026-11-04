@@ -94,6 +94,10 @@
       "docker": "Docker",
       "dockerResources": "Disponível para o Docker",
       "portta": "Pasta do Portta"
+    },
+    "stale": {
+      "title": "Estes números são de {{when}} e não são o estado do servidor agora",
+      "hint": "O coletor, que lê a máquina, não está rodando: depois de reiniciar o servidor ele não volta sozinho. Inicie-o no servidor com"
     }
   }
 }

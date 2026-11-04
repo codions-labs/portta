@@ -94,6 +94,10 @@
       "docker": "Docker",
       "dockerResources": "Available to Docker",
       "portta": "Portta folder"
+    },
+    "stale": {
+      "title": "These numbers are from {{when}} and are not the server's state right now",
+      "hint": "The collector that reads the machine is not running: it does not come back by itself after a reboot. Start it on the server with"
     }
   }
 }
