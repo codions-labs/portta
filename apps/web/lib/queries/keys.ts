@@ -34,6 +34,10 @@ export const keys = {
 
   docker: () => ['docker'] as const,
   dockerHost: () => ['docker', 'host'] as const,
+  dockerNetworks: () => ['docker', 'networks'] as const,
+  dockerImages: () => ['docker', 'images'] as const,
+  dockerVolumes: () => ['docker', 'volumes'] as const,
+  dockerUsage: () => ['docker', 'usage'] as const,
   containers: (filters: Record<string, string | undefined> = {}) =>
     ['docker', 'containers', normalise(filters)] as const,
   containerLogs: (id: string) => ['docker', 'containers', id, 'logs'] as const,

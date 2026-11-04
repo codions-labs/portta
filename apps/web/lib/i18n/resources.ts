@@ -7,6 +7,7 @@
 
 import enAccess from '../../messages/en/access.json' with { type: 'json' }
 import enAuth from '../../messages/en/auth.json' with { type: 'json' }
+import enCleanup from '../../messages/en/cleanup.json' with { type: 'json' }
 import enCommon from '../../messages/en/common.json' with { type: 'json' }
 import enDiagnostics from '../../messages/en/diagnostics.json' with { type: 'json' }
 import enDocker from '../../messages/en/docker.json' with { type: 'json' }
@@ -22,6 +23,7 @@ import enServices from '../../messages/en/services.json' with { type: 'json' }
 import enSettings from '../../messages/en/settings.json' with { type: 'json' }
 import ptAccess from '../../messages/pt-BR/access.json' with { type: 'json' }
 import ptAuth from '../../messages/pt-BR/auth.json' with { type: 'json' }
+import ptCleanup from '../../messages/pt-BR/cleanup.json' with { type: 'json' }
 import ptCommon from '../../messages/pt-BR/common.json' with { type: 'json' }
 import ptDiagnostics from '../../messages/pt-BR/diagnostics.json' with { type: 'json' }
 import ptDocker from '../../messages/pt-BR/docker.json' with { type: 'json' }
@@ -45,6 +47,7 @@ export const RESOURCES = {
     environments: enEnvironments,
     services: enServices,
     docker: enDocker,
+    cleanup: enCleanup,
     host: enHost,
     network: enNetwork,
     access: enAccess,
@@ -62,6 +65,7 @@ export const RESOURCES = {
     environments: ptEnvironments,
     services: ptServices,
     docker: ptDocker,
+    cleanup: ptCleanup,
     host: ptHost,
     network: ptNetwork,
     access: ptAccess,

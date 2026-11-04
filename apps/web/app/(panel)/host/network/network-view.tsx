@@ -7,6 +7,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Mono } from '@/components/copy'
+import { NetworksList } from '@/components/host/networks-list'
 import { Empty, ErrorBox, Loading, NoValue } from '@/components/shell-bits'
 import { StateBadge } from '@/components/status'
 import { Badge, StatusIndicator } from '@/components/ui/badge'
@@ -58,6 +59,9 @@ export function NetworkView() {
   const { t } = useTranslation('network')
   const { t: tc } = useTranslation('common')
   const query = useNetwork()
+  // Removing networks is the Docker list's job, and reading it needs `docker:read`.
+  // Without it the plain list below stays what it always was.
+  const mayListNetworks = useCan('docker:read')
 
   if (query.isPending) return <Loading />
   if (query.error) return <ErrorBox error={query.error} />
@@ -133,33 +137,37 @@ export function NetworkView() {
         </ReachCard>
       </div>
 
-      <Card>
-        <CardHeader
-          title={t('networks.title')}
-          actions={<span className="text-xs text-subtle tabular-nums">{networks.length}</span>}
-        />
-        {networks.length === 0 ? (
-          <Empty title={t('networks.empty')} />
-        ) : (
-          <ul aria-label={t('networks.title')}>
-            {networks.map((network) => (
-              <li
-                key={network.id}
-                className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-5 py-2.5 first:border-t-0"
-              >
-                <Mono kind="host" tone="ink" className="min-w-0 flex-[1_1_12rem] truncate">
-                  {network.name}
-                </Mono>
-                {network.internal ? <Badge tone="info">{t('networks.internal')}</Badge> : null}
-                <Badge tone={ROLE_TONE[network.role]}>{t(`networks.roles.${network.role}`)}</Badge>
-                <span className="w-28 shrink-0 text-right text-xs text-subtle tabular-nums">
-                  {t('networks.count', { count: network.containerCount })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      {mayListNetworks ? (
+        <NetworksList />
+      ) : (
+        <Card>
+          <CardHeader
+            title={t('networks.title')}
+            actions={<span className="text-xs text-subtle tabular-nums">{networks.length}</span>}
+          />
+          {networks.length === 0 ? (
+            <Empty title={t('networks.empty')} />
+          ) : (
+            <ul aria-label={t('networks.title')}>
+              {networks.map((network) => (
+                <li
+                  key={network.id}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-5 py-2.5 first:border-t-0"
+                >
+                  <Mono kind="host" tone="ink" className="min-w-0 flex-[1_1_12rem] truncate">
+                    {network.name}
+                  </Mono>
+                  {network.internal ? <Badge tone="info">{t('networks.internal')}</Badge> : null}
+                  <Badge tone={ROLE_TONE[network.role]}>{t(`networks.roles.${network.role}`)}</Badge>
+                  <span className="w-28 shrink-0 text-right text-xs text-subtle tabular-nums">
+                    {t('networks.count', { count: network.containerCount })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
     </div>
   )
 }
