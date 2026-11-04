@@ -52,7 +52,10 @@ export function readCurrentMetrics(config: PanelConfig, now = Date.now()): Metri
 
   if (!fresh) {
     const live = liveMetrics()?.snapshot() ?? null
-    if (live) return fromLive(live, file, now)
+    // A reading the sampler stopped refreshing is as old as a file nobody writes: it says so.
+    if (live && Math.floor(now / 1000) - live.collectedAt <= config.metricsStaleSeconds) {
+      return fromLive(live, file, now)
+    }
   }
   if (!file) return emptyMetrics()
   return {
@@ -127,6 +130,22 @@ export function metricsFor(metrics: MetricsCurrent, sees: (composeProject: strin
           projects: metrics.dockerStorage.projects.filter((entry) => allowed(entry.composeProject)),
         }
       : metrics.dockerStorage,
+  }
+}
+
+/**
+ * The history for somebody who sees only some projects: the host's own series, and the
+ * series of the projects they see and of Portta's. Container points carry no project,
+ * so they go: what a container of somebody else's used is not theirs to read.
+ */
+export function historyFor(history: MetricsHistory, sees: (composeProject: string) => boolean): MetricsHistory {
+  return {
+    ...history,
+    points: history.points.map((point) => ({
+      ...point,
+      projects: point.projects.filter((project) => sees(project.id)),
+      containers: [],
+    })),
   }
 }
 

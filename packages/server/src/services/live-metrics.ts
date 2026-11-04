@@ -41,6 +41,8 @@ const INFO_INTERVAL_MS = 60_000
 const STORAGE_INTERVAL_MS = 5 * 60_000
 const HISTORY_INTERVAL_MS = 15_000
 const HISTORY_KEEP_SECONDS = 60 * 60
+/** A Docker call that has not answered by then is given up on, so one hung request cannot hold the sampler. */
+const CALL_TIMEOUT_MS = 8_000
 /** How many `docker stats` are in flight at once: each one holds a second open. */
 const STATS_CONCURRENCY = 6
 
@@ -233,6 +235,14 @@ export function storageOf(path: string): HostStorageInfo | null {
 
 // -- the sampler --------------------------------------------------------------
 
+function within<T>(promise: Promise<T>, ms = CALL_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`no answer from Docker in ${ms} ms`)), ms)
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
 export interface LiveSources {
   /** `/proc/<name>` as text, or null when it cannot be read. */
   proc: (name: string) => string | null
@@ -309,7 +319,7 @@ export class LiveMetrics {
     try {
       const now = this.sources.now()
       if (this.info === null || now - this.infoAt >= INFO_INTERVAL_MS) {
-        this.info = await this.client.info().catch(() => null)
+        this.info = await within(this.client.info()).catch(() => null)
         this.infoAt = now
       }
       if (!readsTheHost(this.info, this.sources.platform)) {
@@ -323,7 +333,7 @@ export class LiveMetrics {
       }
       if (now - this.storageAt >= STORAGE_INTERVAL_MS) {
         this.storageAt = now
-        this.storage = storageFromDisk(await this.client.diskUsage(), Math.floor(now / 1000))
+        this.storage = storageFromDisk(await within(this.client.diskUsage(), 60_000), Math.floor(now / 1000))
       }
       this.latest = this.build(now)
       this.remember(this.latest, now)
@@ -347,7 +357,7 @@ export class LiveMetrics {
   }
 
   private async readContainers(): Promise<void> {
-    const listed = await this.client.listContainers(false)
+    const listed = await within(this.client.listContainers(false))
     const identities: ContainerIdentity[] = listed.map((item) => ({
       id: item.Id,
       name: (item.Names[0] ?? item.Id).replace(/^\//, ''),
@@ -359,7 +369,7 @@ export class LiveMetrics {
       while (next < identities.length) {
         const identity = identities[next++]
         if (!identity) return
-        const stats = await this.client.stats(identity.id, { oneShot: false }).catch(() => null)
+        const stats = await within(this.client.stats(identity.id, { oneShot: false })).catch(() => null)
         if (stats) metrics.push(containerFromStats(stats, { ...identity, service: serviceOf(identity.labels) }))
       }
     }
