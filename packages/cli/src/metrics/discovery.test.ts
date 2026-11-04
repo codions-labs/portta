@@ -136,10 +136,17 @@ describe('a Compose file that reaches outside its folder', () => {
   it('is recognised for includes and extends that leave the folder, and not for ones that stay', () => {
     const directory = '/srv/projects/loja'
     expect(includesOutside('include:\n  - path: ../other/compose.yaml\n', directory)).toBe(true)
-    expect(includesOutside('include:\n  - path: /etc/compose.yaml\n', directory)).toBe(true)
-    expect(includesOutside('services:\n  a:\n    extends:\n      file: /etc/shared.yaml\n', directory)).toBe(true)
+    expect(includesOutside('include:\n  - /etc/compose.yaml\n', directory)).toBe(true)
+    expect(includesOutside('include:\n  - path:\n      - ./a.yaml\n      - ../b.yaml\n', directory)).toBe(true)
+    expect(
+      includesOutside('services:\n  a:\n    extends:\n      file: /etc/shared.yaml\n      service: x\n', directory),
+    ).toBe(true)
     expect(includesOutside('include:\n  - path: ./base/compose.yaml\n', directory)).toBe(false)
+    expect(includesOutside('services:\n  a:\n    extends: b\n  b: {}\n', directory)).toBe(false)
+    // A secret or a config names a file Compose does not read when it prints the model.
+    expect(includesOutside('secrets:\n  pw:\n    file: ../secrets/pw\n', directory)).toBe(false)
     expect(includesOutside('services: {}\n', directory)).toBe(false)
+    expect(includesOutside('services: [unclosed', directory)).toBe(false)
   })
 
   it('is listed and not reviewed, and the reason is in the collector log', async () => {

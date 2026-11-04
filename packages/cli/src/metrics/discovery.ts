@@ -21,6 +21,7 @@ import {
   normalizeProjectsHome,
   parseEnv,
 } from 'portta-core'
+import { parse as parseYaml } from 'yaml'
 import { analyze, readSmallFile } from '../commands/projects.js'
 import { appendLog, writeAtomic } from './store.js'
 
@@ -58,14 +59,34 @@ export function reachesOut(composeText: string): boolean {
 }
 
 /**
- * Whether an `include:` or `extends: file:` names a path that leaves the folder: Compose reads it, so the
- * collector must not hand it a file that is not the project's. Only plain relative and absolute paths count.
+ * Whether an `include:` entry or a service's `extends.file` names a path that leaves the folder: Compose
+ * reads it, so the collector must not hand it a file that is not the project's. A `file:` of a secret or a
+ * config is not read by `config`, and is not looked at. A file that does not parse says nothing here.
  */
 export function includesOutside(composeText: string, directory: string): boolean {
-  const paths = [...composeText.matchAll(/^\s*(?:-\s*)?(?:path|file|extends):[ \t]*['"]?([^'"\s#]+)/gim)].map(
-    (match) => match[1]!,
-  )
+  let document: unknown
+  try {
+    document = parseYaml(composeText)
+  } catch {
+    return false
+  }
+  if (typeof document !== 'object' || document === null) return false
+  const root = document as { include?: unknown; services?: unknown }
+  const paths: unknown[] = []
+  for (const entry of Array.isArray(root.include) ? root.include : []) {
+    if (typeof entry === 'string') paths.push(entry)
+    else if (typeof entry === 'object' && entry !== null) {
+      const path = (entry as { path?: unknown }).path
+      paths.push(...(Array.isArray(path) ? path : [path]))
+    }
+  }
+  const services = typeof root.services === 'object' && root.services !== null ? Object.values(root.services) : []
+  for (const service of services) {
+    const extended = (service as { extends?: unknown } | null)?.extends
+    if (typeof extended === 'object' && extended !== null) paths.push((extended as { file?: unknown }).file)
+  }
   return paths.some((value) => {
+    if (typeof value !== 'string' || value === '') return false
     const target = resolve(directory, value)
     return target !== directory && !target.startsWith(`${directory}${sep}`)
   })
