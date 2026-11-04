@@ -41,6 +41,8 @@ export const AUDIT_ACTIONS = [
   'service.restarted',
   'container.operated',
   'container.destroyed',
+  'docker.resources_removed',
+  'docker.pruned',
   'access.bridge_opened',
   'access.bridge_closed',
   'protection.created',

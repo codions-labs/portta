@@ -7,6 +7,7 @@
 // consumer calls the same implementation.
 
 export * from './auth-types.ts'
+export * from './docker-resources.ts'
 export * from './docs.ts'
 export * from './documentation.ts'
 export * from './overview-types.ts'

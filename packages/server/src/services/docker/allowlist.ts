@@ -4,8 +4,10 @@
 // turn into an arbitrary Docker call.
 //
 // Anything absent from this list is denied, including endpoints the proxy would
-// technically forward (`/containers/prune`,
-// `/containers/{id}/archive`, `/networks/{id}/connect`, ...).
+// technically forward (`/containers/prune`, `/images/prune`, `/volumes/prune`,
+// `/images/create`, `/containers/{id}/archive`, `/networks/{id}/connect`, ...).
+// Cleaning is never a Docker prune: the panel lists what is there, decides what
+// may go, and removes it one resource at a time (ADR 0060).
 
 export interface AllowRule {
   method: 'GET' | 'POST' | 'DELETE'
@@ -14,6 +16,10 @@ export interface AllowRule {
 }
 
 const ID = '[a-zA-Z0-9][a-zA-Z0-9_.-]*'
+// An image is named by its id, or by `registry:port/repo/name:tag` to drop one
+// tag of several. No `@`, no `%`, no `..` and no `//`: `isAllowed` rejects the
+// last three before any pattern runs.
+const IMAGE_REF = '[a-zA-Z0-9][a-zA-Z0-9_.:/-]{0,254}'
 
 export const ALLOWED_ENDPOINTS: AllowRule[] = [
   { method: 'GET', pattern: /^\/_ping$/, purpose: 'liveness of the Docker daemon' },
@@ -39,6 +45,10 @@ export const ALLOWED_ENDPOINTS: AllowRule[] = [
   { method: 'GET', pattern: new RegExp(`^/exec/${ID}/json$`), purpose: 'inspect console exit and teardown state' },
   { method: 'POST', pattern: /^\/containers\/create$/, purpose: 'create a TCP access bridge, and nothing else' },
   { method: 'DELETE', pattern: new RegExp(`^/containers/${ID}$`), purpose: 'remove a container, never its volumes' },
+  { method: 'GET', pattern: /^\/system\/df$/, purpose: 'sizes and what uses what, for images and volumes' },
+  { method: 'DELETE', pattern: new RegExp(`^/networks/${ID}$`), purpose: 'remove one unprotected network' },
+  { method: 'DELETE', pattern: new RegExp(`^/images/${IMAGE_REF}$`), purpose: 'remove one unused image, never forced' },
+  { method: 'DELETE', pattern: new RegExp(`^/volumes/${ID}$`), purpose: 'remove one unmounted volume, never forced' },
 ]
 
 export class DockerAccessDenied extends Error {
@@ -65,4 +75,12 @@ export function isValidId(id: string): boolean {
 export function assertValidId(id: string): string {
   if (!isValidId(id)) throw new Error(`invalid container or network id: ${id}`)
   return id
+}
+
+/** An image id (with or without `sha256:`), or a `name:tag` reference. */
+export function assertValidImageRef(ref: string): string {
+  if (!new RegExp(`^${IMAGE_REF}$`).test(ref) || ref.includes('..') || ref.includes('//')) {
+    throw new Error(`invalid image reference: ${ref}`)
+  }
+  return ref
 }

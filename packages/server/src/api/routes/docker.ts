@@ -3,7 +3,15 @@ import { HTTPException } from 'hono/http-exception'
 import {
   ActionResult,
   ContainerSummary,
+  DockerDiskUsage,
   DockerHost,
+  DockerImageList,
+  DockerNetworkList,
+  DockerPruneBody,
+  DockerPruneResult,
+  DockerResourceRemoveBody,
+  DockerResourceRemoveResult,
+  DockerVolumeList,
   LogsResponse,
   type Ownership,
   RemovalPreview,
@@ -11,6 +19,7 @@ import {
 import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { findContainer, removalPreview, removeContainer, runContainerAction } from '../../services/actions.ts'
+import * as cleanup from '../../services/cleanup.ts'
 import { record } from '../audit.ts'
 import { containerIdParameter, documentRoute, tailParameter } from '../openapi.ts'
 import { readLogs } from './services.ts'
@@ -310,6 +319,159 @@ export function dockerRoutes(deps: AppDeps): Hono {
         ports: snapshot.ports,
       }
       return c.json(host)
+    },
+  )
+
+  // -- cleaning: networks, images, volumes ------------------------------------
+  // Reading is `docker:read`. Everything that removes is `docker:destroy`, which
+  // only an owner and an administrator hold. The server decides what may go: a
+  // protected resource is reported back as skipped, whatever the request says.
+
+  const listing = (operationId: string, summary: string, description: string, response: z.ZodType) =>
+    documentRoute({
+      tag: 'Docker',
+      operationId,
+      permission: 'docker:read',
+      summary,
+      description,
+      response,
+      errors: [500, 502],
+    })
+
+  app.get(
+    '/docker/networks',
+    listing(
+      'listDockerNetworks',
+      'List the Docker networks and which ones may be removed',
+      'Every network carries `protection`: null when it may be removed, otherwise why not (Portta, a Docker default, or in use).',
+      DockerNetworkList,
+    ),
+    async (c) => c.json(await cleanup.listNetworks(deps.client, deps.config)),
+  )
+
+  app.get(
+    '/docker/images',
+    listing(
+      'listDockerImages',
+      'List the Docker images with their sizes',
+      'Sizes come from the Docker disk usage report, so the call can take a moment on a host with many images.',
+      DockerImageList,
+    ),
+    async (c) => c.json(await cleanup.listImages(deps.client, deps.config)),
+  )
+
+  app.get(
+    '/docker/volumes',
+    listing(
+      'listDockerVolumes',
+      'List the Docker volumes with their sizes',
+      'A volume with a null size is one whose driver does not report it.',
+      DockerVolumeList,
+    ),
+    async (c) => c.json(await cleanup.listVolumes(deps.client, deps.config)),
+  )
+
+  app.get(
+    '/docker/usage',
+    listing(
+      'getDockerDiskUsage',
+      'Summarise what a cleanup could free',
+      'The counts a prune would act on, taken from the same rules the prune uses.',
+      DockerDiskUsage,
+    ),
+    async (c) => c.json(await cleanup.diskUsage(deps.client, deps.config)),
+  )
+
+  const removals = [
+    { path: 'networks', kind: 'network', operationId: 'removeDockerNetworks', remove: cleanup.removeNetworks },
+    { path: 'images', kind: 'image', operationId: 'removeDockerImages', remove: cleanup.removeImages },
+    { path: 'volumes', kind: 'volume', operationId: 'removeDockerVolumes', remove: cleanup.removeVolumes },
+  ] as const
+
+  for (const entry of removals) {
+    app.post(
+      `/docker/${entry.path}/remove`,
+      documentRoute({
+        tag: 'Docker',
+        operationId: entry.operationId,
+        permission: 'docker:destroy',
+        summary: `Remove Docker ${entry.path}`,
+        description:
+          'Removes what is allowed and reports the rest one by one. Nothing is forced: a resource that Portta owns, that Docker keeps as a default, or that a container still uses is skipped.',
+        response: DockerResourceRemoveResult,
+        request: DockerResourceRemoveBody,
+        errors: [400, 403, 500, 502],
+      }),
+      async (c) => {
+        const parsed = DockerResourceRemoveBody.safeParse(await c.req.json().catch(() => ({})))
+        if (!parsed.success) {
+          throw new HTTPException(400, {
+            message: 'a removal has to be confirmed and name what to remove: send {"confirm": true, "ids": [...]}',
+          })
+        }
+        const result = await entry.remove(deps.client, deps.config, parsed.data.ids)
+        deps.cache.invalidate()
+        await record(deps, c, {
+          action: 'docker.resources_removed',
+          resourceType: entry.kind,
+          resourceName:
+            result.results
+              .filter((outcome) => outcome.ok)
+              .map((outcome) => outcome.name)
+              .join(', ')
+              .slice(0, 500) || null,
+          metadata: {
+            requested: parsed.data.ids.length,
+            removed: result.removed,
+            skipped: result.skipped,
+            failed: result.failed,
+            freedBytes: result.freedBytes,
+          },
+        })
+        return c.json(result)
+      },
+    )
+  }
+
+  app.post(
+    '/docker/prune',
+    documentRoute({
+      tag: 'Docker',
+      operationId: 'pruneDocker',
+      permission: 'docker:destroy',
+      summary: 'Remove what nothing uses',
+      description:
+        'The panel lists the candidates and removes them one at a time, so Portta components, default networks and anything a container still references stay. `dryRun: true` lists and removes nothing.',
+      response: DockerPruneResult,
+      request: DockerPruneBody,
+      errors: [400, 403, 500, 502],
+    }),
+    async (c) => {
+      const parsed = DockerPruneBody.safeParse(await c.req.json().catch(() => ({})))
+      if (!parsed.success) {
+        throw new HTTPException(400, {
+          message: 'a prune has to be confirmed and say what to sweep: send {"confirm": true, "dryRun": ..., ...}',
+        })
+      }
+      const { confirm: _confirm, ...plan } = parsed.data
+      const result = await cleanup.prune(deps.client, deps.config, plan)
+      if (!plan.dryRun) {
+        deps.cache.invalidate()
+        await record(deps, c, {
+          action: 'docker.pruned',
+          resourceType: 'docker',
+          metadata: {
+            containers: plan.containers,
+            networks: plan.networks,
+            images: plan.images,
+            volumes: plan.volumes,
+            removed: result.removed,
+            failed: result.failed,
+            freedBytes: result.freedBytes,
+          },
+        })
+      }
+      return c.json(result)
     },
   )
 

@@ -3455,6 +3455,528 @@
         ],
         "additionalProperties": false
       },
+      "DockerProtection": {
+        "type": "string",
+        "enum": [
+          "portta",
+          "docker",
+          "in-use"
+        ],
+        "description": "Why a resource may not be removed: it belongs to Portta, it is one of Docker’s own defaults, or something still uses it"
+      },
+      "DockerNetworkItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "driver": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "internal": {
+            "type": "boolean"
+          },
+          "containerCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "shared",
+              "control",
+              "access",
+              "project",
+              "other"
+            ]
+          },
+          "project": {
+            "description": "The Compose project that created it, when there is one",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "protection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DockerProtection"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the resource may be removed"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "driver",
+          "scope",
+          "internal",
+          "containerCount",
+          "role",
+          "project",
+          "protection"
+        ],
+        "additionalProperties": false
+      },
+      "DockerNetworkList": {
+        "type": "object",
+        "properties": {
+          "networks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DockerNetworkItem"
+            }
+          }
+        },
+        "required": [
+          "networks"
+        ],
+        "additionalProperties": false
+      },
+      "DockerImageItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Image id without the sha256: prefix"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dangling": {
+            "type": "boolean",
+            "description": "No tag points at it any more"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "description": "The whole image, shared layers included"
+          },
+          "uniqueBytes": {
+            "description": "What removing it would free: the layers no other image shares",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "number",
+            "description": "Unix timestamp in seconds"
+          },
+          "containerCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Containers created from it, running or not"
+          },
+          "protection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DockerProtection"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the resource may be removed"
+          }
+        },
+        "required": [
+          "id",
+          "tags",
+          "dangling",
+          "sizeBytes",
+          "uniqueBytes",
+          "createdAt",
+          "containerCount",
+          "protection"
+        ],
+        "additionalProperties": false
+      },
+      "DockerImageList": {
+        "type": "object",
+        "properties": {
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DockerImageItem"
+            }
+          },
+          "totalBytes": {
+            "type": "number"
+          },
+          "reclaimableBytes": {
+            "type": "number",
+            "description": "Unique size of the images nothing uses and the panel may remove"
+          }
+        },
+        "required": [
+          "images",
+          "totalBytes",
+          "reclaimableBytes"
+        ],
+        "additionalProperties": false
+      },
+      "DockerVolumeItem": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "driver": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "description": "Null when the driver does not report a size",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "description": "Unix timestamp in seconds",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "containerCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Containers that mount it, running or not"
+          },
+          "anonymous": {
+            "type": "boolean",
+            "description": "Docker named it: a container asked for a volume without naming one"
+          },
+          "project": {
+            "description": "The Compose project that created it, when there is one",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "protection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DockerProtection"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the resource may be removed"
+          }
+        },
+        "required": [
+          "name",
+          "driver",
+          "sizeBytes",
+          "createdAt",
+          "containerCount",
+          "anonymous",
+          "project",
+          "protection"
+        ],
+        "additionalProperties": false
+      },
+      "DockerVolumeList": {
+        "type": "object",
+        "properties": {
+          "volumes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DockerVolumeItem"
+            }
+          },
+          "totalBytes": {
+            "type": "number"
+          },
+          "reclaimableBytes": {
+            "type": "number",
+            "description": "Size of the volumes nothing mounts and the panel may remove"
+          }
+        },
+        "required": [
+          "volumes",
+          "totalBytes",
+          "reclaimableBytes"
+        ],
+        "additionalProperties": false
+      },
+      "DockerDiskUsage": {
+        "type": "object",
+        "properties": {
+          "containers": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "stopped": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "Stopped containers the panel may remove"
+              }
+            },
+            "required": [
+              "total",
+              "stopped"
+            ],
+            "additionalProperties": false
+          },
+          "networks": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "unused": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "Networks nothing references that the panel may remove"
+              }
+            },
+            "required": [
+              "total",
+              "unused"
+            ],
+            "additionalProperties": false
+          },
+          "images": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "totalBytes": {
+                "type": "number"
+              },
+              "dangling": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "danglingBytes": {
+                "type": "number"
+              },
+              "unused": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "unusedBytes": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "total",
+              "totalBytes",
+              "dangling",
+              "danglingBytes",
+              "unused",
+              "unusedBytes"
+            ],
+            "additionalProperties": false
+          },
+          "volumes": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "totalBytes": {
+                "type": "number"
+              },
+              "anonymous": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "anonymousBytes": {
+                "type": "number"
+              },
+              "unused": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "unusedBytes": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "total",
+              "totalBytes",
+              "anonymous",
+              "anonymousBytes",
+              "unused",
+              "unusedBytes"
+            ],
+            "additionalProperties": false
+          },
+          "buildCacheBytes": {
+            "type": "number",
+            "description": "Reported only: cleaning it needs the Docker CLI on the host"
+          }
+        },
+        "required": [
+          "containers",
+          "networks",
+          "images",
+          "volumes",
+          "buildCacheBytes"
+        ],
+        "additionalProperties": false
+      },
+      "DockerResourceKind": {
+        "type": "string",
+        "enum": [
+          "container",
+          "network",
+          "image",
+          "volume"
+        ],
+        "description": "A kind of Docker resource the panel can clean"
+      },
+      "DockerResourceOutcome": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/DockerResourceKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "skipped": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sizeBytes": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "ok",
+          "skipped",
+          "reason",
+          "sizeBytes"
+        ],
+        "additionalProperties": false
+      },
+      "DockerResourceRemoveResult": {
+        "type": "object",
+        "properties": {
+          "removed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "freedBytes": {
+            "type": "number"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DockerResourceOutcome"
+            }
+          }
+        },
+        "required": [
+          "removed",
+          "failed",
+          "skipped",
+          "freedBytes",
+          "results"
+        ],
+        "additionalProperties": false
+      },
+      "DockerPruneResult": {
+        "type": "object",
+        "properties": {
+          "dryRun": {
+            "type": "boolean"
+          },
+          "removed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "freedBytes": {
+            "type": "number"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DockerResourceOutcome"
+            }
+          }
+        },
+        "required": [
+          "dryRun",
+          "removed",
+          "failed",
+          "freedBytes",
+          "items"
+        ],
+        "additionalProperties": false
+      },
       "NetworkView": {
         "type": "object",
         "properties": {
@@ -8217,6 +8739,8 @@
               "service.restarted",
               "container.operated",
               "container.destroyed",
+              "docker.resources_removed",
+              "docker.pruned",
               "access.bridge_opened",
               "access.bridge_closed",
               "protection.created",
@@ -12397,6 +12921,645 @@
           }
         ],
         "x-portta-permission": "docker:read"
+      }
+    },
+    "/docker/networks": {
+      "get": {
+        "operationId": "listDockerNetworks",
+        "tags": [
+          "Docker"
+        ],
+        "summary": "List the Docker networks and which ones may be removed",
+        "description": "Every network carries `protection`: null when it may be removed, otherwise why not (Portta, a Docker default, or in use).",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DockerNetworkList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "docker:read"
+      }
+    },
+    "/docker/images": {
+      "get": {
+        "operationId": "listDockerImages",
+        "tags": [
+          "Docker"
+        ],
+        "summary": "List the Docker images with their sizes",
+        "description": "Sizes come from the Docker disk usage report, so the call can take a moment on a host with many images.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DockerImageList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "docker:read"
+      }
+    },
+    "/docker/volumes": {
+      "get": {
+        "operationId": "listDockerVolumes",
+        "tags": [
+          "Docker"
+        ],
+        "summary": "List the Docker volumes with their sizes",
+        "description": "A volume with a null size is one whose driver does not report it.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DockerVolumeList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "docker:read"
+      }
+    },
+    "/docker/usage": {
+      "get": {
+        "operationId": "getDockerDiskUsage",
+        "tags": [
+          "Docker"
+        ],
+        "summary": "Summarise what a cleanup could free",
+        "description": "The counts a prune would act on, taken from the same rules the prune uses.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DockerDiskUsage"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "docker:read"
+      }
+    },
+    "/docker/networks/remove": {
+      "post": {
+        "operationId": "removeDockerNetworks",
+        "tags": [
+          "Docker"
+        ],
+        "summary": "Remove Docker networks",
+        "description": "Removes what is allowed and reports the rest one by one. Nothing is forced: a resource that Portta owns, that Docker keeps as a default, or that a container still uses is skipped.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DockerResourceRemoveResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "ids": {
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    }
+                  }
+                },
+                "required": [
+                  "confirm",
+                  "ids"
+                ],
+                "additionalProperties": false,
+                "ref": "DockerResourceRemoveBody"
+              }
+            }
+          }
+        },
+        "x-portta-permission": "docker:destroy"
+      }
+    },
+    "/docker/images/remove": {
+      "post": {
+        "operationId": "removeDockerImages",
+        "tags": [
+          "Docker"
+        ],
+        "summary": "Remove Docker images",
+        "description": "Removes what is allowed and reports the rest one by one. Nothing is forced: a resource that Portta owns, that Docker keeps as a default, or that a container still uses is skipped.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DockerResourceRemoveResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "ids": {
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    }
+                  }
+                },
+                "required": [
+                  "confirm",
+                  "ids"
+                ],
+                "additionalProperties": false,
+                "ref": "DockerResourceRemoveBody"
+              }
+            }
+          }
+        },
+        "x-portta-permission": "docker:destroy"
+      }
+    },
+    "/docker/volumes/remove": {
+      "post": {
+        "operationId": "removeDockerVolumes",
+        "tags": [
+          "Docker"
+        ],
+        "summary": "Remove Docker volumes",
+        "description": "Removes what is allowed and reports the rest one by one. Nothing is forced: a resource that Portta owns, that Docker keeps as a default, or that a container still uses is skipped.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DockerResourceRemoveResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "ids": {
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    }
+                  }
+                },
+                "required": [
+                  "confirm",
+                  "ids"
+                ],
+                "additionalProperties": false,
+                "ref": "DockerResourceRemoveBody"
+              }
+            }
+          }
+        },
+        "x-portta-permission": "docker:destroy"
+      }
+    },
+    "/docker/prune": {
+      "post": {
+        "operationId": "pruneDocker",
+        "tags": [
+          "Docker"
+        ],
+        "summary": "Remove what nothing uses",
+        "description": "The panel lists the candidates and removes them one at a time, so Portta components, default networks and anything a container still references stay. `dryRun: true` lists and removes nothing.",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DockerPruneResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "dryRun": {
+                    "type": "boolean"
+                  },
+                  "containers": {
+                    "type": "boolean",
+                    "description": "Stopped containers that are not Portta components"
+                  },
+                  "networks": {
+                    "type": "boolean",
+                    "description": "Networks no container references"
+                  },
+                  "images": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "dangling",
+                      "unused"
+                    ],
+                    "description": "`dangling` is untagged images; `unused` is every image no container was created from"
+                  },
+                  "volumes": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "anonymous",
+                      "unused"
+                    ],
+                    "description": "`anonymous` is the volumes Docker named for a container; `unused` also takes named volumes nothing mounts, which is where databases live"
+                  }
+                },
+                "required": [
+                  "confirm",
+                  "dryRun",
+                  "containers",
+                  "networks",
+                  "images",
+                  "volumes"
+                ],
+                "additionalProperties": false,
+                "ref": "DockerPruneBody"
+              }
+            }
+          }
+        },
+        "x-portta-permission": "docker:destroy"
       }
     },
     "/network": {

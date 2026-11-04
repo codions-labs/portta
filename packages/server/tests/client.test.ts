@@ -73,6 +73,34 @@ describe('the client refuses to widen its own permissions', () => {
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'DELETE' })
   })
 
+  it('removes a network, an image and a volume without ever forcing them', async () => {
+    stub()
+    const client = new DockerClient('http://proxy:2375')
+    await client.removeNetwork('net1')
+    await client.removeImage('ghcr.io/acme/app:1')
+    await client.removeVolume('shop_data')
+    const calls = fetchMock.mock.calls.map(([target, init]) => ({
+      url: new URL(String(target)),
+      method: (init as RequestInit).method,
+    }))
+    expect(calls.map((call) => [call.method, call.url.pathname])).toEqual([
+      ['DELETE', `/${DOCKER_ENGINE_API_VERSION}/networks/net1`],
+      ['DELETE', `/${DOCKER_ENGINE_API_VERSION}/images/ghcr.io/acme/app:1`],
+      ['DELETE', `/${DOCKER_ENGINE_API_VERSION}/volumes/shop_data`],
+    ])
+    for (const call of calls.slice(1)) expect(call.url.searchParams.get('force')).toBe('0')
+  })
+
+  it('refuses to force a network, an image or a volume even by reaching past the public surface', async () => {
+    stub()
+    const client = new DockerClient('http://proxy:2375')
+    for (const path of ['/networks/abc', '/images/abc', '/volumes/abc']) {
+      // @ts-expect-error reaching past the public surface on purpose
+      await expect(client.request('DELETE', path, { query: { force: '1' } })).rejects.toThrow(/never forces/)
+    }
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('never issues a call the allowlist does not name', async () => {
     stub()
     const client = new DockerClient('http://proxy:2375')
