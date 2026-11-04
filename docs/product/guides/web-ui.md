@@ -434,7 +434,8 @@ is recorded in the audit log. Editing and sending stay in the terminal or the ag
 
 Never offered: editing configuration or environment variables of a container,
 changing its networks or volumes, running an arbitrary command, resetting a
-database, or any kind of prune. The
+database, or Docker's own `prune` (cleaning is done a resource at a time, see
+[Cleaning the server](#cleaning-the-server)). The
 [container console](container-console.md) is a fixed shell inside a project
 container, never a host shell and never a gateway container.
 
@@ -450,6 +451,40 @@ Removing several asks you to type `remove N`, lists each container and its
 image, and is the same call as removing one: volumes, images and networks stay,
 and only what a container wrote outside any volume is lost. Each removal is in
 the audit log on its own, and a failure on one does not stop the others.
+
+### Cleaning the server
+
+A Docker host fills up with what nobody owns any more: networks of removed projects, images of
+old builds, volumes of containers that are gone. Server has a list for each, with the size each
+takes, and the same way of acting on them as the containers: tick some, or "select all", and
+remove. Removing needs the `docker:destroy` permission, which an owner and an administrator
+hold; everybody else sees the lists and the sizes without a checkbox.
+
+| Where | What it shows | What it never lets you tick |
+|---|---|---|
+| Server > Containers | every container | Portta's own components |
+| Server > Images | size of each image, how much removing it frees, how many containers use it | Portta's images, and any image a container was created from |
+| Server > Volumes | size of each volume, which project it belongs to, how many containers mount it | Portta's volumes, and any volume a container mounts, stopped or not |
+| Server > Network | the Docker networks with their role | Portta's networks, Docker's defaults (`bridge`, `host`, `none`), and any network a container, stopped or not, still points at |
+
+A locked row says why. The server decides this on a fresh read of the host, so a request that
+names a protected resource is refused and reported, never obeyed. Nothing is forced: Docker
+refusing something that is in use stays in force.
+
+An image's size is the whole image; removing it frees only the layers other images do not
+share, and that is the number beside "frees". A volume is data and often a database, so
+deleting volumes asks you to type `remove N` back, the way removing containers does.
+
+**Maintenance** is the sweep. It starts from what would be freed (stopped containers, unused
+networks, unused images, unused volumes), lets you choose what to sweep, and shows the exact list
+that would go before it asks. Sweeping happens one resource at a time, so one that cannot go is
+reported and the others still do. The defaults are the cautious ones: unused networks and
+untagged images. Stopped containers are opt in, and unused **named** volumes are a separate
+choice with a warning, because those are usually the database of a project that was removed.
+Docker's own `prune` is never used, so nothing outside these rules can be swept with it.
+
+Each removal and each sweep is in the audit log with what was asked and what happened. The
+build cache is shown but not cleaned from the panel: on the server, `docker builder prune`.
 
 ### Removing a container
 
@@ -548,13 +583,16 @@ the write. It also keeps the ForwardAuth registry, `state/auth/protections.json`
 which holds who may open each hostname. See [ADR 0011](../../development/adr/0011-bounded-traefik-write-surface.md).
 
 **Docker.** Its own socket proxy grants the read endpoints, the container
-lifecycle and exec, and denies images, volumes, build, swarm, secrets, plugins
-and the system endpoints. On top of that the panel refuses any request that is
-not on its own allowlist: exec is limited to creating, attaching, resizing and
-inspecting the console session, and `prune`, `archive` and container `attach`
-are denied even where the proxy would forward them. See
-[ADR 0008](../../development/adr/0008-web-panel-socket-proxy.md) and
-[ADR 0043](../../development/adr/0043-container-console-over-docker-exec.md).
+lifecycle, exec, and the removal of networks, images and volumes with the disk
+usage report that gives their sizes. It denies build, swarm, secrets and
+plugins. On top of that the panel refuses any request that is not on its own
+allowlist: exec is limited to creating, attaching, resizing and inspecting the
+console session, cleaning is limited to `GET /system/df` and the removal of one
+network, image or volume at a time, never forced, and every `prune`, image pull,
+`archive` and container `attach` are denied even where the proxy would forward
+them. See [ADR 0008](../../development/adr/0008-web-panel-socket-proxy.md),
+[ADR 0043](../../development/adr/0043-container-console-over-docker-exec.md) and
+[ADR 0060](../../development/adr/0060-the-panel-cleans-networks-images-and-volumes.md).
 
 **Console.** A shell in a project container is held by the owner and
 administrators only. When the panel is exposed on a `domain` or `public`, the

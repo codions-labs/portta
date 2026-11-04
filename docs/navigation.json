@@ -601,6 +601,11 @@
           "description": "Why the Add project pages read folders and plans that the host collector publishes."
         },
         {
+          "source": "docs/development/adr/0060-the-panel-cleans-networks-images-and-volumes.md",
+          "slug": "adr/0060-the-panel-cleans-networks-images-and-volumes",
+          "description": "Why the panel may remove networks, images and volumes, and what it never touches."
+        },
+        {
           "source": "docs/development/adr/0057-a-panel-session-opens-a-protected-site.md",
           "slug": "adr/0057-a-panel-session-opens-a-protected-site",
           "description": "How someone signed in to the panel opens a protected site without its password."
