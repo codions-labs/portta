@@ -58,8 +58,8 @@ const { ServiceAlias } = await import('@/components/service-alias')
 const { EnvironmentsView: EnvironmentsPage } = await import('../../app/(panel)/environments/environments-view.tsx')
 
 const WEB_URL = {
-  url: 'http://alpha-web.localhost',
-  host: 'alpha-web.localhost',
+  url: 'http://alpha--web.localhost',
+  host: 'alpha--web.localhost',
   scope: 'local' as const,
   scheme: 'http' as const,
 }

@@ -8,7 +8,7 @@ import { makeApp, testConfig } from './helpers.ts'
 const ROUTERS = [
   {
     name: 'alpha-web@docker',
-    rule: 'Host(`alpha-web.localhost`)',
+    rule: 'Host(`alpha--web.localhost`)',
     entryPoints: ['web'],
     middlewares: ['portta-secure-headers@file'],
     service: 'alpha-web',
@@ -114,7 +114,7 @@ describe('reading the verdict', () => {
 })
 
 describe('matching a router to a service', () => {
-  const container = { urls: [{ host: 'alpha-web.localhost' }] } as ContainerSummary
+  const container = { urls: [{ host: 'alpha--web.localhost' }] } as ContainerSummary
   const verdict = { routers: [] } as unknown as TraefikVerdict
 
   it('matches on the hostname, so a project that named its own router still matches', async () => {
@@ -134,7 +134,7 @@ describe('GET /api/services/:id/traefik', () => {
     const body = (await response.json()) as ServiceTraefik
 
     expect(body.available).toBe(true)
-    expect(body.expectedHosts).toEqual(['alpha-web.localhost'])
+    expect(body.expectedHosts).toEqual(['alpha--web.localhost'])
     expect(body.routers[0]?.name).toBe('alpha-web@docker')
     expect(body.routers[0]?.dashboardUrl).toContain('/dashboard/#/http/routers/')
   })

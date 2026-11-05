@@ -1,9 +1,9 @@
 /**
  * Where a project's hostname comes from.
  *
- * Portta derives every project hostname as `<project>-<service>.<base>`, and
+ * Portta derives every project hostname as `<project>--<service>.<base>`, and
  * until now `<base>` was `localhost` unless the gateway ran a remote profile.
- * That is right on a workstation and wrong on a VPS: `demo-web.localhost`
+ * That is right on a workstation and wrong on a VPS: `demo--web.localhost`
  * resolves to the loopback of whoever typed it, so a panel reached over the
  * internet advertised URLs nobody could open.
  *
@@ -22,7 +22,7 @@
  * See docs/development/adr/0022-project-domain-modes.md.
  */
 
-import { hostLabel } from './hostname.ts'
+import { hostnameFor } from './hostname.ts'
 
 export const DOMAIN_MODES = ['local', 'auto', 'custom'] as const
 export type DomainMode = (typeof DOMAIN_MODES)[number]
@@ -52,7 +52,7 @@ export function isIpv4(value: string): boolean {
 /**
  * Both providers accept the dotted form (`1.2.3.4.sslip.io`) and the dashed one
  * (`1-2-3-4.sslip.io`). The dashed form is used here because it keeps the
- * address to a single DNS label, which leaves `<project>-<service>` as its own
+ * address to a single DNS label, which leaves `<project>--<service>` as its own
  * label and makes the whole name legal for a TLS certificate covering
  * `*.1-2-3-4.sslip.io`.
  */
@@ -121,5 +121,5 @@ export function resolveDomain(options: {
 
 /** What a project's hostname will look like, for a preview the operator reads. */
 export function exampleHostnames(domain: string, services = ['web', 'api'], project = 'loja'): string[] {
-  return services.map((service) => `${hostLabel({ project, service })}.${domain}`)
+  return services.map((service) => hostnameFor({ project, service }, domain))
 }

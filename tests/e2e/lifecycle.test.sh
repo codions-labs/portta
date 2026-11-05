@@ -54,14 +54,14 @@ up_demo demo-b &
 wait
 
 describe "baseline"
-it "demo-a is routed"; assert_success wait_for_route http://demo-a-web.localhost/ 200
+it "demo-a is routed"; assert_success wait_for_route http://demo-a--web.localhost/ 200
 it "doctor passes with two projects on the gateway"; assert_success "$GW" doctor
 
 describe "restarting the gateway"
 "$GW" restart >/dev/null 2>&1
 it "the application container was not restarted"
 assert_eq "running" "$(test_container_state demo-a-web-1)"
-it "routes come back on their own"; assert_success wait_for_route http://demo-a-web.localhost/ 200
+it "routes come back on their own"; assert_success wait_for_route http://demo-a--web.localhost/ 200
 
 describe "stopping the gateway"
 "$GW" down >/dev/null 2>&1
@@ -73,13 +73,13 @@ assert_success sh -c "docker volume ls --format '{{.Name}}' | grep -q '^demo-a_p
 
 describe "starting the gateway again"
 "$GW" up local >/dev/null 2>&1
-it "existing applications are rediscovered"; assert_success wait_for_route http://demo-a-web.localhost/ 200
-it "so is the second project"; assert_success wait_for_route http://demo-b-web.localhost/ 200
+it "existing applications are rediscovered"; assert_success wait_for_route http://demo-a--web.localhost/ 200
+it "so is the second project"; assert_success wait_for_route http://demo-b--web.localhost/ 200
 
 describe "stopping one project does not disturb the other"
 down_demo demo-a
-it "demo-b is still served"; assert_eq "200" "$(test_http_code http://demo-b-web.localhost/)"
+it "demo-b is still served"; assert_eq "200" "$(test_http_code http://demo-b--web.localhost/)"
 it "the gateway is still healthy"; assert_success wait_for_health "$(test_gateway_container traefik)"
-it "demo-a's route is gone"; assert_ne "200" "$(test_http_code http://demo-a-web.localhost/)"
+it "demo-a's route is gone"; assert_ne "200" "$(test_http_code http://demo-a--web.localhost/)"
 
 t_summary

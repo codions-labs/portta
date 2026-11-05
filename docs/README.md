@@ -121,7 +121,7 @@ Use `/docs` in the panel, or `portta docs` in a terminal.
 - [0020. An installation is one runtime directory](development/adr/0020-installer-and-portta-home.md)
 - [0021. Panel access is an explicit decision](development/adr/0021-panel-access-modes.md)
 - [0022. The base domain is a mode, and a host with no domain gets one from its address](development/adr/0022-project-domain-modes.md)
-- [0023. A service's whole name lives in one DNS label](development/adr/0023-flat-hostname-labels.md)
+- [0023. Generated hostnames separate components with -- in one DNS label](development/adr/0023-flat-hostname-labels.md) — 0023. A service's whole name lives in one DNS label.
 - [0024. A service has endpoints, not an access mode](development/adr/0024-capabilities-providers-endpoints.md)
 - [0025. One tunnel, one wildcard rule, and Traefik keeps routing](development/adr/0025-cloudflare-tunnel.md)
 - [0026. Applying panel settings uses one isolated applier](development/adr/0026-applying-settings-from-the-panel.md)

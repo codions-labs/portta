@@ -15,7 +15,7 @@ describe('saving an exposure decision', () => {
       project: 'old',
       service: 'web',
       container: 'old-web-1',
-      host: 'new-web.example.test',
+      host: 'new--web.example.test',
       port: 80,
       entryPoint: 'websecure',
     }
@@ -30,7 +30,7 @@ describe('saving an exposure decision', () => {
     saveExposure(root, store, 'remote-public')
 
     const rendered = readFileSync(file, 'utf8')
-    expect(rendered).not.toContain('Host(`new-web.example.test`)')
+    expect(rendered).not.toContain('Host(`new--web.example.test`)')
     expect(parseAliases(rendered)).toEqual([alias])
   })
 })

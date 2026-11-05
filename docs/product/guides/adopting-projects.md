@@ -203,7 +203,7 @@ balancer and start receiving each other's traffic.
 
 ```bash
 portta urls --project <name>
-curl -sI http://<name>-web.localhost | head -1
+curl -sI http://<name>--web.localhost | head -1
 
 # the real test: a second environment, in parallel
 git worktree add ../<name>-issue1 -b issue1

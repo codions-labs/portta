@@ -8,7 +8,7 @@
 # The base Compose file should declare the rustfs service itself; this overlay
 # only adds the network and labels for the console.
 #
-#   -> http://<COMPOSE_PROJECT_NAME>-rustfs.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>--rustfs.localhost
 # ============================================================================
 
 services:

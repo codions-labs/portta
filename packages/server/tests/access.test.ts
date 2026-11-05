@@ -61,9 +61,9 @@ describe('reaching a database by hostname', () => {
     expect(view.tcpRoutingEnabled).toBe(true)
     expect(service?.routing).toBe('starttls-sni')
     expect(service?.routed).toBe(true)
-    expect(service?.gatewayAddress).toBe('alpha-postgres.localhost:5432')
+    expect(service?.gatewayAddress).toBe('alpha--postgres.localhost:5432')
     expect(service?.gatewayConnectionString).toBe(
-      'postgresql://<user>@alpha-postgres.localhost:5432/<database>?sslmode=require',
+      'postgresql://<user>@alpha--postgres.localhost:5432/<database>?sslmode=require',
     )
   })
 
@@ -117,7 +117,7 @@ describe('reaching a database by hostname', () => {
     const byService = Object.fromEntries(view.services.map((s) => [s.service, s]))
 
     expect(byService.redis?.routing).toBe('tls-sni')
-    expect(byService.redis?.gatewayConnectionString).toContain('--sni alpha-redis.localhost')
+    expect(byService.redis?.gatewayConnectionString).toContain('--sni alpha--redis.localhost')
     expect(byService.mysql?.routing).toBe('unsupported')
     expect(byService.mysql?.gatewayAddress).toBeNull()
   })
@@ -244,7 +244,7 @@ describe('GET /api/access/services/:project/:service/connection', () => {
     const { app } = makeApp({ containers: [...GATEWAY, routed] }, tcp)
     const view = (await (await app.request('/api/access')).json()) as AccessView
     expect(view.services.find((item) => item.service === 'postgres')?.gatewayAddress).toBe(
-      'alpha-postgres.localhost:5432',
+      'alpha--postgres.localhost:5432',
     )
   })
 

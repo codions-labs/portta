@@ -1,84 +1,102 @@
+import { nameIdentity, shortHash } from './name-digest.ts'
 import { slug } from './namespace.ts'
 
-/**
- * What a service is called, in one DNS label: `<project>-<service>`, the
- * name Traefik's `defaultRule` produces and the panel re-derives for display
- * ([ADR 0005](../../../docs/development/adr/0005-hostname-convention.md)).
- * A context — a branch, a pull request, a preview — is appended with `--`:
- * `slug` collapses runs of `-`, so no component can ever contain `--`, which
- * keeps the separator unambiguous.
- *
- *     storefront-web.example.com
- *     storefront-web--pr-42.example.com
- *
- * ### Why one label and not `web.storefront.example.com`
- *
- * Measured, not assumed. Cloudflare's Universal SSL covers the apex and
- * **first-level subdomains only**; `web.storefront.example.com` is a second
- * level and needs Advanced Certificate Manager, a paid add-on. The same holds
- * for the automatic domains: a certificate for `*.1-2-3-4.sslip.io` cannot
- * cover `web.demo.1-2-3-4.sslip.io`. Keeping the whole name in one label means
- * a single wildcard — one the operator already has — covers every project this
- * gateway will ever route.
- *
- * See docs/development/adr/0023-flat-hostname-labels.md.
- */
-
-/** A single DNS label may not exceed 63 octets (RFC 1035). */
+/** One label keeps every generated endpoint inside the same wildcard certificate. */
 export const MAX_LABEL = 63
-
+export const MAX_HOSTNAME = 253
 export const COMPONENT_SEPARATOR = '--'
+export const HOSTNAME_LABEL = 'portta.hostname'
+export const HOSTNAME_CONTEXT_LABEL = 'portta.context'
+
+export { shortHash }
 
 export interface HostLabelParts {
+  /** The Compose namespace is opaque; it may already include a branch. */
   project: string
   service: string
-  /** Branch, pull request, preview — anything that distinguishes one run. */
+  /** An independent context, never a branch repeated from the namespace. */
   context?: string | null
 }
 
-/**
- * A short, stable digest, used only to keep two long names apart.
- *
- * FNV-1a: four lines, no dependency, and no cryptographic claim — the only
- * property needed is that two different inputs rarely collide, which for the
- * handful of names one gateway serves is comfortably enough.
- */
-export function shortHash(value: string): string {
-  let hash = 0x811c9dc5
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 0x01000193) >>> 0
+function component(value: string, field: string): string {
+  nameIdentity([value])
+  const normalized = slug(value)
+  if (!normalized) throw new Error(`${field} has no hostname characters`)
+  return normalized
+}
+
+/** R-LDH labels reserve hyphens in positions three and four for IDNA. */
+function avoidReservedLabel(label: string): string {
+  return label.slice(2, 4) === '--' ? `env-${label}` : label
+}
+
+/** Validate a precomputed label instead of trusting arbitrary Docker metadata. */
+export function validateHostLabel(label: string): string {
+  if (label.length > MAX_LABEL || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label) || label.slice(2, 4) === '--') {
+    throw new Error(`invalid hostname label: ${label}`)
   }
-  return hash.toString(36).padStart(6, '0').slice(-6)
+  return label
 }
 
-/**
- * Trim a label to fit, keeping a digest of what was removed.
- *
- * A label that is simply cut loses the part that made it distinct — two long
- * branch names would collapse onto the same hostname and silently route to
- * whichever container Traefik matched first. Replacing the tail with a digest
- * of the *whole* original keeps them apart.
- */
-export function fitLabel(label: string, limit = MAX_LABEL): string {
+/** Fit the readable label while hashing its complete original identity. */
+export function fitLabel(label: string, limit = MAX_LABEL, identity = label): string {
+  if (!Number.isSafeInteger(limit) || limit < 10 || limit > MAX_LABEL) throw new Error('invalid hostname label limit')
   if (label.length <= limit) return label
-  const digest = shortHash(label)
-  const keep = limit - digest.length - 1
-  return `${label.slice(0, keep).replace(/-+$/, '')}-${digest}`
+  return `${label.slice(0, limit - 9).replace(/-+$/, '')}-${shortHash(identity)}`
 }
 
-/**
- * The label a service answers on, before the base domain.
- *
- * Every component is slugged first, so an input like `feature/auth/login`
- * becomes `feature-auth-login` and can never introduce a stray `--` that would
- * be read back as a component boundary. Without a context this is exactly
- * what Traefik's defaultRule produces, so the two never disagree.
- */
+function readableParts(parts: HostLabelParts): { label: string; identity: string } {
+  const identity = nameIdentity([parts.project, parts.service, parts.context ?? ''])
+  const fields = [component(parts.project, 'project'), component(parts.service, 'service')]
+  if (parts.context) fields.push(component(parts.context, 'context'))
+  return { label: avoidReservedLabel(fields.join(COMPONENT_SEPARATOR)), identity }
+}
+
+/** `<namespace>--<service>[--<context>]`, normalized and bounded exactly once. */
 export function hostLabel(parts: HostLabelParts): string {
-  const project = slug(parts.project)
-  const service = slug(parts.service)
-  const context = parts.context ? slug(parts.context) : ''
-  const base = service ? `${project}-${service}` : project
-  return fitLabel(context ? `${base}${COMPONENT_SEPARATOR}${context}` : base)
+  const { label, identity } = readableParts(parts)
+  return validateHostLabel(fitLabel(label, MAX_LABEL, identity))
+}
+
+/** Preserve the share identifier even when the namespace must be abbreviated. */
+export function shareLabel(parts: HostLabelParts & { id: string }): string {
+  const { label } = readableParts(parts)
+  const suffix = `--share-${component(parts.id, 'share id')}`
+  const identity = nameIdentity([parts.project, parts.service, parts.context ?? '', parts.id])
+  return validateHostLabel(`${fitLabel(label, MAX_LABEL - suffix.length, identity)}${suffix}`)
+}
+
+/** The same decision as Traefik's defaultRule, including standalone containers. */
+export function hostLabelFromLabels(labels: Record<string, string>, containerName: string): string {
+  const assigned = labels[HOSTNAME_LABEL]
+  if (assigned) return validateHostLabel(assigned)
+  const project = labels['com.docker.compose.project']
+  if (project) {
+    return hostLabel({
+      project,
+      service: labels['com.docker.compose.service'] ?? '',
+      context: labels[HOSTNAME_CONTEXT_LABEL] ?? null,
+    })
+  }
+  const identity = nameIdentity([containerName])
+  return validateHostLabel(fitLabel(avoidReservedLabel(component(containerName, 'container')), MAX_LABEL, identity))
+}
+
+/** Validate the complete DNS name as well as its generated first label. */
+export function hostnameFor(parts: HostLabelParts, domain: string): string {
+  return hostnameFromLabel(hostLabel(parts), domain)
+}
+
+export function hostnameFromLabel(label: string, domain: string): string {
+  validateHostLabel(label)
+  const base = domain.toLowerCase().replace(/\.$/, '')
+  if (
+    !base ||
+    base.split('.').some((part) => !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(part) || part.length > MAX_LABEL)
+  ) {
+    throw new Error(`invalid hostname domain: ${domain}`)
+  }
+  const host = `${label}.${base}`
+  if (host.length > MAX_HOSTNAME) throw new Error('hostname exceeds 253 octets')
+  return host
 }

@@ -9,7 +9,7 @@ function container(name: string, labels: Record<string, string>, state = 'runnin
 
 const GATED = {
   'traefik.enable': 'true',
-  'traefik.http.routers.shop-web.rule': 'Host(`shop-web.example.com`)',
+  'traefik.http.routers.shop-web.rule': 'Host(`shop--web.example.com`)',
   'traefik.http.routers.shop-web.middlewares': 'portta-forward-auth@file',
 }
 

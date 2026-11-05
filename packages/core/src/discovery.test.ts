@@ -89,7 +89,7 @@ describe('connection strings', () => {
   // redis-cli does not derive SNI from -h, so the flag is the whole point.
   it('tells a gateway client which instance it wants', () => {
     expect(gatewayConnectionString('postgres', 'a-db.example.com', 5432)).toContain('sslmode=require')
-    expect(gatewayConnectionString('redis', 'a-redis.example.com', 6379)).toContain('--sni a-redis.example.com')
+    expect(gatewayConnectionString('redis', 'a--redis.example.com', 6379)).toContain('--sni a--redis.example.com')
     expect(gatewayConnectionString('tcp', 'host', 1)).toBe('host:1')
   })
 })

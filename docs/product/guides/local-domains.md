@@ -45,7 +45,7 @@ itself. Claiming all of `.test` collides with other tools that already do,
 such as Laravel Valet or a hand-made dnsmasq setup, and makes every `.test`
 name on the machine resolve to Portta.
 
-Hostnames stay flat: `demo-shop-web.portta.test`.
+Hostnames stay flat: `demo-shop--web.portta.test`.
 
 ## Option 1: a public record pointing at loopback
 
@@ -73,7 +73,7 @@ The trade-offs:
 already answer for loopback:
 
 ```text
-demo-shop-web.127-0-0-1.sslip.io  →  127.0.0.1
+demo-shop--web.127-0-0-1.sslip.io  →  127.0.0.1
 ```
 
 Use `127-0-0-1.sslip.io` as a custom domain (the `auto` mode derives its name
@@ -122,7 +122,7 @@ portta.test:5354 {
 
 ```bash
 cd ~/portta-dns && docker compose up -d
-dig +short @127.0.0.1 -p 5354 demo-shop-web.portta.test    # 127.0.0.1
+dig +short @127.0.0.1 -p 5354 demo-shop--web.portta.test    # 127.0.0.1
 ```
 
 Every name under `portta.test`, at any depth, answers `127.0.0.1`. `AAAA` is
@@ -161,7 +161,7 @@ sudo mkdir -p /etc/systemd/resolved.conf.d
 printf '[Resolve]\nDNS=127.0.0.1:5354\nDomains=~portta.test\n' \
   | sudo tee /etc/systemd/resolved.conf.d/portta.conf
 sudo systemctl restart systemd-resolved
-resolvectl query demo-shop-web.portta.test
+resolvectl query demo-shop--web.portta.test
 ```
 
 `~portta.test` is a routing domain: names under it go to the container, and
@@ -215,8 +215,8 @@ sudo systemctl restart NetworkManager
 ## Option 4: the hosts file
 
 ```text
-127.0.0.1  demo-shop-web.portta.test
-127.0.0.1  demo-shop-api.portta.test
+127.0.0.1  demo-shop--web.portta.test
+127.0.0.1  demo-shop--api.portta.test
 ```
 
 `/etc/hosts` has no wildcards. Every service, project and worktree needs its
@@ -274,11 +274,11 @@ it:
 
 ```bash
 # macOS
-dscacheutil -q host -a name demo-shop-web.portta.test
+dscacheutil -q host -a name demo-shop--web.portta.test
 
 # Linux
-getent ahosts demo-shop-web.portta.test
-resolvectl query demo-shop-web.portta.test     # with systemd-resolved
+getent ahosts demo-shop--web.portta.test
+resolvectl query demo-shop--web.portta.test     # with systemd-resolved
 ```
 
 On macOS, `dig`, `nslookup` and `host` read `/etc/resolv.conf` and ignore
@@ -329,7 +329,7 @@ are the whole setup.
 
 Routed databases use the same base, so
 [TCP routing](tcp-routing.md) names become
-`storefront-postgres.portta.test:5432`. They are served with the local
+`storefront--postgres.portta.test:5432`. They are served with the local
 wildcard certificate: `sslmode=require` accepts it as it is, and
 `verify-full` checks it against the name, so run `portta tls init` after
 changing the domain.

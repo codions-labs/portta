@@ -70,11 +70,14 @@ export function adoptCommand(
   decisions: Record<string, 'protect' | 'public' | 'later'>,
   /** Projects Home as the collector published it, so the command names the folder that was reviewed. */
   home = '~/projects',
+  /** Keep execution bound to the namespace whose URLs were reviewed. */
+  projectName?: string,
 ): string {
   const quote = (value: string) => (/^[A-Za-z0-9_./~-]+$/.test(value) ? value : `'${value.replace(/'/g, `'\\''`)}'`)
   const flags = Object.entries(decisions)
     .filter(([name, choice]) => choice !== 'later' && /^[A-Za-z0-9_.-]+$/.test(name))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([name, choice]) => `--${choice === 'protect' ? 'protect' : 'public'} ${name}`)
-  return ['portta adopt', quote(`${home.replace(/\/+$/, '')}/${folder}`), ...flags].join(' ')
+  const namespace = projectName ? ['--project', quote(projectName)] : []
+  return ['portta adopt', quote(`${home.replace(/\/+$/, '')}/${folder}`), ...namespace, ...flags].join(' ')
 }

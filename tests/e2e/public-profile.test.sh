@@ -38,7 +38,8 @@ down_project() {
 }
 cleanup() {
   down_project "$PROJ"; down_project "$TREE"
-  docker volume rm shop_dbdata shop-feature_dbdata >/dev/null 2>&1
+  docker volume rm shop_dbdata >/dev/null 2>&1
+  [ -n "${name2:-}" ] && docker volume rm "${name2}_dbdata" >/dev/null 2>&1
   for key in PORTTA_PROFILE PUBLIC_ENABLED PUBLIC_DOMAIN PORTTA_TCP PORTTA_WEB_EXPOSE TLS_ENABLED; do
     test_env_set "$key" "" >/dev/null 2>&1
   done
@@ -49,7 +50,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # curl against a hostname the gateway routes, with no DNS involved.
-host_of() { printf '%s-%s.%s' "$1" "$2" "$DOMAIN"; }
+host_of() { printf '%s--%s.%s' "$1" "$2" "$DOMAIN"; }
 http_code() { # http_code <host> [curl options...]
   local host="$1"; shift
   curl -s -o /dev/null -w '%{http_code}' --max-time 10 --resolve "$host:80:127.0.0.1" "$@" "http://$host/"
@@ -119,14 +120,14 @@ it "no decision was written to the registry"
 assert_eq "0" "$(python3 -c "import json;print(len(json.load(open('$STORE'))['protections']))")"
 
 describe "adopt records the decision and the credentials come back once"
-result=$("$GW" adopt "$PROJ" --service web:3000 --service api:4000 --protect web --public api --json 2>/dev/null)
+result=$("$GW" adopt "$PROJ" --project shop --service web:3000 --service api:4000 --protect web --public api --json 2>/dev/null)
 password=$(printf '%s' "$result" | jq_py "d['data']['credentials'][0]['password']")
 it "a credential for web is returned"
 assert_ne "" "$password"
 it "the plan on disk never holds the password"
-assert_eq "0" "$(grep -rl "$password" "$PORTTA_ROOT/runtime" 2>/dev/null | wc -l | tr -d ' ')"
+assert_eq "0" "$(grep -rFl -- "$password" "$PORTTA_ROOT/runtime" 2>/dev/null | wc -l | tr -d ' ')"
 it "the registry holds a hash, not the password"
-assert_eq "0" "$(grep -c "$password" "$STORE")"
+assert_eq "0" "$(grep -Fc -- "$password" "$STORE")"
 it "the registry file is owner-only"
 assert_eq "600" "$(test_file_mode "$STORE")"
 it "rerunning adopt without flags does not ask again"
@@ -149,6 +150,8 @@ assert_contains "$(page "$WEB" -b "$JAR")" "shop-web"
 it "the public service opens with no login"
 assert_success wait_code 200 "$API"
 assert_contains "$(page "$API")" "shop-api"
+it "the previous generated hostname has no route"
+assert_eq "404" "$(http_code "shop-api.$DOMAIN")"
 it "a hostname nobody decided about is closed"
 assert_ne "200" "$(http_code "$(host_of shop ghost)")"
 

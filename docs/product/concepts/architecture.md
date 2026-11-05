@@ -172,7 +172,7 @@ private network and the shared one. Nothing else changes about it.
 
 ## How a request is routed
 
-1. `demo-shop-web.localhost` resolves to `127.0.0.1` (see
+1. `demo-shop--web.localhost` resolves to `127.0.0.1` (see
    [Develop applications locally](../guides/local-development.md)).
 2. Traefik, holding `127.0.0.1:80`, matches the `Host` header.
 3. When the hostname is protected, or the host is public (where every routed
@@ -196,7 +196,7 @@ For an opted-in container with no explicit rule, the hostname comes from
 injects ([ADR 0005](../../development/adr/0005-hostname-convention.md)):
 
 ```text
-<com.docker.compose.project>-<com.docker.compose.service>.<domain>
+<com.docker.compose.project>--<com.docker.compose.service>.<domain>
 ```
 
 So a project never writes its own name into a routing rule, and a new worktree

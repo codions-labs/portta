@@ -103,7 +103,7 @@ export function initialState() {
           port: 3000,
         }),
         'traefik.http.routers.demo-shop-web.rule':
-          'Host(`demo-shop-web.localhost`) || Host(`demo-shop-preview.localhost`)',
+          'Host(`demo-shop--web.localhost`) || Host(`demo-shop-preview.localhost`)',
       },
       upSeconds: 3 * HOUR,
     }),
@@ -139,7 +139,7 @@ export function initialState() {
           workingDir: '/Projects/demo-shop',
         }),
         // Opted into hostname routing: reachable at
-        // demo-shop-postgres.localhost:5432 without publishing a port.
+        // demo-shop--postgres.localhost:5432 without publishing a port.
         'traefik.enable': 'true',
         'traefik.docker.network': 'portta-access',
         'traefik.tcp.routers.demo-shop-postgres.entrypoints': 'postgres',
@@ -343,7 +343,7 @@ export function initialState() {
           port: 8025,
         }),
         'traefik.http.routers.demo-monorepo-mailpit.rule':
-          'Host(`demo-monorepo-mailpit.localhost`) || Host(`mail.demo-monorepo.localhost`)',
+          'Host(`demo-monorepo--mailpit.localhost`) || Host(`mail.demo-monorepo.localhost`)',
       },
       upSeconds: 26 * HOUR,
     }),

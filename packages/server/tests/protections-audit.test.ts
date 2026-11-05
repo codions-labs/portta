@@ -28,7 +28,7 @@ describe('exposure changes are audited', () => {
                   ...container,
                   labels: {
                     ...container.labels,
-                    'traefik.http.routers.alpha-web.rule': 'Host(`alpha-web.localhost`)',
+                    'traefik.http.routers.alpha-web.rule': 'Host(`alpha--web.localhost`)',
                     'traefik.http.routers.alpha-web.middlewares': 'portta-forward-auth@file',
                   },
                 }

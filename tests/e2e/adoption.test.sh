@@ -86,7 +86,7 @@ cp "$PROJ/compose.yaml" "$SOURCE"
 
 describe "adopt stores the validated runtime plan outside the source project"
 it "records the explicit compatibility decision"
-assert_success "$GW" adopt "$PROJ" --remove-container-name storefront
+assert_success "$GW" adopt "$PROJ" --project external-shop --remove-container-name storefront
 it "reuses the plan to print the effective Compose model"
 assert_success "$GW" runtime config "$PROJ"
 it "still does not create a project overlay"; assert_failure test -f "$PROJ/compose.portta.yaml"
@@ -96,15 +96,15 @@ describe "the adopted project runs"
 it "starts from the stored plan"; assert_success "$GW" runtime up "$PROJ"
 
 it "the storefront is routed"
-assert_success test_wait_until 30 test_route_is "http://external-shop-storefront.$PORTTA_DOMAIN/" 200
+assert_success test_wait_until 30 test_route_is "http://external-shop--storefront.$PORTTA_DOMAIN/" 200
 it "it is the right application"
 assert_contains "$(curl -s --max-time 10 \
-  --resolve "external-shop-storefront.$PORTTA_DOMAIN:${PORTTA_HTTP_PORT}:${PORTTA_BIND_ADDRESS}" \
-  "http://external-shop-storefront.$PORTTA_DOMAIN/")" "external-storefront"
+  --resolve "external-shop--storefront.$PORTTA_DOMAIN:${PORTTA_HTTP_PORT}:${PORTTA_BIND_ADDRESS}" \
+  "http://external-shop--storefront.$PORTTA_DOMAIN/")" "external-storefront"
 it "the worker is not routed"
-assert_ne "200" "$(test_http_code "http://external-shop-worker.$PORTTA_DOMAIN/")"
+assert_ne "200" "$(test_http_code "http://external-shop--worker.$PORTTA_DOMAIN/")"
 it "the database is not routed"
-assert_ne "200" "$(test_http_code "http://external-shop-db.$PORTTA_DOMAIN/")"
+assert_ne "200" "$(test_http_code "http://external-shop--db.$PORTTA_DOMAIN/")"
 it "nothing is published on the host"
 assert_eq "" "$(docker ps --format '{{.Names}} {{.Ports}}' | grep '^external-shop' | grep -E '0\.0\.0\.0|127\.0\.0\.1' || true)"
 

@@ -19,9 +19,9 @@ One namespace, one private network, one set of volumes, and a hostname per
 service that serves HTTP:
 
 ```text
-demo-shop-web.localhost
+demo-shop--web.localhost
 demo-shop-admin.localhost
-demo-shop-api.localhost
+demo-shop--api.localhost
 ```
 
 `worker` and `importer` serve no HTTP, so they get no networks and no labels
@@ -61,7 +61,7 @@ portta runtime up apps/web
 portta runtime up services/api
 ```
 
-Note the hostnames become `demo-shop-web-web.localhost`, with the
+Note the hostnames become `demo-shop-web--web.localhost`, with the
 namespace and the service name both in there. Usually a reason to keep one
 namespace.
 

@@ -7,7 +7,7 @@
 # The base Compose file should declare the mailpit service itself; this overlay
 # only adds the network and labels.
 #
-#   -> http://<COMPOSE_PROJECT_NAME>-mailpit.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>--mailpit.localhost
 # ============================================================================
 
 services:

@@ -13,9 +13,9 @@
 #     compose.yaml
 #     compose.portta.yaml   <- this file
 #
-#   -> http://<COMPOSE_PROJECT_NAME>-web.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>--web.localhost
 #   -> http://<COMPOSE_PROJECT_NAME>-admin.localhost
-#   -> http://<COMPOSE_PROJECT_NAME>-api.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>--api.localhost
 #
 # Build contexts, Dockerfiles and volumes stay exactly where they are. The
 # gateway never centralises any of that.

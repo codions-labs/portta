@@ -8,7 +8,7 @@
 
 import { existsSync, statSync } from 'node:fs'
 import type { Diagnostic, Share, TraefikVerdict } from 'portta-contracts'
-import { parseEnv, readEnvFile, readProtectionStore, type StoredAlias } from 'portta-core'
+import { parseEnv, readEnvFile, readProtectionStore, routeHostnameProblem, type StoredAlias } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import { isProtected, isRouted } from '../config.ts'
 import type { DatabaseStatus } from '../db/index.ts'
@@ -59,6 +59,20 @@ export function diagnose(
     return results
   }
   results.push(check('docker', 'pass', 'Docker API', 'reachable through the panel socket proxy'))
+
+  for (const container of snapshot.containers) {
+    const problem = routeHostnameProblem(container, config.domain)
+    if (problem)
+      results.push(
+        check(
+          `hostname-invalid:${container.id}`,
+          'fail',
+          'Invalid generated hostname',
+          `${container.name}: ${problem}`,
+          'fix the container routing labels and recreate that service',
+        ),
+      )
+  }
 
   const traefik = componentOf(snapshot, 'traefik')
   if (!traefik) {

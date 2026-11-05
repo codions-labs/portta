@@ -50,14 +50,14 @@ beforeEach(() => {
       namespaceInUse: null,
     },
     collectedAt: 1,
-    command: 'portta adopt /home/ada/projects/loja-nova',
+    command: 'portta adopt /home/ada/projects/loja-nova --project loja-nova',
   })
 })
 
 describe('Reviewing a folder before adopting it', () => {
   it('shows the services, what changes and the collisions the host already has', async () => {
     renderWithQuery(<ReviewView path="loja-nova" />)
-    expect(await screen.findByText('loja-nova-web.portta.example')).toBeInTheDocument()
+    expect(await screen.findByText('loja-nova--web.portta.example')).toBeInTheDocument()
     expect(screen.getByText(/Port 5432:5432 of postgres stops being published/)).toBeInTheDocument()
     expect(screen.getByText(/already uses it/)).toBeInTheDocument()
   })
@@ -65,18 +65,22 @@ describe('Reviewing a folder before adopting it', () => {
   it('puts who may open each site into the command that adopts the folder', async () => {
     const user = userEvent.setup()
     renderWithQuery(<ReviewView path="loja-nova" />)
-    await screen.findByText('loja-nova-web.portta.example')
-    expect(screen.getByText('portta adopt /home/ada/projects/loja-nova')).toBeInTheDocument()
+    await screen.findByText('loja-nova--web.portta.example')
+    expect(screen.getByText('portta adopt /home/ada/projects/loja-nova --project loja-nova')).toBeInTheDocument()
     await user.click(screen.getByRole('radio', { name: 'Password' }))
-    expect(screen.getByText('portta adopt /home/ada/projects/loja-nova --protect web')).toBeInTheDocument()
+    expect(
+      screen.getByText('portta adopt /home/ada/projects/loja-nova --project loja-nova --protect web'),
+    ).toBeInTheDocument()
     await user.click(screen.getByRole('radio', { name: 'Everybody' }))
-    expect(screen.getByText('portta adopt /home/ada/projects/loja-nova --public web')).toBeInTheDocument()
+    expect(
+      screen.getByText('portta adopt /home/ada/projects/loja-nova --project loja-nova --public web'),
+    ).toBeInTheDocument()
   })
 
   it('registers the project with this folder, and opens it', async () => {
     const user = userEvent.setup()
     renderWithQuery(<ReviewView path="loja-nova" />)
-    await screen.findByText('loja-nova-web.portta.example')
+    await screen.findByText('loja-nova--web.portta.example')
     await user.click(screen.getByRole('button', { name: 'Register project' }))
     await waitFor(() =>
       expect(createProject).toHaveBeenCalledWith({

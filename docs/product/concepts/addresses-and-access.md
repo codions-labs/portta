@@ -17,7 +17,7 @@ from the panel.
 3. **How the panel is reached.** Independent of the first two. Publishing the
    panel never publishes a project.
 
-A name is not an exposure. `demo-shop-web.example.com` is only a name until something
+A name is not an exposure. `demo-shop--web.example.com` is only a name until something
 is listening where that name resolves, and only a public name if Traefik is
 bound to the internet on purpose.
 
@@ -26,14 +26,14 @@ bound to the internet on purpose.
 Portta derives every project hostname. It does not store one per service.
 
 ```text
-<project>-<service>.<base>
+<project>--<service>.<base>
 ```
 
 A Compose project named `demo-shop` with services `web` and `api` becomes:
 
 ```text
-demo-shop-web.localhost
-demo-shop-api.localhost
+demo-shop--web.localhost
+demo-shop--api.localhost
 ```
 
 One DNS label holds both parts, so a single wildcard (`*.example.com` or
@@ -63,7 +63,7 @@ elsewhere must not advertise `*.localhost` as a clickable URL.
 that embeds an IPv4 address. No record, no account, no registration:
 
 ```text
-demo-shop-web.203-0-113-10.sslip.io  →  203.0.113.10
+demo-shop--web.203-0-113-10.sslip.io  →  203.0.113.10
 ```
 
 The dashed form keeps the address in one label, so the project hostname stays

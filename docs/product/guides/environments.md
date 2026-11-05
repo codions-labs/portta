@@ -132,7 +132,7 @@ disappears; nothing else notices.
 ### A hostname alias is a nickname, not a rename
 
 ```text
-alpha-web.localhost      derived, still answering
+alpha--web.localhost      derived, still answering
 shop.localhost           alias, answering too
 ```
 
@@ -196,7 +196,7 @@ refused one.
 
 ```text
 Traefik   storefront-web@docker   enabled   websecure     dashboard →
-          Host(`storefront-web.dev.example.com`)
+          Host(`storefront--web.dev.example.com`)
           middlewares: portta-secure-headers@file
           → http://172.18.0.7:3000
 ```

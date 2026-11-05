@@ -5,7 +5,7 @@
 ## Context
 
 Every project hostname Portta serves is derived, never stored:
-`<compose-project>-<service>.<base>`. Traefik bakes the base into its default
+`<compose-project>--<service>.<base>`. Traefik bakes the base into its default
 rule at startup ([ADR 0005](0005-hostname-convention.md)), and two surfaces
 re-derive the same name for display — `routesFor` in
 `packages/core/src/inventory.ts` and the panel's endpoint model in
@@ -48,7 +48,7 @@ first of which [ADR 0021](0021-panel-access-modes.md) decouples for the panel.
 record to create, no account and no registration:
 
 ```
-$ dig +short demo-app-web.2-28-24-129.sslip.io
+$ dig +short demo-app--web.2-28-24-129.sslip.io
 2.28.24.129
 ```
 
@@ -73,7 +73,7 @@ default, `nip.io` the other accepted value).
 ### The dashed form, deliberately
 
 `1-2-3-4.sslip.io` keeps the address inside a single DNS label. That leaves
-`<project>-<service>` as its own label, so the whole name is one level below the
+`<project>--<service>` as its own label, so the whole name is one level below the
 base — which is what makes `*.1-2-3-4.sslip.io` a wildcard a single certificate
 could cover. The dotted form spreads the address over four labels and puts
 project hostnames two levels down, where a wildcard does not reach.

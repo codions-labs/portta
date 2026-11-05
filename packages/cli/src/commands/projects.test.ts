@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { environmentNamespace } from 'portta-core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -22,7 +23,7 @@ vi.mock('../context.js', () => ({
   }),
 }))
 
-import { analyze, analyzeCommand, publishedPorts, readSmallFile } from './projects.js'
+import { analyze, analyzeCommand, namespaceCommand, publishedPorts, readSmallFile } from './projects.js'
 
 const dirs: string[] = []
 afterEach(() => {
@@ -66,6 +67,55 @@ function composeConfig(name: string, webNetworks: Record<string, unknown> = { de
 function container(name: string, labels: Record<string, string>, state = 'running') {
   return { id: name, name, image: 'x', state, labels, ports: [], networks: [], health: null, mounts: [] }
 }
+
+describe('namespace ownership', () => {
+  function setup() {
+    const path = temp()
+    mocks.root = temp()
+    mocks.runProcess.mockImplementation(async (binary: string, args: string[]) => ({
+      exitCode: 0,
+      stdout: binary === 'git' ? (args.includes('rev-parse') ? path : 'feature/a') : '',
+      stderr: '',
+    }))
+    const namespace = environmentNamespace({ base: 'shop', branch: 'feature/a', workspace: path })
+    return { path, namespace }
+  }
+
+  it('allows a stopped container belonging to the same workspace', async () => {
+    const { path, namespace } = setup()
+    mocks.inspectContainers.mockResolvedValue([
+      container(
+        'shop-db',
+        {
+          'com.docker.compose.project': namespace,
+          'com.docker.compose.project.working_dir': path,
+        },
+        'exited',
+      ),
+    ])
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
+    await expect(namespaceCommand({ path, base: 'shop' }, command)).resolves.toBeUndefined()
+  })
+
+  it('refuses a matching namespace with no proven container owner', async () => {
+    const { path, namespace } = setup()
+    mocks.inspectContainers.mockResolvedValue([
+      container('foreign-db', { 'com.docker.compose.project': namespace }, 'exited'),
+    ])
+    await expect(namespaceCommand({ path, base: 'shop' }, command)).rejects.toThrow('unknown workspace')
+  })
+
+  it('refuses orphan volumes rather than assuming ownership', async () => {
+    const { path } = setup()
+    mocks.inspectContainers.mockResolvedValue([])
+    mocks.runProcess.mockImplementation(async (binary: string, args: string[]) => ({
+      exitCode: 0,
+      stdout: binary === 'git' ? (args.includes('rev-parse') ? path : 'feature/a') : 'orphan_pgdata\n',
+      stderr: '',
+    }))
+    await expect(namespaceCommand({ path, base: 'shop' }, command)).rejects.toThrow('volumes without a proven')
+  })
+})
 
 const command = { optsWithGlobals: () => ({ json: true }) } as never
 
@@ -154,6 +204,28 @@ describe('portta analyze', () => {
 
     writeFileSync(join(dir, '.env'), 'COMPOSE_PROJECT_NAME=loja\n')
     expect((await report(dir)).findings.name_without_env).toBeNull()
+  })
+
+  it('reviews the recorded namespace instead of reinterpreting existing environment identity', async () => {
+    const dir = temp()
+    mocks.root = temp()
+    const plans = join(mocks.root, 'runtime/compose/original-id')
+    mkdirSync(plans, { recursive: true })
+    writeFileSync(
+      join(plans, 'plan.json'),
+      JSON.stringify({
+        workspace: dir,
+        compose: { projectName: 'existing-data-identity' },
+      }),
+    )
+    writeFileSync(join(dir, 'compose.yaml'), COMPOSE)
+    writeFileSync(join(dir, '.env'), 'COMPOSE_PROJECT_NAME=changed-source-name\n')
+    mocks.runProcess.mockResolvedValue(composeConfig('changed-source-name'))
+    mocks.inspectContainers.mockResolvedValue([])
+
+    const result = await report(dir)
+    expect(result.project).toEqual({ name: 'existing-data-identity', source: 'Runtime Plan' })
+    expect(result.findings.implicit_namespace).toBe(false)
   })
 
   it('still reports when Docker cannot be asked', async () => {

@@ -1,4 +1,4 @@
-import { slug } from './namespace.ts'
+import { hostLabelFromLabels, hostnameFromLabel } from './hostname.ts'
 import { httpRoutes, isTcpOnly, traefikEnabled } from './traefik-rules.ts'
 
 export interface ContainerRecord {
@@ -31,6 +31,21 @@ export interface RouteRecord {
   state: string
 }
 
+/** A bad container label must not hide every other service in the inventory. */
+export function routeHostnameProblem(
+  container: Pick<ContainerRecord, 'name' | 'labels'>,
+  domain: string,
+): string | null {
+  if (!traefikEnabled(container.labels) || isTcpOnly(container.labels) || !httpRoutes(container.labels).usesDefaultRule)
+    return null
+  try {
+    hostnameFromLabel(hostLabelFromLabels(container.labels, container.name), domain)
+    return null
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  }
+}
+
 export function routesFor(
   containers: ContainerRecord[],
   domain: string,
@@ -48,11 +63,8 @@ export function routesFor(
       // derived one would be fiction: nothing answers there. The panel's public
       // entrypoint is exactly this shape (PathPrefix on its own entrypoint).
       if (!routes.usesDefaultRule && !explicit) return []
-      const hostname =
-        explicit ||
-        (project
-          ? `${slug(project)}-${slug(service || container.name)}.${domain}`
-          : `${slug(container.name)}.${domain}`)
+      if (!explicit && routeHostnameProblem(container, domain)) return []
+      const hostname = explicit || hostnameFromLabel(hostLabelFromLabels(container.labels, container.name), domain)
       const port =
         labelEntries.find(([key]) => /^traefik\.http\.services\..*\.loadbalancer\.server\.port$/.test(key))?.[1] ||
         'auto'

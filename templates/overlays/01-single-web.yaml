@@ -2,7 +2,7 @@
 # One HTTP service
 # ============================================================================
 #   docker compose -f compose.yaml -f compose.portta.yaml up -d
-#   -> http://<COMPOSE_PROJECT_NAME>-web.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>--web.localhost
 # ============================================================================
 
 services:

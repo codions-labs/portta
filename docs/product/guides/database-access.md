@@ -163,7 +163,7 @@ If the gateway has `PORTTA_TCP=true` and the project opted in, its
 PostgreSQL has a stable address that needs no bridge and no free port:
 
 ```bash
-psql "postgresql://demo@demo-shop-postgres.localhost:5432/demo?sslmode=require"
+psql "postgresql://demo@demo-shop--postgres.localhost:5432/demo?sslmode=require"
 ```
 
 The `sslmode` is not decoration: the hostname travels inside the TLS handshake,
@@ -173,7 +173,7 @@ derive it from `-h`; most client libraries do set it from the host they are
 given:
 
 ```bash
-redis-cli -h 127.0.0.1 -p 6379 --tls --sni demo-shop-redis.localhost
+redis-cli -h 127.0.0.1 -p 6379 --tls --sni demo-shop--redis.localhost
 ```
 
 See [Configure TCP routing](tcp-routing.md).

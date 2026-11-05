@@ -84,9 +84,9 @@ it. Running `adopt` or `runtime up` again does not ask twice. Without a flag,
 Later, change a hostname directly:
 
 ```bash
-portta protect host shop-web.example.com     # a new password, shown once
-portta protect open shop-web.example.com     # open to everybody
-portta protect remove shop-web.example.com   # closed again
+portta protect host shop--web.example.com     # a new password, shown once
+portta protect open shop--web.example.com     # open to everybody
+portta protect remove shop--web.example.com   # closed again
 portta protect status                        # every decision, without credentials
 ```
 
@@ -97,7 +97,7 @@ protect the service with a password (**Whoever has the password**) and give the
 person the URL and the password, or create a temporary link that expires on its
 own (1, 4 or 24 hours). Deciding for a hostname needs the `service:protect`
 permission, which only the owner and administrators hold. A temporary link has
-its own hostname, `<project>-<service>-<id>-share.<domain>`, one DNS label deep
+its own hostname, `<project>--<service>--share-<id>.<domain>`, one DNS label deep
 so the wildcard certificate covers it. Temporary links are created from the
 panel and the API, not the CLI.
 

@@ -17,8 +17,8 @@ fails. It never changes anything.
 Ask the resolver your applications use, not `ping` or `dig`:
 
 ```bash
-dscacheutil -q host -a name demo-shop-web.localhost    # macOS
-getent ahosts demo-shop-web.localhost                  # Linux
+dscacheutil -q host -a name demo-shop--web.localhost    # macOS
+getent ahosts demo-shop--web.localhost                  # Linux
 ```
 
 **The browser works, another tool does not.** Browsers and `curl` resolve
@@ -93,8 +93,8 @@ empty body. List the decisions and give the hostname one:
 
 ```bash
 portta protect status
-portta protect host shop-web.example.com     # a login, password shown once
-portta protect open shop-web.example.com     # everybody
+portta protect host shop--web.example.com     # a login, password shown once
+portta protect open shop--web.example.com     # everybody
 ```
 
 If every hostname answers `401`, `portta doctor` reports `portta-auth` is not
@@ -165,7 +165,7 @@ ss -ltnp sport = :80               # Linux
 ```
 
 Stop the other process, or set `PORTTA_HTTP_PORT=8080` and use
-`http://demo-shop-web.localhost:8080`.
+`http://demo-shop--web.localhost:8080`.
 
 ## Traefik keeps restarting
 

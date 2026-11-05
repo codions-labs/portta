@@ -90,13 +90,13 @@ describe('diagnostics', () => {
         'com.docker.compose.project': 'other',
         'com.docker.compose.service': 'web',
         'traefik.enable': 'true',
-        'traefik.http.routers.other.rule': 'Host(`alpha-web.localhost`)',
+        'traefik.http.routers.other.rule': 'Host(`alpha--web.localhost`)',
       },
     }
     const checks = await check([...GATEWAY, ...PROJECT_A, duplicate])
     const problem = find(checks, 'hostname-collision')
     expect(problem?.status).toBe('fail')
-    expect(problem?.detail).toContain('alpha-web.localhost')
+    expect(problem?.detail).toContain('alpha--web.localhost')
   })
 
   it('never sees a `compose run` container collide with the service it ran as', async () => {

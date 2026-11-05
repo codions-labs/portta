@@ -40,8 +40,8 @@ portta urls --project <project>
 
 | Service | URL |
 |---|---|
-| web | `http://<project>-web.localhost` |
-| api | `http://<project>-api.localhost` |
+| web | `http://<project>--web.localhost` |
+| api | `http://<project>--api.localhost` |
 
 No port numbers, and no host port is published for either.
 
@@ -76,7 +76,7 @@ git worktree add --relative-paths ../<project>-issue59 issue59
 cd ../<project>-issue59
 portta adopt .            # the branch gives it its own namespace and URL
 portta runtime up .
-# -> http://<project>-issue59-web.localhost
+# -> http://<project>-issue59-<digest>--web.localhost
 ```
 
 Both run at once, each with its own database. The first environment is not
