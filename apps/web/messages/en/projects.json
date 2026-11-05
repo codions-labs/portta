@@ -189,7 +189,11 @@
     "unownedHint": "Runs on this server and no project adopted it",
     "adoptInto": "Adopt into",
     "sameFolder": "{{count}} environments run from the same folder",
-    "gather": "Group into the {{name}} project"
+    "gather": "Group into the {{name}} project",
+    "forgetRemembered": "Forget remembered ({{count}})",
+    "forgetRememberedTitle": "Forget the remembered environments?",
+    "forgetRememberedImpact": "Portta stops listing {{count}} environments that have no containers. Nothing changes on disk or in Docker.",
+    "forgetFailed": "{{count}} environments could not be forgotten"
   },
   "row": {
     "services": "{{running}}/{{total}} services",

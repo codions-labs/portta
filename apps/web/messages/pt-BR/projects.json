@@ -189,7 +189,11 @@
     "unownedHint": "Roda neste servidor e nenhum projeto adotou",
     "adoptInto": "Adotar em",
     "sameFolder": "{{count}} ambientes rodam da mesma pasta",
-    "gather": "Reunir no projeto {{name}}"
+    "gather": "Reunir no projeto {{name}}",
+    "forgetRemembered": "Esquecer lembrados ({{count}})",
+    "forgetRememberedTitle": "Esquecer os ambientes lembrados?",
+    "forgetRememberedImpact": "O Portta deixa de listar {{count}} ambientes sem contêineres. Nada muda em disco ou no Docker.",
+    "forgetFailed": "{{count}} ambientes não puderam ser esquecidos"
   },
   "row": {
     "services": "{{running}}/{{total}} serviços",

@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeContainer, makeEnvironment } from './fixtures.ts'
@@ -6,14 +6,24 @@ import { renderWithQuery } from './render.tsx'
 
 const createProject = vi.fn()
 const setProjectEnvironments = vi.fn()
+const project = vi.fn()
+const forgetEnvironment = vi.fn()
 
-class ApiError extends Error {}
+class ApiError extends Error {
+  status: number
+  constructor(status: number, message = '') {
+    super(message)
+    this.status = status
+  }
+}
 
 vi.mock('@/lib/api/index', () => ({
   ApiError,
   api: {
     createProject: (...args: unknown[]) => createProject(...args),
     setProjectEnvironments: (...args: unknown[]) => setProjectEnvironments(...args),
+    project: (...args: unknown[]) => project(...args),
+    forgetEnvironment: (...args: unknown[]) => forgetEnvironment(...args),
   },
 }))
 
@@ -24,6 +34,8 @@ const folder = '/root/projects/tuttoria/tuttoria'
 beforeEach(() => {
   createProject.mockReset().mockResolvedValue({ slug: 'tuttoria' })
   setProjectEnvironments.mockReset().mockResolvedValue({})
+  project.mockReset()
+  forgetEnvironment.mockReset().mockResolvedValue({ ok: true })
 })
 
 describe('environments that run from one folder', () => {
@@ -72,6 +84,47 @@ describe('environments that run from one folder', () => {
       'tuttoria-e2e',
       'tuttoria-validation',
     ])
+  })
+
+  it('puts the environments in the project a first attempt already created', async () => {
+    const user = userEvent.setup()
+    createProject.mockRejectedValue(new ApiError(409, 'project exists'))
+    project.mockResolvedValue({ slug: 'tuttoria', environments: [{ environment: 'old', source: 'manual' }] })
+    renderWithQuery(
+      <UnownedGroup
+        environments={[
+          makeEnvironment({ name: 'tuttoria-main', workingDir: folder }),
+          makeEnvironment({ name: 'tuttoria-e2e', workingDir: folder, presence: 'remembered' }),
+        ]}
+        projects={[]}
+        home="/root/projects"
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Group into the Tuttoria project' }))
+    await waitFor(() =>
+      expect(setProjectEnvironments).toHaveBeenCalledWith('tuttoria', ['old', 'tuttoria-main', 'tuttoria-e2e']),
+    )
+  })
+
+  it('forgets only the remembered ones, after asking', async () => {
+    const user = userEvent.setup()
+    renderWithQuery(
+      <UnownedGroup
+        environments={[
+          makeEnvironment({ name: 'live', workingDir: '/srv/a' }),
+          makeEnvironment({ name: 'old-1', workingDir: '/srv/b', presence: 'remembered' }),
+          makeEnvironment({ name: 'old-2', workingDir: '/srv/c', presence: 'remembered' }),
+        ]}
+        projects={[]}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Forget remembered (2)' }))
+    const dialog = screen.getByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Forget remembered (2)' }))
+    await waitFor(() => expect(forgetEnvironment).toHaveBeenCalledTimes(2))
+    expect(forgetEnvironment).toHaveBeenCalledWith('old-1')
+    expect(forgetEnvironment).toHaveBeenCalledWith('old-2')
+    expect(forgetEnvironment).not.toHaveBeenCalledWith('live')
   })
 
   it('offers no group for environments that do not share a folder', () => {

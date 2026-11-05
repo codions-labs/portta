@@ -4,8 +4,12 @@
 // to the panel API — the same answers the UI gets. `envs` is
 // the other noun: what Docker is running, read locally.
 
+import { isAbsolute, resolve } from 'node:path'
 import type { Command } from 'commander'
 import { segment } from '../api.js'
+import { gatewayContext } from '../context.js'
+import { UsageError } from '../errors.js'
+import { projectsHomeOf } from '../metrics/discovery.js'
 import { clientFor, query, table } from './work.js'
 
 interface ProjectSummary {
@@ -64,11 +68,40 @@ export async function projectsShow(slug: string, command: Command): Promise<void
   }
 }
 
+/**
+ * What the panel stores as a Project's directory: a path under Projects Home. Somebody standing in the
+ * folder types `.` or the absolute path, and a path already relative to the home is passed as it is.
+ */
+export function relativeProjectPath(input: string, home: string | null, cwd: string = process.cwd()): string {
+  const given = input.trim()
+  if (given !== '.' && !given.startsWith('./') && !given.startsWith('../') && !isAbsolute(given)) return given
+  const absolute = resolve(cwd, given)
+  if (!home) {
+    throw new UsageError(
+      `cannot place ${absolute} under Projects Home: it is not known on this host`,
+      'set PORTTA_PROJECTS_HOME, or pass the path relative to it, such as group/project',
+    )
+  }
+  const base = home.replace(/\/+$/, '')
+  if (!absolute.startsWith(`${base}/`)) {
+    throw new UsageError(`${absolute} is not under Projects Home (${base})`, 'a Project lives inside Projects Home')
+  }
+  return absolute.slice(base.length + 1)
+}
+
+function projectsHome(profile?: string): string | null {
+  try {
+    return projectsHomeOf(gatewayContext({ profile, required: false }).root)
+  } catch {
+    return null
+  }
+}
+
 export async function projectsCreate(
-  options: { slug?: string; name?: string; description?: string; path?: string },
+  options: { slug?: string; name?: string; description?: string; path?: string; environments?: string },
   command: Command,
 ): Promise<void> {
-  const { client, output } = clientFor(command)
+  const { client, output, globals } = clientFor(command)
   const name = options.name ?? options.slug
   const slug =
     options.slug ??
@@ -76,14 +109,25 @@ export async function projectsCreate(
       ?.toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
-  const project = await client.request<Project>('POST', '/projects', {
+  const relativePath = options.path ? relativeProjectPath(options.path, projectsHome(globals.profile)) : null
+  const environments = (options.environments ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+  const created = await client.request<Project>('POST', '/projects', {
     slug,
     name,
     description: options.description ?? null,
-    ...(options.path ? { relativePath: options.path } : {}),
+    ...(relativePath ? { relativePath } : {}),
   })
+  // By hand, so an environment that runs from another folder, or that nothing runs now, comes along too.
+  const project =
+    environments.length > 0
+      ? await client.request<Project>('PUT', `/projects/${segment(created.slug)}/environments`, { environments })
+      : created
   if (output.json) return output.data(project)
   output.progress(`created ${project.name} (${project.slug})`)
+  if (environments.length > 0) output.progress(`adopted ${environments.join(', ')}`)
 }
 
 export async function projectsResources(slug: string, command: Command): Promise<void> {

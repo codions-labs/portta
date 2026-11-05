@@ -79,6 +79,8 @@ interface Store {
     }
   >
   environments: Map<string, string[]>
+  /** Compose projects the panel remembers although nothing runs them. */
+  remembered: string[]
   /** Set by the test to prove nothing else was touched. */
   destructiveCalls: string[]
 }
@@ -87,13 +89,18 @@ function projectDatabase(): { db: Database; store: Store } {
   const store: Store = {
     projects: new Map(),
     environments: new Map(),
+    remembered: [],
     destructiveCalls: [],
   }
   let nextId = 1
 
   const db = {
     status: () => ({ configured: true, available: true, reason: null, checkedAt: 0, migrations: [] }),
-    environments: { find: async () => null, upsertSeen: async () => ({}), list: async () => [] },
+    environments: {
+      find: async () => null,
+      upsertSeen: async () => ({}),
+      list: async () => store.remembered.map((composeProject) => ({ composeProject })),
+    },
     settings: { listAllEnvironment: async () => [], listAllService: async () => [] },
     projects: {
       create: async (input: {
@@ -295,7 +302,18 @@ describe('adopting environments', () => {
     ])
   })
 
-  it('refuses an environment that is not running', async () => {
+  it('adopts an environment the panel remembers although nothing runs it', async () => {
+    const instance = app()
+    instance.store.remembered.push('stopped-stack')
+    await post(instance.app, '/api/projects', { slug: 'produto', name: 'Produto' })
+    const response = await put(instance, '/api/projects/produto/environments', {
+      environments: ['stopped-stack'],
+    })
+    expect(response.status).toBe(200)
+    expect(instance.store.environments.get('1')).toEqual(['stopped-stack'])
+  })
+
+  it('refuses an environment that is neither running nor remembered', async () => {
     const instance = app()
     await post(instance.app, '/api/projects', { slug: 'produto', name: 'Produto' })
     const response = await put(instance, '/api/projects/produto/environments', {

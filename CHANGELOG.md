@@ -6,6 +6,20 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Forget remembered** in the **No project** group drops, after a confirmation, the environments the panel
+  remembers and nothing runs, so old worktree and test stacks stop cluttering the list.
+- `portta projects create --path` takes an absolute path or `.` (the current folder) as well as a path relative to
+  Projects Home, and `--environments a,b` adopts those environments by hand once the Project exists.
+
+### Fixed
+
+- An environment the panel remembers but nothing runs can now be adopted by hand. **Adopt into**, **Group into the
+  project** and the Project's Environments tab were refused with "no environment is running" for them.
+- **Group into the project** can be repeated: when an earlier attempt already created the Project, the
+  environments are put in it instead of failing with a duplicate.
+
 ## [0.5.2] - 2026-11-04
 
 ### Fixed

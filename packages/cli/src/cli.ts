@@ -326,7 +326,8 @@ describe(panelOptions(projects.command('create')), 'Create a Project')
   .option('--slug <slug>')
   .option('--name <name>')
   .option('--description <text>')
-  .option('--path <dir>', 'directory under Projects Home, such as group/project')
+  .option('--path <dir>', 'directory under Projects Home: group/project, an absolute path, or . for this one')
+  .option('--environments <names>', 'comma-separated environments to adopt by hand, running or remembered')
   .action(projectsCreate)
 describe(
   panelOptions(projects.command('resolve')),

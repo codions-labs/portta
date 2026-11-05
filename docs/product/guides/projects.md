@@ -33,7 +33,12 @@ say to be adopted automatically. A Project may be tied to a directory under
 Projects Home at any depth; when two Projects contain a Compose directory, the
 deepest one wins. A Project needs the panel's database and the
 page says so when it is unavailable. What Docker is running and no Project adopted
-is listed under **No project**.
+is listed under **No project**, and it stays there until someone adopts it: **Adopt into** moves one
+environment, and when several run from the same folder **Group into the project** creates the Project from that
+folder and puts them all in it. That includes environments the panel only remembers (a worktree or a test run
+whose containers are gone). **Forget remembered** drops the ones you do not want to see any more; it never
+touches Docker or the disk. From a terminal, `portta projects create --path .` run inside the folder makes the
+Project for it, and `--environments a,b` adopts those environments by hand.
 
 A Project can carry **tags** to find it by: `cliente: Acme`, or just `loja`. Type one
 beside the Project's name (`+ tag`) and press Enter; up to sixteen, the part before
