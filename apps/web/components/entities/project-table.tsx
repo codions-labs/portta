@@ -6,8 +6,9 @@ import { type ReactNode, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, api } from '../../lib/api/index.ts'
 import type { ProjectListItem } from '../../lib/projects.ts'
-import { projectStateRank } from '../../lib/projects.ts'
+import { projectStateRank, tagLabel } from '../../lib/projects.ts'
 import type { Column } from '../../lib/table.ts'
+import { TagPill } from '../projects/project-tags.tsx'
 import { NoValue } from '../shell-bits.tsx'
 import { ConfirmDialog } from '../ui/confirm-dialog.tsx'
 import { type BulkAction, DataTable } from '../ui/data-table.tsx'
@@ -75,6 +76,22 @@ export function ProjectTable({
         header: t('table.state'),
         sortValue: projectStateRank,
         cell: (item) => <ProjectStateBadge item={item} />,
+      },
+      {
+        id: 'tags',
+        header: t('table.tags'),
+        priority: 2,
+        sortValue: (item) => item.tags.map(tagLabel).sort().join(' ') || null,
+        cell: (item) =>
+          item.tags.length > 0 ? (
+            <div className="flex max-w-80 flex-wrap gap-1">
+              {item.tags.map((tag) => (
+                <TagPill key={tagLabel(tag)} tag={tag} />
+              ))}
+            </div>
+          ) : (
+            <NoValue />
+          ),
       },
       {
         id: 'environments',

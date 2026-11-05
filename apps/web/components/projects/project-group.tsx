@@ -155,14 +155,17 @@ function FolderBand({
   const gather = useMutation({
     mutationFn: async () => {
       const slug = slugify(name)
+      const relativePath = relativeToHome(folder, home)
       const created = await api
-        .createProject({ slug, name, description: null, relativePath: relativeToHome(folder, home) })
+        .createProject({ slug, name, description: null, relativePath })
         .then((project) => ({ slug: project.slug, adopted: [] as string[] }))
         .catch(async (error: unknown) => {
-          // A first attempt that got as far as creating the project must not make the second one fail: the
-          // project is there, and what is left is to put the environments in it.
           if (!(error instanceof ApiError) || error.status !== 409) throw error
+          // A first attempt that got as far as creating the Project must not make the second fail. But a
+          // slug is only a name: resume only for a Project that is provably that attempt, the same folder
+          // and not archived. Anything else is somebody else's Project and gets nothing from this folder.
           const existing = await api.project(slug)
+          if (relativePath === null || existing.relativePath !== relativePath || existing.archived) throw error
           return {
             slug: existing.slug,
             adopted: existing.environments

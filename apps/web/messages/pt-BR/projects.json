@@ -154,7 +154,8 @@
     "state": "Estado",
     "environments": "Ambientes",
     "resources": "Recursos",
-    "actions": "Ações"
+    "actions": "Ações",
+    "tags": "Tags"
   },
   "state": {
     "running": "Em execução",
@@ -259,7 +260,9 @@
     "by": "Agrupar por",
     "none": "Nada",
     "state": "Estado",
-    "without": "Sem {{key}}"
+    "without": "Sem {{key}}",
+    "folder": "Pasta",
+    "noFolder": "Sem pasta"
   },
   "tags": {
     "add": "Adicionar tag",

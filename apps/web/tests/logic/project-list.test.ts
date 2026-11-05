@@ -4,8 +4,10 @@ import { affectedBy, availableActions } from '@/components/entities/project-acti
 import {
   DEFAULT_PROJECT_FILTERS,
   defaultProjectOrder,
+  folderOfProject,
   groupByFolder,
   groupProjects,
+  hasFolders,
   matchesProjectFilters,
   parseTag,
   projectState,
@@ -243,5 +245,38 @@ describe('environments nobody adopted', () => {
     ])
     expect(groups.find((group) => group.environments.some((entry) => entry.name === 'outside'))?.folder).toBeNull()
     expect(groups.find((group) => group.environments.some((entry) => entry.name === 'ambiguous'))?.folder).toBeNull()
+  })
+})
+
+describe('grouping by folder', () => {
+  const at = (slug: string, relativePath: string | null) =>
+    toListItems([summary({ slug, name: slug, relativePath })], undefined)[0]!
+  const labels = { state: (state: string) => state, without: (key: string) => key, noFolder: 'No folder' }
+
+  it('reads the client from the first folder under Projects Home', () => {
+    expect(folderOfProject(at('a', 'powertech/lms-platform'))).toBe('powertech')
+    expect(folderOfProject(at('b', 'portainerengenharia/portainerengenharia/app'))).toBe('portainerengenharia')
+    expect(folderOfProject(at('c', 'loja'))).toBeNull()
+    expect(folderOfProject(at('d', null))).toBeNull()
+  })
+
+  it('offers folders only when a project sits below the top', () => {
+    expect(hasFolders([at('c', 'loja'), at('d', null)])).toBe(false)
+    expect(hasFolders([at('c', 'loja'), at('a', 'powertech/lms-platform')])).toBe(true)
+  })
+
+  it('makes one band per folder by name and leaves the projects with none last', () => {
+    const items = [
+      at('lms-mobile', 'powertech/lms-mobile'),
+      at('loja', 'loja'),
+      at('publivor', 'sudofabio/publivor'),
+      at('lms-platform', 'powertech/lms-platform'),
+    ]
+    const bands = groupProjects(items, 'folder', labels)
+    expect(bands.map((band) => [band.title, band.items.map((item) => item.slug)])).toEqual([
+      ['powertech', ['lms-mobile', 'lms-platform']],
+      ['sudofabio', ['publivor']],
+      ['No folder', ['loja']],
+    ])
   })
 })

@@ -154,7 +154,8 @@
     "state": "State",
     "environments": "Environments",
     "resources": "Resources",
-    "actions": "Actions"
+    "actions": "Actions",
+    "tags": "Tags"
   },
   "state": {
     "running": "Running",
@@ -259,7 +260,9 @@
     "by": "Group by",
     "none": "None",
     "state": "State",
-    "without": "No {{key}}"
+    "without": "No {{key}}",
+    "folder": "Folder",
+    "noFolder": "No folder"
   },
   "tags": {
     "add": "Add a tag",

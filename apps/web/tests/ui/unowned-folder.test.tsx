@@ -89,7 +89,12 @@ describe('environments that run from one folder', () => {
   it('puts the environments in the project a first attempt already created', async () => {
     const user = userEvent.setup()
     createProject.mockRejectedValue(new ApiError(409, 'project exists'))
-    project.mockResolvedValue({ slug: 'tuttoria', environments: [{ environment: 'old', source: 'manual' }] })
+    project.mockResolvedValue({
+      slug: 'tuttoria',
+      relativePath: 'tuttoria/tuttoria',
+      archived: false,
+      environments: [{ environment: 'old', source: 'manual' }],
+    })
     renderWithQuery(
       <UnownedGroup
         environments={[
@@ -104,6 +109,25 @@ describe('environments that run from one folder', () => {
     await waitFor(() =>
       expect(setProjectEnvironments).toHaveBeenCalledWith('tuttoria', ['old', 'tuttoria-main', 'tuttoria-e2e']),
     )
+  })
+
+  it('does not put the environments in a project that only shares the slug', async () => {
+    const user = userEvent.setup()
+    createProject.mockRejectedValue(new ApiError(409, 'project exists'))
+    project.mockResolvedValue({ slug: 'tuttoria', relativePath: 'other/place', archived: false, environments: [] })
+    renderWithQuery(
+      <UnownedGroup
+        environments={[
+          makeEnvironment({ name: 'tuttoria-main', workingDir: folder }),
+          makeEnvironment({ name: 'tuttoria-e2e', workingDir: folder }),
+        ]}
+        projects={[]}
+        home="/root/projects"
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Group into the Tuttoria project' }))
+    await waitFor(() => expect(project).toHaveBeenCalled())
+    expect(setProjectEnvironments).not.toHaveBeenCalled()
   })
 
   it('forgets only the remembered ones, after asking', async () => {
