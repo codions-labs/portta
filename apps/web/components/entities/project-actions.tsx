@@ -7,6 +7,8 @@ import {
   Boxes,
   ExternalLink,
   MoreHorizontal,
+  Pin,
+  PinOff,
   Play,
   RotateCw,
   Settings2,
@@ -36,6 +38,7 @@ export interface ProjectActionTarget {
   slug: string
   name: string
   archived: boolean
+  pinned?: boolean
   environments: readonly ProjectEnvironmentFacts[]
 }
 
@@ -170,6 +173,16 @@ export function ProjectActionsMenu({
       toast.push({ tone: 'danger', title: ta('failed', { name: target.name }), description: String(error) }),
   })
 
+  const pin = useMutation({
+    mutationFn: () => api.patchProject(target.slug, { pinned: !target.pinned }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: keys.projects() })
+      void queryClient.invalidateQueries({ queryKey: keys.project(target.slug) })
+    },
+    onError: (error) =>
+      toast.push({ tone: 'danger', title: ta('failed', { name: target.name }), description: String(error) }),
+  })
+
   const remove = useMutation({
     mutationFn: () => api.deleteProject(target.slug),
     onSuccess: (result) => {
@@ -239,6 +252,9 @@ export function ProjectActionsMenu({
           <MenuSeparator />
           <MenuItem onSelect={() => navigate(`${base}/settings`.replace(/^#/, ''))}>
             <Settings2 className="size-3.5" /> {ta('settings')}
+          </MenuItem>
+          <MenuItem disabled={pin.isPending} icon={target.pinned ? <PinOff /> : <Pin />} onSelect={() => pin.mutate()}>
+            {ta(target.pinned ? 'unpin' : 'pin')}
           </MenuItem>
           <MenuItem
             disabled={archive.isPending}

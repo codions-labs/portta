@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `pinned` integer DEFAULT false NOT NULL;

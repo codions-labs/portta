@@ -75,10 +75,13 @@ interface Store {
       name: string
       description: string | null
       archived: boolean
+      pinned: boolean
       relativePath: string | null
     }
   >
   environments: Map<string, string[]>
+  /** Compose projects the panel remembers although nothing runs them. */
+  remembered: string[]
   /** Set by the test to prove nothing else was touched. */
   destructiveCalls: string[]
 }
@@ -87,13 +90,18 @@ function projectDatabase(): { db: Database; store: Store } {
   const store: Store = {
     projects: new Map(),
     environments: new Map(),
+    remembered: [],
     destructiveCalls: [],
   }
   let nextId = 1
 
   const db = {
     status: () => ({ configured: true, available: true, reason: null, checkedAt: 0, migrations: [] }),
-    environments: { find: async () => null, upsertSeen: async () => ({}), list: async () => [] },
+    environments: {
+      find: async () => null,
+      upsertSeen: async () => ({}),
+      list: async () => store.remembered.map((composeProject) => ({ composeProject })),
+    },
     settings: { listAllEnvironment: async () => [], listAllService: async () => [] },
     projects: {
       create: async (input: {
@@ -102,7 +110,7 @@ function projectDatabase(): { db: Database; store: Store } {
         description: string | null
         relativePath: string | null
       }) => {
-        const record = { id: String(nextId++), archived: false, ...input }
+        const record = { id: String(nextId++), archived: false, pinned: false, ...input }
         store.projects.set(input.slug, record)
         return record
       },
@@ -295,13 +303,45 @@ describe('adopting environments', () => {
     ])
   })
 
-  it('refuses an environment that is not running', async () => {
+  it('adopts an environment the panel remembers although nothing runs it', async () => {
+    const instance = app()
+    instance.store.remembered.push('stopped-stack')
+    await post(instance.app, '/api/projects', { slug: 'produto', name: 'Produto' })
+    const response = await put(instance, '/api/projects/produto/environments', {
+      environments: ['stopped-stack'],
+    })
+    expect(response.status).toBe(200)
+    expect(instance.store.environments.get('1')).toEqual(['stopped-stack'])
+  })
+
+  it('refuses an environment that is neither running nor remembered', async () => {
     const instance = app()
     await post(instance.app, '/api/projects', { slug: 'produto', name: 'Produto' })
     const response = await put(instance, '/api/projects/produto/environments', {
       environments: ['ghost'],
     })
     expect(response.status).toBe(400)
+  })
+})
+
+describe('pinning a Project', () => {
+  it('pins and unpins through the same patch as archiving, and says so on the project', async () => {
+    const instance = app()
+    await post(instance.app, '/api/projects', { slug: 'produto', name: 'Produto' })
+    const patch = (body: unknown) =>
+      instance.app.request('/api/projects/produto', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    const pinned = await patch({ pinned: true })
+    expect(pinned.status).toBe(200)
+    expect(((await pinned.json()) as { pinned: boolean }).pinned).toBe(true)
+    const listed = (await (await instance.app.request('/api/projects')).json()) as {
+      projects: Array<{ slug: string; pinned: boolean }>
+    }
+    expect(listed.projects.find((project) => project.slug === 'produto')?.pinned).toBe(true)
+    expect(((await (await patch({ pinned: false })).json()) as { pinned: boolean }).pinned).toBe(false)
   })
 })
 

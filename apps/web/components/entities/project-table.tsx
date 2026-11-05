@@ -1,16 +1,20 @@
 'use client'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { Archive, Play, RotateCw, Square } from 'lucide-react'
+import { Archive, Play, RotateCw, Square, Tag } from 'lucide-react'
 import { type ReactNode, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, api } from '../../lib/api/index.ts'
 import type { ProjectListItem } from '../../lib/projects.ts'
-import { projectStateRank } from '../../lib/projects.ts'
+import { parseTag, projectStateRank, tagLabel } from '../../lib/projects.ts'
 import type { Column } from '../../lib/table.ts'
+import { TagPill } from '../projects/project-tags.tsx'
 import { NoValue } from '../shell-bits.tsx'
+import { Button } from '../ui/button.tsx'
 import { ConfirmDialog } from '../ui/confirm-dialog.tsx'
 import { type BulkAction, DataTable } from '../ui/data-table.tsx'
+import { Dialog } from '../ui/dialog.tsx'
+import { Input } from '../ui/field.tsx'
 import type { TableArrangementHandle } from '../ui/table-arrangement.tsx'
 import { useToast } from '../ui/toast.tsx'
 import { affectedBy, type LifecycleAction, ProjectActionsMenu, type ProjectActionTarget } from './project-actions.tsx'
@@ -18,7 +22,13 @@ import { ProjectStateBadge } from './project-card.tsx'
 import { ResourceUsage } from './resource-usage.tsx'
 
 function targetOf(item: ProjectListItem): ProjectActionTarget {
-  return { slug: item.slug, name: item.name, archived: item.archived, environments: item.environments }
+  return {
+    slug: item.slug,
+    name: item.name,
+    archived: item.archived,
+    pinned: item.pinned,
+    environments: item.environments,
+  }
 }
 
 type BulkKind = LifecycleAction | 'archive'
@@ -48,6 +58,8 @@ export function ProjectTable({
   const toast = useToast()
   const [pending, setPending] = useState<{ kind: BulkKind; items: ProjectListItem[]; clear: () => void } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [tagging, setTagging] = useState<{ items: ProjectListItem[]; clear: () => void } | null>(null)
+  const [tagText, setTagText] = useState('')
 
   const columns = useMemo<Column<ProjectListItem>[]>(
     () => [
@@ -75,6 +87,22 @@ export function ProjectTable({
         header: t('table.state'),
         sortValue: projectStateRank,
         cell: (item) => <ProjectStateBadge item={item} />,
+      },
+      {
+        id: 'tags',
+        header: t('table.tags'),
+        priority: 2,
+        sortValue: (item) => item.tags.map(tagLabel).sort().join(' ') || null,
+        cell: (item) =>
+          item.tags.length > 0 ? (
+            <div className="flex max-w-80 flex-wrap gap-1">
+              {item.tags.map((tag) => (
+                <TagPill key={tagLabel(tag)} tag={tag} />
+              ))}
+            </div>
+          ) : (
+            <NoValue />
+          ),
       },
       {
         id: 'environments',
@@ -171,6 +199,35 @@ export function ProjectTable({
     }
   }
 
+  /** Adds or removes one tag across the selection, merging with what each project already carries. */
+  async function retag(mode: 'add' | 'remove'): Promise<void> {
+    const wanted = parseTag(tagText)
+    if (!tagging || !wanted) return
+    setBusy(true)
+    const failures: string[] = []
+    for (const item of tagging.items) {
+      const has = item.tags.some((tag) => tagLabel(tag) === tagLabel(wanted))
+      if ((mode === 'add' && has) || (mode === 'remove' && !has)) continue
+      const next =
+        mode === 'add' ? [...item.tags, wanted] : item.tags.filter((tag) => tagLabel(tag) !== tagLabel(wanted))
+      try {
+        await api.setProjectTags(item.slug, next)
+      } catch (error) {
+        failures.push(`${item.name}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    setBusy(false)
+    tagging.clear()
+    setTagging(null)
+    setTagText('')
+    void queryClient.invalidateQueries()
+    if (failures.length > 0) {
+      toast.push({ tone: 'danger', title: t('tags.failed'), description: failures.join('\n') })
+    } else {
+      toast.push({ tone: 'ok', duration: 3000, title: ta('bulk.tagged', { tag: tagLabel(wanted) }) })
+    }
+  }
+
   function bulkActions(selected: ProjectListItem[], clear: () => void): BulkAction[] {
     const startable = selected.filter((item) => item.environments.some((environment) => !environment.running))
     const stoppable = selected.filter((item) => item.environments.some((environment) => environment.running))
@@ -196,6 +253,12 @@ export function ProjectTable({
         icon: <RotateCw />,
         disabledReason: stoppable.length === 0 ? ta('bulk.nothingToStop') : undefined,
         onRun: () => setPending({ kind: 'restart', items: stoppable, clear }),
+      },
+      {
+        id: 'tag',
+        label: ta('bulk.tag'),
+        icon: <Tag />,
+        onRun: () => setTagging({ items: selected, clear }),
       },
       {
         id: 'archive',
@@ -228,6 +291,45 @@ export function ProjectTable({
         caption={t('table.caption')}
         empty={empty}
       />
+
+      {tagging ? (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setTagging(null)
+          }}
+          size="sm"
+          title={ta('bulk.tagTitle', { count: tagging.items.length })}
+          description={ta('bulk.tagHint')}
+          footer={
+            <>
+              <Button size="sm" variant="ghost" onClick={() => setTagging(null)}>
+                {ta('bulk.cancel')}
+              </Button>
+              <Button size="sm" busy={busy} disabled={!parseTag(tagText)} onClick={() => void retag('remove')}>
+                {ta('bulk.tagRemove')}
+              </Button>
+              <Button
+                size="sm"
+                variant="primary"
+                busy={busy}
+                disabled={!parseTag(tagText)}
+                onClick={() => void retag('add')}
+              >
+                {ta('bulk.tagAdd')}
+              </Button>
+            </>
+          }
+        >
+          <Input
+            autoFocus
+            value={tagText}
+            onChange={(event) => setTagText(event.target.value)}
+            placeholder={t('tags.placeholder')}
+            aria-label={t('tags.new')}
+          />
+        </Dialog>
+      ) : null}
 
       {pending ? (
         <ConfirmDialog

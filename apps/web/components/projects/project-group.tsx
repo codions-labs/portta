@@ -4,11 +4,11 @@
 // a band, each environment under it with its address and its next action.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Folder } from 'lucide-react'
+import { Folder, Pin } from 'lucide-react'
 import Link from 'next/link'
 import type { Environment, ExposureView, ProjectSummary } from 'portta-contracts'
 import { slug as slugify } from 'portta-core/browser'
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EnvironmentRow } from '@/components/entities/environment-row'
 import { ProjectActionsMenu, ProjectPrimaryAction } from '@/components/entities/project-actions'
@@ -17,9 +17,10 @@ import { ProjectTags } from '@/components/projects/project-tags'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '@/components/ui/menu'
 import { useToast } from '@/components/ui/toast'
-import { api } from '@/lib/api'
+import { ApiError, api } from '@/lib/api'
 import { useCan } from '@/lib/permissions'
 import {
   groupByFolder,
@@ -54,6 +55,7 @@ export function ProjectGroup({
           >
             {item.name}
           </Link>
+          {item.pinned ? <Pin className="size-3.5 text-subtle" aria-label={t('list.pinned')} /> : null}
           <Badge tone={projectStateTone(state)}>{t(`state.${state}`)}</Badge>
           {item.environments.length > 0 || item.tags.length > 0 || item.resources === null ? (
             <ProjectTags slug={item.slug} tags={item.tags} />
@@ -153,17 +155,29 @@ function FolderBand({
   const name = projectNameOfFolder(folder)
   const gather = useMutation({
     mutationFn: async () => {
-      const created = await api.createProject({
-        slug: slugify(name),
-        name,
-        description: null,
-        relativePath: relativeToHome(folder, home),
-      })
+      const slug = slugify(name)
+      const relativePath = relativeToHome(folder, home)
+      const created = await api
+        .createProject({ slug, name, description: null, relativePath })
+        .then((project) => ({ slug: project.slug, adopted: [] as string[] }))
+        .catch(async (error: unknown) => {
+          if (!(error instanceof ApiError) || error.status !== 409) throw error
+          // A first attempt that got as far as creating the Project must not make the second fail. But a
+          // slug is only a name: resume only for a Project that is provably that attempt, the same folder
+          // and not archived. Anything else is somebody else's Project and gets nothing from this folder.
+          const existing = await api.project(slug)
+          if (relativePath === null || existing.relativePath !== relativePath || existing.archived) throw error
+          return {
+            slug: existing.slug,
+            adopted: existing.environments
+              .filter((entry) => entry.source === 'manual')
+              .map((entry) => entry.environment),
+          }
+        })
       // By hand, so one started without a folder of its own, that only mounts files from this one, comes along.
-      await api.setProjectEnvironments(
-        created.slug,
-        environments.map((environment) => environment.name),
-      )
+      await api.setProjectEnvironments(created.slug, [
+        ...new Set([...created.adopted, ...environments.map((environment) => environment.name)]),
+      ])
     },
     onSuccess: () => void queryClient.invalidateQueries(),
     onError: (error) =>
@@ -185,6 +199,54 @@ function FolderBand({
   )
 }
 
+/** Drops the stacks the panel remembers and nothing runs, so old worktree and test runs stop cluttering the list. */
+function ForgetRemembered({ names }: { names: readonly string[] }) {
+  const { t } = useTranslation('projects', { keyPrefix: 'list' })
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const mayForget = useCan('environment:destroy')
+  const [open, setOpen] = useState(false)
+  const forget = useMutation({
+    mutationFn: async () => {
+      const results = await Promise.allSettled(names.map((name) => api.forgetEnvironment(name)))
+      const failed = results.filter((result) => result.status === 'rejected').length
+      if (failed > 0) throw new Error(t('forgetFailed', { count: failed }))
+    },
+    onSuccess: () => setOpen(false),
+    onError: (error) =>
+      toast.push({
+        tone: 'danger',
+        title: t('forgetRemembered'),
+        description: error instanceof Error ? error.message : String(error),
+      }),
+    onSettled: () => void queryClient.invalidateQueries(),
+  })
+  if (!mayForget || names.length === 0) return null
+  return (
+    <>
+      <Button size="sm" onClick={() => setOpen(true)}>
+        {t('forgetRemembered', { count: names.length })}
+      </Button>
+      <ConfirmDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t('forgetRememberedTitle')}
+        impact={t('forgetRememberedImpact', { count: names.length })}
+        details={
+          <ul className="max-h-48 list-disc space-y-0.5 overflow-auto pl-5 font-mono text-xs">
+            {names.map((name) => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+        }
+        confirmLabel={t('forgetRemembered', { count: names.length })}
+        busy={forget.isPending}
+        onConfirm={() => forget.mutate()}
+      />
+    </>
+  )
+}
+
 export function UnownedGroup({
   environments,
   projects,
@@ -200,12 +262,15 @@ export function UnownedGroup({
   const { t } = useTranslation('projects', { keyPrefix: 'list' })
   const mayUpdate = useCan('project:update')
   const adoptable = projects.filter((project) => !project.archived)
+  // Only a stack nothing runs: a live one is refused by the server and never offered here.
+  const forgettable = environments.filter((environment) => environment.presence === 'remembered')
   return (
     <Card>
       <div className="flex flex-wrap items-center gap-2.5 border-b border-line bg-surface-2/60 px-5 py-2.5">
         <h2 className="text-lg font-semibold text-ink">{t('unowned')}</h2>
         <Badge tone="neutral">{environments.length}</Badge>
-        <span className="text-xs text-muted">{t('unownedHint')}</span>
+        <span className="min-w-0 flex-1 text-xs text-muted">{t('unownedHint')}</span>
+        <ForgetRemembered names={forgettable.map((environment) => environment.name)} />
       </div>
       <ul>
         {groupByFolder(environments).map((group) => (

@@ -237,7 +237,8 @@ open, who may open it on a public host, and the next action, so most things are
 done from here. A search and filters narrow it, **Table** selects several Projects
 to act on at once, and **By service** reads the same catalogue service by service.
 **No project** holds what the host runs and no Project adopted, with **Adopt into**
-beside it. **Add project** asks for a name, a slug and a description, and the slug
+beside it, **Group into the project** for environments that run from one folder, and **Forget
+remembered** for the stopped stacks nobody needs listed. **Add project** asks for a name, a slug and a description, and the slug
 is what an environment's `portta.project` label must say to be adopted
 automatically.
 

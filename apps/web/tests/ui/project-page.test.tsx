@@ -43,6 +43,7 @@ const detail: Project = {
   name: 'Meu Produto',
   description: 'The thing we sell',
   archived: false,
+  pinned: false,
   relativePath: null,
   resolvedPath: null,
   location: 'external',

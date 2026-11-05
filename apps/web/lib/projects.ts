@@ -16,6 +16,10 @@ export interface ProjectListItem {
   name: string
   description: string | null
   archived: boolean
+  /** Kept at the top of the list by whoever may update it. */
+  pinned: boolean
+  /** Where it sits under Projects Home, such as `powertech/lms-platform`; null when it has no directory. */
+  relativePath: string | null
   tags: ProjectTag[]
   environmentCount: number
   runningEnvironments: number
@@ -36,6 +40,8 @@ export function toListItem(summary: ProjectSummary, pulse: ProjectPulse | undefi
     name: summary.name,
     description: summary.description,
     archived: summary.archived,
+    pinned: summary.pinned,
+    relativePath: summary.relativePath,
     tags: summary.tags,
     environmentCount: summary.environmentCount,
     runningEnvironments: summary.runningEnvironmentCount,
@@ -86,6 +92,8 @@ export function fromPulse(pulse: ProjectPulse): ProjectListItem {
     name: pulse.name,
     description: null,
     archived: pulse.archived,
+    pinned: false,
+    relativePath: null,
     tags: [],
     environmentCount: pulse.environmentCount,
     runningEnvironments: pulse.runningEnvironments,
@@ -172,6 +180,7 @@ export function matchesProjectFilters(
 
 /** Most interesting first: problems, then running, then by name. */
 export function defaultProjectOrder(left: ProjectListItem, right: ProjectListItem): number {
+  if (left.pinned !== right.pinned) return left.pinned ? -1 : 1
   const byState = projectStateRank(right) - projectStateRank(left)
   if (byState !== 0) return byState
   return left.name.localeCompare(right.name)
@@ -206,7 +215,19 @@ export function tagKeys(items: readonly ProjectListItem[]): string[] {
   return [...new Set(items.flatMap((item) => item.tags.map((tag) => tag.key).filter((key) => key !== '')))].sort()
 }
 
-export type ProjectGrouping = 'none' | 'state' | `tag:${string}`
+export type ProjectGrouping = 'none' | 'state' | 'folder' | `tag:${string}`
+
+/** The first folder under Projects Home: the client, or the group, a project sits in. Null for one at the top. */
+export function folderOfProject(item: Pick<ProjectListItem, 'relativePath'>): string | null {
+  const path = item.relativePath?.replace(/^\/+|\/+$/g, '')
+  if (!path?.includes('/')) return null
+  return path.split('/')[0] ?? null
+}
+
+/** Whether the list has folders to group by: a project sitting one level down or deeper. */
+export function hasFolders(items: readonly ProjectListItem[]): boolean {
+  return items.some((item) => folderOfProject(item) !== null)
+}
 
 export interface ProjectBand {
   id: string
@@ -221,9 +242,37 @@ const STATE_ORDER: ProjectState[] = ['unhealthy', 'partial', 'running', 'idle', 
 export function groupProjects(
   items: readonly ProjectListItem[],
   grouping: ProjectGrouping,
-  labels: { state: (state: ProjectState) => string; without: (key: string) => string },
+  labels: {
+    state: (state: ProjectState) => string
+    without: (key: string) => string
+    noFolder?: string
+    pinned?: string
+    others?: string
+  },
 ): ProjectBand[] {
-  if (grouping === 'none') return [{ id: 'all', title: null, items: [...items] }]
+  if (grouping === 'folder') {
+    const folders = new Map<string, ProjectListItem[]>()
+    const loose: ProjectListItem[] = []
+    for (const item of items) {
+      const folder = folderOfProject(item)
+      if (folder === null) loose.push(item)
+      else folders.set(folder, [...(folders.get(folder) ?? []), item])
+    }
+    return [
+      ...[...folders.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([folder, list]) => ({ id: `folder:${folder}`, title: folder, items: list })),
+      ...(loose.length > 0 ? [{ id: 'folder:', title: labels.noFolder ?? '', items: loose }] : []),
+    ]
+  }
+  if (grouping === 'none') {
+    const pinned = items.filter((item) => item.pinned)
+    if (pinned.length === 0 || pinned.length === items.length) return [{ id: 'all', title: null, items: [...items] }]
+    return [
+      { id: 'pinned', title: labels.pinned ?? '', items: pinned },
+      { id: 'all', title: labels.others ?? '', items: items.filter((item) => !item.pinned) },
+    ]
+  }
   if (grouping === 'state') {
     return STATE_ORDER.map((state) => ({
       id: state,

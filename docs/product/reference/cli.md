@@ -109,7 +109,9 @@ project Docker is running: an observation, read locally.
 |---|---|
 | `projects list` | Global flags only |
 | `projects show <slug>` | The Project with its adopted environments |
-| `projects create` | `--slug`, `--name`, `--description`, `--path <dir>` (directory relative to Projects Home, at any depth) |
+| `projects pin <slug>` / `projects unpin <slug>` | Keep a Project at the top of the list, or stop |
+| `projects tag <slug>` | `--add <tag...>`, `--remove <tag...>`, `--clear`; with none, prints the tags |
+| `projects create` | `--slug`, `--name`, `--description`, `--path <dir>` (directory under Projects Home: relative to it at any depth, an absolute path, or `.` for the current one), `--environments <a,b>` (adopt these environments by hand, running or remembered) |
 | `projects resolve [--path <abs>]` | Which Project a directory belongs to: the registered root, a subdirectory of it, or a linked worktree. Reads the host and the panel, writes nothing. Fails with a named reason instead of guessing: `unknown`, `ambiguous` (the candidates are listed) or `unauthorized` |
 | `projects resources <slug>` | Usage attributed through the adopted environments |
 | `envs list` (`env` and `environment` are aliases) | Global flags only |

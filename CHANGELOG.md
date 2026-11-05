@@ -6,6 +6,28 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-04
+
+### Added
+
+- The Projects list can be grouped by **Folder** (the first folder under Projects Home, such as the client), the
+  table has a **Tags** column, and **Tag** on a selection adds or removes one tag on every Project selected.
+  Search, tag filter and grouping are kept in the address.
+- A Project can be pinned to the top of the list (**Pin to top** in its menu, `portta projects pin|unpin`). It is one
+  flag on the Project, stored in the panel database (migration `0002`), shown as a *Pinned* band.
+- `portta projects tag <slug> --add/--remove/--clear` and a TAGS column in `portta projects list`.
+- **Forget remembered** in the **No project** group drops, after a confirmation, the environments the panel
+  remembers and nothing runs, so old worktree and test stacks stop cluttering the list.
+- `portta projects create --path` takes an absolute path or `.` (the current folder) as well as a path relative to
+  Projects Home, and `--environments a,b` adopts those environments by hand once the Project exists.
+
+### Fixed
+
+- An environment the panel remembers but nothing runs can now be adopted by hand. **Adopt into**, **Group into the
+  project** and the Project's Environments tab were refused with "no environment is running" for them.
+- **Group into the project** can be repeated: when an earlier attempt already created the Project, the
+  environments are put in it instead of failing with a duplicate.
+
 ## [0.5.2] - 2026-11-04
 
 ### Fixed

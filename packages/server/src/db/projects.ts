@@ -12,6 +12,7 @@ export interface ProjectRecord {
   name: string
   description: string | null
   archived: boolean
+  pinned: boolean
   /** Directory under Projects Home, at any depth. Null when unmanaged / not yet placed. */
   relativePath: string | null
   createdAt: Date
@@ -62,6 +63,7 @@ const UpdateProject = z
     name: z.string().min(1).max(120).optional(),
     description: z.string().max(2000).nullable().optional(),
     archived: z.boolean().optional(),
+    pinned: z.boolean().optional(),
     relativePath: RelativePath.nullable().optional(),
   })
   .strict()
@@ -115,6 +117,7 @@ export class ProjectsRepository {
     if (parsed.name !== undefined) changes.name = parsed.name
     if (Object.hasOwn(parsed, 'description')) changes.description = parsed.description ?? null
     if (parsed.archived !== undefined) changes.archived = parsed.archived
+    if (parsed.pinned !== undefined) changes.pinned = parsed.pinned
     if (Object.hasOwn(parsed, 'relativePath')) changes.relativePath = parsed.relativePath ?? null
     const [row] = await this.db.update(projects).set(changes).where(eq(projects.slug, slug)).returning()
     return row ? toRecord(row) : null

@@ -15,6 +15,8 @@ export const projects = sqliteTable(
     name: text('name').notNull(),
     description: text('description'),
     archived: flag('archived').notNull().default(false),
+    /** Kept at the top of the list. One flag for everybody, a decision about the product and not a preference. */
+    pinned: flag('pinned').notNull().default(false),
     /**
      * The directory under Projects Home (`group/storefront`), at any depth,
      * never an absolute path and never the identity: changing PORTTA_PROJECTS_HOME must

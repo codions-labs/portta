@@ -69,6 +69,7 @@ const PatchBody = z
     name: z.string().min(1).max(120).optional(),
     description: z.string().max(2000).nullable().optional(),
     archived: z.boolean().optional(),
+    pinned: z.boolean().optional(),
     relativePath: RelativePath.nullable().optional(),
   })
   .strict()
@@ -411,9 +412,12 @@ export function projectRoutes(deps: AppDeps): Hono {
 
       const body = EnvironmentsBody.parse(await c.req.json())
       const snapshot = await deps.cache.get()
+      // An environment is known when Docker shows it or the panel remembers it: a stack that ran once and
+      // is stopped now still belongs to a product.
+      const remembered = new Set((await db.environments.list().catch(() => [])).map((row) => row.composeProject))
       for (const name of body.environments) {
-        if (!snapshot.environments.some((environment) => environment.name === name)) {
-          throw new OverrideRefused(`no environment '${name}' is running`)
+        if (!snapshot.environments.some((environment) => environment.name === name) && !remembered.has(name)) {
+          throw new OverrideRefused(`no environment '${name}' is running or remembered`)
         }
       }
       // Defence in depth: today only roles that see everything hold project:update. Claiming an

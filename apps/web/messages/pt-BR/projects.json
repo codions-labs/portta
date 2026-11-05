@@ -140,8 +140,17 @@
       "restartTitle_other": "Reiniciar {{count}} projetos?",
       "restartImpact": "Isso reinicia {{count}} contêineres; cada um fica brevemente inacessível.",
       "archiveTitle": "Arquivar {{count}} projetos?",
-      "archiveImpact": "Eles saem da lista padrão. Nada no servidor muda, e podem ser desarquivados a qualquer momento."
-    }
+      "archiveImpact": "Eles saem da lista padrão. Nada no servidor muda, e podem ser desarquivados a qualquer momento.",
+      "tag": "Tag",
+      "tagTitle": "Tag em {{count}} projetos",
+      "tagHint": "Escreva a tag como loja ou cliente: Acme. Os projetos mantêm as tags que já têm.",
+      "tagAdd": "Adicionar",
+      "tagRemove": "Remover",
+      "cancel": "Cancelar",
+      "tagged": "Tag {{tag}} aplicada"
+    },
+    "pin": "Fixar no topo",
+    "unpin": "Desafixar"
   },
   "views": {
     "cards": "Cards",
@@ -154,7 +163,8 @@
     "state": "Estado",
     "environments": "Ambientes",
     "resources": "Recursos",
-    "actions": "Ações"
+    "actions": "Ações",
+    "tags": "Tags"
   },
   "state": {
     "running": "Em execução",
@@ -189,7 +199,12 @@
     "unownedHint": "Roda neste servidor e nenhum projeto adotou",
     "adoptInto": "Adotar em",
     "sameFolder": "{{count}} ambientes rodam da mesma pasta",
-    "gather": "Reunir no projeto {{name}}"
+    "gather": "Reunir no projeto {{name}}",
+    "forgetRemembered": "Esquecer lembrados ({{count}})",
+    "forgetRememberedTitle": "Esquecer os ambientes lembrados?",
+    "forgetRememberedImpact": "O Portta deixa de listar {{count}} ambientes sem contêineres. Nada muda em disco ou no Docker.",
+    "forgetFailed": "{{count}} ambientes não puderam ser esquecidos",
+    "pinned": "Fixado"
   },
   "row": {
     "services": "{{running}}/{{total}} serviços",
@@ -255,7 +270,11 @@
     "by": "Agrupar por",
     "none": "Nada",
     "state": "Estado",
-    "without": "Sem {{key}}"
+    "without": "Sem {{key}}",
+    "folder": "Pasta",
+    "noFolder": "Sem pasta",
+    "pinned": "Fixados",
+    "others": "Demais"
   },
   "tags": {
     "add": "Adicionar tag",

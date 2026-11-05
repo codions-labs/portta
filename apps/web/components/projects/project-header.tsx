@@ -76,6 +76,7 @@ export function ProjectHeader({ project }: { project: Project }) {
     slug: project.slug,
     name: project.name,
     archived: project.archived,
+    pinned: project.pinned,
     environments: project.environments.map((entry) => ({
       name: entry.environment,
       running: entry.running,

@@ -140,8 +140,17 @@
       "restartTitle_other": "Restart {{count}} projects?",
       "restartImpact": "This restarts {{count}} containers; each one is briefly unreachable.",
       "archiveTitle": "Archive {{count}} projects?",
-      "archiveImpact": "They leave the default list. Nothing on the server changes, and they can be unarchived at any time."
-    }
+      "archiveImpact": "They leave the default list. Nothing on the server changes, and they can be unarchived at any time.",
+      "tag": "Tag",
+      "tagTitle": "Tag {{count}} projects",
+      "tagHint": "Write the tag as shop or client: Acme. Projects keep the tags they already have.",
+      "tagAdd": "Add",
+      "tagRemove": "Remove",
+      "cancel": "Cancel",
+      "tagged": "Tag {{tag}} applied"
+    },
+    "pin": "Pin to top",
+    "unpin": "Unpin"
   },
   "views": {
     "cards": "Cards",
@@ -154,7 +163,8 @@
     "state": "State",
     "environments": "Environments",
     "resources": "Resources",
-    "actions": "Actions"
+    "actions": "Actions",
+    "tags": "Tags"
   },
   "state": {
     "running": "Running",
@@ -189,7 +199,12 @@
     "unownedHint": "Runs on this server and no project adopted it",
     "adoptInto": "Adopt into",
     "sameFolder": "{{count}} environments run from the same folder",
-    "gather": "Group into the {{name}} project"
+    "gather": "Group into the {{name}} project",
+    "forgetRemembered": "Forget remembered ({{count}})",
+    "forgetRememberedTitle": "Forget the remembered environments?",
+    "forgetRememberedImpact": "Portta stops listing {{count}} environments that have no containers. Nothing changes on disk or in Docker.",
+    "forgetFailed": "{{count}} environments could not be forgotten",
+    "pinned": "Pinned"
   },
   "row": {
     "services": "{{running}}/{{total}} services",
@@ -255,7 +270,11 @@
     "by": "Group by",
     "none": "None",
     "state": "State",
-    "without": "No {{key}}"
+    "without": "No {{key}}",
+    "folder": "Folder",
+    "noFolder": "No folder",
+    "pinned": "Pinned",
+    "others": "Others"
   },
   "tags": {
     "add": "Add a tag",

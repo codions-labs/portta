@@ -33,7 +33,12 @@ say to be adopted automatically. A Project may be tied to a directory under
 Projects Home at any depth; when two Projects contain a Compose directory, the
 deepest one wins. A Project needs the panel's database and the
 page says so when it is unavailable. What Docker is running and no Project adopted
-is listed under **No project**.
+is listed under **No project**, and it stays there until someone adopts it: **Adopt into** moves one
+environment, and when several run from the same folder **Group into the project** creates the Project from that
+folder and puts them all in it. That includes environments the panel only remembers (a worktree or a test run
+whose containers are gone). **Forget remembered** drops the ones you do not want to see any more; it never
+touches Docker or the disk. From a terminal, `portta projects create --path .` run inside the folder makes the
+Project for it, and `--environments a,b` adopts those environments by hand.
 
 A Project can carry **tags** to find it by: `cliente: Acme`, or just `loja`. Type one
 beside the Project's name (`+ tag`) and press Enter; up to sixteen, the part before
@@ -44,6 +49,17 @@ last) or by state. A Project with two values of a key appears under each. A tag 
 groups and filters: it grants and hides nothing, so whoever may update a Project may tag
 it, and the change is in the audit log as `project.tagged`. `PUT /api/projects/{slug}/tags`
 replaces them all.
+
+**Pin to top** (in a Project's menu, or `portta projects pin <slug>`) keeps a Project first, under a *Pinned*
+band; it is one flag for everybody, set by whoever may update the Project.
+
+**Group by Folder** gathers the list by the first folder under Projects Home, so projects kept as
+`powertech/lms-platform` and `powertech/lms-mobile` sit under *powertech*; it is offered only when some project sits
+below the top level. In the table the tags have their own column, and **Tag** on a selection adds or removes one
+tag across the Projects selected, keeping what each already carries. The search, the tag filter and the grouping
+are kept in the address, so a reload or a shared link shows the same list. From a terminal,
+`portta projects tag <slug> --add "cliente: Acme" --remove loja` changes them, with no options it prints them, and
+`portta projects list` has a TAGS column.
 
 Both views are places to act, not only to look. A Project carries the one action
 its state allows (start what is stopped, stop what is running) and a menu

@@ -38,6 +38,7 @@ import {
   DEFAULT_PROJECT_FILTERS,
   defaultProjectOrder,
   groupProjects,
+  hasFolders,
   hasUnpushedCode,
   matchesProjectFilters,
   type ProjectFilters,
@@ -84,6 +85,38 @@ export function ProjectsView({
       /* private browsing */
     }
   }, [])
+  // The list as it was left: search, tag and grouping live in the address, so a reload or a shared link
+  // shows the same list. Read after the first render for the reason the view is.
+  const [restored, setRestored] = useState(false)
+  useEffect(() => {
+    try {
+      const query = new URLSearchParams(window.location.search)
+      const q = query.get('q')
+      const tag = query.get('tag')
+      const group = query.get('group')
+      if (q !== null || tag !== null) {
+        setFilters((current) => ({ ...current, search: q ?? current.search, tag: tag ?? current.tag }))
+      }
+      if (group === 'state' || group === 'folder' || group?.startsWith('tag:')) setGrouping(group as ProjectGrouping)
+    } catch {
+      /* no address to read */
+    }
+    setRestored(true)
+  }, [])
+  useEffect(() => {
+    if (!restored) return
+    try {
+      const url = new URL(window.location.href)
+      const write = (key: string, value: string | null) =>
+        value ? url.searchParams.set(key, value) : url.searchParams.delete(key)
+      write('q', filters.search.trim() || null)
+      write('tag', filters.tag)
+      write('group', grouping === 'none' ? null : grouping)
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+    } catch {
+      /* the list works without an address */
+    }
+  }, [restored, filters.search, filters.tag, grouping])
   const catalog = useProjects(initialProjects)
   const overview = useDevelopmentOverview(initialOverview)
   const environments = useEnvironments(true)
@@ -118,13 +151,19 @@ export function ProjectsView({
   const tags = useMemo(() => tagCounts(items), [items])
   const keysInUse = useMemo(() => tagKeys(items), [items])
   // A grouping by a key nobody uses any more is no grouping.
+  const folders = useMemo(() => hasFolders(items), [items])
   const effective: ProjectGrouping =
-    grouping.startsWith('tag:') && !keysInUse.includes(grouping.slice(4)) ? 'none' : grouping
+    (grouping.startsWith('tag:') && !keysInUse.includes(grouping.slice(4))) || (grouping === 'folder' && !folders)
+      ? 'none'
+      : grouping
   const bands = useMemo(
     () =>
       groupProjects(shown, effective, {
         state: (state) => t(`state.${state}`),
         without: (key) => t('group.without', { key }),
+        noFolder: t('group.noFolder'),
+        pinned: t('group.pinned'),
+        others: t('group.others'),
       }),
     [shown, effective, t],
   )
@@ -196,16 +235,20 @@ export function ProjectsView({
   )
 
   const tagChips =
-    tags.length > 0 ? (
+    tags.length > 0 || folders ? (
       <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label={t('tagsAria')}>
-        <FilterChip active={filters.tag === null} onClick={() => set('tag', null)}>
-          {t('filters.allTags')}
-        </FilterChip>
-        {tags.map((tag) => (
-          <FilterChip key={tag.label} active={filters.tag === tag.label} onClick={() => set('tag', tag.label)}>
-            {tag.label} {tag.count}
-          </FilterChip>
-        ))}
+        {tags.length > 0 ? (
+          <>
+            <FilterChip active={filters.tag === null} onClick={() => set('tag', null)}>
+              {t('filters.allTags')}
+            </FilterChip>
+            {tags.map((tag) => (
+              <FilterChip key={tag.label} active={filters.tag === tag.label} onClick={() => set('tag', tag.label)}>
+                {tag.label} {tag.count}
+              </FilterChip>
+            ))}
+          </>
+        ) : null}
         <span className="ml-2 text-xs font-semibold text-muted">{t('group.by')}</span>
         <Segmented
           label={t('group.by')}
@@ -213,6 +256,7 @@ export function ProjectsView({
           onChange={setGrouping}
           options={[
             { value: 'none', label: t('group.none') },
+            ...(folders ? [{ value: 'folder' as const, label: t('group.folder') }] : []),
             ...keysInUse.map((key) => ({
               value: `tag:${key}` as const,
               label: key.charAt(0).toUpperCase() + key.slice(1),
