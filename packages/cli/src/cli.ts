@@ -67,6 +67,7 @@ import {
   envLogs,
   projectsCreate,
   projectsList,
+  projectsPin,
   projectsResources,
   projectsShow,
   projectsTag,
@@ -326,7 +327,7 @@ describe(envs.command('endpoints <name>'), 'The routed hostnames of one environm
 
 const projects = describe(
   program.command('projects'),
-  'The products being developed: list, create, tag, resolve, resources',
+  'The products being developed: list, create, tag, pin, resolve, resources',
 )
 describe(panelOptions(projects.command('list')), 'List Projects').action(projectsList)
 describe(panelOptions(projects.command('show <slug>')), 'One Project with its environments').action(
@@ -339,6 +340,12 @@ describe(panelOptions(projects.command('create')), 'Create a Project')
   .option('--path <dir>', 'directory under Projects Home: group/project, an absolute path, or . for this one')
   .option('--environments <names>', 'comma-separated environments to adopt by hand, running or remembered')
   .action(projectsCreate)
+describe(panelOptions(projects.command('pin <slug>')), 'Keep a Project at the top of the list').action(
+  (slug, _options, command) => projectsPin(slug, true, command),
+)
+describe(panelOptions(projects.command('unpin <slug>')), 'Stop keeping a Project at the top of the list').action(
+  (slug, _options, command) => projectsPin(slug, false, command),
+)
 describe(panelOptions(projects.command('tag <slug>')), 'Show, add or remove the tags of a Project')
   .option('--add <tag...>', 'a tag to add: `loja` or `cliente: Acme`')
   .option('--remove <tag...>', 'a tag to remove')

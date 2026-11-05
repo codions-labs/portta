@@ -22,7 +22,13 @@ import { ProjectStateBadge } from './project-card.tsx'
 import { ResourceUsage } from './resource-usage.tsx'
 
 function targetOf(item: ProjectListItem): ProjectActionTarget {
-  return { slug: item.slug, name: item.name, archived: item.archived, environments: item.environments }
+  return {
+    slug: item.slug,
+    name: item.name,
+    archived: item.archived,
+    pinned: item.pinned,
+    environments: item.environments,
+  }
 }
 
 type BulkKind = LifecycleAction | 'archive'

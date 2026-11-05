@@ -2145,6 +2145,9 @@
           "archived": {
             "type": "boolean"
           },
+          "pinned": {
+            "type": "boolean"
+          },
           "relativePath": {
             "type": [
               "string",
@@ -2215,6 +2218,7 @@
           "name",
           "description",
           "archived",
+          "pinned",
           "relativePath",
           "location",
           "tags",
@@ -2334,6 +2338,9 @@
           "archived": {
             "type": "boolean"
           },
+          "pinned": {
+            "type": "boolean"
+          },
           "relativePath": {
             "type": [
               "string",
@@ -2368,6 +2375,7 @@
           "name",
           "description",
           "archived",
+          "pinned",
           "relativePath",
           "resolvedPath",
           "location",
@@ -11091,6 +11099,9 @@
                     ]
                   },
                   "archived": {
+                    "type": "boolean"
+                  },
+                  "pinned": {
                     "type": "boolean"
                   },
                   "relativePath": {

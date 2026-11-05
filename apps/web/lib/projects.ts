@@ -16,6 +16,8 @@ export interface ProjectListItem {
   name: string
   description: string | null
   archived: boolean
+  /** Kept at the top of the list by whoever may update it. */
+  pinned: boolean
   /** Where it sits under Projects Home, such as `powertech/lms-platform`; null when it has no directory. */
   relativePath: string | null
   tags: ProjectTag[]
@@ -38,6 +40,7 @@ export function toListItem(summary: ProjectSummary, pulse: ProjectPulse | undefi
     name: summary.name,
     description: summary.description,
     archived: summary.archived,
+    pinned: summary.pinned,
     relativePath: summary.relativePath,
     tags: summary.tags,
     environmentCount: summary.environmentCount,
@@ -89,6 +92,7 @@ export function fromPulse(pulse: ProjectPulse): ProjectListItem {
     name: pulse.name,
     description: null,
     archived: pulse.archived,
+    pinned: false,
     relativePath: null,
     tags: [],
     environmentCount: pulse.environmentCount,
@@ -176,6 +180,7 @@ export function matchesProjectFilters(
 
 /** Most interesting first: problems, then running, then by name. */
 export function defaultProjectOrder(left: ProjectListItem, right: ProjectListItem): number {
+  if (left.pinned !== right.pinned) return left.pinned ? -1 : 1
   const byState = projectStateRank(right) - projectStateRank(left)
   if (byState !== 0) return byState
   return left.name.localeCompare(right.name)
@@ -237,7 +242,13 @@ const STATE_ORDER: ProjectState[] = ['unhealthy', 'partial', 'running', 'idle', 
 export function groupProjects(
   items: readonly ProjectListItem[],
   grouping: ProjectGrouping,
-  labels: { state: (state: ProjectState) => string; without: (key: string) => string; noFolder?: string },
+  labels: {
+    state: (state: ProjectState) => string
+    without: (key: string) => string
+    noFolder?: string
+    pinned?: string
+    others?: string
+  },
 ): ProjectBand[] {
   if (grouping === 'folder') {
     const folders = new Map<string, ProjectListItem[]>()
@@ -254,7 +265,14 @@ export function groupProjects(
       ...(loose.length > 0 ? [{ id: 'folder:', title: labels.noFolder ?? '', items: loose }] : []),
     ]
   }
-  if (grouping === 'none') return [{ id: 'all', title: null, items: [...items] }]
+  if (grouping === 'none') {
+    const pinned = items.filter((item) => item.pinned)
+    if (pinned.length === 0 || pinned.length === items.length) return [{ id: 'all', title: null, items: [...items] }]
+    return [
+      { id: 'pinned', title: labels.pinned ?? '', items: pinned },
+      { id: 'all', title: labels.others ?? '', items: items.filter((item) => !item.pinned) },
+    ]
+  }
   if (grouping === 'state') {
     return STATE_ORDER.map((state) => ({
       id: state,

@@ -69,6 +69,7 @@ const PatchBody = z
     name: z.string().min(1).max(120).optional(),
     description: z.string().max(2000).nullable().optional(),
     archived: z.boolean().optional(),
+    pinned: z.boolean().optional(),
     relativePath: RelativePath.nullable().optional(),
   })
   .strict()

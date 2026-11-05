@@ -53,6 +53,7 @@ function summary(overrides: Record<string, unknown> = {}) {
     name: 'Meu Produto',
     description: 'The thing we sell',
     archived: false,
+    pinned: false,
     relativePath: null,
     location: 'external',
     tags: [],

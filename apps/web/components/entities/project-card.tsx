@@ -79,7 +79,13 @@ export function ProjectCounts({ item, className }: { item: ProjectListItem; clas
  * which was the whole complaint about this page.
  */
 export function ProjectCard({ item }: { item: ProjectListItem }) {
-  const target = { slug: item.slug, name: item.name, archived: item.archived, environments: item.environments }
+  const target = {
+    slug: item.slug,
+    name: item.name,
+    archived: item.archived,
+    pinned: item.pinned,
+    environments: item.environments,
+  }
 
   return (
     <Card className="group flex min-w-0 flex-col">

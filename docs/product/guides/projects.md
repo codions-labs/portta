@@ -50,6 +50,9 @@ groups and filters: it grants and hides nothing, so whoever may update a Project
 it, and the change is in the audit log as `project.tagged`. `PUT /api/projects/{slug}/tags`
 replaces them all.
 
+**Pin to top** (in a Project's menu, or `portta projects pin <slug>`) keeps a Project first, under a *Pinned*
+band; it is one flag for everybody, set by whoever may update the Project.
+
 **Group by Folder** gathers the list by the first folder under Projects Home, so projects kept as
 `powertech/lms-platform` and `powertech/lms-mobile` sit under *powertech*; it is offered only when some project sits
 below the top level. In the table the tags have their own column, and **Tag** on a selection adds or removes one

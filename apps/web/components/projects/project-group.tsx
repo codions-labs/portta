@@ -4,7 +4,7 @@
 // a band, each environment under it with its address and its next action.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Folder } from 'lucide-react'
+import { Folder, Pin } from 'lucide-react'
 import Link from 'next/link'
 import type { Environment, ExposureView, ProjectSummary } from 'portta-contracts'
 import { slug as slugify } from 'portta-core/browser'
@@ -55,6 +55,7 @@ export function ProjectGroup({
           >
             {item.name}
           </Link>
+          {item.pinned ? <Pin className="size-3.5 text-subtle" aria-label={t('list.pinned')} /> : null}
           <Badge tone={projectStateTone(state)}>{t(`state.${state}`)}</Badge>
           {item.environments.length > 0 || item.tags.length > 0 || item.resources === null ? (
             <ProjectTags slug={item.slug} tags={item.tags} />

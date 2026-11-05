@@ -148,7 +148,9 @@
       "tagRemove": "Remover",
       "cancel": "Cancelar",
       "tagged": "Tag {{tag}} aplicada"
-    }
+    },
+    "pin": "Fixar no topo",
+    "unpin": "Desafixar"
   },
   "views": {
     "cards": "Cards",
@@ -201,7 +203,8 @@
     "forgetRemembered": "Esquecer lembrados ({{count}})",
     "forgetRememberedTitle": "Esquecer os ambientes lembrados?",
     "forgetRememberedImpact": "O Portta deixa de listar {{count}} ambientes sem contêineres. Nada muda em disco ou no Docker.",
-    "forgetFailed": "{{count}} ambientes não puderam ser esquecidos"
+    "forgetFailed": "{{count}} ambientes não puderam ser esquecidos",
+    "pinned": "Fixado"
   },
   "row": {
     "services": "{{running}}/{{total}} serviços",
@@ -269,7 +272,9 @@
     "state": "Estado",
     "without": "Sem {{key}}",
     "folder": "Pasta",
-    "noFolder": "Sem pasta"
+    "noFolder": "Sem pasta",
+    "pinned": "Fixados",
+    "others": "Demais"
   },
   "tags": {
     "add": "Adicionar tag",

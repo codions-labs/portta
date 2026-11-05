@@ -148,7 +148,9 @@
       "tagRemove": "Remove",
       "cancel": "Cancel",
       "tagged": "Tag {{tag}} applied"
-    }
+    },
+    "pin": "Pin to top",
+    "unpin": "Unpin"
   },
   "views": {
     "cards": "Cards",
@@ -201,7 +203,8 @@
     "forgetRemembered": "Forget remembered ({{count}})",
     "forgetRememberedTitle": "Forget the remembered environments?",
     "forgetRememberedImpact": "Portta stops listing {{count}} environments that have no containers. Nothing changes on disk or in Docker.",
-    "forgetFailed": "{{count}} environments could not be forgotten"
+    "forgetFailed": "{{count}} environments could not be forgotten",
+    "pinned": "Pinned"
   },
   "row": {
     "services": "{{running}}/{{total}} services",
@@ -269,7 +272,9 @@
     "state": "State",
     "without": "No {{key}}",
     "folder": "Folder",
-    "noFolder": "No folder"
+    "noFolder": "No folder",
+    "pinned": "Pinned",
+    "others": "Others"
   },
   "tags": {
     "add": "Add a tag",

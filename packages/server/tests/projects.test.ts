@@ -75,6 +75,7 @@ interface Store {
       name: string
       description: string | null
       archived: boolean
+      pinned: boolean
       relativePath: string | null
     }
   >
@@ -109,7 +110,7 @@ function projectDatabase(): { db: Database; store: Store } {
         description: string | null
         relativePath: string | null
       }) => {
-        const record = { id: String(nextId++), archived: false, ...input }
+        const record = { id: String(nextId++), archived: false, pinned: false, ...input }
         store.projects.set(input.slug, record)
         return record
       },
@@ -320,6 +321,27 @@ describe('adopting environments', () => {
       environments: ['ghost'],
     })
     expect(response.status).toBe(400)
+  })
+})
+
+describe('pinning a Project', () => {
+  it('pins and unpins through the same patch as archiving, and says so on the project', async () => {
+    const instance = app()
+    await post(instance.app, '/api/projects', { slug: 'produto', name: 'Produto' })
+    const patch = (body: unknown) =>
+      instance.app.request('/api/projects/produto', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    const pinned = await patch({ pinned: true })
+    expect(pinned.status).toBe(200)
+    expect(((await pinned.json()) as { pinned: boolean }).pinned).toBe(true)
+    const listed = (await (await instance.app.request('/api/projects')).json()) as {
+      projects: Array<{ slug: string; pinned: boolean }>
+    }
+    expect(listed.projects.find((project) => project.slug === 'produto')?.pinned).toBe(true)
+    expect(((await (await patch({ pinned: false })).json()) as { pinned: boolean }).pinned).toBe(false)
   })
 })
 

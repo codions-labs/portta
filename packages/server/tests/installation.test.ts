@@ -50,7 +50,7 @@ it('comes up on SQLite with no authentication and nothing to configure', async (
   try {
     await database.initialize()
     expect(database.status().available).toBe(true)
-    expect(database.status().migrations).toEqual(['0000_current', '0001_careful_ricochet'])
+    expect(database.status().migrations).toEqual(['0000_current', '0001_careful_ricochet', '0002_smooth_yellow_claw'])
     expect(existsSync(file)).toBe(true)
 
     seedMinimal(database.handle)
@@ -70,7 +70,7 @@ it('comes up on SQLite with no authentication and nothing to configure', async (
   const again = Database.open(file)
   try {
     await again.initialize()
-    expect(again.status().migrations).toEqual(['0000_current', '0001_careful_ricochet'])
+    expect(again.status().migrations).toEqual(['0000_current', '0001_careful_ricochet', '0002_smooth_yellow_claw'])
     expect(again.handle.select().from(settings).all()).toHaveLength(1)
   } finally {
     await again.close()

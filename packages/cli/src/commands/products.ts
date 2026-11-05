@@ -19,6 +19,7 @@ interface ProjectSummary {
   name: string
   description: string | null
   archived: boolean
+  pinned?: boolean
   location: string
   environmentCount: number
   runningEnvironmentCount: number
@@ -50,7 +51,7 @@ export async function projectsList(_options: unknown, command: Command): Promise
     ['SLUG', 'NAME', 'ENVS', 'RUNNING', 'WHERE', 'TAGS'],
     ...body.projects.map((p) => [
       p.slug,
-      p.name,
+      p.pinned ? `${p.name} *` : p.name,
       String(p.environmentCount),
       String(p.runningEnvironmentCount),
       p.location,
@@ -112,6 +113,13 @@ export async function projectsTag(
     : project
   if (output.json) return output.data(updated)
   output.line(`${project.slug}: ${tags.length > 0 ? tags.map(tagText).join(', ') : 'no tags'}`)
+}
+
+export async function projectsPin(slug: string, pinned: boolean, command: Command): Promise<void> {
+  const { client, output } = clientFor(command)
+  const project = await client.request<ProjectSummary>('PATCH', `/projects/${segment(slug)}`, { pinned })
+  if (output.json) return output.data(project)
+  output.progress(`${pinned ? 'pinned' : 'unpinned'} ${project.name} (${project.slug})`)
 }
 
 export async function projectsShow(slug: string, command: Command): Promise<void> {

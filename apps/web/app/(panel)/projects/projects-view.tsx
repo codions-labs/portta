@@ -162,6 +162,8 @@ export function ProjectsView({
         state: (state) => t(`state.${state}`),
         without: (key) => t('group.without', { key }),
         noFolder: t('group.noFolder'),
+        pinned: t('group.pinned'),
+        others: t('group.others'),
       }),
     [shown, effective, t],
   )

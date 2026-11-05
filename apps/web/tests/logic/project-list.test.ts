@@ -25,6 +25,7 @@ function summary(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
     name: 'Meu Produto',
     description: null,
     archived: false,
+    pinned: false,
     relativePath: null,
     location: 'external',
     tags: [],
@@ -278,5 +279,25 @@ describe('grouping by folder', () => {
       ['sudofabio', ['publivor']],
       ['No folder', ['loja']],
     ])
+  })
+})
+
+describe('pinned projects', () => {
+  const labels = { state: (state: string) => state, without: (key: string) => key, pinned: 'Pinned', others: 'Others' }
+  const item = (slug: string, pinned: boolean) => toListItems([summary({ slug, name: slug, pinned })], undefined)[0]!
+
+  it('puts a pinned project before one that is worse off, then keeps the usual order', () => {
+    const ordered = [item('b', false), item('a', true), item('c', false)].sort(defaultProjectOrder)
+    expect(ordered.map((project) => project.slug)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('makes a Pinned band at the top of an ungrouped list, and none when nothing or everything is pinned', () => {
+    const bands = groupProjects([item('a', true), item('b', false)], 'none', labels)
+    expect(bands.map((band) => [band.title, band.items.map((project) => project.slug)])).toEqual([
+      ['Pinned', ['a']],
+      ['Others', ['b']],
+    ])
+    expect(groupProjects([item('b', false)], 'none', labels)).toHaveLength(1)
+    expect(groupProjects([item('a', true)], 'none', labels)[0]?.title).toBeNull()
   })
 })

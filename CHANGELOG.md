@@ -11,6 +11,8 @@ All notable changes to Portta are documented here. The format follows
 - The Projects list can be grouped by **Folder** (the first folder under Projects Home, such as the client), the
   table has a **Tags** column, and **Tag** on a selection adds or removes one tag on every Project selected.
   Search, tag filter and grouping are kept in the address.
+- A Project can be pinned to the top of the list (**Pin to top** in its menu, `portta projects pin|unpin`). It is one
+  flag on the Project, stored in the panel database (migration `0002`), shown as a *Pinned* band.
 - `portta projects tag <slug> --add/--remove/--clear` and a TAGS column in `portta projects list`.
 - **Forget remembered** in the **No project** group drops, after a confirmation, the environments the panel
   remembers and nothing runs, so old worktree and test stacks stop cluttering the list.
