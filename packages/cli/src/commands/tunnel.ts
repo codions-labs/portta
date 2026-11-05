@@ -30,6 +30,7 @@ import {
   tunnelDnsTarget,
   tunnelStatusFrom,
 } from 'portta-core'
+import { ensurePanelBridgeImage } from '../bridge-image.js'
 import { composeArguments, type GatewayContext, gatewayContext } from '../context.js'
 import { PreconditionError, UsageError } from '../errors.js'
 import { Output } from '../output.js'
@@ -330,6 +331,7 @@ export async function tunnelEnable(command: Command): Promise<void> {
 
   // The overlay is selected from the same variable, so `up` is all it takes.
   context = gatewayContext({ profile: global.profile, overrides: { CLOUDFLARE_TUNNEL_ENABLED: 'true' } })
+  await ensurePanelBridgeImage(context, output)
   const result = await runProcess('docker', ['compose', ...composeArguments(context), 'up', '-d', '--remove-orphans'], {
     cwd: context.root,
     env: context.env,

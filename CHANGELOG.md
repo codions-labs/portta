@@ -6,6 +6,16 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-05
+
+### Fixed
+
+- Opening local access no longer fails because the bridge image was never prepared. The CLI checks it before
+  starting or recreating an enabled panel, reuses a cached image without contacting the registry, and stops
+  with the Docker cause and a recovery command if a missing image cannot be downloaded.
+- Setup with `--skip-pull` requires the bridge image to be cached, and `dev --reset` checks it before removing
+  any environment.
+
 ## [0.6.0] - 2026-11-04
 
 ### Added
@@ -448,7 +458,10 @@ baseline was regenerated.
   all three from the repository root, rewriting the README's relative links to
   absolute GitHub URLs.
 
-[Unreleased]: https://github.com/codions-labs/portta/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/codions-labs/portta/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/codions-labs/portta/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/codions-labs/portta/compare/v0.5.2...v0.6.0
+[0.5.2]: https://github.com/codions-labs/portta/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/codions-labs/portta/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/codions-labs/portta/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/codions-labs/portta/compare/v0.4.4...v0.4.5

@@ -1,8 +1,24 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import type { Command } from 'commander'
+import { BRIDGE_IMAGE, composeFiles, loadGatewayConfig } from 'portta-core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { PANEL_SERVICES, panelLoopbackApiUrl, requestPanelMigrate, waitForPanelLoopback, webUrl } from './web.js'
+
+const mocks = vi.hoisted(() => ({ runProcess: vi.fn() }))
+vi.mock('../process.js', () => ({ runProcess: mocks.runProcess }))
+
+import { PreconditionError } from '../errors.js'
+import {
+  PANEL_SERVICES,
+  panelLoopbackApiUrl,
+  requestPanelMigrate,
+  waitForPanelLoopback,
+  webRestart,
+  webUp,
+  webUrl,
+} from './web.js'
 
 type Context = Parameters<typeof webUrl>[0]
 
@@ -22,6 +38,56 @@ function context(config: Partial<Context['config']>, env: Record<string, string>
     },
   } as unknown as Context
 }
+
+describe('the access bridge prerequisite', () => {
+  const roots: string[] = []
+  afterEach(() => {
+    mocks.runProcess.mockReset()
+    vi.unstubAllEnvs()
+    for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
+  })
+
+  function installation(): Command {
+    const root = mkdtempSync(join(tmpdir(), 'portta-web-'))
+    roots.push(root)
+    const env = {
+      PORTTA_PROFILE: 'local',
+      PORTTA_WEB: 'false',
+      PORTTA_WEB_EXPOSE: 'local',
+      PORTTA_LOCAL_RELEASE: 'false',
+    }
+    const contents = Object.entries(env)
+      .map(([key, value]) => `${key}=${value}\n`)
+      .join('')
+    writeFileSync(join(root, '.env'), contents)
+    writeFileSync(join(root, '.env.example'), contents)
+    writeFileSync(join(root, 'VERSION'), '0.8.0\n')
+    for (const file of composeFiles(loadGatewayConfig({ ...env, PORTTA_WEB: 'true' }))) {
+      mkdirSync(dirname(join(root, file)), { recursive: true })
+      writeFileSync(join(root, file), 'services: {}\n')
+    }
+    vi.stubEnv('PORTTA_ROOT', root)
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => ({
+      stdout: '',
+      stderr: args[0] === 'pull' ? 'registry unavailable' : 'No such image',
+      exitCode: args[0] === 'network' ? 0 : 1,
+      failed: args[0] !== 'network',
+    }))
+    return { optsWithGlobals: () => ({ quiet: true }) } as unknown as Command
+  }
+
+  it('does not start the panel when its bridge image cannot be prepared', async () => {
+    await expect(webUp({}, installation())).rejects.toBeInstanceOf(PreconditionError)
+    expect(mocks.runProcess).toHaveBeenCalledWith('docker', ['pull', BRIDGE_IMAGE], expect.anything())
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args[0] === 'compose')).toBe(false)
+  })
+
+  it('checks the bridge before restart even when the panel setting is disabled', async () => {
+    await expect(webRestart(installation())).rejects.toBeInstanceOf(PreconditionError)
+    expect(mocks.runProcess).toHaveBeenCalledWith('docker', ['image', 'inspect', BRIDGE_IMAGE], expect.anything())
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('restart'))).toBe(false)
+  })
+})
 
 describe('where migrations reach the panel', () => {
   it('dials the published API port, never Vite', () => {

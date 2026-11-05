@@ -18,6 +18,7 @@ import {
   ungatedContainers,
   writeApplied,
 } from 'portta-core'
+import { ensurePanelBridgeImage } from '../bridge-image.js'
 import { ensureCheckoutCli, reexecBuiltCli } from '../checkout-cli.js'
 import { confirm } from '../confirm.js'
 import { composeArguments, gatewayContext } from '../context.js'
@@ -262,6 +263,7 @@ export async function upCommand(
     if (ungated.length > 0)
       output.warning(`routed with no login gate, so open to the internet: ${ungated.join(', ')}. ${advice}`)
   }
+  await ensurePanelBridgeImage(context, output)
   const applied = envBeforeUp(context.root)
   output.progress(builds ? 'starting components, building local images' : 'starting components')
   const wait = !options.attach
@@ -350,7 +352,12 @@ export async function devCommand(
       'list routed hostnames',
     ].join(' -> ')}`,
   )
-  if (options.reset) await wipePorttaRuntime(command)
+  if (options.reset) {
+    // Dev always enables the panel. Check its dependency before the reset
+    // removes anything, even when the current installation has the panel off.
+    await ensurePanelBridgeImage({ ...existing, config: { ...existing.config, webEnabled: true } }, output)
+    await wipePorttaRuntime(command)
+  }
   if (needsBootstrap) {
     command.setOptionValueWithSource('yes', true, 'cli')
     await bootstrapCommand({ skipPull: true }, command)
@@ -498,7 +505,9 @@ export async function resetCommand(options: { demo?: boolean }, command: Command
 }
 
 export async function restartCommand(command: Command): Promise<void> {
-  const root = gatewayContext({ profile: globals(command).profile }).root
+  const context = gatewayContext({ profile: globals(command).profile })
+  await ensurePanelBridgeImage(context, new Output(globals(command)))
+  const root = context.root
   const applied = envBeforeUp(root)
   await compose(command, ['up', '-d', '--force-recreate', '--wait', '--wait-timeout', '180'])
   recordApplied(root, applied)
@@ -529,6 +538,7 @@ export async function logsCommand(
 export async function updateCommand(command: Command): Promise<void> {
   prepareEnvFile(join(gatewayContext({ profile: globals(command).profile }).root, '.env'))
   await compose(command, ['config', '--quiet'])
+  await ensurePanelBridgeImage(gatewayContext({ profile: globals(command).profile }), new Output(globals(command)))
   await compose(command, ['pull', '--ignore-buildable'])
   await confirm('recreate gateway components with the pulled images?', globals(command).yes === true)
   const root = gatewayContext({ profile: globals(command).profile }).root

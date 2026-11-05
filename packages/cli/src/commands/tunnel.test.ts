@@ -1,6 +1,56 @@
-import { TUNNEL_STATES, tunnelStatusFrom } from 'portta-core'
-import { describe, expect, it } from 'vitest'
-import { cliHint, describeProbe, tunnelContainer } from './tunnel.ts'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import type { Command } from 'commander'
+import { BRIDGE_IMAGE, loadGatewayConfig, TUNNEL_STATES, tunnelStatusFrom } from 'portta-core'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { GatewayContext } from '../context.js'
+
+const mocks = vi.hoisted(() => ({ gatewayContext: vi.fn(), runProcess: vi.fn() }))
+vi.mock('../context.js', () => ({ gatewayContext: mocks.gatewayContext, composeArguments: () => [] }))
+vi.mock('../process.js', () => ({ runProcess: mocks.runProcess }))
+
+import { cliHint, describeProbe, tunnelContainer, tunnelEnable, tunnelPaths } from './tunnel.ts'
+
+describe('tunnel enable prepares the panel bridge', () => {
+  let root: string
+  let context: GatewayContext
+  const command = { optsWithGlobals: () => ({ quiet: true }) } as unknown as Command
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'portta-tunnel-bridge-'))
+    writeFileSync(join(root, '.env'), 'PORTTA_WEB=true\n')
+    const env = { PORTTA_WEB: 'true', DOCKER_HOST: 'unix:///run/test-docker.sock' }
+    context = { root, env, config: loadGatewayConfig(env), composeFiles: [], version: 'test' }
+    mocks.gatewayContext.mockReset().mockReturnValue(context)
+    mocks.runProcess.mockReset()
+  })
+
+  afterEach(() => rmSync(root, { recursive: true, force: true }))
+
+  it('refuses to start containers when the panel bridge image cannot be prepared', async () => {
+    const paths = tunnelPaths(root)
+    mkdirSync(paths.directory, { recursive: true })
+    writeFileSync(paths.config, 'ingress: []\n')
+    writeFileSync(paths.credentials, '{}\n')
+    mocks.runProcess.mockResolvedValue({ stdout: '', stderr: 'registry unavailable', exitCode: 1, failed: true })
+
+    await expect(tunnelEnable(command)).rejects.toThrow(/registry unavailable/)
+
+    expect(mocks.runProcess).toHaveBeenCalledWith('docker', ['pull', BRIDGE_IMAGE], {
+      env: context.env,
+      reject: false,
+      stdio: 'stream',
+    })
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args[0] === 'compose')).toBe(false)
+  })
+
+  it('refuses an unconfigured connector before preparing any image', async () => {
+    await expect(tunnelEnable(command)).rejects.toThrow(/connector is not configured/)
+
+    expect(mocks.runProcess).not.toHaveBeenCalled()
+  })
+})
 
 describe('tunnelContainer', () => {
   it('follows the Compose project name, so two gateways on one host do not collide', () => {

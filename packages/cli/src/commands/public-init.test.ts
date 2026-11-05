@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Command } from 'commander'
+import { BRIDGE_IMAGE } from 'portta-core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -13,15 +14,19 @@ const mocks = vi.hoisted(() => ({
   containers: [] as unknown[],
   dockerDown: false,
   yes: true,
+  webEnabled: false,
+  runProcess: vi.fn(),
 }))
 
+vi.mock('../process.js', () => ({ runProcess: mocks.runProcess }))
 vi.mock('../context.js', () => ({
   gatewayContext: () => ({
     root: mocks.root,
-    env: {},
-    config: { tcpEnabled: mocks.tcp, publicDomain: 'example.com' },
+    env: { DOCKER_HOST: 'unix:///run/test-docker.sock' },
+    config: { tcpEnabled: mocks.tcp, publicDomain: 'example.com', webEnabled: mocks.webEnabled },
     composeFiles: [],
   }),
+  composeArguments: () => [],
 }))
 vi.mock('../docker.js', () => ({
   inspectContainers: async () => {
@@ -58,7 +63,8 @@ let err = ''
 beforeEach(() => {
   mocks.root = mkdtempSync(join(tmpdir(), 'portta-public-init-'))
   writeFileSync(join(mocks.root, '.env'), 'KEEP_ME=1\nPORTTA_WEB=false\nCF_DNS_API_TOKEN=\n')
-  Object.assign(mocks, { tcp: false, containers: [], dockerDown: false, yes: true })
+  Object.assign(mocks, { tcp: false, containers: [], dockerDown: false, yes: true, webEnabled: false })
+  mocks.runProcess.mockReset()
   setJsonSchema('public.init')
   out = ''
   err = ''
@@ -198,8 +204,23 @@ describe('public init', () => {
         /tcp-bypass/,
       )
       expect(env()).toBe(before)
+      expect(mocks.runProcess).not.toHaveBeenCalled()
     },
   )
+
+  it('public enable refuses to start containers when the panel bridge image cannot be prepared', async () => {
+    mocks.webEnabled = true
+    mocks.runProcess.mockResolvedValue({ stdout: '', stderr: 'registry unavailable', exitCode: 1, failed: true })
+
+    await expect(publicEnable(command())).rejects.toThrow(/registry unavailable/)
+
+    expect(mocks.runProcess).toHaveBeenCalledWith('docker', ['pull', BRIDGE_IMAGE], {
+      env: { DOCKER_HOST: 'unix:///run/test-docker.sock' },
+      reject: false,
+      stdio: 'stream',
+    })
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args[0] === 'compose')).toBe(false)
+  })
 
   it('changes nothing the second time', async () => {
     await publicInit({ ...base, cloudflareTokenStdin: true }, command(true), { readStdin: async () => TOKEN })

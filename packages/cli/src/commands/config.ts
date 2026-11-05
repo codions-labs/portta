@@ -14,6 +14,7 @@ import {
   patchEnvFile,
   prepareEnvFile,
 } from 'portta-core'
+import { ensurePanelBridgeImage } from '../bridge-image.js'
 import { composeArguments, gatewayContext } from '../context.js'
 import { PreconditionError, RefusedError, UsageError } from '../errors.js'
 import { Output } from '../output.js'
@@ -172,6 +173,7 @@ async function apply(
   // The values just written win over anything inherited, for the same reason
   // `web up` needs it: the environment normally beats the file.
   const context = gatewayContext({ root, profile, overrides: values })
+  await ensurePanelBridgeImage(context, output)
   output.progress('recreating gateway components')
   await runProcess(
     'docker',

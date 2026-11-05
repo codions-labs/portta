@@ -16,6 +16,7 @@ import {
   writeEnvFile,
   writeProtectionStore,
 } from 'portta-core'
+import { ensurePanelBridgeImage } from '../bridge-image.js'
 import { composeArguments, gatewayContext } from '../context.js'
 import { ensureNetwork, inspectContainers } from '../docker.js'
 import { CliError, PreconditionError, RefusedError, UsageError } from '../errors.js'
@@ -193,10 +194,7 @@ export async function webUp(options: WebUpOptions, command: Command): Promise<vo
   output.step('panel')
   if (!options.dev) await requireLocalRelease(context)
   await ensureNetwork(context.config.network)
-  // This was silent and can be slow on a cold pull; `reject: false` meant a
-  // failure produced no output at all.
-  output.progress('pulling alpine/socat:1.8.1.3')
-  await runProcess('docker', ['pull', 'alpine/socat:1.8.1.3'], { reject: false, stdio: 'stream' })
+  await ensurePanelBridgeImage(context, output)
   // There is no database service to start any more: the panel opens a file
   // under state/panel, creating it if it is not there
   // (docs/development/adr/0037-sqlite-is-the-panel-database.md). The directory
@@ -466,6 +464,8 @@ export async function webDisable(command: Command): Promise<void> {
 }
 
 export async function webRestart(command: Command): Promise<void> {
+  const context = gatewayContext({ profile: globals(command).profile, overrides: PANEL_OVERRIDES })
+  await ensurePanelBridgeImage(context, new Output(globals(command)))
   await webCompose(command, ['restart', 'web', 'web-socket-proxy'])
 }
 export async function webLogs(service: string | undefined, command: Command): Promise<void> {
