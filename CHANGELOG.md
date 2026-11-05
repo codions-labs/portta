@@ -6,7 +6,7 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
-## [0.6.0] - 2026-11-05
+## [0.6.0] - 2026-11-04
 
 ### Added
 
