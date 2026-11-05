@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Command } from 'commander'
+import { BRIDGE_IMAGE } from 'portta-core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -87,7 +88,9 @@ import {
   isPorttaOwnedContainer,
   porttaOwnedComposeProjects,
   resetCommand,
+  restartCommand,
   upCommand,
+  updateCommand,
 } from './lifecycle.js'
 
 describe('checkout development images', () => {
@@ -180,6 +183,93 @@ describe('resetCommand', () => {
   function ok() {
     return { stdout: '', stderr: '', exitCode: 0, failed: false }
   }
+
+  function readyGateway(): void {
+    mocks.requireDocker.mockResolvedValue(undefined)
+    mocks.ensureNetwork.mockResolvedValue('ok')
+    mocks.ensureApplier.mockResolvedValue({ action: 'absent' })
+    mocks.ensureRunner.mockResolvedValue({ action: 'absent' })
+    mocks.inspectContainers.mockResolvedValue([])
+    mocks.prepareWebUp.mockReturnValue({})
+    mocks.ensureDevDemoOwner.mockResolvedValue('demo-token')
+  }
+
+  const starts = {
+    up: () => upCommand(undefined, {}, command()),
+    dev: () => devCommand(undefined, {}, command()),
+    restart: () => restartCommand(command()),
+    update: () => updateCommand(command()),
+  }
+
+  it.each(Object.keys(starts) as (keyof typeof starts)[])(
+    '%s prepares a missing bridge image before starting containers',
+    async (name) => {
+      checkout()
+      readyGateway()
+      const order: string[] = []
+      let imagePresent = false
+      mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => {
+        if (args[0] === 'image' && args[1] === 'inspect') {
+          return imagePresent ? ok() : { ...ok(), exitCode: 1, failed: true, stderr: 'No such image' }
+        }
+        if (args[0] === 'pull' && args[1] === BRIDGE_IMAGE) {
+          order.push('bridge-image')
+          imagePresent = true
+        }
+        if (args[0] === 'compose' && args.includes('up')) order.push('containers')
+        return ok()
+      })
+
+      await starts[name]()
+
+      expect(order).toEqual(['bridge-image', 'containers'])
+    },
+  )
+
+  it.each(Object.keys(starts) as (keyof typeof starts)[])(
+    '%s leaves containers alone when the bridge image cannot be prepared',
+    async (name) => {
+      checkout()
+      readyGateway()
+      mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => {
+        if (args[0] === 'image' || args[0] === 'pull') {
+          return { ...ok(), exitCode: 1, failed: true, stderr: 'registry unavailable' }
+        }
+        return ok()
+      })
+
+      await expect(starts[name]()).rejects.toThrow(/registry unavailable/)
+
+      expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up'))).toBe(false)
+      expect(mocks.ensureDevDemoOwner).not.toHaveBeenCalled()
+    },
+  )
+
+  it('up starts without probing images when the panel is disabled', async () => {
+    checkout()
+    readyGateway()
+    mocks.gatewayContext().config.webEnabled = false
+    mocks.runProcess.mockResolvedValue(ok())
+
+    await upCommand(undefined, {}, command())
+
+    expect(mocks.runProcess.mock.calls.some(([, args]) => ['image', 'pull'].includes(args[0]))).toBe(false)
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up'))).toBe(true)
+  })
+
+  it('reset checks the image before wiping an installation with the panel disabled', async () => {
+    const root = checkout()
+    mocks.gatewayContext().config.webEnabled = false
+    mocks.runProcess.mockResolvedValue({ ...ok(), exitCode: 1, failed: true, stderr: 'registry unavailable' })
+
+    await expect(resetCommand({}, command())).rejects.toThrow(/registry unavailable/)
+
+    expect(mocks.confirm).not.toHaveBeenCalled()
+    expect(mocks.demoStacksDown).not.toHaveBeenCalled()
+    expect(mocks.inspectContainers).not.toHaveBeenCalled()
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('down') || args.includes('rm'))).toBe(false)
+    expect(readFileSync(join(root, 'state/metrics/host.json'), 'utf8')).toBe('{}')
+  })
 
   it('stops Portta-managed stacks, drops the panel database, then runs the checkout setup', async () => {
     const root = checkout()

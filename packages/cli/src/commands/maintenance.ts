@@ -25,6 +25,7 @@ import { hostname, tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { Command } from 'commander'
 import { databaseFileFor, databaseFiles, isTrue } from 'portta-core'
+import { ensurePanelBridgeImage } from '../bridge-image.js'
 import { composeArguments, type GatewayContext, gatewayContext } from '../context.js'
 import { PreconditionError, UsageError } from '../errors.js'
 import { fileMode } from '../host.js'
@@ -369,6 +370,7 @@ export async function repairCommand(options: { dryRun?: boolean }, command: Comm
     return
   }
 
+  await ensurePanelBridgeImage(context, output)
   // `up -d` is idempotent: containers whose definition has not changed are
   // left alone, so this is safe to run on a healthy installation.
   output.progress('reconciling containers')

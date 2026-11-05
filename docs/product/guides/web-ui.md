@@ -644,9 +644,18 @@ portta web restart
 The proxy is up but denying calls. Confirm the panel is talking to its own
 proxy (`PORTTA_RUNTIME_DOCKER_API`), not Traefik's read-only one.
 
-**"Connect" says the bridge image is not on this host.** The panel
-cannot pull images. `portta web up` pulls it; when the panel was started some
-other way, pull it once on the host:
+**"Connect" says the bridge image is not on this host.** The panel cannot pull
+images. The CLI prepares the pinned bridge image before starting, restarting
+or recreating an enabled panel, including setup, updates, configuration changes
+and repair. It reuses a cached image without contacting the registry and pulls
+only when the image is missing. If it cannot prepare the image, the command
+stops before converging containers and reports how to recover.
+
+`portta setup --skip-pull` requires the image to be cached when the panel is
+enabled; it never downloads the image. A setup with the panel disabled does not
+need it. If the panel was started directly with Compose, or the image was
+removed later, pull it once on the Docker host managed by the panel and retry
+the access action:
 
 ```bash
 docker pull alpine/socat:1.8.1.3

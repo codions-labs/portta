@@ -2,6 +2,7 @@ import { lookup } from 'node:dns/promises'
 import { join } from 'node:path'
 import type { Command } from 'commander'
 import { patchEnvFile, ungatedContainers } from 'portta-core'
+import { ensurePanelBridgeImage } from '../bridge-image.js'
 import { confirm } from '../confirm.js'
 import { composeArguments, gatewayContext } from '../context.js'
 import { inspectContainers } from '../docker.js'
@@ -115,6 +116,7 @@ export async function publicEnable(command: Command): Promise<void> {
   if (!context.config.publicDomain) await writeSetting('PUBLIC_DOMAIN', publicDomain, command)
   await writeSetting('PORTTA_PROFILE', 'remote-public', command)
   const refreshed = gatewayContext({ profile: 'remote-public' })
+  await ensurePanelBridgeImage(refreshed, new Output(global))
   // composeArguments, not a hand-built file list: it is what carries
   // --project-directory. Without it Compose anchors every relative bind at
   // docker/compose/, so `.env`, the dynamic directory and the auth
