@@ -27,7 +27,7 @@ release.
 | [0020](0020-installer-and-portta-home.md) | An installation is one runtime directory | Accepted |
 | [0021](0021-panel-access-modes.md) | Panel access is an explicit decision | Accepted; see 0027, 0035, 0051 |
 | [0022](0022-project-domain-modes.md) | The base domain is a mode, and a host with no domain gets one from its address | Accepted |
-| [0023](0023-flat-hostname-labels.md) | A service's whole name lives in one DNS label | Accepted; see 0005 |
+| [0023](0023-flat-hostname-labels.md) | Generated hostnames separate components with -- in one DNS label | Accepted; extends 0005 |
 | [0024](0024-capabilities-providers-endpoints.md) | A service has endpoints, not an access mode | Accepted |
 | [0025](0025-cloudflare-tunnel.md) | One tunnel, one wildcard rule, and Traefik keeps routing | Accepted |
 | [0026](0026-applying-settings-from-the-panel.md) | Applying panel settings uses one isolated applier | Accepted |

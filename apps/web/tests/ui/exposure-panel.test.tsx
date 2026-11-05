@@ -26,10 +26,10 @@ const container = makeContainer({
   id: 'c1',
   labels: {
     'traefik.enable': 'true',
-    'traefik.http.routers.web.rule': 'Host(`shop-web.example.test`)',
+    'traefik.http.routers.web.rule': 'Host(`shop--web.example.test`)',
     'traefik.http.routers.web.middlewares': 'portta-forward-auth@file',
   },
-  urls: [{ url: 'https://shop-web.example.test', host: 'shop-web.example.test', scope: 'public', scheme: 'https' }],
+  urls: [{ url: 'https://shop--web.example.test', host: 'shop--web.example.test', scope: 'public', scheme: 'https' }],
 })
 
 beforeEach(() => {
@@ -41,8 +41,8 @@ beforeEach(() => {
 
 describe('the hostname the panel matches on', () => {
   it('canonicalizes like the registry: case, trailing dot, default port and IDN', () => {
-    expect(canonicalHost('Shop-Web.Example.TEST.')).toBe('shop-web.example.test')
-    expect(canonicalHost('shop-web.example.test:80')).toBe('shop-web.example.test')
+    expect(canonicalHost('Shop--Web.Example.TEST.')).toBe('shop--web.example.test')
+    expect(canonicalHost('shop--web.example.test:80')).toBe('shop--web.example.test')
     expect(canonicalHost('bücher.example.test')).toBe('xn--bcher-kva.example.test')
   })
 })
@@ -54,7 +54,7 @@ describe('who may open a service', () => {
       openRouters: { count: 0, names: [] },
       entries: [
         {
-          host: 'shop-web.example.test',
+          host: 'shop--web.example.test',
           mode: 'protected',
           user: 'reviewer',
           project: null,
@@ -93,7 +93,7 @@ describe('who may open a service', () => {
       openRouters: { count: 0, names: [] },
       entries: [
         {
-          host: 'shop-web.example.test',
+          host: 'shop--web.example.test',
           mode: 'protected',
           user: 'reviewer',
           project: null,

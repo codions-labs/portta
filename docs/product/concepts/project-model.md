@@ -11,7 +11,7 @@ flowchart TD
     P -. adopts .-> E["Environment<br/>Compose project demo-shop"]
     E --> S["Service<br/>web, api, mysql, redis"]
     S --> C[Container]
-    S --> EP["Endpoint<br/>http://demo-shop-web.localhost"]
+    S --> EP["Endpoint<br/>http://demo-shop--web.localhost"]
 ```
 
 Solid lines are ownership; dotted lines are links Portta records or infers.
@@ -61,7 +61,7 @@ local, LAN, private, protected or public. The default HTTP endpoint is derived
 from the names:
 
 ```text
-<compose-project>-<service>.<domain>   →   http://demo-shop-web.localhost
+<compose-project>--<service>.<domain>   →   http://demo-shop--web.localhost
 ```
 
 See [Addresses and access](addresses-and-access.md) and

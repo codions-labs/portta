@@ -128,8 +128,8 @@ portta tunnel test      # confirms traffic is flowing
 Once the tunnel is connected, every project gets a hostname automatically:
 
 ```text
-ecommerce-web.example.com
-ecommerce-api.example.com
+ecommerce--web.example.com
+ecommerce--api.example.com
 ecommerce-mail.example.com
 ```
 
@@ -137,8 +137,8 @@ and, where a branch or pull request needs its own environment, its own
 Compose project namespace carries the difference:
 
 ```text
-ecommerce-develop-web.example.com
-ecommerce-pr-123-web.example.com
+ecommerce-develop--web.example.com
+ecommerce-pr-123--web.example.com
 ```
 
 **Nothing needs to be created at Cloudflare for any of these.** Starting a
@@ -218,7 +218,7 @@ blocks outbound UDP is the usual cause.
 **The hostname does not resolve at all.**
 
 ```bash
-dig +short ecommerce-web.example.com
+dig +short ecommerce--web.example.com
 ```
 
 Nothing back means the wildcard CNAME is missing, or is not proxied. It must be

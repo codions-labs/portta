@@ -1,32 +1,49 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { readProtectionStore } from 'portta-core'
+import { type ContainerRecord, hostLabel, readProtectionStore } from 'portta-core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ root: '', profile: 'local', runProcess: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  root: '',
+  profile: 'local',
+  domain: 'apps.example.test',
+  containers: [] as ContainerRecord[],
+  volumes: [] as string[],
+  runProcess: vi.fn(),
+}))
 vi.mock('../context.js', () => ({
   gatewayContext: () => ({
     root: mocks.root,
     env: {},
-    config: { network: 'portta', profile: mocks.profile, domain: 'apps.example.test', tlsEnabled: true },
+    config: { network: 'portta', profile: mocks.profile, domain: mocks.domain, tlsEnabled: true },
     composeFiles: [],
     version: 'test',
   }),
 }))
-vi.mock('../process.js', () => ({ runProcess: mocks.runProcess }))
+vi.mock('../process.js', () => ({
+  runProcess: (file: string, args: string[], ...options: unknown[]) =>
+    args[0] === 'volume'
+      ? Promise.resolve({ exitCode: 0, stdout: mocks.volumes.join('\n'), stderr: '', failed: false })
+      : mocks.runProcess(file, args, ...options),
+}))
+vi.mock('../docker.js', () => ({ inspectContainers: vi.fn(async () => mocks.containers) }))
 
 import { adoptComposeRuntime, initComposeRuntime, prepareComposeRuntime, runtimeAction } from './compose-runtime.js'
 
 const roots: string[] = []
 afterEach(() => {
   mocks.profile = 'local'
+  mocks.domain = 'apps.example.test'
+  mocks.containers = []
+  mocks.volumes = []
+  vi.unstubAllEnvs()
   vi.restoreAllMocks()
   mocks.runProcess.mockReset()
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
 })
 function temp(): string {
-  const root = mkdtempSync(join(tmpdir(), 'portta-runtime-'))
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'portta-runtime-')))
   roots.push(root)
   return root
 }
@@ -653,6 +670,142 @@ describe('Compose runtime', () => {
     expect(mocks.runProcess.mock.calls.at(-1)?.[1]).toEqual(expect.arrayContaining(['-p', 'poc75-example', 'up', '-d']))
   })
 
+  it('preserves the recorded namespace on re-adoption and refreshes hosts after a domain change', async () => {
+    const workspace = temp()
+    mocks.root = join(temp(), 'gateway')
+    writeFileSync(join(workspace, 'compose.yaml'), 'services: {}\n')
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version')
+        ? result('2.24.4')
+        : args.includes('branch')
+          ? result('feature/renamed')
+          : args.some((arg) => arg.endsWith('.tmp'))
+            ? result(finalModel)
+            : result(sourceModel),
+    )
+    await prepareComposeRuntime({ path: workspace, project: 'existing-data' }, command)
+    const adopted = await adoptComposeRuntime({ path: workspace }, command)
+    expect(adopted.compose.projectName).toBe('existing-data')
+    const beforeRename = readFileSync(join(mocks.root, 'runtime/compose', adopted.id, 'plan.json'), 'utf8')
+    await expect(prepareComposeRuntime({ path: workspace, project: 'different-data' }, command)).rejects.toThrow(
+      'recorded Compose namespace cannot be changed',
+    )
+    expect(readFileSync(join(mocks.root, 'runtime/compose', adopted.id, 'plan.json'), 'utf8')).toBe(beforeRename)
+    mocks.domain = 'new.example.test'
+    await runtimeAction('up', { path: workspace }, command)
+    const saved = JSON.parse(readFileSync(join(mocks.root, 'runtime/compose', adopted.id, 'plan.json'), 'utf8'))
+    expect(saved.compose.projectName).toBe('existing-data')
+    expect(saved.services[0].host).toBe('existing-data--web.new.example.test')
+  })
+
+  it('refuses normalized service hostname collisions before persisting adoption intent', async () => {
+    const workspace = temp()
+    mocks.root = join(temp(), 'gateway')
+    writeFileSync(join(workspace, 'compose.yaml'), 'services: {}\n')
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version')
+        ? result('2.24.4')
+        : args.includes('branch')
+          ? result('')
+          : result({
+              services: {
+                'web-api': { expose: [3000] },
+                web_api: { expose: [3001] },
+              },
+            }),
+    )
+    await expect(adoptComposeRuntime({ path: workspace }, command)).rejects.toThrow(/multiple services derive/)
+    expect(existsSync(join(mocks.root, 'runtime'))).toBe(false)
+  })
+
+  it.each(['prepare', 'up'] as const)('refuses a stopped foreign namespace before %s', async (operation) => {
+    const workspace = temp()
+    mocks.root = join(temp(), 'gateway')
+    writeFileSync(join(workspace, 'compose.yaml'), 'services: {}\n')
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version')
+        ? result('2.24.4')
+        : args.includes('branch')
+          ? result('')
+          : args.some((arg) => arg.endsWith('.tmp'))
+            ? result(finalModel)
+            : result(sourceModel),
+    )
+    if (operation === 'up') await prepareComposeRuntime({ path: workspace, project: 'shop' }, command)
+    mocks.runProcess.mockClear()
+    mocks.containers = [
+      {
+        id: 'foreign',
+        name: 'shop-web-1',
+        image: 'nginx',
+        state: 'exited',
+        ports: [],
+        networks: [],
+        labels: {
+          'com.docker.compose.project': 'shop',
+          'com.docker.compose.service': 'web',
+          'com.docker.compose.project.working_dir': '/another/worktree',
+        },
+      },
+    ]
+    const action =
+      operation === 'up'
+        ? runtimeAction('up', { path: workspace }, command)
+        : prepareComposeRuntime({ path: workspace, project: 'shop' }, command)
+    await expect(action).rejects.toThrow(/another or unidentified workspace/)
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up'))).toBe(false)
+    if (operation === 'prepare') expect(existsSync(join(mocks.root, 'runtime'))).toBe(false)
+  })
+
+  it('refuses orphaned volumes and colliding internal Traefik service names before adoption', async () => {
+    const workspace = temp()
+    mocks.root = join(temp(), 'gateway')
+    writeFileSync(join(workspace, 'compose.yaml'), 'services: {}\n')
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version')
+        ? result('2.24.4')
+        : args.includes('branch')
+          ? result('')
+          : result({ services: { web: { expose: [3000] } } }),
+    )
+    mocks.volumes = ['shop_database']
+    await expect(prepareComposeRuntime({ path: workspace, project: 'shop' }, command)).rejects.toThrow(
+      /volumes without a proven/,
+    )
+    mocks.volumes = []
+    mocks.containers = [
+      {
+        id: 'other',
+        name: 'other-app-1',
+        image: 'nginx',
+        state: 'running',
+        ports: [],
+        networks: [],
+        labels: {
+          'com.docker.compose.project': 'other',
+          'com.docker.compose.service': 'app',
+          'traefik.enable': 'true',
+          'traefik.http.services.shop-web.loadbalancer.server.port': '3000',
+        },
+      },
+    ]
+    await expect(prepareComposeRuntime({ path: workspace, project: 'shop' }, command)).rejects.toThrow(
+      /Traefik identifier shop-web/,
+    )
+    expect(existsSync(join(mocks.root, 'runtime'))).toBe(false)
+  })
+
+  it('preserves an explicitly exported Compose namespace', async () => {
+    const workspace = temp()
+    mocks.root = join(temp(), 'gateway')
+    writeFileSync(join(workspace, 'compose.yaml'), 'services: {}\n')
+    vi.stubEnv('COMPOSE_PROJECT_NAME', 'existing-export')
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version') ? result('2.24.4') : args.includes('branch') ? result('') : result({ services: {} }),
+    )
+    expect((await prepareComposeRuntime({ path: workspace }, command)).compose.projectName).toBe('existing-export')
+  })
+
   it('regenerates a plan when runtime intent changes', async () => {
     const workspace = temp()
     mocks.root = join(temp(), 'gateway')
@@ -821,6 +974,7 @@ describe('who may open a routed hostname on a public host', () => {
     { 'traefik.http.routers.mine.rule': 'Host(`x`)' },
     { 'Traefik.HTTP.Routers.bypass.Rule': 'Host(`x`)' },
     ['Traefik.HTTP.Routers.bypass.Rule=Host(`x`)'],
+    { 'portta.hostname': 'a-different--service' },
   ])('refuses a project that brings its own Traefik router: %j', async (labels) => {
     const workspace = arrange()
     const labelled = {
@@ -908,6 +1062,7 @@ describe('who may open a routed hostname on a public host', () => {
           JSON.stringify({
             'com.docker.compose.service': 'web',
             'traefik.enable': 'true',
+            'portta.hostname': hostLabel({ project: plan.compose.projectName, service: 'web' }),
             [`traefik.http.routers.${plan.compose.projectName}-web.middlewares`]: 'portta-forward-auth@file',
           }),
         )
@@ -939,6 +1094,32 @@ describe('who may open a routed hostname on a public host', () => {
     })
     await expect(runtimeAction('up', { path: workspace }, command)).rejects.toMatchObject({
       hint: expect.stringContaining('ForwardAuth is not enforced'),
+    })
+    expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up') && !args.includes('--no-start'))).toBe(
+      false,
+    )
+  })
+
+  it('refuses a created container whose canonical hostname label differs from the protected plan', async () => {
+    const workspace = arrange()
+    const plan = await prepareComposeRuntime({ path: workspace, public: ['web', 'api'] }, command)
+    mocks.runProcess.mockClear()
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => {
+      if (args.includes('version')) return result('2.24.4')
+      if (args.includes('ps')) return result('c1\n')
+      if (args[0] === 'inspect')
+        return result(
+          JSON.stringify({
+            'com.docker.compose.service': 'web',
+            'traefik.enable': 'true',
+            'portta.hostname': 'other--web',
+            [`traefik.http.routers.${plan.compose.projectName}-web.middlewares`]: 'portta-forward-auth@file',
+          }),
+        )
+      return result('')
+    })
+    await expect(runtimeAction('up', { path: workspace }, command)).rejects.toMatchObject({
+      hint: expect.stringContaining('canonical hostname'),
     })
     expect(mocks.runProcess.mock.calls.some(([, args]) => args.includes('up') && !args.includes('--no-start'))).toBe(
       false,

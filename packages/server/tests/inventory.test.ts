@@ -83,6 +83,20 @@ describe('projects', () => {
 })
 
 describe('URLs', () => {
+  it('uses the same assigned canonical label as the gateway', () => {
+    const urls = urlsFor(
+      {
+        'traefik.enable': 'true',
+        'com.docker.compose.project': 'shop',
+        'com.docker.compose.service': 'web',
+        'portta.hostname': 'shop--web--preview-9',
+      },
+      'shop-web-1',
+      config,
+    )
+    expect(urls[0]?.url).toBe('http://shop--web--preview-9.localhost')
+  })
+
   it('derives the hostname the way Traefik’s default rule does', () => {
     const urls = urlsFor(
       {
@@ -93,7 +107,7 @@ describe('URLs', () => {
       'whatever',
       config,
     )
-    expect(urls[0]?.url).toBe('http://base-empresarial-web.localhost')
+    expect(urls[0]?.url).toBe('http://base-empresarial--web.localhost')
     expect(urls[0]?.scope).toBe('local')
   })
 
@@ -143,7 +157,7 @@ describe('URLs', () => {
       'x',
       config,
     )
-    expect(urls.map((url) => url.host)).toEqual(['api.alpha.test', 'alpha-api.localhost'])
+    expect(urls.map((url) => url.host)).toEqual(['api.alpha.test', 'alpha--api.localhost'])
   })
 
   it('gives no URL to a service that did not opt in', () => {
@@ -200,12 +214,12 @@ describe('URLs', () => {
         'com.docker.compose.project': 'alpha',
         'com.docker.compose.service': 'web',
         'traefik.tcp.routers.alpha-web.rule': 'HostSNI(`x`)',
-        'traefik.http.routers.alpha-web.rule': 'Host(`alpha-web.test`)',
+        'traefik.http.routers.alpha-web.rule': 'Host(`alpha--web.test`)',
       },
       'alpha-web-1',
       config,
     )
-    expect(urls.map((url) => url.host)).toEqual(['alpha-web.test'])
+    expect(urls.map((url) => url.host)).toEqual(['alpha--web.test'])
   })
 })
 
@@ -351,7 +365,7 @@ describe('what is not a service', () => {
     const alpha = snapshot.environments.find((p) => p.name === 'alpha')
     expect(alpha?.services.map((s) => s.id)).not.toContain('a-web-run')
     expect(alpha?.serviceCount).toBe(4)
-    expect(alpha?.urls.filter((url) => url.host === 'alpha-web.localhost')).toHaveLength(1)
+    expect(alpha?.urls.filter((url) => url.host === 'alpha--web.localhost')).toHaveLength(1)
   })
 
   it('calls a service that exited 0 with no restart policy completed, and counts it', async () => {

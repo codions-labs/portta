@@ -5,6 +5,7 @@ import {
   fstatSync,
   lstatSync,
   openSync,
+  readdirSync,
   readFileSync,
   readSync,
   realpathSync,
@@ -17,6 +18,9 @@ import {
   type ContainerRecord,
   composeNamespace,
   defaultProjectConfig,
+  environmentNamespace,
+  hostLabel,
+  hostnameFor,
   orderProjectServices,
   PROJECT_CONFIG_PATH,
   type ProjectConfig,
@@ -31,9 +35,10 @@ import { z } from 'portta-core/zod'
 import { parse as parseYaml } from 'yaml'
 import { gatewayContext } from '../context.js'
 import { inspectContainers } from '../docker.js'
-import { RefusedError, UsageError } from '../errors.js'
+import { PreconditionError, RefusedError, UsageError } from '../errors.js'
 import { Output } from '../output.js'
 import { runProcess } from '../process.js'
+import { readPlan } from './compose-runtime.js'
 
 function globals(command: Command) {
   return command.optsWithGlobals() as {
@@ -389,8 +394,15 @@ export async function analyze(pathValue: string, options: AnalyzeOptions = {}, c
     )
   const projectFromEnv =
     envText === 'absent' || envText === 'refused' ? undefined : parseEnv(envText).get('COMPOSE_PROJECT_NAME')
+  const gateway = gatewayContext({ required: false })
+  let savedProject: string | undefined
+  try {
+    savedProject = readPlan(gateway.root, safeRealpath(path)).compose.projectName
+  } catch (error) {
+    if (!(error instanceof UsageError)) throw error
+  }
   const declaredName = declaredComposeName(composeFile)
-  const project = projectFromEnv || composeNamespace(declaredName ?? model.name ?? basename(path))
+  const project = savedProject || projectFromEnv || model.name || declaredName || composeNamespace(basename(path))
   const services = Object.entries(model.services).map(([name, service]) => ({
     name,
     image: service.image ?? null,
@@ -446,9 +458,15 @@ export async function analyze(pathValue: string, options: AnalyzeOptions = {}, c
     project_config: readProjectConfig(path),
     project: {
       name: project,
-      source: projectFromEnv ? '.env' : declaredName ? 'compose name:' : 'directory name (implicit)',
+      source: savedProject
+        ? 'Runtime Plan'
+        : projectFromEnv
+          ? '.env'
+          : declaredName
+            ? 'compose name:'
+            : 'directory name (implicit)',
     },
-    domain: gatewayContext({ required: false }).config.domain,
+    domain: gateway.config.domain,
     services,
     findings: {
       published_host_ports: services
@@ -458,14 +476,14 @@ export async function analyze(pathValue: string, options: AnalyzeOptions = {}, c
       published_datastores: services
         .filter((service) => service.kind === 'datastore' && service.published_ports.length > 0)
         .map((service) => service.name),
-      implicit_namespace: !projectFromEnv && !declaredName,
+      implicit_namespace: !savedProject && !projectFromEnv && !declaredName,
       already_adopted: overlay !== null,
       /** Fixed container names the host already has, and who holds them */
       container_name_collisions,
       /** Containers under this COMPOSE_PROJECT_NAME that run from another directory */
       namespace_in_use: otherDirs.length > 0 ? { project, working_dirs: otherDirs } : null,
       /** A top-level `name:` in the file, but no COMPOSE_PROJECT_NAME in .env: the overlay can only fall back to the written name */
-      name_without_env: declaredName !== null && !projectFromEnv ? declaredName : null,
+      name_without_env: declaredName !== null && !savedProject && !projectFromEnv ? declaredName : null,
     },
   }
 }
@@ -557,7 +575,7 @@ export async function analyzeCommand(path: string, options: AnalyzeOptions, comm
     else
       for (const service of report.services.filter((service) => service.kind === 'http'))
         output.line(
-          `  ${service.name}\tport ${service.container_ports[0] ?? service.expose[0] ?? '?'} -> http://${report.project.name}-${service.name}.${report.domain}`,
+          `  ${service.name}\tport ${service.container_ports[0] ?? service.expose[0] ?? '?'} -> http://${hostLabel({ project: report.project.name, service: service.name })}.${report.domain}`,
         )
     output.line('\nNothing in this project was modified. See docs/product/guides/adopting-projects.md.')
   }
@@ -576,21 +594,66 @@ export async function namespaceCommand(
   const root = await gitOutput(path, ['rev-parse', '--show-toplevel'])
   const branch = await gitOutput(path, ['branch', '--show-current'])
   const base = options.base ?? basename(root ?? path).replace(/-(worktree|wt)$/i, '')
-  const suffix = options.suffix ?? (branch ? branchSuffix(branch) : null)
-  const namespace = composeNamespace(base, suffix)
+  const suffix = options.suffix ?? (branch && branchSuffix(branch) !== null ? branch : null)
+  const namespace = environmentNamespace({ base, branch: suffix, workspace: safeRealpath(path) })
   if (options.check !== false) {
-    const collision = (await inspectContainers()).some(
+    const members = (await inspectContainers()).filter(
       (container) => container.labels['com.docker.compose.project'] === namespace,
     )
-    if (collision)
+    const foreign = members.some((container) => {
+      const owner = container.labels['com.docker.compose.project.working_dir']
+      return !owner || safeRealpath(owner) !== safeRealpath(path)
+    })
+    if (foreign)
       throw new RefusedError(
-        `Compose project ${namespace} is already running`,
-        'pass --no-check only when sharing it is intentional',
+        `Compose project ${namespace} belongs to another or unknown workspace`,
+        'choose another base or suffix; existing containers and volumes are left alone',
       )
+    const directory = join(gatewayContext({ required: false }).root, 'runtime/compose')
+    let reservedHere = false
+    for (const entry of existsSync(directory) ? readdirSync(directory) : []) {
+      const plan = join(directory, entry, 'plan.json')
+      if (!existsSync(plan)) continue
+      const stored = JSON.parse(readFileSync(plan, 'utf8')) as {
+        workspace?: string
+        compose?: { projectName?: string }
+      }
+      if (stored.compose?.projectName !== namespace) continue
+      if (!stored.workspace || safeRealpath(stored.workspace) !== safeRealpath(path))
+        throw new RefusedError(`Compose project ${namespace} is reserved by another runtime plan`)
+      reservedHere = true
+    }
+    if (members.length === 0 && !reservedHere) {
+      const volumes = await runProcess(
+        'docker',
+        ['volume', 'ls', '--filter', `label=com.docker.compose.project=${namespace}`, '--format', '{{.Name}}'],
+        { reject: false },
+      )
+      if (volumes.exitCode !== 0)
+        throw new PreconditionError('cannot verify the namespace against existing volumes', volumes.stderr.trim())
+      if (volumes.stdout.trim())
+        throw new RefusedError(
+          `Compose project ${namespace} has volumes without a proven workspace owner`,
+          'recover its original runtime plan before reusing the namespace',
+        )
+    }
   }
   const output = new Output(globals(command))
   if (output.json) output.data({ namespace, base: composeNamespace(base), suffix })
   else output.data(namespace)
+}
+
+/** Pure naming output for manual HTTP/TCP overlays, without touching Docker. */
+export function hostnameCommand(
+  options: { project: string; service: string; context?: string; domain?: string },
+  command: Command,
+): void {
+  const parts = { project: options.project, service: options.service, context: options.context }
+  const label = hostLabel(parts)
+  const hostname = options.domain ? hostnameFor(parts, options.domain) : null
+  const output = new Output(globals(command))
+  if (output.json) output.data({ label, hostname })
+  else output.data(hostname ?? label)
 }
 
 const CONTAINERS_GONE =

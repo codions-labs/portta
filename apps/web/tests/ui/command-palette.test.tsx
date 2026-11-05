@@ -35,11 +35,11 @@ const web = (environment: string) =>
     state: 'running',
     labels: {
       'traefik.enable': 'true',
-      'traefik.http.routers.web.rule': `Host(\`${environment}-web.test\`)`,
+      'traefik.http.routers.web.rule': `Host(\`${environment}--web.test\`)`,
       'traefik.http.routers.web.middlewares': 'portta-forward-auth@file',
     },
     urls: [
-      { url: `https://${environment}-web.test`, host: `${environment}-web.test`, scope: 'public', scheme: 'https' },
+      { url: `https://${environment}--web.test`, host: `${environment}--web.test`, scope: 'public', scheme: 'https' },
     ],
   })
 
@@ -83,7 +83,7 @@ describe('the command menu', () => {
   it('shows how the service is doing beside the list', async () => {
     await search('shop web')
     const preview = await screen.findByRole('complementary', { name: 'How web is doing' })
-    expect(within(preview).getByText('https://demo-shop-web.test')).toBeInTheDocument()
+    expect(within(preview).getByText('https://demo-shop--web.test')).toBeInTheDocument()
     expect(within(preview).getByText('Closed')).toBeInTheDocument()
   })
 

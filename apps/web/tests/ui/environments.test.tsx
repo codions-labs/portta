@@ -36,19 +36,24 @@ vi.mock('@/lib/api', () => ({
 const { EnvironmentsView: EnvironmentsPage } = await import('../../app/(panel)/environments/environments-view.tsx')
 
 const WEB_URL = {
-  url: 'http://alpha-web.localhost',
-  host: 'alpha-web.localhost',
+  url: 'http://alpha--web.localhost',
+  host: 'alpha--web.localhost',
   scope: 'local' as const,
   scheme: 'http' as const,
 }
 const API_URLS = [
   {
-    url: 'https://alpha-api.vpn.example.test',
-    host: 'alpha-api.vpn.example.test',
+    url: 'https://alpha--api.vpn.example.test',
+    host: 'alpha--api.vpn.example.test',
     scope: 'vpn' as const,
     scheme: 'https' as const,
   },
-  { url: 'http://alpha-api.localhost', host: 'alpha-api.localhost', scope: 'local' as const, scheme: 'http' as const },
+  {
+    url: 'http://alpha--api.localhost',
+    host: 'alpha--api.localhost',
+    scope: 'local' as const,
+    scheme: 'http' as const,
+  },
 ]
 
 const alpha: Environment = {

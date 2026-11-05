@@ -29,7 +29,7 @@ import { FIELDS, FIELDS_BY_KEY, ValidationError, validateCombination, validateVa
  *
  * A hostname is a name, not an exposure: this says nothing about who may reach
  * a service, only whether the name they would be given can reach this host at
- * all. Reporting `demo-web.localhost` to somebody reading the panel over the
+ * all. Reporting `demo--web.localhost` to somebody reading the panel over the
  * internet is the failure this exists to catch.
  */
 function projectDomainOf(config: PanelConfig): ProjectDomain {

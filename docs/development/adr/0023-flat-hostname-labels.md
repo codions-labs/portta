@@ -1,93 +1,93 @@
-# 0023. A service's whole name lives in one DNS label
+# 0023. Generated hostnames separate components with -- in one DNS label
 
-**Status:** Accepted; see [0005](0005-hostname-convention.md)
+**Status:** Accepted; extends [0005](0005-hostname-convention.md)
 
 ## Context
 
-[ADR 0005](0005-hostname-convention.md) derives every project hostname from the
-labels Compose already injects, as `<project>-<service>.<base>`. Two things it
-did not have to answer come up as soon as a name needs more than two parts.
+The namespace and service labels that Compose injects identify a service on the
+host. Joining those fields with a single hyphen loses their boundaries:
+namespace `a-b`, service `c` and namespace `a`, service `b-c` both become
+`a-b-c`. A branch, pull request or preview can also add an independent context.
 
-**A name may need a third component.** A branch, a pull request, a preview
-environment — anything that distinguishes one run of the same service from
-another. `<project>-<service>` has nowhere to put it.
-
-**A single `-` cannot be read back.** `slug` replaces every run of
-non-alphanumerics with one `-`, so `storefront-web` could be project
-`storefront` service `web`, or project `storefront-web` with no service at all.
-The gateway never needs to parse a hostname it produced, so this costs
-nothing. Anything that reconciles routes, or that maps a hostname back to a
-container, cannot rely on the split.
-
-The obvious answer — more levels, `web.storefront.example.com` — was measured
-before being rejected.
-
-### What a second level actually costs
-
-Cloudflare's Universal SSL covers **the apex and first-level subdomains only**.
-`web.storefront.example.com` is a second level and is not covered. Serving it
-over HTTPS requires Advanced Certificate Manager, a **paid add-on on every
-plan**, or Total TLS, which is part of the same add-on. Cloudflare's own tunnel
-troubleshooting says so directly: a multi-level subdomain shows
-`This site can't provide a secure connection` until an advanced certificate is
-ordered.
-
-The same limit applies with no Cloudflare in sight. A wildcard certificate
-covers one level, by the standard, so `*.1-2-3-4.sslip.io` cannot cover
-`web.demo.1-2-3-4.sslip.io` either. Multi-level naming would mean a certificate
-per project, on a host that by design has no DNS API to answer a DNS-01
-challenge with. Browsers add nothing to that: a single label is what a
-wildcard, a cookie scope and a CORS origin all agree on.
-
-So the choice is not "flat or nested". It is "flat, or ask every operator to buy
-a certificate add-on before they can name a second project".
+Putting each field in a separate DNS label makes those boundaries visible, but
+changes certificate requirements. A wildcard certificate for `*.example.com`
+covers `shop--web--pr-42.example.com`, not `web.pr-42.shop.example.com`.
+[RFC 9525 section 6.3](https://www.rfc-editor.org/rfc/rfc9525.html#section-6.3)
+limits the wildcard to one complete label. DNS wildcard matching has different
+rules; it must not be confused with certificate matching.
 
 ## Decision
 
-**A service's whole name lives in one DNS label, `<project>-<service>`, and
-a third component, when there is one, joins it with `--`.**
+**Every generated service hostname uses one label and `--` between fields:**
 
+```text
+<namespace>--<service>[--<context>].<domain>
+
+storefront--web.example.com
+storefront--web--pr-42.example.com
+shop-feature-login--api.example.com
 ```
-storefront-web.example.com
-storefront-web--pr-42.example.com
-shop-api--preview-7.example.com
+
+The namespace is the existing `COMPOSE_PROJECT_NAME`, treated as an opaque
+identity. It may already contain the branch. A context is appended only when
+it is an independent field, never to repeat a branch already in the namespace.
+Internal ports remain upstream configuration rather than mandatory URL fields.
+
+Core owns normalization, validation and fitting. Components use lowercase
+ASCII letters, digits and single hyphens, so they cannot introduce the `--`
+separator. Required components that normalize to an empty string, and names
+containing control characters, are refused.
+
+The first label must not contain `--` in positions three and four, reserved by
+IDNA. A generated label such as `go--api` is prefixed with `env-` to avoid that
+position. See [RFC 5890 section 2.3.1](https://www.rfc-editor.org/rfc/rfc5890.html#section-2.3.1).
+
+A DNS label is limited to 63 octets and the complete hostname to 253 characters
+without its trailing dot. Because generated labels are ASCII, their character
+and octet counts agree. A long label is shortened with an eight-character
+hexadecimal SHA-256 digest of its complete original identity, before
+normalization or truncation. Field boundaries remain part of that identity.
+A digest reduces accidental collisions; callers must still refuse conflicting
+routes rather than treating it as a uniqueness or authorization guarantee.
+
+Managed overlays carry the canonical label in `portta.hostname`, without a
+domain. Traefik consumes that label and Core uses the same value for inventory
+and endpoints. The Docker provider's default rule derives the same convention
+when the label is absent, including validation and fitting. Display and routing
+must agree for short names, contexts, normalization and names near the DNS
+limit. Metadata, not a split of the fitted hostname, establishes ownership.
+
+Temporary links use the same boundaries:
+
+```text
+<namespace>--<service>--share-<id>.<domain>
 ```
 
-The Traefik default rule in `docker/compose/compose.yaml` produces the
-`<project>-<service>` label from the Compose labels at container start, and
-`hostLabel` in `packages/core/src/hostname.ts` derives the same name for
-display, so the panel cannot print one name while the gateway serves another.
-A context — a branch, a pull request, a preview — is appended with the
-`--` separator, which works precisely because `slug` collapses runs of `-`: no
-component can ever contain two in a row, so the boundary before the context is
-unambiguous.
-
-Length is bounded by the DNS, not by us: a label may not exceed 63 octets and a
-whole name 253. `fitLabel` trims an over-long label and appends a short digest
-**of the original**, so two long branch names cannot truncate onto each other
-and silently route to whichever container Traefik matched first.
+Fitting reserves room for the share identifier and suffix. Router and service
+identifiers inside Traefik keep their existing names: they are not hostnames.
+TCP templates use the same canonical hostname while keeping their transport
+ports and TLS requirements.
 
 ## Consequences
 
-**One wildcard covers everything.** `*.example.com` — the record the operator
-already has, on the certificate Cloudflare already issues for free — covers
-every project this gateway will ever route, including ones that do not exist
-yet. That is what makes both the automatic domains and the Cloudflare Tunnel
-in [ADR 0025](0025-cloudflare-tunnel.md) work without a per-service record.
+One wildcard certificate can cover all generated names under a base domain.
+This does not issue a certificate, enable HTTPS, publish a service or grant
+access. Those remain separate configuration and authorization decisions.
 
-**Names get longer and less pretty.** `storefront-web--feature-auth-login` is
-a mouthful next to `web.login.storefront.example.com`. That is the trade, and it
-buys a free certificate and a name that can be served under one wildcard.
+The readable label is longer, and abbreviation can remove readable fields.
+Normalization can also converge distinct inputs before a label needs fitting.
+Collision checks and metadata remain necessary; a hostname is not a reversible
+serialization of the environment.
 
-**A very long branch produces a digest.** `feature/…` names that exceed the
-label limit end in six characters nobody chose. The alternative was two branches
-sharing a hostname, which is worse in a way that is much harder to notice.
+There is one runtime convention. The 0.7.0 migration moves existing generated
+URLs and access decisions to it, with no old-format routing fallback, redirects
+or compatibility aliases. Custom domains remain explicit choices. Existing
+Compose namespaces, containers, networks and volumes are not renamed as part
+of this URL migration; preserving those identities preserves the data paths.
+The migration preserves credential hashes and access policy, but sessions tied
+to an old hostname must authenticate again at the new one.
 
-**One style to keep in step.** The Traefik rule and `hostLabel` must produce
-the same label for the same Compose project and service, and a test covers
-both; a second style would double that surface, and there should not be one.
-
-**Temporary links follow the same rule.** A share is
-`<project>-<service>-<id>-share.<domain>`: still one label, so the wildcard a
-public host already has covers it. The project and service are fitted to leave
-room for the id and the suffix inside the 63 octets a label may have.
+The retired format is read only by the dedicated migration operation. New
+namespaces are generated from the original base, branch and workspace identity
+with a digest, while existing namespaces are never passed through that generator
+again. See [Update Portta](../../product/guides/update.md) for the cutover order.

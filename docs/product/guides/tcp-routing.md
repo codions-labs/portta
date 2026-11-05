@@ -4,9 +4,9 @@ One host port per protocol, any number of instances behind it, told apart by
 the hostname the client asks for:
 
 ```text
-storefront-postgres.localhost:5432      -> storefront's postgres:5432
-checkout-postgres.localhost:5432        -> checkout's postgres:5432
-storefront-redis.localhost:6379         -> storefront's redis:6379
+storefront--postgres.localhost:5432      -> storefront's postgres:5432
+checkout--postgres.localhost:5432        -> checkout's postgres:5432
+storefront--redis.localhost:6379         -> storefront's redis:6379
 ```
 
 No project renumbers a port. No container publishes one. Traefik owns `:5432`
@@ -71,11 +71,11 @@ The convention is flat, the one the gateway uses for HTTP
 ([ADR 0005](../../development/adr/0005-hostname-convention.md)):
 
 ```text
-<compose-project>-<service>.<domain>
+<compose-project>--<service>.<domain>
 
-storefront-postgres.localhost
-storefront-redis.localhost
-checkout-postgres.vpn.example.com
+storefront--postgres.localhost
+storefront--redis.localhost
+checkout--postgres.vpn.example.com
 ```
 
 One wildcard covers every service of every project, HTTP and TCP alike, and
@@ -83,6 +83,18 @@ One wildcard covers every service of every project, HTTP and TCP alike, and
 `postgres.storefront.<domain>` does not survive certificate validation, because
 a wildcard covers exactly one label. Nobody invents a hostname: the gateway
 derives it from the labels Compose already sets.
+
+For a manual TCP overlay, derive the canonical label when a namespace is long
+or needs the IDNA prefix, then pass it to the template:
+
+```bash
+export PORTTA_POSTGRES_HOST_LABEL="$(portta envs hostname --project "$COMPOSE_PROJECT_NAME" --service postgres)"
+export PORTTA_REDIS_HOST_LABEL="$(portta envs hostname --project "$COMPOSE_PROJECT_NAME" --service redis)"
+```
+
+The overlay uses the same value for `portta.hostname` and its SNI rule, so a
+fitted name is the one the panel advertises. Persist those values alongside the
+overlay's other host configuration when the environment is reused.
 
 ## Networks: datastores still do not join the HTTP network
 
@@ -143,7 +155,7 @@ is not a security hole. It is a diagnostic one: the client reports whatever it
 makes of an HTTP response rather than "unknown host":
 
 ```text
-$ redis-cli -h 127.0.0.1 -p 6379 --tls --sni typo-redis.localhost get k
+$ redis-cli -h 127.0.0.1 -p 6379 --tls --sni typo--redis.localhost get k
 Error: Protocol error, got "H" as reply type byte
 ```
 
@@ -170,8 +182,8 @@ Nothing extra is needed, which is the point.
   configurable.
 
 ```bash
-psql "postgresql://demo@storefront-postgres.localhost:5432/demo?sslmode=require"
-redis-cli -h 127.0.0.1 -p 6379 --tls --sni storefront-redis.localhost
+psql "postgresql://demo@storefront--postgres.localhost:5432/demo?sslmode=require"
+redis-cli -h 127.0.0.1 -p 6379 --tls --sni storefront--redis.localhost
 ```
 
 ## Remote, on Debian or Ubuntu
@@ -195,7 +207,7 @@ Same mechanism, different exposure.
   is out of scope here.
 
 ```bash
-psql "postgresql://demo@checkout-postgres.vpn.example.com:5432/demo?sslmode=verify-full"
+psql "postgresql://demo@checkout--postgres.vpn.example.com:5432/demo?sslmode=verify-full"
 ```
 
 ## When SNI is not there: the fallback

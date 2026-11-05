@@ -9,7 +9,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { adoptCommand, slug as slugify } from 'portta-core/browser'
+import { adoptCommand, hostnameFor, slug as slugify } from 'portta-core/browser'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CopyButton, Mono } from '@/components/copy'
@@ -62,6 +62,7 @@ export function ReviewView({ path }: { path: string }) {
     path,
     Object.fromEntries(http.map((service) => [service.name, choiceOf(service.name)])),
     data.home,
+    data.project.name,
   )
   const published = data.services.filter((service) => service.publishedPorts.length > 0)
 
@@ -111,11 +112,9 @@ export function ReviewView({ path }: { path: string }) {
                         </td>
                         <td className="px-3 py-3">
                           {isHttp ? (
-                            <Mono
-                              kind="text"
-                              tone="ink"
-                              className="text-xs"
-                            >{`${data.project.name}-${service.name}.${data.domain}`}</Mono>
+                            <Mono kind="text" tone="ink" className="text-xs">
+                              {hostnameFor({ project: data.project.name, service: service.name }, data.domain)}
+                            </Mono>
                           ) : (
                             <span className="text-xs text-subtle">{t('services.onlyInside')}</span>
                           )}

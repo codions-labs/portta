@@ -114,13 +114,13 @@ fixture (`portta-demo-compose`). `portta-demo-external` runs but is not adopted
 by a Project. The routed URLs include:
 
 ```text
-http://demo-shop-web.localhost
-http://demo-shop-api.localhost
-http://demo-shop-mailpit.localhost
-http://demo-shop-rustfs.localhost
-http://demo-site-web.localhost
-http://portta-demo-compose-web.localhost
-http://portta-demo-compose-api.localhost
+http://demo-shop--web.localhost
+http://demo-shop--api.localhost
+http://demo-shop--mailpit.localhost
+http://demo-shop--rustfs.localhost
+http://demo-site--web.localhost
+http://portta-demo-compose--web.localhost
+http://portta-demo-compose--api.localhost
 ```
 
 ```bash

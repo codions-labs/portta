@@ -139,7 +139,7 @@ export const CONTAINERS: ContainerSummary[] = [
     kind: 'http',
     health: 'healthy',
     networks: ['portta', 'alpha_default'],
-    urls: [{ url: 'http://alpha-web.localhost', host: 'alpha-web.localhost', scope: 'local', scheme: 'http' }],
+    urls: [{ url: 'http://alpha--web.localhost', host: 'alpha--web.localhost', scope: 'local', scheme: 'http' }],
   }),
   makeContainer({
     id: 'ext-pg',
@@ -246,7 +246,7 @@ export function makeService(overrides: Partial<Service> = {}): Service {
       kind: 'http',
       primary: {
         provider: 'local',
-        url: 'http://alpha-web.localhost',
+        url: 'http://alpha--web.localhost',
         scope: 'local',
         usable: true,
         shareable: false,
@@ -255,7 +255,7 @@ export function makeService(overrides: Partial<Service> = {}): Service {
       endpoints: [
         {
           provider: 'local',
-          url: 'http://alpha-web.localhost',
+          url: 'http://alpha--web.localhost',
           scope: 'local',
           usable: true,
           shareable: false,
@@ -263,7 +263,7 @@ export function makeService(overrides: Partial<Service> = {}): Service {
         },
         {
           provider: 'public',
-          url: 'https://alpha-web.dev.example.test',
+          url: 'https://alpha--web.dev.example.test',
           scope: 'public',
           usable: true,
           shareable: true,

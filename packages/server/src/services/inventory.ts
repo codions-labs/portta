@@ -18,11 +18,13 @@ import type {
 } from 'portta-contracts'
 import {
   composeFilesFromLabel,
+  hostLabelFromLabels,
+  hostnameFromLabel,
   httpRoutes,
   isTcpOnly,
   projectOperable,
+  routeHostnameProblem,
   serviceKind,
-  slug,
   traefikEnabled,
 } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
@@ -118,11 +120,9 @@ export function urlsFor(labels: Record<string, string>, containerName: string, c
   const scheme = schemeFor(config)
   const routes = httpRoutes(labels)
   const hosts = [...routes.hosts]
-  if (routes.usesDefaultRule) {
-    const project = labels[LABELS.composeProject]
-    const service = labels[LABELS.composeService]
-    const label = project ? `${slug(project)}-${slug(service ?? '')}` : slug(containerName)
-    hosts.push(`${label}.${config.domain}`)
+  if (routes.usesDefaultRule && !routeHostnameProblem({ labels, name: containerName }, config.domain)) {
+    const label = hostLabelFromLabels(labels, containerName)
+    hosts.push(hostnameFromLabel(label, config.domain))
   }
   return hosts.map((host) => ({
     host,

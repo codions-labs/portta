@@ -22,21 +22,21 @@ const data: ServiceConnection = {
   endpoints: [
     {
       provider: 'local',
-      url: 'alpha-postgres.localhost:5432',
+      url: 'alpha--postgres.localhost:5432',
       scope: 'local',
       usable: true,
       shareable: false,
       problem: null,
-      connectionString: 'postgresql://shop:s3cret@alpha-postgres.localhost:5432/storefront?sslmode=require',
+      connectionString: 'postgresql://shop:s3cret@alpha--postgres.localhost:5432/storefront?sslmode=require',
     },
     {
       provider: 'custom-domain',
-      url: 'alpha-postgres.dev.example.com:5432',
+      url: 'alpha--postgres.dev.example.com:5432',
       scope: 'public',
       usable: true,
       shareable: true,
       problem: null,
-      connectionString: 'postgresql://shop:s3cret@alpha-postgres.dev.example.com:5432/storefront?sslmode=require',
+      connectionString: 'postgresql://shop:s3cret@alpha--postgres.dev.example.com:5432/storefront?sslmode=require',
     },
   ],
   credentials: {
@@ -58,8 +58,8 @@ describe('ConnectionPanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Connect' }))
     await waitFor(() => expect(serviceConnection).toHaveBeenCalledWith('alpha', 'postgres'))
 
-    expect(screen.getByText('alpha-postgres.localhost:5432')).toBeInTheDocument()
-    expect(screen.getByText('alpha-postgres.dev.example.com:5432')).toBeInTheDocument()
+    expect(screen.getByText('alpha--postgres.localhost:5432')).toBeInTheDocument()
+    expect(screen.getByText('alpha--postgres.dev.example.com:5432')).toBeInTheDocument()
     expect(screen.getByText('••••••••')).toBeInTheDocument()
     expect(screen.queryByText('s3cret')).not.toBeInTheDocument()
 

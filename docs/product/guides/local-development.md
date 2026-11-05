@@ -34,7 +34,7 @@ directory; an installation outside `~/portta` needs `PORTTA_HOME` exported.
 which asks resolvers to map it, **and every name below it**, to loopback
 without consulting DNS.
 
-So `demo-shop-web.localhost` resolves to `127.0.0.1` with:
+So `demo-shop--web.localhost` resolves to `127.0.0.1` with:
 
 - no `/etc/hosts` editing,
 - no `dnsmasq`,
@@ -66,7 +66,7 @@ Check what your machine does with the resolver applications use:
 
 ```bash
 grep '^hosts' /etc/nsswitch.conf
-getent ahosts demo-shop-web.localhost
+getent ahosts demo-shop--web.localhost
 ```
 
 No answer from `getent` while the browser works means neither
@@ -122,10 +122,10 @@ services:
   web:
     networks: [default, portta]
     external_links:
-      - portta-traefik-1:demo-shop-api.portta.test
+      - portta-traefik-1:demo-shop--api.portta.test
 ```
 
-On the shared network, `demo-shop-api.portta.test` then resolves to Traefik,
+On the shared network, `demo-shop--api.portta.test` then resolves to Traefik,
 which routes it exactly as it does for the browser. There is no wildcard: list
 each hostname the container calls. The link follows Traefik by container name,
 so it survives the gateway being recreated, and does not resolve while the
@@ -136,7 +136,7 @@ instead:
 
 ```yaml
     extra_hosts:
-      - "demo-shop-api.portta.test:host-gateway"
+      - "demo-shop--api.portta.test:host-gateway"
 ```
 
 That reaches Traefik on **OrbStack and Docker Desktop**, which forward
@@ -145,7 +145,7 @@ Engine** it does not: `host-gateway` is the bridge address and Traefik listens
 on `127.0.0.1`. Use `external_links` there.
 
 To call the gateway without a resolvable name at all, send the hostname as a
-header: `curl -H 'Host: demo-shop-api.localhost' http://traefik/` from any
+header: `curl -H 'Host: demo-shop--api.localhost' http://traefik/` from any
 container on the shared network.
 
 
@@ -231,15 +231,18 @@ worktree is a second environment with nothing to configure:
 ```bash
 portta adopt ~/projects/demo-shop
 portta runtime up ~/projects/demo-shop
-# -> demo-shop-web.localhost
+# -> demo-shop-<digest>--web.localhost
 
 git worktree add --relative-paths ../demo-shop-issue59 issue59
 portta adopt ~/projects/demo-shop-issue59
 portta runtime up ~/projects/demo-shop-issue59
-# -> demo-shop-issue59-web.localhost
+# -> demo-shop-issue59-<digest>--web.localhost
 ```
 
 Both run at once, each with its own containers, network, volumes and database.
+The digest distinguishes the original checkout and branch even when their
+readable names normalise alike. Use `portta urls` for the actual URL; an existing
+or explicitly supplied Compose namespace is kept unchanged.
 Inside either directory, `portta up`, `portta status`, `portta logs` and
 `portta down` operate that one environment.
 

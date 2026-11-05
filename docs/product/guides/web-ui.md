@@ -319,7 +319,7 @@ a connection text with no password in it, and the password when the panel can re
 it from the container.
 
 **Fixed address** is the other way in, when [hostname routing](tcp-routing.md) is
-enabled: a stable `<project>-<service>.<domain>:<port>` that needs no bridge. Where a
+enabled: a stable `<project>--<service>.<domain>:<port>` that needs no bridge. Where a
 protocol cannot do it, or hostname routing is off, it says so. The page also lists
 persistent forwarders created with
 [`portta service publish --private`](tailscale-services.md).

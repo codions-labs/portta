@@ -124,7 +124,7 @@ describe('a hostname alias', () => {
     const body = await response.json()
     expect(body.host).toBe('shop.localhost')
     // Additive: the project's own hostname is still in the answer.
-    expect(body.derivedHosts).toContain('alpha-web.localhost')
+    expect(body.derivedHosts).toContain('alpha--web.localhost')
 
     const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
     expect(written).toContain('Host(`shop.localhost`)')
@@ -194,7 +194,7 @@ describe('a hostname alias', () => {
   it('refuses a hostname a running container already claims', async () => {
     const instance = await app()
     const response = await put(instance, '/api/environments/alpha/services/web/alias', {
-      alias: 'alpha-web.localhost',
+      alias: 'alpha--web.localhost',
     })
     expect(response.status).toBe(400)
     expect((await response.json()).error).toContain('already the hostname')
@@ -279,7 +279,7 @@ describe('a hostname alias', () => {
     const project = (await (await instance.app.request('/api/environments/alpha')).json()) as Environment
     const web = project.services.find((service) => service.service === 'web')!
     expect(web.overrides?.alias).toBe('shop.localhost')
-    expect(web.urls.map((url) => url.host)).toContain('alpha-web.localhost')
+    expect(web.urls.map((url) => url.host)).toContain('alpha--web.localhost')
   })
 
   it('reports an alias whose container is gone', async () => {

@@ -92,18 +92,18 @@ assert_eq "" "$(docker ps --format '{{.Names}} {{.Ports}}' | grep -E '^(demo-a|d
 
 describe "every web and api is routed under its own hostname"
 for ns in $ROUTED; do
-  it "$ns web answers"; assert_success test_wait_until 30 test_route_is "http://${ns}-web.localhost/" 200
-  it "$ns api answers"; assert_success test_wait_until 30 test_route_is "http://${ns}-api.localhost/" 200
+  it "$ns web answers"; assert_success test_wait_until 30 test_route_is "http://${ns}--web.localhost/" 200
+  it "$ns api answers"; assert_success test_wait_until 30 test_route_is "http://${ns}--api.localhost/" 200
 done
 
 urls=$("$GW" urls 2>/dev/null)
 for ns in $ROUTED; do
-  it "urls lists ${ns}-web"; assert_contains "$urls" "${ns}-web.localhost"
+  it "urls lists ${ns}-web"; assert_contains "$urls" "${ns}--web.localhost"
 done
 
 describe "nothing is routed without opting in"
 it "a container without traefik.enable is not routed"
-assert_ne "200" "$(test_http_code "http://optin-probe-web.$PORTTA_DOMAIN/")"
+assert_ne "200" "$(test_http_code "http://optin-probe--web.$PORTTA_DOMAIN/")"
 it "and urls does not list it"
 assert_not_contains "$urls" "optin-probe"
 docker rm -f "$PROBE" >/dev/null 2>&1

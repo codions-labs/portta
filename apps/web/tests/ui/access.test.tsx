@@ -74,8 +74,8 @@ const view: AccessView = {
       integrated: true,
       routing: 'starttls-sni',
       routed: true,
-      gatewayAddress: 'storefront-postgres.localhost:5432',
-      gatewayConnectionString: 'postgresql://<user>@storefront-postgres.localhost:5432/<database>?sslmode=require',
+      gatewayAddress: 'storefront--postgres.localhost:5432',
+      gatewayConnectionString: 'postgresql://<user>@storefront--postgres.localhost:5432/<database>?sslmode=require',
     },
     {
       containerId: 'a-redis',

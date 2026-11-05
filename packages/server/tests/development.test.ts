@@ -44,7 +44,7 @@ describe('consolidated services', () => {
     expect(body.environment).toBe('alpha')
     const web = body.services.find((service) => service.name === 'web')
     expect(web?.access.kind).toBe('http')
-    expect(web?.access.primary?.url).toContain('alpha-web')
+    expect(web?.access.primary?.url).toContain('alpha--web')
     expect(web?.actions.stop).toBe(true)
     expect(body.services.some((service) => service.access.kind === 'tcp')).toBe(true)
   })

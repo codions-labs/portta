@@ -155,7 +155,36 @@ services:
       # project opts in without repeating its own name. An explicit
       # `traefik.http.routers.<name>.rule` label always wins.
       TRAEFIK_PROVIDERS_DOCKER_DEFAULTRULE: >-
-        Host(`{{ if index .Labels "com.docker.compose.project" }}{{ normalize (index .Labels "com.docker.compose.project") }}-{{ normalize (index .Labels "com.docker.compose.service") }}{{ else }}{{ normalize .Name }}{{ end }}.${PORTTA_DOMAIN:-localhost}`)
+        {{- $$project := default "" (index .Labels "com.docker.compose.project") -}}
+        {{- $$service := default "" (index .Labels "com.docker.compose.service") -}}
+        {{- $$context := default "" (index .Labels "portta.context") -}}
+        {{- $$label := default "" (index .Labels "portta.hostname") -}}
+        {{- if not $$label -}}
+        {{- $$raw := .Name -}}
+        {{- $$label = lower (trimAll "-" (regexReplaceAll "[^a-zA-Z0-9]+" .Name "-")) -}}
+        {{- if $$project -}}
+        {{- if regexMatch "[\x00-\x1f\x7f]" (printf "%s%s%s" $$project $$service $$context) -}}{{ fail "hostname components contain controls" }}{{- end -}}
+        {{- $$p := lower (trimAll "-" (regexReplaceAll "[^a-zA-Z0-9]+" $$project "-")) -}}
+        {{- $$s := lower (trimAll "-" (regexReplaceAll "[^a-zA-Z0-9]+" $$service "-")) -}}
+        {{- if or (not $$p) (not $$s) -}}{{ fail "hostname components are empty" }}{{- end -}}
+        {{- $$raw = printf "%s\x00%s\x00%s" $$project $$service $$context -}}
+        {{- $$label = printf "%s--%s" $$p $$s -}}
+        {{- if $$context -}}
+        {{- $$c := lower (trimAll "-" (regexReplaceAll "[^a-zA-Z0-9]+" $$context "-")) -}}
+        {{- if not $$c -}}{{ fail "hostname context is empty" }}{{- end -}}
+        {{- $$label = printf "%s--%s" $$label $$c -}}
+        {{- end -}}
+        {{- else -}}
+        {{- if regexMatch "[\x00-\x1f\x7f]" .Name -}}{{ fail "container name contains controls" }}{{- end -}}
+        {{- end -}}
+        {{- if and (ge (len $$label) 4) (eq (substr 2 4 $$label) "--") -}}{{- $$label = printf "env-%s" $$label -}}{{- end -}}
+        {{- if gt (len $$label) 63 -}}{{- $$label = printf "%s-%s" (trimAll "-" (trunc 54 $$label)) (trunc 8 (sha256sum $$raw)) -}}{{- end -}}
+        {{- end -}}
+        {{- if or (gt (len $$label) 63) (not (regexMatch "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$" $$label)) (and (ge (len $$label) 4) (eq (substr 2 4 $$label) "--")) -}}{{ fail "invalid hostname label" }}{{- end -}}
+        {{- $$base := lower (trimSuffix "." "${PORTTA_DOMAIN:-localhost}") -}}
+        {{- if not (regexMatch "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$" $$base) -}}{{ fail "invalid hostname domain" }}{{- end -}}
+        {{- if gt (len (printf "%s.%s" $$label $$base)) 253 -}}{{ fail "hostname exceeds 253 octets" }}{{- end -}}
+        Host(`{{ $$label }}.{{ $$base }}`)
 
       # -- file provider (dynamic configuration) ---------------------------
       TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/dynamic

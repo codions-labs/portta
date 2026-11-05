@@ -36,7 +36,7 @@ Binding one LAN or tailnet address on purpose is covered in
 [Open a project from another device](../guides/local-development.md#open-a-project-from-another-device).
 
 If 80 is already taken, changing `PORTTA_HTTP_PORT` to, say, `8080` means
-URLs become `http://demo-shop-web.localhost:8080`.
+URLs become `http://demo-shop--web.localhost:8080`.
 
 ## Header aliasing
 

@@ -424,11 +424,11 @@ are never edited. `portta adopt` asks for it (`--protect <service>` or
 `--public <service>`), and later:
 
 ```bash
-portta protect host demo-shop-web.example.com --project demo-shop --service web
-portta protect open demo-shop-api.example.com --project demo-shop --service api
+portta protect host demo-shop--web.example.com --project demo-shop --service web
+portta protect open demo-shop--api.example.com --project demo-shop --service api
 portta protect status
-portta protect status demo-shop-web.example.com
-portta protect remove demo-shop-web.example.com
+portta protect status demo-shop--web.example.com
+portta protect remove demo-shop--web.example.com
 ```
 
 `protect host` creates or rotates the credential and prints a generated password

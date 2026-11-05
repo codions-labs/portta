@@ -4900,7 +4900,7 @@
           },
           "domain": {
             "type": "string",
-            "description": "The domain share hostnames sit under, one label deep: <project>-<service>-<id>-share.<domain>"
+            "description": "The domain share hostnames sit under, one label deep: <project>--<service>--share-<id>.<domain>"
           },
           "publicAllowed": {
             "type": "boolean",

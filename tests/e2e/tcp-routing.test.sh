@@ -98,9 +98,9 @@ describe "the gateway publishes one port per protocol"
 # Docker's resolver does not promise RFC 6761 wildcard localhost names. Keep the
 # hostnames in the URLs for TLS SNI, but resolve them explicitly in the client.
 test_toolbox_start \
-  --add-host "$A-postgres.$PORTTA_DOMAIN:127.0.0.1" \
-  --add-host "$B-postgres.$PORTTA_DOMAIN:127.0.0.1" \
-  --add-host "nobody-postgres.$PORTTA_DOMAIN:127.0.0.1" \
+  --add-host "$A--postgres.$PORTTA_DOMAIN:127.0.0.1" \
+  --add-host "$B--postgres.$PORTTA_DOMAIN:127.0.0.1" \
+  --add-host "nobody--postgres.$PORTTA_DOMAIN:127.0.0.1" \
   || { echo "toolbox unavailable: E2E incomplete"; exit 1; }
 traefik_ports=$(docker ps --format '{{.Names}} {{.Ports}}' | grep 'portta-traefik' || true)
 
@@ -143,55 +143,55 @@ assert_eq "" "$(docker inspect "$A-postgres-1" "$B-postgres-1" \
 describe "the hostname decides which database answers"
 
 it "the first project's data comes back on its own hostname"
-assert_success wait_for psql_require "$A-postgres.$PORTTA_DOMAIN" "$A"
+assert_success wait_for psql_require "$A--postgres.$PORTTA_DOMAIN" "$A"
 
 it "and the second's on its own, through the very same port"
-assert_success wait_for psql_require "$B-postgres.$PORTTA_DOMAIN" "$B"
+assert_success wait_for psql_require "$B--postgres.$PORTTA_DOMAIN" "$B"
 
 it "they really are different databases, queried back to back"
-assert_eq "$A|$B" "$(psql_at "$A-postgres.$PORTTA_DOMAIN" require)|$(psql_at "$B-postgres.$PORTTA_DOMAIN" require)"
+assert_eq "$A|$B" "$(psql_at "$A--postgres.$PORTTA_DOMAIN" require)|$(psql_at "$B--postgres.$PORTTA_DOMAIN" require)"
 
 # The Redis routers are separate from the PostgreSQL ones, so they need their
 # own wait. Without it this asserts against whichever router happened to be
 # live first, and fails on a loaded machine.
-wait_for redis_at "$A-redis.$PORTTA_DOMAIN" "$A" || true
-wait_for redis_at "$B-redis.$PORTTA_DOMAIN" "$B" || true
+wait_for redis_at "$A--redis.$PORTTA_DOMAIN" "$A" || true
+wait_for redis_at "$B--redis.$PORTTA_DOMAIN" "$B" || true
 
 it "Redis does the same on its own single port"
-assert_eq "$A|$B" "$(redis_at "$A-redis.$PORTTA_DOMAIN")|$(redis_at "$B-redis.$PORTTA_DOMAIN")"
+assert_eq "$A|$B" "$(redis_at "$A--redis.$PORTTA_DOMAIN")|$(redis_at "$B--redis.$PORTTA_DOMAIN")"
 
 describe "without TLS there is no hostname to route on"
 
 it "sslmode=disable is refused rather than sent somewhere arbitrary"
-assert_success refused "$(psql_at "$A-postgres.$PORTTA_DOMAIN" disable)" "$A"
+assert_success refused "$(psql_at "$A--postgres.$PORTTA_DOMAIN" disable)" "$A"
 
 it "and connecting by IP is too, because SNI is never sent for one"
 assert_success refused "$(psql_at "127.0.0.1" require)" "$A"
 
 it "an unknown hostname reaches nothing"
-assert_success refused "$(psql_at "nobody-postgres.$PORTTA_DOMAIN" require)" "$A"
+assert_success refused "$(psql_at "nobody--postgres.$PORTTA_DOMAIN" require)" "$A"
 
 it "and gets Traefik's HTTP 404, because an unmatched TCP entrypoint falls back to HTTP"
-assert_contains "$(redis_at "nobody-redis.$PORTTA_DOMAIN")" "Protocol error"
+assert_contains "$(redis_at "nobody--redis.$PORTTA_DOMAIN")" "Protocol error"
 
 describe "routes follow the containers"
 
 it "stopping one leaves the other alone"
 docker stop "$A-postgres-1" >/dev/null 2>&1
-assert_eq "$B" "$(psql_at "$B-postgres.$PORTTA_DOMAIN" require)"
+assert_eq "$B" "$(psql_at "$B--postgres.$PORTTA_DOMAIN" require)"
 
 it "and the stopped one stops answering"
-stopped_answers_nothing() { refused "$(psql_at "$A-postgres.$PORTTA_DOMAIN" require)" "$A"; }
+stopped_answers_nothing() { refused "$(psql_at "$A--postgres.$PORTTA_DOMAIN" require)" "$A"; }
 assert_success test_wait_until 15 stopped_answers_nothing
 
 it "starting it again brings its route back"
 docker start "$A-postgres-1" >/dev/null 2>&1
-assert_success wait_for psql_require "$A-postgres.$PORTTA_DOMAIN" "$A"
+assert_success wait_for psql_require "$A--postgres.$PORTTA_DOMAIN" "$A"
 
 it "recreating it from scratch works too"
 compose_env "$A" up -d --force-recreate --wait --wait-timeout 180 postgres >/dev/null 2>&1
 docker exec "$A-postgres-1" psql -U demo -d demo -qc \
   "create table if not exists whoami(name text); delete from whoami; insert into whoami values ('$A');" >/dev/null 2>&1
-assert_success wait_for psql_require "$A-postgres.$PORTTA_DOMAIN" "$A"
+assert_success wait_for psql_require "$A--postgres.$PORTTA_DOMAIN" "$A"
 
 t_summary
