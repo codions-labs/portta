@@ -6,6 +6,14 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-11-04
+
+### Fixed
+
+- A call the panel's sampler makes to Docker that does not answer is now cancelled when it gives up, instead of being
+  left open until Docker answers or the connection drops. Before, a stalled request kept its connection after the
+  sampler moved on.
+
 ## [0.5.1] - 2026-11-04
 
 ### Fixed

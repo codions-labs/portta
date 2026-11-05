@@ -235,13 +235,8 @@ export function storageOf(path: string): HostStorageInfo | null {
 
 // -- the sampler --------------------------------------------------------------
 
-function within<T>(promise: Promise<T>, ms = CALL_TIMEOUT_MS): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`no answer from Docker in ${ms} ms`)), ms)
-  })
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
-}
+/** A signal that ends the request itself, so a Docker call that never answers frees its connection. */
+const giveUpAfter = (ms = CALL_TIMEOUT_MS) => ({ signal: AbortSignal.timeout(ms) })
 
 export interface LiveSources {
   /** `/proc/<name>` as text, or null when it cannot be read. */
@@ -319,7 +314,7 @@ export class LiveMetrics {
     try {
       const now = this.sources.now()
       if (this.info === null || now - this.infoAt >= INFO_INTERVAL_MS) {
-        this.info = await within(this.client.info()).catch(() => null)
+        this.info = await this.client.info(giveUpAfter()).catch(() => null)
         this.infoAt = now
       }
       if (!readsTheHost(this.info, this.sources.platform)) {
@@ -333,7 +328,7 @@ export class LiveMetrics {
       }
       if (now - this.storageAt >= STORAGE_INTERVAL_MS) {
         this.storageAt = now
-        this.storage = storageFromDisk(await within(this.client.diskUsage(), 60_000), Math.floor(now / 1000))
+        this.storage = storageFromDisk(await this.client.diskUsage(giveUpAfter(60_000)), Math.floor(now / 1000))
       }
       this.latest = this.build(now)
       this.remember(this.latest, now)
@@ -357,7 +352,7 @@ export class LiveMetrics {
   }
 
   private async readContainers(): Promise<void> {
-    const listed = await within(this.client.listContainers(false))
+    const listed = await this.client.listContainers(false, giveUpAfter())
     const identities: ContainerIdentity[] = listed.map((item) => ({
       id: item.Id,
       name: (item.Names[0] ?? item.Id).replace(/^\//, ''),
@@ -369,7 +364,7 @@ export class LiveMetrics {
       while (next < identities.length) {
         const identity = identities[next++]
         if (!identity) return
-        const stats = await within(this.client.stats(identity.id, { oneShot: false })).catch(() => null)
+        const stats = await this.client.stats(identity.id, { oneShot: false, ...giveUpAfter() }).catch(() => null)
         if (stats) metrics.push(containerFromStats(stats, { ...identity, service: serviceOf(identity.labels) }))
       }
     }

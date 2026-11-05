@@ -129,8 +129,10 @@ export class DockerClient {
     options: {
       query?: Record<string, string | undefined>
       body?: unknown
+      signal?: AbortSignal
     } = {},
   ): Promise<T> {
+    // The same signal covers the body: a request that stalls while it is read is cancelled too.
     const response = await this.request(method, path, options)
     return (await response.json()) as T
   }
@@ -148,13 +150,14 @@ export class DockerClient {
     return this.json<DockerVersion>('GET', '/version')
   }
 
-  info(): Promise<DockerInfo> {
-    return this.json<DockerInfo>('GET', '/info')
+  info(options: { signal?: AbortSignal } = {}): Promise<DockerInfo> {
+    return this.json<DockerInfo>('GET', '/info', options)
   }
 
-  listContainers(all = true): Promise<DockerContainerListItem[]> {
+  listContainers(all = true, options: { signal?: AbortSignal } = {}): Promise<DockerContainerListItem[]> {
     return this.json<DockerContainerListItem[]>('GET', '/containers/json', {
       query: { all: all ? '1' : '0' },
+      ...options,
     })
   }
 
@@ -170,8 +173,8 @@ export class DockerClient {
     return this.json<DockerNetwork>('GET', `/networks/${assertValidId(id)}`)
   }
 
-  diskUsage(): Promise<DockerDiskUsage> {
-    return this.json<DockerDiskUsage>('GET', '/system/df')
+  diskUsage(options: { signal?: AbortSignal } = {}): Promise<DockerDiskUsage> {
+    return this.json<DockerDiskUsage>('GET', '/system/df', options)
   }
 
   async removeNetwork(id: string): Promise<void> {
@@ -301,10 +304,11 @@ export class DockerClient {
    * One sample. `one-shot` answers at once but without a previous reading to take
    * a CPU difference against; without it Docker waits a second and includes one.
    */
-  async stats(id: string, options: { oneShot?: boolean } = {}): Promise<DockerStats> {
+  async stats(id: string, options: { oneShot?: boolean; signal?: AbortSignal } = {}): Promise<DockerStats> {
     const oneShot = options.oneShot ?? true
     return this.json<DockerStats>('GET', `/containers/${assertValidId(id)}/stats`, {
       query: { stream: 'false', ...(oneShot ? { 'one-shot': 'true' } : {}) },
+      ...(options.signal ? { signal: options.signal } : {}),
     })
   }
 

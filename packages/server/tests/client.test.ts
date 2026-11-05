@@ -101,6 +101,15 @@ describe('the client refuses to widen its own permissions', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  it('hands a caller’s signal to the request, so a call that never answers can be ended', async () => {
+    stub()
+    const client = new DockerClient('http://proxy:2375')
+    const controller = new AbortController()
+    await client.stats('abc', { oneShot: false, signal: controller.signal })
+    await client.diskUsage({ signal: controller.signal })
+    for (const call of fetchMock.mock.calls) expect((call[1] as RequestInit).signal).toBe(controller.signal)
+  })
+
   it('never issues a call the allowlist does not name', async () => {
     stub()
     const client = new DockerClient('http://proxy:2375')
