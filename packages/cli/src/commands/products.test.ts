@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { relativeProjectPath } from './products.js'
+import { changeTags, parseTagText, relativeProjectPath, tagText } from './products.js'
 
 describe('relativeProjectPath', () => {
   it('passes a path already relative to Projects Home as it is', () => {
@@ -17,5 +17,28 @@ describe('relativeProjectPath', () => {
     expect(() => relativeProjectPath('/srv/billing', '/root/projects', '/tmp')).toThrow(/not under Projects Home/)
     expect(() => relativeProjectPath('/root/projects', '/root/projects', '/tmp')).toThrow(/not under Projects Home/)
     expect(() => relativeProjectPath('.', null, '/tmp')).toThrow(/not known on this host/)
+  })
+})
+
+describe('tags from the terminal', () => {
+  const current = [
+    { key: 'cliente', value: 'Acme' },
+    { key: '', value: 'loja' },
+  ]
+
+  it('reads a tag the way the panel does', () => {
+    expect(parseTagText('Cliente:  Acme ')).toEqual({ key: 'cliente', value: 'Acme' })
+    expect(parseTagText('loja')).toEqual({ key: '', value: 'loja' })
+    expect(() => parseTagText('cliente:')).toThrow(/not a tag/)
+  })
+
+  it('adds without duplicating and removes what was asked, keeping the rest', () => {
+    const next = changeTags(current, ['time: web', 'loja'], ['cliente: Acme'])
+    expect(next.map(tagText)).toEqual(['loja', 'time: web'])
+  })
+
+  it('refuses more than sixteen', () => {
+    const many = Array.from({ length: 17 }, (_, index) => `t${index}`)
+    expect(() => changeTags([], many, [])).toThrow(/at most 16/)
   })
 })

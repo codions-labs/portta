@@ -50,6 +50,14 @@ groups and filters: it grants and hides nothing, so whoever may update a Project
 it, and the change is in the audit log as `project.tagged`. `PUT /api/projects/{slug}/tags`
 replaces them all.
 
+**Group by Folder** gathers the list by the first folder under Projects Home, so projects kept as
+`powertech/lms-platform` and `powertech/lms-mobile` sit under *powertech*; it is offered only when some project sits
+below the top level. In the table the tags have their own column, and **Tag** on a selection adds or removes one
+tag across the Projects selected, keeping what each already carries. The search, the tag filter and the grouping
+are kept in the address, so a reload or a shared link shows the same list. From a terminal,
+`portta projects tag <slug> --add "cliente: Acme" --remove loja` changes them, with no options it prints them, and
+`portta projects list` has a TAGS column.
+
 Both views are places to act, not only to look. A Project carries the one action
 its state allows (start what is stopped, stop what is running) and a menu
 with the rest: environments, settings, archive, delete. An action that could

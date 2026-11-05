@@ -140,7 +140,14 @@
       "restartTitle_other": "Restart {{count}} projects?",
       "restartImpact": "This restarts {{count}} containers; each one is briefly unreachable.",
       "archiveTitle": "Archive {{count}} projects?",
-      "archiveImpact": "They leave the default list. Nothing on the server changes, and they can be unarchived at any time."
+      "archiveImpact": "They leave the default list. Nothing on the server changes, and they can be unarchived at any time.",
+      "tag": "Tag",
+      "tagTitle": "Tag {{count}} projects",
+      "tagHint": "Write the tag as shop or client: Acme. Projects keep the tags they already have.",
+      "tagAdd": "Add",
+      "tagRemove": "Remove",
+      "cancel": "Cancel",
+      "tagged": "Tag {{tag}} applied"
     }
   },
   "views": {

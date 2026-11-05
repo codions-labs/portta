@@ -140,7 +140,14 @@
       "restartTitle_other": "Reiniciar {{count}} projetos?",
       "restartImpact": "Isso reinicia {{count}} contêineres; cada um fica brevemente inacessível.",
       "archiveTitle": "Arquivar {{count}} projetos?",
-      "archiveImpact": "Eles saem da lista padrão. Nada no servidor muda, e podem ser desarquivados a qualquer momento."
+      "archiveImpact": "Eles saem da lista padrão. Nada no servidor muda, e podem ser desarquivados a qualquer momento.",
+      "tag": "Tag",
+      "tagTitle": "Tag em {{count}} projetos",
+      "tagHint": "Escreva a tag como loja ou cliente: Acme. Os projetos mantêm as tags que já têm.",
+      "tagAdd": "Adicionar",
+      "tagRemove": "Remover",
+      "cancel": "Cancelar",
+      "tagged": "Tag {{tag}} aplicada"
     }
   },
   "views": {

@@ -63,7 +63,14 @@ import {
   publicEnable,
   publicStatus,
 } from './commands/network.js'
-import { envLogs, projectsCreate, projectsList, projectsResources, projectsShow } from './commands/products.js'
+import {
+  envLogs,
+  projectsCreate,
+  projectsList,
+  projectsResources,
+  projectsShow,
+  projectsTag,
+} from './commands/products.js'
 import {
   analyzeCommand,
   namespaceCommand,
@@ -317,7 +324,10 @@ describe(envs.command('endpoints <name>'), 'The routed hostnames of one environm
   (name, _options, command) => urlsCommand({ project: name }, command),
 )
 
-const projects = describe(program.command('projects'), 'The products being developed: list, create, resolve, resources')
+const projects = describe(
+  program.command('projects'),
+  'The products being developed: list, create, tag, resolve, resources',
+)
 describe(panelOptions(projects.command('list')), 'List Projects').action(projectsList)
 describe(panelOptions(projects.command('show <slug>')), 'One Project with its environments').action(
   (slug, _options, command) => projectsShow(slug, command),
@@ -329,6 +339,11 @@ describe(panelOptions(projects.command('create')), 'Create a Project')
   .option('--path <dir>', 'directory under Projects Home: group/project, an absolute path, or . for this one')
   .option('--environments <names>', 'comma-separated environments to adopt by hand, running or remembered')
   .action(projectsCreate)
+describe(panelOptions(projects.command('tag <slug>')), 'Show, add or remove the tags of a Project')
+  .option('--add <tag...>', 'a tag to add: `loja` or `cliente: Acme`')
+  .option('--remove <tag...>', 'a tag to remove')
+  .option('--clear', 'remove every tag first')
+  .action((slug, options, command) => projectsTag(slug, options, command))
 describe(
   panelOptions(projects.command('resolve')),
   'Which Project a directory belongs to: its root, a subdirectory or a worktree',

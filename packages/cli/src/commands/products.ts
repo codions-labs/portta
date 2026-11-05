@@ -13,6 +13,7 @@ import { projectsHomeOf } from '../metrics/discovery.js'
 import { clientFor, query, table } from './work.js'
 
 interface ProjectSummary {
+  tags?: ProjectTag[]
   id: string
   slug: string
   name: string
@@ -22,7 +23,12 @@ interface ProjectSummary {
   environmentCount: number
   runningEnvironmentCount: number
 }
+interface ProjectTag {
+  key: string
+  value: string
+}
 interface Project extends ProjectSummary {
+  tags?: ProjectTag[]
   resolvedPath: string | null
   environments: Array<{
     environment: string
@@ -41,15 +47,71 @@ export async function projectsList(_options: unknown, command: Command): Promise
   if (body.projects.length === 0)
     return output.progress('no projects yet: create one in the panel or with `portta projects create`')
   table(output, [
-    ['SLUG', 'NAME', 'ENVS', 'RUNNING', 'WHERE'],
+    ['SLUG', 'NAME', 'ENVS', 'RUNNING', 'WHERE', 'TAGS'],
     ...body.projects.map((p) => [
       p.slug,
       p.name,
       String(p.environmentCount),
       String(p.runningEnvironmentCount),
       p.location,
+      (p.tags ?? []).map(tagText).join(', '),
     ]),
   ])
+}
+
+const MAX_TAGS = 16
+
+export function tagText(tag: ProjectTag): string {
+  return tag.key === '' ? tag.value : `${tag.key}: ${tag.value}`
+}
+
+/** `cliente: Acme` or `loja`: everything before the first colon is the key, lowercased, as the panel reads it. */
+export function parseTagText(text: string): ProjectTag {
+  const at = text.indexOf(':')
+  const key = at < 0 ? '' : text.slice(0, at).trim().toLowerCase()
+  const value = (at < 0 ? text : text.slice(at + 1)).trim()
+  if (value === '' || key.length > 32 || value.length > 64) {
+    throw new UsageError(
+      `'${text}' is not a tag`,
+      'write a tag as `loja` or `cliente: Acme`: key up to 32, value up to 64',
+    )
+  }
+  return { key, value }
+}
+
+/** The tags after removing what was asked and adding what was asked, in the order they were. */
+export function changeTags(
+  current: readonly ProjectTag[],
+  add: readonly string[],
+  remove: readonly string[],
+): ProjectTag[] {
+  const gone = new Set(remove.map((text) => tagText(parseTagText(text))))
+  const kept = current.filter((tag) => !gone.has(tagText(tag)))
+  const next = [...kept]
+  for (const text of add) {
+    const tag = parseTagText(text)
+    if (!next.some((other) => tagText(other) === tagText(tag))) next.push(tag)
+  }
+  if (next.length > MAX_TAGS) throw new UsageError(`a project carries at most ${MAX_TAGS} tags`)
+  return next
+}
+
+export async function projectsTag(
+  slug: string,
+  options: { add?: string[]; remove?: string[]; clear?: boolean },
+  command: Command,
+): Promise<void> {
+  const { client, output } = clientFor(command)
+  const project = await client.request<Project>('GET', `/projects/${segment(slug)}`)
+  const asked = (options.add?.length ?? 0) + (options.remove?.length ?? 0) > 0 || options.clear === true
+  const tags = asked
+    ? changeTags(options.clear ? [] : (project.tags ?? []), options.add ?? [], options.remove ?? [])
+    : (project.tags ?? [])
+  const updated = asked
+    ? await client.request<ProjectSummary>('PUT', `/projects/${segment(slug)}/tags`, { tags })
+    : project
+  if (output.json) return output.data(updated)
+  output.line(`${project.slug}: ${tags.length > 0 ? tags.map(tagText).join(', ') : 'no tags'}`)
 }
 
 export async function projectsShow(slug: string, command: Command): Promise<void> {

@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeOverview, makePulse } from './fixtures.ts'
@@ -159,6 +159,31 @@ describe('the Projects page', () => {
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Stop' }))
     expect(environmentAction).toHaveBeenCalledWith('produto', 'stop')
     expect(environmentAction).not.toHaveBeenCalledWith('loja', 'stop')
+  })
+
+  it('tags several projects at once, keeping what each already carries', async () => {
+    projects.mockResolvedValue([
+      summary({ tags: [{ key: '', value: 'loja' }] }),
+      { ...idle, tags: [{ key: 'cliente', value: 'Acme' }] },
+    ])
+    developmentOverview.mockResolvedValue(makeOverview({ projects: [] }))
+    renderWithQuery(view())
+    await screen.findByRole('link', { name: 'Meu Produto' })
+    await userEvent.click(screen.getByRole('radio', { name: 'Table' }))
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Select every row' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Tag' }))
+    const dialog = screen.getByRole('dialog')
+    await userEvent.type(within(dialog).getByLabelText('New tag'), 'time: web', { delay: null })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add' }))
+    await waitFor(() => expect(setProjectTags).toHaveBeenCalledTimes(2))
+    expect(setProjectTags).toHaveBeenCalledWith('produto', [
+      { key: '', value: 'loja' },
+      { key: 'time', value: 'web' },
+    ])
+    expect(setProjectTags).toHaveBeenCalledWith(idle.slug, [
+      { key: 'cliente', value: 'Acme' },
+      { key: 'time', value: 'web' },
+    ])
   })
 
   it('will not delete a project until its slug is typed', async () => {
