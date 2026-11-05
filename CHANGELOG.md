@@ -6,6 +6,22 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-05
+
+### Changed
+
+- Generated project hostnames use `--` between namespace, service and optional context, such as
+  `shop--web.example.com`. Temporary shares use `shop--web--share-<id>.example.com`. Previous generated URLs
+  are removed; update application base URLs, callbacks and clients when upgrading.
+- Hostname generation is shared by the CLI, panel and gateway, with DNS length validation and stable
+  SHA-256 suffixes for long names. Newly generated namespaces retain the original environment identity
+  when normalisation or truncation would otherwise collide; existing Compose namespaces stay intact.
+
+### Added
+
+- `portta migrate hostnames` previews the URL migration; `--apply` backs up and migrates runtime plans,
+  overlays and access decisions without starting stopped environments, changing passwords or renaming volumes.
+
 ## [0.6.1] - 2026-11-05
 
 ### Fixed
@@ -458,7 +474,8 @@ baseline was regenerated.
   all three from the repository root, rewriting the README's relative links to
   absolute GitHub URLs.
 
-[Unreleased]: https://github.com/codions-labs/portta/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/codions-labs/portta/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/codions-labs/portta/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/codions-labs/portta/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/codions-labs/portta/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/codions-labs/portta/compare/v0.5.1...v0.5.2

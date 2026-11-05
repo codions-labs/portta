@@ -52,7 +52,7 @@ export function initialState() {
           workingDir: '/srv/dev/alpha',
           routed: true,
         }),
-        'traefik.http.routers.alpha-web.rule': 'Host(`alpha-web.localhost`) || Host(`alpha-preview.localhost`)',
+        'traefik.http.routers.alpha-web.rule': 'Host(`alpha--web.localhost`) || Host(`alpha-preview.localhost`)',
       },
     }),
     makeContainer({

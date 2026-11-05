@@ -45,14 +45,14 @@ describe('the Open / Test menu', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open / Test' }))
     const items = await screen.findAllByRole('menuitem')
     expect(items.map((item) => item.textContent?.trim())).toEqual([
-      'http://alpha-web.localhost',
-      'https://alpha-web.dev.example.test',
+      'http://alpha--web.localhost',
+      'https://alpha--web.dev.example.test',
       'Logs',
     ])
     expect(screen.getByText('local')).toBeInTheDocument()
     expect(screen.getByText('public')).toBeInTheDocument()
     await userEvent.click(items[1]!)
-    expect(open).toHaveBeenCalledWith('https://alpha-web.dev.example.test', '_blank', 'noopener,noreferrer')
+    expect(open).toHaveBeenCalledWith('https://alpha--web.dev.example.test', '_blank', 'noopener,noreferrer')
     open.mockRestore()
   })
 })

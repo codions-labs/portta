@@ -86,7 +86,7 @@ describe('a name that resolves is not a route', () => {
   it('marks a public name unusable while Traefik listens on loopback', () => {
     const list = endpoints(WEB, vpsOnTailnet({ publicIpv4: '152.53.36.62' }), ['auto-domain'])
     const auto = list.find((entry) => entry.provider === 'auto-domain')
-    expect(auto?.url).toBe('http://storefront-web.152-53-36-62.sslip.io')
+    expect(auto?.url).toBe('http://storefront--web.152-53-36-62.sslip.io')
     expect(auto?.usable).toBe(false)
     expect(auto?.shareable).toBe(false)
     expect(auto?.problem).toMatch(/Traefik listens on 127\.0\.0\.1 only/)
@@ -99,7 +99,7 @@ describe('a name that resolves is not a route', () => {
 
   it('says the tailnet name needs the tailnet address bound, not public exposure', () => {
     const tailscale = endpoints(WEB, vpsOnTailnet(), ['tailscale']).find((entry) => entry.provider === 'tailscale')
-    expect(tailscale?.url).toBe('http://storefront-web.100-87-243-7.sslip.io')
+    expect(tailscale?.url).toBe('http://storefront--web.100-87-243-7.sslip.io')
     expect(tailscale?.problem).toMatch(/Set the bind address to 100\.87\.243\.7/)
   })
 
@@ -113,7 +113,7 @@ describe('a name that resolves is not a route', () => {
 
   it('a localhost base on a loopback bind is the one that does work', () => {
     const local = endpoints(WEB, laptop(), []).find((entry) => entry.provider === 'local')
-    expect(local).toMatchObject({ url: 'http://storefront-web.localhost', usable: true })
+    expect(local).toMatchObject({ url: 'http://storefront--web.localhost', usable: true })
   })
 })
 
@@ -156,7 +156,7 @@ describe('the tunnel does not depend on the bind address', () => {
     const list = endpoints(WEB, withTunnel(true), ['cloudflare-tunnel'])
     const tunnel = list.find((entry) => entry.provider === 'cloudflare-tunnel')
     expect(tunnel).toMatchObject({
-      url: 'https://storefront-web.portta.app',
+      url: 'https://storefront--web.portta.app',
       scope: 'public',
       usable: true,
       shareable: true,
@@ -244,9 +244,9 @@ describe('a hostname-routable datastore', () => {
     const list = tcp(facts, ['lan', 'tailscale', 'custom-domain'])
     expect(list.map((entry) => entry.provider)).toEqual(['internal', 'local', 'lan', 'tailscale', 'custom-domain'])
     expect(list.find((entry) => entry.provider === 'custom-domain')?.url).toBe(
-      'storefront-postgres.dev.example.com:5432',
+      'storefront--postgres.dev.example.com:5432',
     )
-    expect(list.find((entry) => entry.provider === 'lan')?.url).toBe('storefront-postgres.192-168-1-10.sslip.io:5432')
+    expect(list.find((entry) => entry.provider === 'lan')?.url).toBe('storefront--postgres.192-168-1-10.sslip.io:5432')
   })
 
   it('emits nothing routed when the container has not opted in', () => {

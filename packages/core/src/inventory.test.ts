@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type ContainerRecord, routesFor } from './inventory.js'
+import { type ContainerRecord, routeHostnameProblem, routesFor } from './inventory.js'
 
 const container: ContainerRecord = {
   id: '1',
@@ -30,6 +30,23 @@ describe('routes without a hostname', () => {
 })
 
 describe('routes read from labels', () => {
+  it('rejects an invalid assigned hostname without losing the other routes', () => {
+    const broken = { ...container, name: 'broken', labels: { ...container.labels, 'portta.hostname': 'go--web' } }
+    expect(routeHostnameProblem(broken, 'localhost')).toContain('invalid hostname label')
+    expect(routesFor([broken, container], 'localhost').map((route) => route.hostname)).toEqual(['shop--web.localhost'])
+  })
+
+  it('announces the canonical label assigned to a generated router', () => {
+    const routed = {
+      ...container,
+      labels: { ...container.labels, 'portta.hostname': 'shop--web--preview-9' },
+    }
+    expect(routesFor([routed], 'localhost')[0]).toMatchObject({
+      hostname: 'shop--web--preview-9.localhost',
+      url: 'http://shop--web--preview-9.localhost',
+    })
+  })
+
   it('lets an explicit Host() rule win, reads the backend port, and leaves out a TCP-only database', () => {
     const probe: ContainerRecord = {
       ...container,

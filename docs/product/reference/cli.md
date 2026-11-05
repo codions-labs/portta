@@ -122,6 +122,7 @@ project Docker is running: an observation, read locally.
 | `envs services` | `--project <name>` |
 | `envs analyze <path>` | Read-only. `--file <path>` names the Compose file (relative to `<path>` or absolute) when it is not `compose.yaml` in `<path>`; the project directory is then the file's. |
 | `envs namespace` | `--path`, `--base`, `--suffix`, `--no-check` |
+| `envs hostname` | Required `--project <namespace>` and `--service <service>`; optional `--context` and `--domain`. Prints the canonical DNS label, or the full hostname when a domain is given. Reads no Docker state. |
 | `adopt <path>` | Canonical isolated Compose adoption. `--dry-run --json` reports the Runtime Plan and pending decisions without writing state. Repeat `--service <name:port>` to choose an HTTP surface; `--project <name>` sets an explicit Compose project namespace; `--remove-container-name <service>`, `--allow-shared-networks`, and `--allow-shared-volumes` record explicit compatibility decisions. `--manual` records a project-owned integration without Portta mutations. On a public host, `--protect <service>` asks for a generated credential (printed once) and `--public <service>` lets everybody open it; adopt stops with a pending `public_exposure` until every routed service has one. |
 | `runtime up\|down\|restart\|status\|config [path]` | Reuse the validated persisted Runtime Plan; `up` reconciles stale source inputs before starting. |
 | `runtime logs [path]` | `--service <name>`, `--no-follow`, `--tail <lines>` |
@@ -237,6 +238,7 @@ arguments directly to the selected client. `psql` and `mysql` also accept
 | `backup` | `-o, --output <file>`, `--no-database`. Copies the panel database with `VACUUM INTO` (needs `sqlite3`) unless `--no-database`; the archive holds credentials and is written 0600. |
 | `restore <file>` | `-f, --force`; refuses while the gateway runs without it, and always keeps a safety copy of what it replaces. |
 | `repair` | `--dry-run`; never deletes data, never touches a volume. |
+| `migrate hostnames` | Previews the generated URL migration. `--apply` requires the panel to be stopped, saves a private backup and migrates stored routes and access decisions without starting applications. See [Update Portta](../guides/update.md). |
 
 
 ## JSON shapes
@@ -274,6 +276,7 @@ The table lists the stable top-level fields of `data`:
 | `envs logs` | `lines[]` (`service`, `line`, `stream`) |
 | `envs analyze` | `path`, `compose_file`, `gateway_overlay`, `project`, `domain`, `services`, `findings` |
 | `envs namespace` | `namespace`, `base`, `suffix` |
+| `envs hostname` | `label`, `hostname` (null without `--domain`) |
 | `projects list` | `projects[]` (`ProjectSummary` of the API) |
 | `projects show` | the API's `Project` |
 | `projects resolve` | `resolved`, `path`, `basis` (`root`, `subdirectory`, `worktree`), `project` (`id`, `slug`, `name`, `path`), `worktree` (`path`, `mainPath`); on failure `error` (`kind`, `message`, `hint`, `candidates[]`) with exit 1 (`unknown`, `ambiguous`) or 4 (`unauthorized`) |
@@ -294,6 +297,7 @@ The table lists the stable top-level fields of `data`:
 | `tunnel test` | `host`, `code`, `ok`, `detail`, `hint` |
 | `backup` | `file`, `size`, `paths[]`, `database` |
 | `repair --dry-run` | `dryRun`, `changes[]` |
+| `migrate hostnames` | `applied`, `changed`, `moves[]`, `files[]`, `backup` |
 | `agent context` | `host` (`portta`, `version`, `profile`, `gateway`, `domain`), `project` (`root`, `worktree`, `scope`, `compose`, `publishedPorts`, `exposure[]`, `urls`, `violations`, `note`), `skills`, `next` |
 | `agents install\|status\|uninstall` | `home`, `dryRun`, `agents[]`, `items[]` (`agent`, `kind`, `path`, `state`, `action`), `notes[]` |
 

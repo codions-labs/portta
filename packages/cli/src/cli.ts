@@ -54,6 +54,7 @@ import {
   versionCommand,
 } from './commands/lifecycle.js'
 import { backupCommand, repairCommand, restoreCommand } from './commands/maintenance.js'
+import { migrateHostnames } from './commands/migrate-hostnames.js'
 import {
   dnsCheck,
   dnsSetup,
@@ -74,6 +75,7 @@ import {
 } from './commands/products.js'
 import {
   analyzeCommand,
+  hostnameCommand,
   namespaceCommand,
   projectAction,
   projectList,
@@ -223,6 +225,12 @@ describe(envs.command('services'), 'List services across running environments')
 describe(envs.command('report'), 'Collect host environment readiness into state/environment').action(
   (_options, command) => environmentReport(command),
 )
+describe(envs.command('hostname'), 'Derive a canonical service DNS label or hostname')
+  .requiredOption('--project <namespace>', 'Compose project namespace')
+  .requiredOption('--service <service>', 'Compose service name')
+  .option('--context <context>', 'independent preview context')
+  .option('--domain <domain>', 'append this base domain and validate the hostname')
+  .action(hostnameCommand)
 describe(envs.command('analyze <path>'), 'Read-only adoption report')
   .option(
     '--file <path>',
@@ -648,6 +656,11 @@ describe(program.command('restore [file]'), 'Put a backup back, keeping what it 
 describe(program.command('repair'), 'Recreate what is missing and fix what is provably wrong')
   .option('--dry-run', 'print the plan without changing anything')
   .action(repairCommand)
+
+const migrate = describe(program.command('migrate'), 'Preview or apply installation state migrations')
+describe(migrate.command('hostnames'), 'Move generated URLs to the double-hyphen convention, preserving credentials')
+  .option('--apply', 'apply after stopping the panel; default: read-only preview')
+  .action(migrateHostnames)
 
 /** Every work command talks to the panel API, as the UI does. */
 function panelOptions(command: Command, includeActor = true): Command {

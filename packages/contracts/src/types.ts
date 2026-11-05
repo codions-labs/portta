@@ -750,7 +750,7 @@ export const ShareView = named(
       shares: z.array(Share),
       domain: z
         .string()
-        .describe('The domain share hostnames sit under, one label deep: <project>-<service>-<id>-share.<domain>'),
+        .describe('The domain share hostnames sit under, one label deep: <project>--<service>--share-<id>.<domain>'),
       publicAllowed: z.boolean().describe('Whether a public share would be accepted'),
       maxTtlSeconds: z.number().int(),
     })

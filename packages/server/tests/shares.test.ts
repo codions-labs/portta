@@ -45,7 +45,7 @@ describe('the share hostname', () => {
 
   it('is one DNS label under the domain, so the wildcard certificate covers it', () => {
     const host = shareHost(config, 'storefront', 'web', 'a7f3')
-    expect(host).toBe('storefront-web-a7f3-share.apps.example.test')
+    expect(host).toBe('storefront--web--share-a7f3.apps.example.test')
     expect(host.slice(0, host.indexOf('.apps.'))).not.toContain('.')
   })
 
@@ -58,7 +58,7 @@ describe('the share hostname', () => {
     )
     const label = host.slice(0, host.indexOf('.apps.'))
     expect(label.length).toBeLessThanOrEqual(63)
-    expect(label.endsWith('-a7f3-share')).toBe(true)
+    expect(label.endsWith('--share-a7f3')).toBe(true)
   })
 })
 
@@ -73,7 +73,7 @@ describe('a share is an additional hostname, and nothing about the project chang
     // alias `web` on the shared network.
     expect(yaml).toContain('url: "http://alpha-web-1:80"')
     expect(yaml).toContain('middlewares: [portta-forward-auth]')
-    expect(created.share.host).toMatch(/^alpha-web-[0-9a-f]{4}-share\.dev\.example\.com$/)
+    expect(created.share.host).toMatch(/^alpha--web--share-[0-9a-f]{4}\.dev\.example\.com$/)
   })
 
   it('shows the password exactly once, and stores only its hash', async () => {

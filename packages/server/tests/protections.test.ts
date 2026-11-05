@@ -15,7 +15,7 @@ const gatedProjects = PROJECT_A.map((container) => ({
     ...(container.labels?.['traefik.enable'] === 'true'
       ? {
           [`traefik.http.routers.alpha-${container.labels['com.docker.compose.service']}.rule`]:
-            container.labels['traefik.http.routers.alpha-api.rule'] ?? 'Host(`alpha-web.localhost`)',
+            container.labels['traefik.http.routers.alpha-api.rule'] ?? 'Host(`alpha--web.localhost`)',
           [`traefik.http.routers.alpha-${container.labels['com.docker.compose.service']}.middlewares`]:
             'portta-forward-auth@file',
         }
@@ -202,7 +202,7 @@ describe('who may open a service, from the panel', () => {
       project: 'old-project',
       service: 'web',
       container: 'old-project-web-1',
-      host: 'alpha-web.localhost',
+      host: 'alpha--web.localhost',
       port: 80,
       entryPoint: 'websecure',
     }
@@ -210,10 +210,10 @@ describe('who may open a service, from the panel', () => {
     writeFileSync(file, renderAliases([alias], true))
     expect((await post(app, '/api/services/a-web/exposure/open')).status).toBe(200)
     const rendered = readFileSync(file, 'utf8')
-    expect(rendered).not.toContain('Host(`alpha-web.localhost`)')
+    expect(rendered).not.toContain('Host(`alpha--web.localhost`)')
     expect(parseAliases(rendered)).toEqual([alias])
     expect((await del(app, '/api/services/a-web/exposure')).status).toBe(200)
-    expect(readFileSync(file, 'utf8')).toContain('Host(`alpha-web.localhost`)')
+    expect(readFileSync(file, 'utf8')).toContain('Host(`alpha--web.localhost`)')
   })
 
   it('keeps a hostname closed when its alias routing state cannot be read', async () => {

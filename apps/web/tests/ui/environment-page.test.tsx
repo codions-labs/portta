@@ -75,8 +75,8 @@ function page(name: string, tab: 'overview' | 'logs' | 'settings' = 'overview', 
 }
 
 const WEB_URL = {
-  url: 'http://alpha-web.localhost',
-  host: 'alpha-web.localhost',
+  url: 'http://alpha--web.localhost',
+  host: 'alpha--web.localhost',
   scope: 'local' as const,
   scheme: 'http' as const,
 }

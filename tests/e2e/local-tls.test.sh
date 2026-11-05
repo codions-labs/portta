@@ -58,20 +58,20 @@ unset TLS_ENABLED TLS_MODE
 "$GW" up local >/dev/null 2>&1
 ( cd "$(test_example_dir demo-a)" && docker compose \
     -f compose.yaml -f compose.portta.yaml up -d --wait --wait-timeout 120 ) >/dev/null 2>&1
-test_wait_until 30 test_route_is https://demo-a-web.localhost/ 200
+test_wait_until 30 test_route_is https://demo-a--web.localhost/ 200
 
 it "the chain validates against the generated CA"
 assert_contains "$(echo | openssl s_client -connect "127.0.0.1:${PORTTA_HTTPS_PORT}" \
-  -servername demo-a-web.localhost -CAfile "$CA" 2>/dev/null)" "Verify return code: 0 (ok)"
+  -servername demo-a--web.localhost -CAfile "$CA" 2>/dev/null)" "Verify return code: 0 (ok)"
 
 it "the application is actually served over TLS"
 assert_contains "$(curl -sk --max-time 10 \
-  --resolve "demo-a-web.localhost:${PORTTA_HTTPS_PORT}:127.0.0.1" \
-  https://demo-a-web.localhost/ 2>/dev/null)" "demo-a-web"
+  --resolve "demo-a--web.localhost:${PORTTA_HTTPS_PORT}:127.0.0.1" \
+  https://demo-a--web.localhost/ 2>/dev/null)" "demo-a-web"
 
 it "plain HTTP redirects to the HTTPS URL"
-assert_eq "302 https://demo-a-web.localhost/" "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 10 \
-  --resolve "demo-a-web.localhost:${PORTTA_HTTP_PORT}:127.0.0.1" \
-  http://demo-a-web.localhost/)"
+assert_eq "302 https://demo-a--web.localhost/" "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 10 \
+  --resolve "demo-a--web.localhost:${PORTTA_HTTP_PORT}:127.0.0.1" \
+  http://demo-a--web.localhost/)"
 
 t_summary

@@ -17,7 +17,7 @@ outbound tunnel. Which of those exist is a property of the **host**. Which of
 them a given service uses is a decision about that **service**. Collapsing both
 into one project-wide domain forces one answer where several are correct, and
 produces the failure that started this: a panel read over the internet
-confidently advertising `demo-web.localhost`.
+confidently advertising `demo--web.localhost`.
 
 Three distinct things had been fused into that single value:
 

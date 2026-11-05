@@ -5,7 +5,7 @@
 # overlay you already use. It opts a datastore into hostname routing, so it is
 # reachable on the gateway's shared port without publishing one of its own:
 #
-#   psql "postgresql://user@<project>-postgres.<domain>:5432/db?sslmode=require"
+#   psql "postgresql://user@<project>--postgres.<domain>:5432/db?sslmode=require"
 #
 # Requires PORTTA_TCP=true on the gateway. Read docs/product/guides/tcp-routing.md first:
 # PostgreSQL and Redis work, MySQL cannot, and TLS is not optional.
@@ -27,6 +27,11 @@
 # 3. Router and service names carry the project name, because they share one
 #    namespace across every project on the host. `portta doctor` reports
 #    a collision if two projects ever pick the same one.
+#
+# For abbreviated names or a two-character namespace, set
+# PORTTA_POSTGRES_HOST_LABEL and PORTTA_REDIS_HOST_LABEL to the canonical
+# labels printed by `portta envs hostname --project <name> --service <service>`.
+# The same value names the endpoint and its SNI rule; router names stay opaque.
 # ============================================================================
 
 services:
@@ -37,8 +42,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=${PORTTA_ACCESS_NETWORK:-portta-access}"
+      - "portta.hostname=${PORTTA_POSTGRES_HOST_LABEL:-${COMPOSE_PROJECT_NAME}--postgres}"
       - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-postgres.entrypoints=postgres"
-      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-postgres.rule=HostSNIRegexp(`^${COMPOSE_PROJECT_NAME}-postgres\\..+$`)"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-postgres.rule=HostSNIRegexp(`^${PORTTA_POSTGRES_HOST_LABEL:-${COMPOSE_PROJECT_NAME}--postgres}\\..+$`)"
       - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-postgres.tls=true"
       # libpq 17+ offers ALPN `postgresql`; without this option the TLS
       # handshake is rejected before any Postgres traffic happens.
@@ -53,8 +59,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=${PORTTA_ACCESS_NETWORK:-portta-access}"
+      - "portta.hostname=${PORTTA_REDIS_HOST_LABEL:-${COMPOSE_PROJECT_NAME}--redis}"
       - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-redis.entrypoints=redis"
-      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-redis.rule=HostSNIRegexp(`^${COMPOSE_PROJECT_NAME}-redis\\..+$`)"
+      - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-redis.rule=HostSNIRegexp(`^${PORTTA_REDIS_HOST_LABEL:-${COMPOSE_PROJECT_NAME}--redis}\\..+$`)"
       - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-redis.tls=true"
       - "traefik.tcp.routers.${COMPOSE_PROJECT_NAME}-redis.service=${COMPOSE_PROJECT_NAME}-redis"
       - "traefik.tcp.services.${COMPOSE_PROJECT_NAME}-redis.loadbalancer.server.port=6379"

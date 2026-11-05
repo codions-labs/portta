@@ -157,6 +157,7 @@ export function datastoreEndpoints(
       container: container.name,
       port,
       kind,
+      labels: container.labels,
     },
     {
       facts,

@@ -9,7 +9,7 @@ is one extra address that ends by itself.
 
 ```text
 Share      Protected · reviewer · expires in 6 h        Revoke   Regenerate
-           https://storefront-web-a7f3-share.dev.example.com
+           https://storefront--web--share-a7f3.dev.example.com
 ```
 
 ## The three states
@@ -21,7 +21,7 @@ Share      Protected · reviewer · expires in 6 h        Revoke   Regenerate
 | `public` | An additional hostname with no password. Refused unless `PUBLIC_ENABLED=true` and `PUBLIC_DOMAIN` is set |
 
 A shared hostname is one DNS label,
-`<project>-<service>-<id>-share.<domain>`, so the wildcard certificate a host
+`<project>--<service>--share-<id>.<domain>`, so the wildcard certificate a host
 already has covers it. Project and service are shortened when needed to keep
 the id and the suffix inside the 63 octets a label may have
 ([ADR 0023](../../development/adr/0023-flat-hostname-labels.md)).
@@ -61,7 +61,7 @@ Traefik already watches and hot-reloads:
 http:
   routers:
     portta-share-a7f3:
-      rule: "Host(`storefront-web-a7f3-share.dev.example.com`)"
+      rule: "Host(`storefront--web--share-a7f3.dev.example.com`)"
       entryPoints: [websecure]
       middlewares: [portta-forward-auth]
       service: portta-share-a7f3

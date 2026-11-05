@@ -57,8 +57,8 @@ short forms work too: `portta up`, `portta status`, `portta logs` and `portta
 down` operate the runtime of the directory you are in.
 
 Use the URLs printed by Portta. On this machine a service named `web` is at
-`<namespace>-web.localhost`, such as `http://demo-shop-web.localhost`. On a
-server with a domain it is `<project>-<service>.<domain>`.
+`<namespace>--web.localhost`, such as `http://demo-shop--web.localhost`. On a
+server with a domain it is `<project>--<service>.<domain>`.
 
 ## On a public host
 

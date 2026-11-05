@@ -67,9 +67,9 @@ describe('resolving the base domain', () => {
 describe('the preview the panel shows', () => {
   it('is the hostname a project would actually get', () => {
     expect(exampleHostnames('203-0-113-10.sslip.io')).toEqual([
-      'loja-web.203-0-113-10.sslip.io',
-      'loja-api.203-0-113-10.sslip.io',
+      'loja--web.203-0-113-10.sslip.io',
+      'loja--api.203-0-113-10.sslip.io',
     ])
-    expect(exampleHostnames('localhost')).toEqual(['loja-web.localhost', 'loja-api.localhost'])
+    expect(exampleHostnames('localhost')).toEqual(['loja--web.localhost', 'loja--api.localhost'])
   })
 })

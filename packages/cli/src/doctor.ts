@@ -37,6 +37,7 @@ import {
   protectionForHost,
   publishesSensitivePort,
   readProtectionStore,
+  routeHostnameProblem,
   routesFor,
   traefikEnabled,
   traefikServiceNames,
@@ -774,6 +775,19 @@ export async function runDoctor(context: GatewayContext): Promise<DoctorCheck[]>
   }
 
   // --- routing and consumers -----------------------------------------------
+  for (const container of running) {
+    const problem = routeHostnameProblem(container, config.domain)
+    if (problem)
+      add(
+        check(
+          `routes.invalid.${container.id}`,
+          'fail',
+          'generated hostname',
+          `${container.name}: ${problem}`,
+          'fix the container routing labels and recreate that service',
+        ),
+      )
+  }
   const routes = routesFor(running, config.domain, config.tlsEnabled ? 'https' : 'http')
   add(check('routes.count', 'pass', 'routed services', String(routes.length)))
 

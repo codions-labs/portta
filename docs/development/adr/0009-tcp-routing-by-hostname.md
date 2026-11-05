@@ -33,7 +33,7 @@ is the whole point of [ADR 0001](0001-decoupled-infrastructure.md). The cost is
 that the gateway sees the traffic, on a host where it already terminates HTTPS
 and runs everything.
 
-**Hostnames are flat: `<project>-<service>.<domain>`.** The obvious
+**Hostnames are flat: `<project>--<service>.<domain>`.** The obvious
 `<service>.<project>.<domain>` cannot be covered by a wildcard certificate,
 which matches exactly one label. Verified: routing works, `verify-full` fails
 with "server certificate for `*.<domain>` does not match host name". Flat reuses

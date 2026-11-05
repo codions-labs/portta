@@ -5,8 +5,8 @@
 # 3000 and 8000 at the same time, and nothing collides, because neither
 # publishes a host port.
 #
-#   -> http://<COMPOSE_PROJECT_NAME>-web.localhost
-#   -> http://<COMPOSE_PROJECT_NAME>-api.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>--web.localhost
+#   -> http://<COMPOSE_PROJECT_NAME>--api.localhost
 # ============================================================================
 
 services:

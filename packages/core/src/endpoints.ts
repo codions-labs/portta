@@ -8,7 +8,7 @@ import {
 } from './capabilities.ts'
 import { isHostnameRoutable, type ServiceKind } from './discovery.ts'
 import { type AutoDomainProvider, autoDomainFor, ipFromAutoDomain } from './domain.ts'
-import { hostLabel } from './hostname.ts'
+import { hostLabelFromLabels } from './hostname.ts'
 
 /**
  * How a service can be reached, and by whom.
@@ -86,6 +86,8 @@ export interface ServiceRef {
   container: string
   /** Branch, pull request or preview, when the endpoint should carry one. */
   context?: string | null
+  /** Container routing metadata, including an assigned canonical hostname label. */
+  labels?: Record<string, string>
   /** The port the container listens on. */
   port: number
   /** HTTP services get hostnames; a datastore gets them only when the protocol is routable. */
@@ -256,7 +258,15 @@ function pushTcpEndpoints(list: Endpoint[], _service: ServiceRef, options: Endpo
 export function endpointsFor(service: ServiceRef, options: EndpointOptions): Endpoint[] {
   const { facts, capabilities, exposures } = options
   const scheme = options.scheme ?? (facts.tlsEnabled ? 'https' : 'http')
-  const label = hostLabel({ project: service.project, service: service.service, context: service.context ?? null })
+  const labelFor = () =>
+    hostLabelFromLabels(
+      service.labels ?? {
+        'com.docker.compose.project': service.project,
+        'com.docker.compose.service': service.service,
+        ...(service.context ? { 'portta.context': service.context } : {}),
+      },
+      service.container,
+    )
   const list: Endpoint[] = []
 
   // Always true, and the only address a datastore should ever be given
@@ -272,11 +282,12 @@ export function endpointsFor(service: ServiceRef, options: EndpointOptions): End
   // an HTTP hostname would be offering something that cannot work.
   if (service.kind !== 'http') {
     if (isHostnameRoutable(service.kind) && options.tcpRouted === true && options.tcpPort) {
-      pushTcpEndpoints(list, service, options, label)
+      pushTcpEndpoints(list, service, options, labelFor())
     }
     return list.sort((a, b) => SCOPE_ORDER[a.scope] - SCOPE_ORDER[b.scope])
   }
 
+  const label = labelFor()
   const provider = options.autoDomainProvider ?? 'sslip.io'
   const loopbackOnly = isLoopback(facts.bindAddress)
   const enabled = new Set(exposures)
@@ -287,7 +298,7 @@ export function endpointsFor(service: ServiceRef, options: EndpointOptions): End
   // here depends on the address that name resolves to, so this is checked
   // rather than assumed — an auto domain on a loopback-only Traefik does not
   // work from the host either, and saying it does would be the same lie as
-  // advertising `demo-web.localhost` to somebody on another continent.
+  // advertising `demo--web.localhost` to somebody on another continent.
   const localReaches = domainReachesBind(facts.resolvedDomain, facts)
   list.push(
     endpoint(
@@ -422,7 +433,7 @@ export function endpointsFor(service: ServiceRef, options: EndpointOptions): End
  * The one URL to show first.
  *
  * "Most reachable that actually works" — never the most reachable that merely
- * exists. A panel read over the internet advertising `demo-web.localhost` is
+ * exists. A panel read over the internet advertising `demo--web.localhost` is
  * the failure this ordering prevents.
  */
 export function primaryEndpoint(endpoints: Endpoint[]): Endpoint | null {

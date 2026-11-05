@@ -41,7 +41,7 @@ Cloudflare, never the orange one):
 
 The wildcard does not cover the domain itself, which is why there are two
 records. Add `AAAA` records with the server's IPv6 address if it has one. A
-name like `shop-web.example.com` needs no record of its own: the wildcard
+name like `shop--web.example.com` needs no record of its own: the wildcard
 answers for it, so a new project never touches the DNS again.
 
 If you prefer the panel on its own name, such as `portta.example.com`, set
@@ -212,8 +212,8 @@ Change a decision at any time, with no restart:
 
 ```bash
 portta protect status
-portta protect open shop-web.example.com
-portta protect remove shop-web.example.com
+portta protect open shop--web.example.com
+portta protect remove shop--web.example.com
 ```
 
 ## 9. Back up

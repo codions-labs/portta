@@ -29,7 +29,7 @@ const localDomain: ProjectDomain = {
   domain: 'localhost',
   publicIp: null,
   provider: 'sslip.io',
-  examples: ['loja-web.localhost'],
+  examples: ['loja--web.localhost'],
   problem: null,
   reachable: true,
   advice: null,

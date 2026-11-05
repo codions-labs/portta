@@ -157,7 +157,7 @@ assert_contains \
 
 it "shows the URL Traefik actually serves"
 assert_contains "$(get /api/environments/demo-a | jq_py "[u['host'] for u in d['urls']]")" \
-  "demo-a-web.$PORTTA_DOMAIN"
+  "demo-a--web.$PORTTA_DOMAIN"
 
 describe "it tells the gateway's containers from everybody else's"
 

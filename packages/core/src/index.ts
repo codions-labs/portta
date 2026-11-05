@@ -41,5 +41,12 @@ export * from './route-path.ts'
 export * from './runner.ts'
 export * from './shares.ts'
 export * from './site-entry.ts'
-export { httpRoutes, isTcpOnly, ruleHosts, traefikEnabled } from './traefik-rules.ts'
+export {
+  httpRouterNames,
+  httpRoutes,
+  isTcpOnly,
+  readTraefikLabels,
+  ruleHosts,
+  traefikEnabled,
+} from './traefik-rules.ts'
 export * from './tunnel.ts'

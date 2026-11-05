@@ -101,14 +101,14 @@ Without them Traefik may pick the private address, which it cannot reach.
 ## Hostnames
 
 ```text
-<compose-project>-<service>.<domain>
+<compose-project>--<service>.<domain>
 ```
 
 | Environment | Hostname |
 |---|---|
-| `demo-shop` / `web` | `demo-shop-web.localhost` |
-| `demo-shop-issue59` / `api` | `demo-shop-issue59-api.localhost` |
-| on a VPS | `demo-shop-web.vpn.dev.example.com` |
+| `demo-shop` / `web` | `demo-shop--web.localhost` |
+| `demo-shop-issue59` / `api` | `demo-shop-issue59--api.localhost` |
+| on a VPS | `demo-shop--web.vpn.dev.example.com` |
 
 Both parts are normalised to lowercase `[a-z0-9-]`. One subdomain level, not
 two, so a single wildcard certificate covers everything

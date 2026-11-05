@@ -30,8 +30,8 @@ function container(overrides: Partial<ContainerSummary> = {}): ContainerSummary 
     kind: 'http',
     tech: { id: 'node', label: 'Node' },
     urls: [
-      { url: 'https://shop-web.dev.example.com', host: 'shop-web.dev.example.com', scope: 'public', scheme: 'https' },
-      { url: 'http://shop-web.localhost', host: 'shop-web.localhost', scope: 'local', scheme: 'http' },
+      { url: 'https://shop--web.dev.example.com', host: 'shop--web.dev.example.com', scope: 'public', scheme: 'https' },
+      { url: 'http://shop--web.localhost', host: 'shop--web.localhost', scope: 'local', scheme: 'http' },
     ],
     mounts: [],
     labels: {},
@@ -100,7 +100,7 @@ describe('a service row', () => {
     const view = serviceView(container(), testConfig(), metrics(), null)
     expect(view.name).toBe('web')
     expect(view.access.kind).toBe('http')
-    expect(view.access.primary?.url).toBe('http://shop-web.localhost')
+    expect(view.access.primary?.url).toBe('http://shop--web.localhost')
     expect(view.resources).toMatchObject({ cpuUtilisation: 8, memoryUsedBytes: 300, stale: false })
     expect(view.actions).toMatchObject({
       start: false,
