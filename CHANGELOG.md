@@ -6,6 +6,8 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-05
+
 ### Added
 
 - The Projects list can be grouped by **Folder** (the first folder under Projects Home, such as the client), the
