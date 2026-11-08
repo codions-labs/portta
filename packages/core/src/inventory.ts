@@ -1,3 +1,4 @@
+import type { StoredAlias } from './aliases.ts'
 import { hostLabelFromLabels, hostnameFromLabel } from './hostname.ts'
 import { httpRoutes, isTcpOnly, traefikEnabled } from './traefik-rules.ts'
 
@@ -29,6 +30,48 @@ export interface RouteRecord {
   url: string
   port: string
   state: string
+  /** Added in the panel beside the hostname the project derives. */
+  alias?: boolean
+  /** A domain the user pointed at the gateway. */
+  custom?: boolean
+  /** The address to report for this service: its custom domain if it has one, else the derived one. */
+  primary?: boolean
+}
+
+/** Panel-created hostnames as routes, so every command lists what the gateway actually answers on. */
+export function aliasRoutes(aliases: StoredAlias[], containers: ContainerRecord[] = []): RouteRecord[] {
+  const state = new Map(containers.map((container) => [container.name, container.state]))
+  return aliases.map((alias) => ({
+    project: alias.project,
+    service: alias.service,
+    container: alias.container,
+    hostname: alias.host,
+    url: `${alias.entryPoint === 'websecure' ? 'https' : 'http'}://${alias.host}`,
+    port: String(alias.port),
+    state: state.get(alias.container) ?? 'alias',
+    alias: true,
+    ...(alias.custom ? { custom: true } : {}),
+  }))
+}
+
+/**
+ * Marks the one address to report per service.
+ *
+ * A domain the user chose wins, because it is the one they will open and share; otherwise the
+ * address the project derives; otherwise a nickname added in the panel.
+ */
+export function markPrimary(routes: RouteRecord[]): RouteRecord[] {
+  const rank = (route: RouteRecord): number => (route.custom ? 0 : route.alias ? 2 : 1)
+  const best = new Map<string, RouteRecord>()
+  for (const route of routes) {
+    const key = `${route.project ?? ''}\u0000${route.service ?? route.container}`
+    const current = best.get(key)
+    if (!current || rank(route) < rank(current)) best.set(key, route)
+  }
+  return routes.map((route) => ({
+    ...route,
+    primary: best.get(`${route.project ?? ''}\u0000${route.service ?? route.container}`) === route,
+  }))
 }
 
 /** A bad container label must not hide every other service in the inventory. */
@@ -94,8 +137,9 @@ export function projectsFor(
   containers: ContainerRecord[],
   domain: string,
   scheme: 'http' | 'https' = 'http',
+  aliases: StoredAlias[] = [],
 ): ProjectRecord[] {
-  const routes = routesFor(containers, domain, scheme)
+  const routes = markPrimary([...routesFor(containers, domain, scheme), ...aliasRoutes(aliases, containers)])
   const grouped = new Map<string, ContainerRecord[]>()
   for (const container of containers) {
     const project = container.labels['com.docker.compose.project']

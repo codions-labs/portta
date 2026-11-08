@@ -24,18 +24,17 @@ export const ENVIRONMENT_KEYS = {
   serviceOrder: z.array(z.string().min(1).max(128)).max(256),
 } as const
 
+const HOSTNAME_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/
+
 /**
- * `alias` holds a whole hostname, not a label: the gateway will only mint one
- * inside a domain it already serves, and that check needs the full name. The
- * shape is checked here; membership of a configured domain is checked in
- * core/overrides.ts, where the configuration is.
+ * `alias` is the first version of this setting: one whole hostname. `aliases` replaced it when a
+ * service could have several, including domains the user pointed at the gateway. Both are read,
+ * only `aliases` is written, and the hostnames are shape-checked here; whether the gateway will
+ * route one is decided in services/overrides.ts, where the configuration is.
  */
 export const SERVICE_KEYS = {
-  alias: z
-    .string()
-    .min(1)
-    .max(253)
-    .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/),
+  alias: z.string().min(1).max(253).regex(HOSTNAME_PATTERN),
+  aliases: z.array(z.string().min(1).max(253).regex(HOSTNAME_PATTERN)).min(1).max(10),
   note: z.string().max(2000),
   hidden: z.boolean(),
 } as const

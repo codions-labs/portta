@@ -91,12 +91,16 @@
     "collapsedServicesHint": "Collapsed by default, never removed."
   },
   "alias": {
-    "placeholder": "shop.localhost",
-    "update": "Update alias",
-    "add": "Add alias",
-    "aliasBadge": "alias: {{alias}}",
-    "aliasFor": "Hostname alias for {{name}}",
-    "hint": "An alias is additional: the project keeps answering on the hostname it derives."
+    "placeholder": "shop.localhost or app.yourdomain.com",
+    "add": "Add address",
+    "aliasFor": "Additional address for {{name}}",
+    "custom": "custom domain",
+    "remove": "Remove {{host}}",
+    "hint": "Additional addresses never replace the one the project derives: both keep answering. A domain you own works once its DNS points at this server.",
+    "dnsTitle": "Create this record at your DNS provider",
+    "dnsRecord": "{{type}} record: {{name}} → {{value}}",
+    "dnsUnknown": "Point {{name}} at this server's public IP address.",
+    "dnsCertificate": "The HTTPS certificate is issued on the first request, once the record has propagated and port 80 is reachable."
   },
   "backToAll": "Back to all projects",
   "header": {

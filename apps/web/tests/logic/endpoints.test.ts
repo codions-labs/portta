@@ -24,4 +24,8 @@ describe('endpoint order', () => {
     ).toBe('http://b.local')
     expect(primaryEndpoint([])).toBeNull()
   })
+  it('prefers a domain the user pointed at the gateway over a nearer address', () => {
+    const custom = { ...url('https://shop.example.com.br', 'public', 'https'), custom: true }
+    expect(primaryEndpoint([url('http://a.local', 'local', 'http'), custom])?.url).toBe('https://shop.example.com.br')
+  })
 })

@@ -15,7 +15,13 @@ export function orderEndpoints(urls: readonly RouteUrl[]): RouteUrl[] {
   )
 }
 
-/** The one address to open when the user does not choose: the first in that order. */
+/**
+ * The one address to open when the user does not choose.
+ *
+ * A domain the user pointed at the gateway wins: it is the one they chose to open and share.
+ * Otherwise the first in the usual order.
+ */
 export function primaryEndpoint(urls: readonly RouteUrl[]): RouteUrl | null {
-  return orderEndpoints(urls)[0] ?? null
+  const custom = orderEndpoints(urls.filter((url) => url.custom))[0]
+  return custom ?? orderEndpoints(urls)[0] ?? null
 }

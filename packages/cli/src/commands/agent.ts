@@ -27,6 +27,7 @@ import { Output } from '../output.js'
 import { runProcess } from '../process.js'
 import { CLI_VERSION } from '../version.js'
 import { idFor, planPath } from './compose-runtime.js'
+import { readAliases } from './lifecycle.js'
 
 export type AgentScope =
   | 'no-portta'
@@ -571,7 +572,18 @@ export async function agentContext(options: ContextOptions = {}): Promise<AgentC
       }
     }
     const scheme = config?.tlsEnabled ? 'https' : 'http'
-    const urls = routed.map((service) => `${scheme}://${service.host}`)
+    // A domain the user pointed at the gateway is the address they will open and share, so it
+    // leads; the derived hostname keeps answering and follows.
+    const custom = (root ? readAliases(root) : []).filter(
+      (alias) =>
+        alias.custom === true &&
+        alias.project === plan.projectName &&
+        routed.some((service) => service.name === alias.service),
+    )
+    const urls = [
+      ...custom.map((alias) => `${alias.entryPoint === 'websecure' ? 'https' : 'http'}://${alias.host}`),
+      ...routed.map((service) => `${scheme}://${service.host}`),
+    ]
     const scope: AgentScope = violations.length ? 'non-compliant' : 'compliant'
     return finish(
       scope,

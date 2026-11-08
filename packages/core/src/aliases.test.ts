@@ -37,4 +37,22 @@ describe('hostname aliases', () => {
     expect(parseAliases(pending)).toEqual([ALIAS])
     expect(renderAliasesForStore([ALIAS], emptyProtectionStore(), true)).toContain('Host(`store.example.test`)')
   })
+
+  it('gives every hostname of one service its own router, the first keeping its old name', () => {
+    const second: StoredAlias = { ...ALIAS, host: 'www.store.example.test' }
+    const rendered = renderAliases([ALIAS, second])
+    expect(rendered).toContain('portta-alias-shop-web:')
+    expect(rendered).toContain('portta-alias-shop-web-2:')
+    expect(rendered).toContain('Host(`www.store.example.test`)')
+    expect(rendered).toContain('http://shop-web-1:3000')
+    expect(parseAliases(rendered)).toEqual([ALIAS, second])
+  })
+
+  it('names the ACME resolver on the router of a custom domain, and only there', () => {
+    const custom: StoredAlias = { ...ALIAS, host: 'app.cliente.com.br', custom: true, certResolver: 'letsencrypthttp' }
+    const rendered = renderAliases([ALIAS, custom])
+    expect(rendered.match(/^ +certResolver:/gm)).toHaveLength(1)
+    expect(rendered).toContain('certResolver: "letsencrypthttp"')
+    expect(parseAliases(rendered)).toEqual([ALIAS, custom])
+  })
 })

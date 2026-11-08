@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { type ContainerRecord, routeHostnameProblem, routesFor } from './inventory.js'
+import type { StoredAlias } from './aliases.ts'
+import {
+  aliasRoutes,
+  type ContainerRecord,
+  markPrimary,
+  projectsFor,
+  routeHostnameProblem,
+  routesFor,
+} from './inventory.js'
 
 const container: ContainerRecord = {
   id: '1',
@@ -68,5 +76,37 @@ describe('routes read from labels', () => {
     expect(routesFor([probe, database], 'localhost')).toEqual([
       expect.objectContaining({ hostname: 'explicit-name.test', port: '9999' }),
     ])
+  })
+})
+
+describe('addresses added in the panel', () => {
+  const nickname: StoredAlias = {
+    project: 'shop',
+    service: 'web',
+    container: 'shop-web-1',
+    host: 'shop.localhost',
+    port: 80,
+    entryPoint: 'web',
+  }
+  const owned: StoredAlias = { ...nickname, host: 'loja.example.com.br', entryPoint: 'websecure', custom: true }
+
+  it('lists them beside the derived address, with the scheme their router answers on', () => {
+    const routes = aliasRoutes([nickname, owned], [container])
+    expect(routes.map((route) => route.url)).toEqual(['http://shop.localhost', 'https://loja.example.com.br'])
+    expect(routes[1]).toMatchObject({ alias: true, custom: true, state: 'running' })
+  })
+
+  it('reports a domain the user owns first, then the derived address, then a nickname', () => {
+    const derived = routesFor([container], 'localhost')
+    const only = (aliases: StoredAlias[]) =>
+      markPrimary([...derived, ...aliasRoutes(aliases)]).filter((route) => route.primary)
+
+    expect(only([nickname, owned]).map((route) => route.hostname)).toEqual(['loja.example.com.br'])
+    expect(only([nickname]).map((route) => route.hostname)).toEqual(['shop--web.localhost'])
+  })
+
+  it('reaches the project view, so every command that lists a project shows them', () => {
+    const [project] = projectsFor([container], 'localhost', 'http', [owned])
+    expect(project!.urls.map((route) => route.hostname).sort()).toEqual(['loja.example.com.br', 'shop--web.localhost'])
   })
 })

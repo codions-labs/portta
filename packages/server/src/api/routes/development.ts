@@ -18,7 +18,7 @@ import { projectOfEnvironment, projectScope } from '../../services/access-contro
 import { runContainerAction } from '../../services/actions.ts'
 import { developmentOverview, listProjects } from '../../services/development.ts'
 import { readCurrentMetrics } from '../../services/metrics.ts'
-import { applyOverrides, loadOverrides } from '../../services/overrides.ts'
+import { aliasViewFor, applyOverrides, loadOverrides } from '../../services/overrides.ts'
 import { findRememberedEnvironment } from '../../services/remembered.ts'
 import { environmentServices } from '../../services/service-view.ts'
 import { record } from '../audit.ts'
@@ -51,7 +51,7 @@ export function developmentRoutes(deps: AppDeps): Hono {
       snapshot.environments.find((item) => item.name === name) ??
       (await findRememberedEnvironment(deps.db, snapshot, deps.config, name))
     if (!found) throw new HTTPException(404, { message: `no environment '${name}' is running` })
-    return applyOverrides([found], await loadOverrides(deps.db))[0]!
+    return applyOverrides([found], await loadOverrides(deps.db), aliasViewFor(deps.config))[0]!
   }
 
   const projects = (db: Database): Promise<Project[]> => listProjects(deps, db)

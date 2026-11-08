@@ -117,7 +117,12 @@ portta urls --project <name>
 ```
 
 Report those hostnames, never `localhost:3000`, which means nothing on a shared
-host. On a public host a service may answer only after a login. Say which
+host. A service can answer on several: the hostname the project derives, and
+addresses the user added in the panel, including a domain they own and pointed
+at the server. The line marked `primary` is the one to report first, and a
+`custom` one is the address the user will open and share. The derived hostname
+keeps answering beside it. Do not add or remove these addresses yourself: they
+are configured in the panel. On a public host a service may answer only after a login. Say which
 services are protected and which are open, using `data.project.exposure` from
 the preflight, and never print or store a password. Temporary share links are
 created in the panel, not by you.

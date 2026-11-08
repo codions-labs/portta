@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { setProtection } from 'portta-core'
+import { renderAliases, setProtection } from 'portta-core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ runProcess: vi.fn() }))
@@ -171,6 +171,33 @@ describe('portta agent context: the scope decides, and the first matching row wi
     expect(found.project.scope).toBe('compliant')
     expect(found.project.urls).toEqual(['http://demo--web.portta.app'])
     expect(found.host).toMatchObject({ portta: true, version: '0.2.0', profile: 'local', gateway: 'healthy' })
+  })
+
+  it('compliant: a domain the user pointed at the gateway leads the URLs, and the derived one follows', async () => {
+    const directory = project('demo', { 'compose.yaml': COMPOSE })
+    adopt(directory)
+    const aliases = renderAliases([
+      {
+        project: 'demo',
+        service: 'web',
+        container: 'demo-web-1',
+        host: 'loja.example.com.br',
+        port: 8000,
+        entryPoint: 'websecure',
+        custom: true,
+      },
+      {
+        project: 'demo',
+        service: 'web',
+        container: 'demo-web-1',
+        host: 'nick.portta.app',
+        port: 8000,
+        entryPoint: 'web',
+      },
+    ])
+    put(join(gateway, 'config/traefik/dynamic/portta-aliases.yaml'), aliases)
+    const found = await context(directory)
+    expect(found.project.urls).toEqual(['https://loja.example.com.br', 'http://demo--web.portta.app'])
   })
 
   it('non-compliant: a running container publishing a port, and a plan the source outgrew', async () => {

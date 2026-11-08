@@ -91,12 +91,16 @@
     "collapsedServicesHint": "Recolhidos por padrão, nunca removidos."
   },
   "alias": {
-    "placeholder": "shop.localhost",
-    "update": "Atualizar alias",
-    "add": "Adicionar alias",
-    "aliasBadge": "alias: {{alias}}",
-    "aliasFor": "Alias de hostname para {{name}}",
-    "hint": "Um alias é adicional: o projeto continua respondendo no hostname que ele deriva."
+    "placeholder": "shop.localhost ou app.seudominio.com.br",
+    "add": "Adicionar endereço",
+    "aliasFor": "Endereço adicional para {{name}}",
+    "custom": "domínio próprio",
+    "remove": "Remover {{host}}",
+    "hint": "Endereços adicionais nunca substituem o que o projeto deriva: os dois continuam respondendo. Um domínio seu funciona assim que o DNS apontar para este servidor.",
+    "dnsTitle": "Crie este registro no seu provedor de DNS",
+    "dnsRecord": "Registro {{type}}: {{name}} → {{value}}",
+    "dnsUnknown": "Aponte {{name}} para o endereço IP público deste servidor.",
+    "dnsCertificate": "O certificado HTTPS é emitido na primeira requisição, depois que o registro propagar e a porta 80 estiver acessível."
   },
   "backToAll": "Voltar para todos os projetos",
   "header": {

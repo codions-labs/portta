@@ -75,13 +75,20 @@ export const environmentsApi = {
       body: '{}',
     }),
   serviceAlias: (name: string, service: string, alias: string) =>
-    request<{ host: string; derivedHosts: string[]; port: number }>(
-      `/environments/${encodeURIComponent(name)}/services/${encodeURIComponent(service)}/alias`,
-      { method: 'PUT', body: JSON.stringify({ alias }) },
-    ),
-  clearServiceAlias: (name: string, service: string) =>
-    request<{ ok: boolean; removed: string | null }>(
-      `/environments/${encodeURIComponent(name)}/services/${encodeURIComponent(service)}/alias`,
+    request<{
+      host: string
+      derivedHosts: string[]
+      port: number
+      custom: boolean
+      hosts: string[]
+      dns: { type: 'A' | 'CNAME'; name: string; value: string | null } | null
+    }>(`/environments/${encodeURIComponent(name)}/services/${encodeURIComponent(service)}/alias`, {
+      method: 'PUT',
+      body: JSON.stringify({ alias }),
+    }),
+  clearServiceAlias: (name: string, service: string, host?: string) =>
+    request<{ ok: boolean; removed: string | null; hosts: string[] }>(
+      `/environments/${encodeURIComponent(name)}/services/${encodeURIComponent(service)}/alias${host ? `?host=${encodeURIComponent(host)}` : ''}`,
       { method: 'DELETE', body: '{}' },
     ),
   serviceOverrides: (name: string, service: string) =>
