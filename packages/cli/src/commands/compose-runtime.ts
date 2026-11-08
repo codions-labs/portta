@@ -280,10 +280,26 @@ function inputFiles(workspace: string, manifest: RuntimeManifest): string[] {
   if (configured) return configured.split(delimiter).map((file) => (isAbsolute(file) ? file : resolve(workspace, file)))
   const base = composeCandidates(workspace)[0]
   if (!base) throw new UsageError(`no Compose file found in ${workspace}`)
-  const override = ['compose.override.yaml', 'compose.override.yml']
+  const override = overrideFor(workspace, base)
+  return override ? [base, override] : [base]
+}
+/**
+ * The override Compose itself would load beside `base`.
+ *
+ * Compose pairs `docker-compose.yml` with `docker-compose.override.yml` and `compose.yaml` with
+ * `compose.override.yaml`. Ignoring the first pair ran a project without the override its own
+ * `docker compose up` loads. The other family stays a fallback, which is what Portta accepted
+ * before, so a project that mixes the two keeps working.
+ */
+function overrideFor(workspace: string, base: string): string | undefined {
+  const legacy = basename(base).startsWith('docker-compose')
+  const stems = legacy
+    ? ['docker-compose.override', 'compose.override']
+    : ['compose.override', 'docker-compose.override']
+  return stems
+    .flatMap((stem) => [`${stem}.yaml`, `${stem}.yml`])
     .map((file) => join(workspace, file))
     .find(existsSync)
-  return override ? [base, override] : [base]
 }
 function versionAtLeast(value: string, minimum = [2, 24, 4]): boolean {
   const parts = value

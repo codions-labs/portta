@@ -331,6 +331,33 @@ describe('Compose runtime', () => {
     ).toBe(true)
   })
 
+  it.each([
+    ['docker-compose.yml', 'docker-compose.override.yml'],
+    ['docker-compose.yaml', 'docker-compose.override.yaml'],
+    ['compose.yaml', 'compose.override.yaml'],
+    ['compose.yml', 'compose.override.yml'],
+    // Accepted before the pairing existed, so a project that mixes the two families keeps its override.
+    ['docker-compose.yml', 'compose.override.yaml'],
+  ])('loads %s together with the %s Compose itself would load', async (base, override) => {
+    const workspace = temp()
+    mocks.root = join(temp(), 'gateway')
+    writeFileSync(join(workspace, base), 'services:\n  web:\n    image: nginx\n')
+    writeFileSync(join(workspace, override), 'services: {}\n')
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version')
+        ? result('2.24.4')
+        : args.includes('branch')
+          ? result('')
+          : args.includes('config') && args.some((arg) => arg.endsWith('.tmp'))
+            ? result(finalModel)
+            : result(sourceModel),
+    )
+
+    const plan = await prepareComposeRuntime({ path: workspace }, command)
+
+    expect(plan.compose.files).toEqual([join(workspace, base), join(workspace, override)])
+  })
+
   it('uses configured profiles while validating the source model', async () => {
     const workspace = temp()
     mocks.root = join(temp(), 'gateway')
