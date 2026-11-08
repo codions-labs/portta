@@ -39,6 +39,7 @@ import { PreconditionError, RefusedError, UsageError } from '../errors.js'
 import { Output } from '../output.js'
 import { runProcess } from '../process.js'
 import { readPlan } from './compose-runtime.js'
+import { readAliases } from './lifecycle.js'
 
 function globals(command: Command) {
   return command.optsWithGlobals() as {
@@ -57,6 +58,7 @@ export async function projectList(options: { project?: string }, command: Comman
     await inspectContainers(),
     context.config.domain,
     context.config.tlsEnabled ? 'https' : 'http',
+    readAliases(context.root),
   ).filter((project) => !options.project || project.name === options.project)
   const output = new Output(global)
   if (output.json)
@@ -81,6 +83,7 @@ export async function projectShow(name: string, command: Command): Promise<void>
     await inspectContainers(),
     context.config.domain,
     context.config.tlsEnabled ? 'https' : 'http',
+    readAliases(context.root),
   ).find((candidate) => candidate.name === name)
   if (!project) throw new UsageError(`project not found: ${name}`)
   const output = new Output(global)
@@ -102,7 +105,8 @@ export async function projectShow(name: string, command: Command): Promise<void>
   else {
     output.line(`${project.name} · ${project.state}`)
     for (const service of value.services) output.line(`${service.name}\t${service.state}\t${service.image}`)
-    for (const url of value.urls) output.line(url.url)
+    for (const url of value.urls)
+      output.line(`${url.url}${url.custom ? '\tcustom' : url.alias ? '\talias' : ''}${url.primary ? '\tprimary' : ''}`)
   }
 }
 

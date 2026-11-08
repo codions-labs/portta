@@ -200,6 +200,26 @@ entryPoints.websecure.http.tls.domains[0].main = dev.example.com
 entryPoints.websecure.http.tls.domains[0].sans = *.dev.example.com
 ```
 
+## A domain you own
+
+A domain you point at the gateway, as an additional address of a service, is
+outside `PORTTA_DOMAIN`. The wildcard cannot cover it, and on `dns` the DNS
+provider you configured does not control it. So its router names a second
+resolver, `letsencrypthttp`, which issues over HTTP-01 and keeps its
+certificates in `acme-http.json` beside the first resolver's store.
+
+| Gateway | A domain you own |
+|---|---|
+| `ACME_CHALLENGE=dns` | HTTP-01 through `letsencrypthttp`; needs `:80` reachable and an `A` record |
+| `ACME_CHALLENGE=http` | the default resolver already does HTTP-01 |
+| no TLS | plain HTTP, no certificate |
+
+A private or VPN-only gateway cannot get a certificate for a public domain this
+way, because Let's Encrypt must reach `:80`. Let's Encrypt's per-domain limits
+apply to your domain, not to `PORTTA_DOMAIN`. `portta doctor` warns while the
+domain does not resolve to this server. See
+[ADR 0062](../../development/adr/0062-an-address-may-be-a-domain-the-user-owns.md).
+
 ## Use staging first
 
 Let's Encrypt's rate limits are unforgiving and a misconfigured DNS-01 will

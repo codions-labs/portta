@@ -113,7 +113,7 @@ nothing inside the project — no file, no label, no dependency, no commit.
 | Collapsed services | Folded away by default, never removed |
 | Pinned / archived | Ordering and default filtering in the list |
 | Service note | A line on the service row |
-| **Hostname alias** | **An additional hostname, routed by Traefik** |
+| **Additional addresses** | **Hostnames routed to the service beside the derived one, including a domain you own** |
 
 Everything except the alias is presentation, kept in the gateway's own
 database. **Nothing is ever only-renamed**: the derived name and the derived
@@ -150,8 +150,8 @@ anything is written:
 
 - a hostname a running container already derives or declares;
 - a hostname another alias already took;
-- a hostname outside `PORTTA_DOMAIN`, `PRIVATE_DOMAIN` or `PUBLIC_DOMAIN`
-  — the gateway will not mint an address it cannot serve;
+- a hostname no certificate authority could issue for: an IP address, or a name
+  ending in `.local` or `.internal`, or with no dot at all;
 - a service whose `kind` is not `http`: a database is reached through
   [Configure TCP routing](tcp-routing.md), not by an HTTP router;
 - a service off the shared network, or one that never enabled Traefik;
@@ -167,8 +167,8 @@ about what answers.
 The CLI reads the same file, so the two tools never contradict each other:
 
 ```bash
-portta urls          # aliases are listed and marked as such
-portta doctor        # flags an alias whose target container is gone
+portta urls          # every address, marked alias or custom; the one to report is primary
+portta doctor        # flags an alias whose target is gone, and a custom domain that does not resolve here
 ```
 
 Anything the panel refuses can still be written by hand into
@@ -232,3 +232,29 @@ never from GitHub: nothing here contacts a remote, so *not pushed* and *behind* 
 the last fetch somebody did. Only file names and their status are read, not what is in
 them, and nothing writes to the repository. The reasoning is in
 [ADR 0056](../../development/adr/0056-the-collector-reads-where-the-code-stands.md).
+
+### Use a domain you own
+
+A service can have up to ten additional addresses, and one of them can be a
+domain you own at Cloudflare, Registro.br or anywhere else. The hostname the
+project derives keeps answering, so you can use only your own domain or both.
+
+1. In the service's drawer, type the domain (`loja.example.com.br`) and press
+   **Add address**. The panel shows the record to create.
+2. At your DNS provider, create an `A` record from that name to the server's
+   public IP address. On Cloudflare, leave the record **DNS only** (grey cloud)
+   until the certificate is issued.
+3. Open the address. The HTTPS certificate is issued on the first request.
+
+A domain outside `PORTTA_DOMAIN` cannot use the wildcard certificate, so on a
+gateway that issues over DNS-01 its router asks for its own HTTP-01
+certificate. That needs `:80` reachable from the internet and the record already
+propagated. See [Configure DNS and TLS](dns-and-tls.md#a-domain-you-own).
+On a profile without TLS the address routes over plain HTTP.
+
+On a public host the domain sits behind the same login as every other
+hostname: it stays closed until someone decides about it on the Access page.
+
+The CLI and the agent context follow the same file. `portta urls` marks the
+address to report as `primary`, and a `custom` domain is always the primary one.
+`portta doctor` warns while the record does not resolve to this server.

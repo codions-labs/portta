@@ -19,7 +19,19 @@ export interface StoredAlias {
   host: string
   port: number
   entryPoint: string
+  /** The hostname is outside every domain the gateway serves: a domain the user pointed here. */
+  custom?: boolean
+  /**
+   * ACME resolver named on the router itself.
+   *
+   * Set only for a custom domain on a gateway whose entrypoint resolver issues over DNS-01: that
+   * resolver's DNS provider does not control the user's domain, so the router asks for HTTP-01.
+   */
+  certResolver?: string
 }
+
+/** Name of the HTTP-01 resolver that profiles/remote-tls-dns.yaml defines beside the default one. */
+export const HTTP_CERT_RESOLVER = 'letsencrypthttp'
 
 export const ALIASES_MARKER = '# portta-aliases: '
 
@@ -32,8 +44,34 @@ const HEADER = [
   '# ============================================================================',
 ]
 
-export function aliasRouterName(project: string, service: string): string {
-  return `portta-alias-${project}-${service}`.replace(/[^a-zA-Z0-9-]/g, '-')
+/**
+ * One router per hostname. The first alias of a service keeps the name it always had, so a file
+ * written before a service could have several is not rewritten into new routers.
+ */
+export function aliasRouterName(project: string, service: string, index = 0): string {
+  const base = `portta-alias-${project}-${service}`.replace(/[^a-zA-Z0-9-]/g, '-')
+  return index === 0 ? base : `${base}-${index + 1}`
+}
+
+/**
+ * The router name of each alias, unique across the whole file.
+ *
+ * Names are built from project and service with dashes, so `web` second and a service called
+ * `web-2` first would spell the same name, and Traefik would drop one router silently. A name
+ * already taken moves on to the next free index instead.
+ */
+function routerNames(aliases: StoredAlias[]): string[] {
+  const seen = new Map<string, number>()
+  const taken = new Set<string>()
+  return aliases.map((alias) => {
+    const key = `${alias.project}\u0000${alias.service}`
+    let index = seen.get(key) ?? 0
+    let name = aliasRouterName(alias.project, alias.service, index)
+    while (taken.has(name)) name = aliasRouterName(alias.project, alias.service, ++index)
+    seen.set(key, index + 1)
+    taken.add(name)
+    return name
+  })
 }
 
 /**
@@ -50,22 +88,24 @@ export function renderAliases(aliases: StoredAlias[], forwardAuth = false, suspe
     return `${lines.join('\n')}\n`
   }
 
+  const names = routerNames(aliases)
   lines.push('http:', '  routers:')
-  for (const alias of aliases) {
-    const router = aliasRouterName(alias.project, alias.service)
+  aliases.forEach((alias, position) => {
+    const router = names[position]!
     lines.push(`    ${router}:`)
     lines.push(`      rule: ${quoteDynamicValue(`Host(\`${alias.host}\`)`)}`)
     lines.push(`      entryPoints: [${alias.entryPoint}]`)
     if (forwardAuth) lines.push(`      middlewares: [${FORWARD_AUTH_MIDDLEWARE}]`)
     lines.push(`      service: ${router}`)
-  }
+    if (alias.certResolver) lines.push('      tls:', `        certResolver: ${quoteDynamicValue(alias.certResolver)}`)
+  })
 
   lines.push('  services:')
-  for (const alias of aliases) {
-    const router = aliasRouterName(alias.project, alias.service)
+  aliases.forEach((alias, position) => {
+    const router = names[position]!
     lines.push(`    ${router}:`, '      loadBalancer:', '        servers:')
     lines.push(`          - url: ${quoteDynamicValue(`http://${alias.container}:${alias.port}`)}`)
-  }
+  })
 
   lines.push('')
   return lines.join('\n')

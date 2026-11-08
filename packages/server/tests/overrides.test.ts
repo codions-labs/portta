@@ -209,13 +209,72 @@ describe('a hostname alias', () => {
     expect((await response.json()).error).toContain('already an alias')
   })
 
-  it('refuses a hostname outside the domains this gateway serves', async () => {
-    const instance = await app()
+  it('routes a domain the user pointed at the gateway, and says what to create at the DNS provider', async () => {
+    const instance = await app(scratch(), {}, { publicIp: '203.0.113.7' })
     const response = await put(instance, '/api/environments/alpha/services/web/alias', {
-      alias: 'shop.example.com',
+      alias: 'Shop.Example.com.br',
     })
-    expect(response.status).toBe(400)
-    expect((await response.json()).error).toContain('outside the domains')
+    expect(response.status).toBe(200)
+
+    const body = await response.json()
+    expect(body.host).toBe('shop.example.com.br')
+    expect(body.custom).toBe(true)
+    expect(body.dns).toEqual({ type: 'A', name: 'shop.example.com.br', value: '203.0.113.7' })
+    // The hostname the project derives keeps answering.
+    expect(body.derivedHosts).toContain('alpha--web.localhost')
+    expect(readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')).toContain(
+      'Host(`shop.example.com.br`)',
+    )
+  })
+
+  it('asks for HTTP-01 on a custom domain when the gateway issues its certificates over DNS-01', async () => {
+    const instance = await app(scratch(), {}, { profile: 'remote', tlsEnabled: true, acmeChallenge: 'dns' })
+    await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'shop.example.com.br' })
+    await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'inside' })
+    const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
+    expect(written.match(/^ +certResolver: "letsencrypthttp"/gm)).toHaveLength(1)
+  })
+
+  it('leaves the resolver alone when HTTP-01 is already how the gateway issues', async () => {
+    const instance = await app(scratch(), {}, { profile: 'remote', tlsEnabled: true, acmeChallenge: 'http' })
+    await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'shop.example.com.br' })
+    expect(readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')).not.toContain('letsencrypthttp')
+  })
+
+  it('refuses a custom hostname that no certificate authority could issue for', async () => {
+    const instance = await app()
+    for (const alias of ['10.0.0.5', 'app.internal', 'app.local']) {
+      const response = await put(instance, '/api/environments/alpha/services/web/alias', { alias })
+      expect(response.status).toBe(400)
+    }
+    expect(existsSync(join(instance.dynamicDir, GENERATED_FILES.aliases))).toBe(false)
+  })
+
+  it('keeps several hostnames on one service, and removes one at a time', async () => {
+    const instance = await app()
+    await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'shop.example.com.br' })
+    const second = await put(instance, '/api/environments/alpha/services/web/alias', {
+      alias: 'www.shop.example.com.br',
+    })
+    expect((await second.json()).hosts).toEqual(['shop.example.com.br', 'www.shop.example.com.br'])
+
+    const removal = await instance.app.request('/api/environments/alpha/services/web/alias?host=shop.example.com.br', {
+      method: 'DELETE',
+      headers: { origin: 'http://localhost', host: 'localhost' },
+    })
+    expect((await removal.json()).hosts).toEqual(['www.shop.example.com.br'])
+    const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
+    expect(written).toContain('Host(`www.shop.example.com.br`)')
+    expect(written).not.toContain('Host(`shop.example.com.br`)')
+  })
+
+  it('answers 404 when the hostname to remove is not one of the service', async () => {
+    const instance = await app()
+    const response = await instance.app.request('/api/environments/alpha/services/web/alias?host=nope.example.com', {
+      method: 'DELETE',
+      headers: { origin: 'http://localhost', host: 'localhost' },
+    })
+    expect(response.status).toBe(404)
   })
 
   it('refuses a datastore, which is not reached with an HTTP router', async () => {
@@ -278,8 +337,10 @@ describe('a hostname alias', () => {
 
     const project = (await (await instance.app.request('/api/environments/alpha')).json()) as Environment
     const web = project.services.find((service) => service.service === 'web')!
-    expect(web.overrides?.alias).toBe('shop.localhost')
-    expect(web.urls.map((url) => url.host)).toContain('alpha--web.localhost')
+    expect(web.overrides?.aliases).toEqual(['shop.localhost'])
+    // The derived address stays, and the alias is listed beside it so every surface sees what answers.
+    expect(web.urls.map((url) => url.host)).toEqual(['alpha--web.localhost', 'shop.localhost'])
+    expect(web.urls.find((url) => url.host === 'shop.localhost')?.alias).toBe(true)
   })
 
   it('reports an alias whose container is gone', async () => {

@@ -611,6 +611,11 @@
           "description": "Why the panel reads the server's health itself where it can see the machine."
         },
         {
+          "source": "docs/development/adr/0062-an-address-may-be-a-domain-the-user-owns.md",
+          "slug": "adr/0062-an-address-may-be-a-domain-the-user-owns",
+          "description": "Why a service can answer on a domain the user owns, and how its certificate is issued."
+        },
+        {
           "source": "docs/development/adr/0057-a-panel-session-opens-a-protected-site.md",
           "slug": "adr/0057-a-panel-session-opens-a-protected-site",
           "description": "How someone signed in to the panel opens a protected site without its password."

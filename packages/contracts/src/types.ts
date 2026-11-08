@@ -93,6 +93,13 @@ export const RouteUrl = named(
       host: z.string(),
       scope: UrlScope,
       scheme: z.enum(['http', 'https']),
+      custom: z
+        .boolean()
+        .optional()
+        .describe(
+          'A hostname added in the panel, beside the one the project derives; custom=true when it is a domain the user owns',
+        ),
+      alias: z.boolean().optional().describe('Added in the panel rather than derived from the project'),
     })
     .strict(),
   'RouteUrl',
@@ -133,7 +140,11 @@ export type EnvironmentOverrides = z.infer<typeof EnvironmentOverrides>
 export const ServiceOverrides = named(
   z
     .object({
-      alias: z.string().optional().describe('An additional hostname, routed by Traefik'),
+      alias: z.string().optional().describe('Legacy single hostname; read `aliases` instead'),
+      aliases: z
+        .array(z.string())
+        .optional()
+        .describe('Additional hostnames routed to this service, including domains the user pointed at the gateway'),
       note: z.string().optional(),
       hidden: z.boolean().optional(),
     })

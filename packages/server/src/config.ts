@@ -66,6 +66,8 @@ export interface PanelConfig {
   httpsPort: string
   tlsEnabled: boolean
   tlsMode: string
+  /** `dns` (wildcard, the default) or `http` (one certificate per hostname). */
+  acmeChallenge: string
   acmeEmailSet: boolean
   acmeCaServer: string
   acmeDnsProvider: string
@@ -189,6 +191,7 @@ export function loadConfig(overrides: Partial<PanelConfig> = {}): PanelConfig {
     httpsPort: String(gateway.httpsPort),
     tlsEnabled: gateway.tlsEnabled,
     tlsMode: gateway.tlsMode,
+    acmeChallenge: env('ACME_CHALLENGE', 'dns'),
     acmeEmailSet: Boolean(optional('ACME_EMAIL')),
     acmeCaServer: env('ACME_CA_SERVER', 'https://acme-v02.api.letsencrypt.org/directory'),
     acmeDnsProvider: env('ACME_DNS_PROVIDER', 'cloudflare'),
