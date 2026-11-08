@@ -9,8 +9,9 @@
 //
 // Nothing here writes a byte inside a project. See ADR 0001 and ADR 0011.
 
-import type { ContainerSummary, Environment, EnvironmentOverrides, ServiceOverrides } from 'portta-contracts'
+import type { ContainerSummary, Environment, EnvironmentOverrides, RouteUrl, ServiceOverrides } from 'portta-contracts'
 import {
+  HTTP_CERT_RESOLVER,
   isTcpOnly,
   parseAliases,
   protectionForHost,
@@ -24,7 +25,9 @@ import type { Database } from '../db/index.ts'
 import { ENVIRONMENT_KEYS, SERVICE_KEYS } from '../db/keys.ts'
 import { GENERATED_FILES, readGenerated, writeGenerated } from './dynamic.ts'
 import type { Snapshot } from './inventory.ts'
-import { hostsFromRules } from './inventory.ts'
+import { hostsFromRules, scopeForHost } from './inventory.ts'
+
+const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/
 
 const HOSTNAME = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/
 
@@ -89,17 +92,33 @@ export async function loadOverrides(db: Database | null): Promise<OverrideMap> {
  * With no overrides the objects come back untouched, which is what keeps a
  * panel with no database byte-identical to today's.
  */
-export function applyOverrides<T extends Environment>(projects: T[], overrides: OverrideMap): T[] {
-  if (overrides.environments.size === 0 && overrides.services.size === 0) return projects
+export interface AliasView {
+  aliases: StoredAlias[]
+  config: PanelConfig
+}
+
+/** The hostnames added in the panel, read from the file Traefik itself serves. */
+export function aliasViewFor(config: PanelConfig): AliasView {
+  return { aliases: loadAliases(config), config }
+}
+
+export function applyOverrides<T extends Environment>(
+  projects: T[],
+  overrides: OverrideMap,
+  aliasView?: AliasView,
+): T[] {
+  const hasAliases = (aliasView?.aliases.length ?? 0) > 0
+  if (overrides.environments.size === 0 && overrides.services.size === 0 && !hasAliases) return projects
 
   return projects.map((project) => {
     const projectOverrides = overrides.environments.get(project.name)
     const perService = overrides.services.get(project.name)
-    if (projectOverrides === undefined && perService === undefined) return project
+    const projectAliases = hasAliases ? aliasView!.aliases.filter((alias) => alias.project === project.name) : []
+    if (projectOverrides === undefined && perService === undefined && projectAliases.length === 0) return project
 
-    const services = perService
-      ? project.services.map((service) => decorateService(service, perService))
-      : project.services
+    const services = project.services.map((service) =>
+      withAliasUrls(perService ? decorateService(service, perService) : service, projectAliases, aliasView?.config),
+    )
 
     return {
       ...project,
@@ -107,6 +126,37 @@ export function applyOverrides<T extends Environment>(projects: T[], overrides: 
       ...(projectOverrides ? { overrides: projectOverrides } : {}),
     }
   })
+}
+
+/**
+ * Lists the hostnames added in the panel beside the derived ones.
+ *
+ * They are what actually answers, so every surface that reads `urls` (the endpoint list, the
+ * access page, the CLI, an agent) sees the same addresses. A hostname the user owns is a public
+ * address whatever the gateway's own profile: it is reached by the name the user chose.
+ */
+function withAliasUrls(
+  service: ContainerSummary,
+  aliases: StoredAlias[],
+  config: PanelConfig | undefined,
+): ContainerSummary {
+  const mine = aliases.filter((alias) => alias.container === service.name)
+  if (mine.length === 0 || config === undefined) return service
+  const known = new Set(service.urls.map((url) => url.host.toLowerCase()))
+  const added: RouteUrl[] = mine
+    .filter((alias) => !known.has(alias.host.toLowerCase()))
+    .map((alias) => {
+      const scheme = alias.entryPoint === 'websecure' ? 'https' : 'http'
+      return {
+        host: alias.host,
+        url: `${scheme}://${alias.host}`,
+        scheme,
+        scope: alias.custom ? 'public' : scopeForHost(alias.host, config),
+        alias: true,
+        ...(alias.custom ? { custom: true } : {}),
+      }
+    })
+  return added.length === 0 ? service : { ...service, urls: [...service.urls, ...added] }
 }
 
 function decorateService(service: ContainerSummary, perService: Map<string, ServiceOverrides>): ContainerSummary {
@@ -225,12 +275,8 @@ export function planAlias(
   }
 
   const domains = servedDomains(config)
-  if (!domains.some((domain) => host === domain || host.endsWith(`.${domain.toLowerCase()}`))) {
-    throw new OverrideRefused(
-      `${host} is outside the domains this gateway serves`,
-      `use a hostname under ${domains.join(', ')}`,
-    )
-  }
+  const custom = !domains.some((domain) => host === domain.toLowerCase() || host.endsWith(`.${domain.toLowerCase()}`))
+  if (custom) refuseUnusableCustomHost(host, domains)
 
   if (derivedHosts(snapshot).has(host)) {
     throw new OverrideRefused(
@@ -285,7 +331,93 @@ export function planAlias(
     host,
     port: aliasPort(service),
     entryPoint: entryPointFor(config),
+    ...(custom ? { custom: true } : {}),
+    ...(custom && usesHttpResolver(config) ? { certResolver: HTTP_CERT_RESOLVER } : {}),
   }
+}
+
+/**
+ * A domain the user pointed at the gateway has to be one a public CA can issue for and a browser
+ * can resolve. Refused with the reason, before any write, rather than left as a router that never
+ * gets a certificate.
+ */
+function refuseUnusableCustomHost(host: string, domains: string[]): void {
+  if (IPV4.test(host)) {
+    throw new OverrideRefused(`${host} is an IP address, not a domain`, 'use a domain name that points at this server')
+  }
+  if (!host.includes('.') || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) {
+    throw new OverrideRefused(
+      `${host} is not a public domain, so no certificate can be issued for it`,
+      `use a domain you own, or a hostname under ${domains.join(', ')}`,
+    )
+  }
+}
+
+/**
+ * Whether a custom domain needs its own HTTP-01 resolver.
+ *
+ * Only when TLS is on, on a remote profile, with the DNS-01 challenge: the entrypoint resolver is
+ * then bound to a DNS provider that does not control the user's domain. With HTTP-01 already in
+ * charge the default resolver issues for any name pointed here, and without TLS there is nothing
+ * to issue.
+ */
+function usesHttpResolver(config: PanelConfig): boolean {
+  return config.tlsEnabled && config.profile !== 'local' && config.acmeChallenge === 'dns'
+}
+
+export const MAX_ALIASES_PER_SERVICE = 10
+
+/**
+ * What to create at the DNS provider for a domain the user wants routed here.
+ *
+ * An A record at the server's public address is the answer a user can always give. A name under
+ * the gateway's own domain would be a CNAME, but a custom domain is by definition not under it.
+ */
+export function dnsRecordFor(
+  host: string,
+  config: PanelConfig,
+): { type: 'A' | 'CNAME'; name: string; value: string | null } {
+  return { type: 'A', name: host, value: config.publicIp }
+}
+
+type StoredHosts = { aliases: string[] | null; alias: string | null }
+
+export async function readStoredHosts(db: Database, environmentId: string, service: string): Promise<StoredHosts> {
+  const [aliases, alias] = await Promise.all([
+    db.settings.getService(environmentId, service, 'aliases'),
+    db.settings.getService(environmentId, service, 'alias'),
+  ])
+  return { aliases, alias }
+}
+
+/** Always the list; the single-hostname row of the first version is dropped once a list replaces it. */
+export async function writeStoredHosts(
+  db: Database,
+  environmentId: string,
+  service: string,
+  hosts: string[],
+): Promise<void> {
+  await db.settings.clearService(environmentId, service, 'alias')
+  if (hosts.length === 0) await db.settings.clearService(environmentId, service, 'aliases')
+  else await db.settings.setService(environmentId, service, 'aliases', hosts)
+}
+
+export async function restoreStoredHosts(
+  db: Database,
+  environmentId: string,
+  service: string,
+  previous: StoredHosts,
+): Promise<void> {
+  if (previous.aliases === null) await db.settings.clearService(environmentId, service, 'aliases')
+  else await db.settings.setService(environmentId, service, 'aliases', previous.aliases)
+  if (previous.alias === null) await db.settings.clearService(environmentId, service, 'alias')
+  else await db.settings.setService(environmentId, service, 'alias', previous.alias)
+}
+
+/** The hostnames stored for a service, whichever version of the setting wrote them. */
+export function storedHosts(overrides: ServiceOverrides | undefined): string[] {
+  if (overrides?.aliases && overrides.aliases.length > 0) return overrides.aliases
+  return overrides?.alias ? [overrides.alias] : []
 }
 
 // ---------------------------------------------------------------------------
@@ -307,7 +439,10 @@ export function saveAliases(config: PanelConfig, aliases: StoredAlias[]): void {
 /** Sorted so a rewrite of unchanged state produces an unchanged file. */
 export function sortAliases(aliases: StoredAlias[]): StoredAlias[] {
   return [...aliases].sort(
-    (left, right) => left.project.localeCompare(right.project) || left.service.localeCompare(right.service),
+    (left, right) =>
+      left.project.localeCompare(right.project) ||
+      left.service.localeCompare(right.service) ||
+      left.host.localeCompare(right.host),
   )
 }
 

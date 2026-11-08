@@ -7,7 +7,18 @@ import { requireDatabase } from '../../db/index.ts'
 import { ENVIRONMENT_KEYS, type EnvironmentSettingKey } from '../../db/keys.ts'
 import type { AppDeps } from '../../deps.ts'
 import { projectOfEnvironment } from '../../services/access-control.ts'
-import { loadAliases, OverrideRefused, planAlias, saveAliases, sortAliases } from '../../services/overrides.ts'
+import {
+  dnsRecordFor,
+  loadAliases,
+  MAX_ALIASES_PER_SERVICE,
+  OverrideRefused,
+  planAlias,
+  readStoredHosts,
+  restoreStoredHosts,
+  saveAliases,
+  sortAliases,
+  writeStoredHosts,
+} from '../../services/overrides.ts'
 import { documentRoute, projectParameter } from '../openapi.ts'
 
 const serviceParameter = {
@@ -50,6 +61,12 @@ const AliasResult = z
     derivedHosts: z.array(z.string()).describe('What the project itself declares; never replaced'),
     port: z.number().int(),
     entryPoint: z.string(),
+    custom: z.boolean().describe('The hostname is outside the gateway domains: a domain the user pointed here'),
+    hosts: z.array(z.string()).describe('Every additional hostname of this service after the change'),
+    dns: z
+      .object({ type: z.enum(['A', 'CNAME']), name: z.string(), value: z.string().nullable() })
+      .nullable()
+      .describe('The record to create at the DNS provider for a custom domain; null for a gateway hostname'),
     file: z.string().describe('The generated Traefik file this was written to'),
   })
   .strict()
@@ -185,7 +202,7 @@ export function overrideRoutes(deps: AppDeps): Hono {
       const { db, record } = await projectRecord(c, c.req.param('project'))
       const service = c.req.param('service')
       const stored: Record<string, unknown> = {}
-      for (const key of ['alias', 'note', 'hidden'] as const) {
+      for (const key of ['alias', 'aliases', 'note', 'hidden'] as const) {
         const value = await db.settings.getService(record.id, service, key)
         if (value !== null) stored[key] = value
       }
@@ -252,18 +269,27 @@ export function overrideRoutes(deps: AppDeps): Hono {
       const existing = loadAliases(deps.config)
       const planned = planAlias({ project: projectName, service, alias: body.alias }, snapshot, existing, deps.config)
 
-      const previous = await db.settings.getService(record.id, service, 'alias')
-      await db.settings.setService(record.id, service, 'alias', planned.host)
+      const mine = existing.filter((alias) => alias.project === projectName && alias.service === service)
+      const hosts = [...new Set([...mine.map((alias) => alias.host), planned.host])].sort()
+      if (hosts.length > MAX_ALIASES_PER_SERVICE) {
+        throw new OverrideRefused(
+          `${service} already has ${mine.length} additional hostnames`,
+          `remove one first; the limit is ${MAX_ALIASES_PER_SERVICE}`,
+        )
+      }
+
+      const previous = await readStoredHosts(db, record.id, service)
+      await writeStoredHosts(db, record.id, service, hosts)
 
       try {
         const next = sortAliases([
           ...existing.filter((alias) => !(alias.project === projectName && alias.service === service)),
+          ...mine.filter((alias) => alias.host !== planned.host),
           planned,
         ])
         saveAliases(deps.config, next)
       } catch (cause) {
-        if (previous === null) await db.settings.clearService(record.id, service, 'alias')
-        else await db.settings.setService(record.id, service, 'alias', previous)
+        await restoreStoredHosts(db, record.id, service, previous)
         throw cause
       }
 
@@ -279,6 +305,9 @@ export function overrideRoutes(deps: AppDeps): Hono {
         derivedHosts: target.urls.map((url) => url.host),
         port: planned.port,
         entryPoint: planned.entryPoint,
+        custom: planned.custom === true,
+        hosts,
+        dns: planned.custom === true ? dnsRecordFor(planned.host, deps.config) : null,
         file: 'portta-aliases.yaml',
       })
     },
@@ -291,8 +320,23 @@ export function overrideRoutes(deps: AppDeps): Hono {
       operationId: 'clearServiceAlias',
       permission: 'environment:settings',
       summary: 'Remove a hostname alias',
-      response: z.object({ ok: z.boolean(), removed: z.string().nullable() }).strict().meta({ ref: 'AliasRemoval' }),
-      parameters: [projectParameter, serviceParameter],
+      description:
+        'Pass `host` to remove one hostname; without it every additional hostname of the service is removed.',
+      response: z
+        .object({ ok: z.boolean(), removed: z.string().nullable(), hosts: z.array(z.string()) })
+        .strict()
+        .meta({ ref: 'AliasRemoval' }),
+      parameters: [
+        projectParameter,
+        serviceParameter,
+        {
+          name: 'host',
+          in: 'query' as const,
+          required: false,
+          description: 'The one hostname to remove.',
+          schema: { type: 'string' as const },
+        },
+      ],
       errors: [403, 404, 500, 503],
     }),
     async (c) => {
@@ -300,17 +344,38 @@ export function overrideRoutes(deps: AppDeps): Hono {
       const service = c.req.param('service')
       const { db, record } = await projectRecord(c, projectName)
 
+      const requested = c.req.query('host')?.trim().toLowerCase() || null
       const existing = loadAliases(deps.config)
-      const removed = existing.find((alias) => alias.project === projectName && alias.service === service) ?? null
+      const mine = existing.filter((alias) => alias.project === projectName && alias.service === service)
+      const doomed = requested === null ? mine : mine.filter((alias) => alias.host === requested)
+      if (requested !== null && doomed.length === 0) {
+        throw new HTTPException(404, { message: `${service} has no additional hostname ${requested}` })
+      }
+      const removed = doomed[0] ?? null
+      const kept = mine.filter((alias) => !doomed.includes(alias))
 
-      await db.settings.clearService(record.id, service, 'alias')
-      saveAliases(
-        deps.config,
-        sortAliases(existing.filter((alias) => !(alias.project === projectName && alias.service === service))),
+      const previous = await readStoredHosts(db, record.id, service)
+      await writeStoredHosts(
+        db,
+        record.id,
+        service,
+        kept.map((alias) => alias.host),
       )
+      try {
+        saveAliases(
+          deps.config,
+          sortAliases([
+            ...existing.filter((alias) => !(alias.project === projectName && alias.service === service)),
+            ...kept,
+          ]),
+        )
+      } catch (cause) {
+        await restoreStoredHosts(db, record.id, service, previous)
+        throw cause
+      }
 
       announce(deps, c.req.param('project'))
-      return c.json({ ok: true, removed: removed?.host ?? null })
+      return c.json({ ok: true, removed: removed?.host ?? null, hosts: kept.map((alias) => alias.host) })
     },
   )
 

@@ -6,6 +6,11 @@
 # and the only option for a private gateway the ACME server can never reach:
 # Let's Encrypt has to see a TXT record, not this host.
 #
+# A domain the user points at this gateway from outside is not in that zone, so
+# the DNS provider below cannot answer for it. Its router names the second
+# resolver defined here instead, which issues over HTTP-01: that one needs :80
+# reachable and an A record, and no credential. See ADR 0062.
+#
 # The cost is a DNS provider credential. `remote-tls-http.yaml` is the trade
 # in the other direction. See docs/product/guides/dns-and-tls.md.
 # ============================================================================
@@ -24,3 +29,12 @@ services:
       # Read by lego inside Traefik. Empty unless the provider is configured;
       # a scoped token, never a global API key. See docs/product/guides/cloudflare.md.
       CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN:-}
+
+      # -- HTTP-01, for domains outside PORTTA_DOMAIN ----------------------
+      # Named by the router of a custom domain in portta-aliases.yaml, never
+      # by the entrypoint, so a hostname under PORTTA_DOMAIN keeps the wildcard.
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPTHTTP_ACME_EMAIL: ${ACME_EMAIL:-}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPTHTTP_ACME_CASERVER: ${ACME_CA_SERVER:-https://acme-v02.api.letsencrypt.org/directory}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPTHTTP_ACME_STORAGE: /etc/traefik/acme/acme-http.json
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPTHTTP_ACME_HTTPCHALLENGE: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPTHTTP_ACME_HTTPCHALLENGE_ENTRYPOINT: web

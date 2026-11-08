@@ -54,3 +54,4 @@ release.
 | [0060](0060-the-panel-cleans-networks-images-and-volumes.md) | The panel cleans networks, images and volumes, one resource at a time | Accepted; see 0008 |
 | [0061](0061-the-panel-reads-the-server-it-runs-on.md) | The panel reads the server's health itself where it can see the machine | Accepted; see 0056 |
 | [0057](0057-a-panel-session-opens-a-protected-site.md) | A panel session opens a protected site, by a token the panel hands over | Accepted; see 0027, 0035, 0038 |
+| [0062](0062-an-address-may-be-a-domain-the-user-owns.md) | An address may be a domain the user owns | Accepted; see 0011, 0023 |

@@ -19,7 +19,7 @@ import { loadProjectCatalog, toProject } from './catalog.ts'
 import { diagnose, problemsOnly } from './diagnostics.ts'
 import { gatewayStatus } from './gateway.ts'
 import { readCurrentMetrics } from './metrics.ts'
-import { applyOverrides, loadAliases, loadOverrides } from './overrides.ts'
+import { aliasViewFor, applyOverrides, loadAliases, loadOverrides } from './overrides.ts'
 import { buildOverview } from './overview-view.ts'
 import { listShares } from './shares.ts'
 
@@ -46,7 +46,7 @@ export async function developmentOverview(deps: AppDeps, principal: Principal): 
   const owners = await adoptions(deps.db)
   const environments = visible(
     principal,
-    applyOverrides(snapshot.environments, overrides),
+    applyOverrides(snapshot.environments, overrides, aliasViewFor(deps.config)),
     (environment) => owners.get(environment.name) ?? null,
   )
   const metrics = readCurrentMetrics(deps.config)

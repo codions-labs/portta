@@ -1,13 +1,16 @@
+import { resolve4 } from 'node:dns/promises'
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Command } from 'commander'
 import {
   AUTH_BUILD_FILE,
   AUTH_DEV_FILE,
+  aliasRoutes,
   type ContainerRecord,
   databaseFileFor,
   databaseFiles,
   gatewayAlreadyPublic,
+  markPrimary,
   parseAliases,
   parseEnv,
   patchEnvFile,
@@ -666,6 +669,8 @@ export async function doctorCommand(command: Command): Promise<void> {
     )
   }
 
+  checks.push(...(await customDomainChecks(aliases, context.config.publicIp)))
+
   const failed = checks.filter((entry) => entry.status === 'fail')
   const output = new Output(options)
   if (output.json) output.data({ ok: failed.length === 0, instance: { name: context.config.projectName }, checks })
@@ -675,6 +680,43 @@ export async function doctorCommand(command: Command): Promise<void> {
       if (entry.hint) output.hint(entry.hint)
     }
   if (failed.length) throw new CliError(`${failed.length} doctor check(s) failed`)
+}
+
+/**
+ * A domain the user pointed at this server has to resolve to it, or no certificate is ever issued
+ * and the browser never arrives. A warning rather than a failure: the record may simply not have
+ * propagated yet, and nothing on the gateway is broken.
+ */
+export async function customDomainChecks(
+  aliases: StoredAlias[],
+  publicIp: string | null,
+  lookup: (host: string) => Promise<string[]> = (host) => resolve4(host),
+): Promise<Check[]> {
+  const checks: Check[] = []
+  for (const alias of aliases.filter((entry) => entry.custom)) {
+    const addresses = await lookup(alias.host).catch(() => [] as string[])
+    if (addresses.length === 0)
+      checks.push({
+        id: `custom-domain:${alias.host}`,
+        status: 'warn',
+        message: `${alias.host} does not resolve yet`,
+        fix: `create an A record for ${alias.host}${publicIp ? ` pointing at ${publicIp}` : ' pointing at this server'}`,
+      })
+    else if (publicIp && !addresses.includes(publicIp))
+      checks.push({
+        id: `custom-domain:${alias.host}`,
+        status: 'warn',
+        message: `${alias.host} resolves to ${addresses.join(', ')}, not to ${publicIp}`,
+        fix: `point the A record for ${alias.host} at ${publicIp}`,
+      })
+    else
+      checks.push({
+        id: `custom-domain:${alias.host}`,
+        status: 'pass',
+        message: `${alias.host} resolves to this server`,
+      })
+  }
+  return checks
 }
 
 /**
@@ -695,21 +737,13 @@ export async function urlsCommand(options: { project?: string }, command: Comman
   const global = globals(command)
   const context = gatewayContext({ profile: global.profile })
   const scheme = context.config.tlsEnabled ? 'https' : 'http'
-  const derived = routesFor(await inspectContainers(), context.config.domain, scheme).map((route) => ({
+  const containers = await inspectContainers()
+  const derived = routesFor(containers, context.config.domain, scheme).map((route) => ({
     ...route,
     alias: false,
   }))
-  const aliases = readAliases(context.root).map((alias) => ({
-    project: alias.project,
-    service: alias.service,
-    container: alias.container,
-    hostname: alias.host,
-    url: `${scheme}://${alias.host}`,
-    port: String(alias.port),
-    state: 'alias',
-    alias: true,
-  }))
-  const routes = [...derived, ...aliases]
+  const aliases = aliasRoutes(readAliases(context.root), containers)
+  const routes = markPrimary([...derived, ...aliases])
     .filter((route) => !options.project || route.project === options.project)
     .sort((left, right) => left.hostname.localeCompare(right.hostname))
   const output = new Output(global)
@@ -717,6 +751,6 @@ export async function urlsCommand(options: { project?: string }, command: Comman
   else
     for (const route of routes)
       output.line(
-        `${route.url}\t${route.project ?? '-'}\t${route.service ?? route.container}${route.alias ? '\talias' : ''}`,
+        `${route.url}\t${route.project ?? '-'}\t${route.service ?? route.container}${route.custom ? '\tcustom' : route.alias ? '\talias' : ''}${route.primary ? '\tprimary' : ''}`,
       )
 }

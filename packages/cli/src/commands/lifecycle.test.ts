@@ -83,6 +83,7 @@ vi.mock('../checkout-cli.js', () => ({
 import {
   checkoutLocalEnv,
   clearRegenerableState,
+  customDomainChecks,
   devCommand,
   downCommand,
   isPorttaOwnedContainer,
@@ -652,5 +653,26 @@ describe('Portta-owned Compose projects', () => {
         { gatewayProject: 'portta', sharedNetwork: 'portta', accessNetwork: 'portta-access' },
       ),
     ).toEqual([{ name: 'shop', workingDir: '/srv/shop' }])
+  })
+})
+
+describe('customDomainChecks', () => {
+  const base = { project: 'shop', service: 'web', container: 'shop-web-1', port: 80, entryPoint: 'websecure' }
+  const owned = { ...base, host: 'loja.example.com.br', custom: true }
+
+  it('ignores the hostnames the gateway itself serves', async () => {
+    const lookup = vi.fn()
+    expect(await customDomainChecks([{ ...base, host: 'shop.localhost' }], '203.0.113.7', lookup)).toEqual([])
+    expect(lookup).not.toHaveBeenCalled()
+  })
+
+  it('warns, not fails, while the record has not propagated', async () => {
+    const [check] = await customDomainChecks([owned], '203.0.113.7', async () => [])
+    expect(check).toMatchObject({ status: 'warn', fix: expect.stringContaining('203.0.113.7') })
+  })
+
+  it('warns when the domain points somewhere else, and passes when it points here', async () => {
+    expect((await customDomainChecks([owned], '203.0.113.7', async () => ['198.51.100.1']))[0]!.status).toBe('warn')
+    expect((await customDomainChecks([owned], '203.0.113.7', async () => ['203.0.113.7']))[0]!.status).toBe('pass')
   })
 })

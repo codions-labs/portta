@@ -20,7 +20,7 @@ import { ActionRefused, runProjectAction } from '../../services/actions.ts'
 import { type AuditAction, audit } from '../../services/audit.ts'
 import type { Snapshot } from '../../services/inventory.ts'
 import { dispatchRunner, projectRemovalPreview, rebuildProject, removeProject } from '../../services/operations.ts'
-import { applyOverrides, loadOverrides } from '../../services/overrides.ts'
+import { aliasViewFor, applyOverrides, loadOverrides } from '../../services/overrides.ts'
 import { type LogSourceLines, mergeLogSources } from '../../services/projectlogs.ts'
 import { composeUpCommand, findRememberedEnvironment, rememberedEnvironments } from '../../services/remembered.ts'
 import { runnerOf } from '../../services/runner.ts'
@@ -155,7 +155,7 @@ export function environmentRoutes(deps: AppDeps): Hono {
       // With no database, or none reachable, `applyOverrides` is the identity
       // function and the response is byte-identical to a panel with no
       // persistence at all.
-      const decorated = applyOverrides(environments, await loadOverrides(deps.db))
+      const decorated = applyOverrides(environments, await loadOverrides(deps.db), aliasViewFor(deps.config))
       // Then filtered: a developer sees the environments their Projects adopted,
       // and an environment nobody adopted is for whoever sees everything.
       const owners = await adoptions(deps.db)
@@ -186,7 +186,7 @@ export function environmentRoutes(deps: AppDeps): Hono {
         (await findRememberedEnvironment(deps.db, snapshot, deps.config, name))
       if (!project) throw new HTTPException(404, { message: `no environment '${name}' is running` })
       await reach(c, name)
-      const decorated = applyOverrides([project], await loadOverrides(deps.db))[0]!
+      const decorated = applyOverrides([project], await loadOverrides(deps.db), aliasViewFor(deps.config))[0]!
       return c.json(decorated)
     },
   )
