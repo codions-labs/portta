@@ -55,4 +55,13 @@ describe('hostname aliases', () => {
     expect(rendered).toContain('certResolver: "letsencrypthttp"')
     expect(parseAliases(rendered)).toEqual([ALIAS, custom])
   })
+
+  it('never gives two routers the same name, even when service names spell the suffix', () => {
+    const web2: StoredAlias = { ...ALIAS, service: 'web-2', container: 'shop-web-2-1', host: 'two.example.test' }
+    const second: StoredAlias = { ...ALIAS, host: 'www.store.example.test' }
+    const rendered = renderAliases([web2, ALIAS, second])
+    const names = [...rendered.matchAll(/^ {4}(portta-alias-[\w-]+):$/gm)].map((match) => match[1])
+    const routers = names.slice(0, 3)
+    expect(new Set(routers).size).toBe(3)
+  })
 })

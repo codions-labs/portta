@@ -53,14 +53,24 @@ export function aliasRouterName(project: string, service: string, index = 0): st
   return index === 0 ? base : `${base}-${index + 1}`
 }
 
-/** The router name of each alias, by position among the aliases of its own service. */
+/**
+ * The router name of each alias, unique across the whole file.
+ *
+ * Names are built from project and service with dashes, so `web` second and a service called
+ * `web-2` first would spell the same name, and Traefik would drop one router silently. A name
+ * already taken moves on to the next free index instead.
+ */
 function routerNames(aliases: StoredAlias[]): string[] {
   const seen = new Map<string, number>()
+  const taken = new Set<string>()
   return aliases.map((alias) => {
     const key = `${alias.project}\u0000${alias.service}`
-    const index = seen.get(key) ?? 0
+    let index = seen.get(key) ?? 0
+    let name = aliasRouterName(alias.project, alias.service, index)
+    while (taken.has(name)) name = aliasRouterName(alias.project, alias.service, ++index)
     seen.set(key, index + 1)
-    return aliasRouterName(alias.project, alias.service, index)
+    taken.add(name)
+    return name
   })
 }
 
