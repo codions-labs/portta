@@ -39,7 +39,7 @@
     "better-auth": "1.7.15",
     "drizzle-orm": "0.45.4",
     "hono": "4.13.16",
-    "nanoid": "5.1.16",
+    "nanoid": "6.0.2",
     "portta-core": "0.1.0",
     "portta-db": "0.1.0"
   },
