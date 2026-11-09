@@ -113,3 +113,5 @@ assert_eq "" "$(grep -rn "from 'portta-web'" packages --include='*.ts' --include
 # resolves perfectly well and answers to none of the rules above.
 it "no package reaches into another by relative path"
 assert_eq "" "$(grep -rnE "from '(\.\./){2,}(apps|packages)/" packages apps --include='*.ts' --include='*.tsx' 2>/dev/null || true)"
+
+t_summary

@@ -3,9 +3,17 @@
 // Pure: the collector runs git on the host and hands the text here, so the reading
 // is tested without a repository and the CLI is the only part that spawns anything.
 
-import type { GitState } from 'portta-contracts'
+export interface GitFile {
+  path: string
+  status: 'M' | 'A' | 'D' | 'U'
+}
 
-type GitFile = GitState['files'][number]
+export interface GitHead {
+  sha: string
+  subject: string
+  author: string
+  at: number
+}
 
 export const GIT_FILE_LIMIT = 20
 
@@ -82,7 +90,7 @@ export function parseGitStatus(text: string): ParsedStatus {
 }
 
 /** `git log -1 --format=%h%x1f%s%x1f%an%x1f%ct`. Null for a repository with no commit. */
-export function parseGitHead(text: string): GitState['head'] {
+export function parseGitHead(text: string): GitHead | null {
   const [sha, subject, author, at] = text.trim().split('\u001f')
   const seconds = Number(at)
   if (!sha || subject === undefined || author === undefined || !Number.isSafeInteger(seconds)) return null
