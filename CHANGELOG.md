@@ -6,6 +6,21 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-11-09
+
+### Fixed
+
+- Service access lists container ports and routes secondary web panels, such as Mailpit on port 8025,
+  through a selected HTTP port while preserving SMTP and private database connections.
+- Adding the first web address integrates only the selected service through a persistent Compose overlay.
+  New addresses on public hosts are password-protected by default, with access controlled per hostname.
+- The service panel keeps its progress across container recreation and distinguishes HTTP links from TCP
+  connections. Existing primary routes and declared HTTP target ports remain supported.
+- Git parsing owns its output types in Core, and the workspace boundary check now exits with a failure
+  when an import violates the architecture.
+
+## [0.8.2] - 2026-11-09
+
 ### Added
 
 - `portta runtime up --build` rebuilds the images of services that define a `build` before starting, like
