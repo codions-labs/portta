@@ -32,7 +32,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@types/node": "24.13.3",
+    "@types/node": "26.6.6",
     "portta-server": "0.1.0",
     "typescript": "7.0.2",
     "vitest": "5.0.5"

@@ -49,7 +49,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@types/node": "24.13.3",
+    "@types/node": "26.6.6",
     "esbuild": "0.28.2",
     "portta-contracts": "0.1.0",
     "portta-core": "0.1.0",
