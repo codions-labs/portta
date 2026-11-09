@@ -30,7 +30,7 @@
     "docs:check": "node --import tsx tooling/docs.mjs --check"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.6",
     "esbuild": "0.28.2",
     "tsx": "4.23.15"
   },
