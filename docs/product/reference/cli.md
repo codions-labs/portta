@@ -124,7 +124,7 @@ project Docker is running: an observation, read locally.
 | `envs namespace` | `--path`, `--base`, `--suffix`, `--no-check` |
 | `envs hostname` | Required `--project <namespace>` and `--service <service>`; optional `--context` and `--domain`. Prints the canonical DNS label, or the full hostname when a domain is given. Reads no Docker state. |
 | `adopt <path>` | Canonical isolated Compose adoption. `--dry-run --json` reports the Runtime Plan and pending decisions without writing state. Repeat `--service <name:port>` to choose an HTTP surface; `--project <name>` sets an explicit Compose project namespace; `--remove-container-name <service>`, `--allow-shared-networks`, and `--allow-shared-volumes` record explicit compatibility decisions. `--manual` records a project-owned integration without Portta mutations. On a public host, `--protect <service>` asks for a generated credential (printed once) and `--public <service>` lets everybody open it; adopt stops with a pending `public_exposure` until every routed service has one. |
-| `runtime up\|down\|restart\|status\|config [path]` | Reuse the validated persisted Runtime Plan; `up` reconciles stale source inputs before starting. |
+| `runtime up\|down\|restart\|status\|config [path]` | Reuse the validated persisted Runtime Plan; `up` reconciles stale source inputs before starting; `runtime up --build` also rebuilds the images of services that define a `build`. |
 | `runtime logs [path]` | `--service <name>`, `--no-follow`, `--tail <lines>` |
 
 Every verb that calls the panel accepts `--url`, `--allow-remote` and

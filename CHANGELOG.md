@@ -6,6 +6,11 @@ All notable changes to Portta are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `portta runtime up --build` rebuilds the images of services that define a `build` before starting, like
+  `docker compose up -d --build`.
+
 ## [0.7.0] - 2026-11-05
 
 ### Changed

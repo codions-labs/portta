@@ -697,6 +697,31 @@ describe('Compose runtime', () => {
     expect(mocks.runProcess.mock.calls.at(-1)?.[1]).toEqual(expect.arrayContaining(['-p', 'poc75-example', 'up', '-d']))
   })
 
+  it('rebuilds images only when up is asked to build', async () => {
+    const workspace = temp()
+    mocks.root = join(temp(), 'gateway')
+    writeFileSync(join(workspace, 'compose.yaml'), 'services: {}\n')
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) =>
+      args.includes('version')
+        ? result('2.24.4')
+        : args.includes('branch')
+          ? result('')
+          : args.some((arg) => arg.endsWith('.tmp'))
+            ? result(finalModel)
+            : result(sourceModel),
+    )
+    await prepareComposeRuntime({ path: workspace, project: 'poc75-example' }, command)
+    const upCall = () => mocks.runProcess.mock.calls.map(([, args]) => args as string[]).find((a) => a.includes('up'))
+
+    mocks.runProcess.mockClear()
+    await runtimeAction('up', { path: workspace }, command)
+    expect(upCall()).not.toContain('--build')
+
+    mocks.runProcess.mockClear()
+    await runtimeAction('up', { path: workspace, build: true }, command)
+    expect(upCall()).toEqual(expect.arrayContaining(['up', '-d', '--build']))
+  })
+
   it('preserves the recorded namespace on re-adoption and refreshes hosts after a domain change', async () => {
     const workspace = temp()
     mocks.root = join(temp(), 'gateway')

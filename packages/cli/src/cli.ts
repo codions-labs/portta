@@ -288,9 +288,9 @@ describe(
     )
   })
 const runtime = describe(program.command('runtime'), 'Operate the persisted Compose Runtime Plan for a project')
-describe(runtime.command('up [path]'), 'Prepare when stale, then start the runtime').action((path, _options, command) =>
-  runtimeAction('up', { path }, command),
-)
+describe(runtime.command('up [path]'), 'Prepare when stale, then start the runtime')
+  .option('--build', 'rebuild the images of services that define a build before starting')
+  .action((path, options: { build?: boolean }, command) => runtimeAction('up', { path, build: options.build }, command))
 describe(runtime.command('down [path]'), 'Stop the runtime using its persisted plan').action(
   (path, _options, command) => runtimeAction('down', { path }, command),
 )

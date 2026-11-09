@@ -954,7 +954,7 @@ export async function adoptComposeRuntime(options: AdoptionOptions, command: Com
 
 export async function runtimeAction(
   action: 'up' | 'down' | 'restart' | 'status' | 'logs' | 'config',
-  options: { path?: string; service?: string; follow?: boolean; tail?: string },
+  options: { path?: string; service?: string; follow?: boolean; tail?: string; build?: boolean },
   command: Command,
 ): Promise<void> {
   const workspace = canonicalWorkspace(options.path ?? process.cwd())
@@ -982,6 +982,7 @@ export async function runtimeAction(
           'up',
           '-d',
           ...(publicStart ? ['--no-start'] : []),
+          ...(action === 'up' && options.build ? ['--build'] : []),
           ...(action === 'restart' ? ['--force-recreate'] : []),
         ]
       : action === 'down'
