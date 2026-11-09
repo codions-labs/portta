@@ -8,30 +8,49 @@ import { orderEndpoints } from './endpoints.ts'
 /** Nearest first, the order a person tries them in. */
 export const SCOPE_ORDER: EndpointScope[] = ['local', 'lan', 'private', 'protected', 'public', 'internal']
 
+/** Internal ports retain Docker's transport; published host mappings are separate. */
+export function containerPortsFor(container: ContainerSummary): Array<{ port: number; protocol: string }> {
+  const ports = container.containerPorts ?? container.exposedPorts.map((port) => ({ port, protocol: 'tcp' }))
+  const found = new Map(ports.map((port) => [`${port.port}/${port.protocol}`, port]))
+  for (const port of container.ports) {
+    found.set(`${port.containerPort}/${port.protocol}`, { port: port.containerPort, protocol: port.protocol })
+  }
+  return [...found.values()].sort((a, b) => a.port - b.port || a.protocol.localeCompare(b.protocol))
+}
+
 export function accessFromContainer(container: ContainerSummary): ServiceAccess {
   const running = container.state === 'running'
-  if (container.kind === 'http') {
+  if (container.kind === 'http' || container.urls.length > 0) {
     const endpoints: ServiceAccessEndpoint[] = running
       ? orderEndpoints(container.urls).map((url) => ({
           provider: url.scope,
           url: url.url,
           scope: url.scope === 'vpn' ? 'private' : url.scope,
-          usable: true,
+          usable: container.onGatewayNetwork,
           shareable: url.scope !== 'local',
-          problem: null,
+          problem: container.onGatewayNetwork ? null : 'off-network',
+          protocol: 'http',
+          ...(url.targetPort ? { targetPort: url.targetPort } : {}),
         }))
       : []
-    const routed = container.traefikEnabled && container.onGatewayNetwork
+    const routed = container.onGatewayNetwork && (container.traefikEnabled || container.urls.some((url) => url.alias))
     const problem = !running
       ? null
       : routed && endpoints.length === 0
         ? 'no-hostname'
-        : !container.traefikEnabled
+        : !container.traefikEnabled && !container.urls.some((url) => url.alias)
           ? 'not-routed'
           : !container.onGatewayNetwork
             ? 'off-network'
             : null
-    return { kind: 'http', primary: endpoints[0] ?? null, endpoints, bridge: null, routed, problem }
+    return {
+      kind: 'http',
+      primary: endpoints.find((endpoint) => endpoint.usable) ?? null,
+      endpoints,
+      bridge: null,
+      routed,
+      problem,
+    }
   }
   if (container.exposedPorts.length === 0 && container.ports.length === 0) {
     return {
@@ -85,8 +104,12 @@ export function serviceFromContainer(
       stop: writable && running,
       restart: writable && running,
       logs: true,
-      openAccess: writable && running && access.kind === 'tcp',
-      share: writable && running && access.kind === 'http' && access.routed,
+      openAccess:
+        writable &&
+        running &&
+        container.kind !== 'http' &&
+        containerPortsFor(container).some((port) => port.protocol === 'tcp'),
+      share: writable && running && container.kind === 'http' && access.kind === 'http' && access.routed,
     },
     ...(container.overrides ? { overrides: container.overrides } : {}),
     hidden: options.hidden === true,

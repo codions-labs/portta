@@ -91,5 +91,23 @@
       "closed": "Fechado",
       "failed": "Falhou"
     }
+  },
+  "ports": {
+    "title": "Portas do container",
+    "published": "Publicadas no host"
+  },
+  "webAddress": {
+    "port": "Porta web",
+    "create": "Criar endereço web",
+    "confirmHttp": "Este serviço responde HTTP na porta {{port}}.",
+    "integrationHint": "Criar este endereço conecta {{name}} ao gateway e recria somente este serviço.",
+    "protectedHint": "O novo endereço exigirá uma senha.",
+    "integrating": "Conectando este serviço ao gateway…",
+    "creating": "Criando o endereço…",
+    "failed": "Não foi possível conectar o serviço ao gateway.",
+    "passwordTitle": "Senha deste endereço",
+    "user": "Usuário: {{user}}",
+    "copyPassword": "Copiar senha",
+    "passwordHint": "Esta senha aparece apenas agora. Guarde-a para abrir o novo endereço."
   }
 }

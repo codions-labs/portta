@@ -9,7 +9,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, delimiter, isAbsolute, join, resolve } from 'node:path'
+import { basename, delimiter, dirname, isAbsolute, join, resolve } from 'node:path'
 import type { Command } from 'commander'
 import {
   environmentNamespace,
@@ -18,6 +18,7 @@ import {
   hostLabelFromLabels,
   hostnameFor,
   hostnameFromLabel,
+  httpAccessOverlayPath,
   httpRouterNames,
   httpRoutes,
   isTcpOnly,
@@ -34,6 +35,7 @@ import { PreconditionError, RefusedError, UsageError } from '../errors.js'
 import { Output } from '../output.js'
 import { runProcess } from '../process.js'
 import { generatePassword, openStore, protectedStore, readExposure, saveExposure } from './exposure.js'
+import { refreshHttpAccessOverlay } from './runner-http.js'
 
 const Manifest = z.object({
   schemaVersion: z.literal(1),
@@ -327,16 +329,19 @@ async function gitBranch(workspace: string): Promise<string | null> {
   const result = await runProcess('git', ['-C', workspace, 'branch', '--show-current'], { reject: false })
   return result.exitCode === 0 ? result.stdout.trim() || null : null
 }
-function composeArgs(plan: RuntimePlan, overlayFile = plan.compose.generatedOverlay): string[] {
+function composeArgs(plan: RuntimePlan, overlayFile = plan.compose.generatedOverlay, withAttachments = true): string[] {
+  const root = resolve(dirname(plan.compose.generatedOverlay), '../../..')
+  const attachment = httpAccessOverlayPath(root, plan.compose.projectName)
   return [
     'compose',
     '-p',
     plan.compose.projectName,
     '--project-directory',
     plan.workspace,
-    ...plan.compose.files.flatMap((file) => ['-f', file]),
+    ...plan.compose.files.filter((file) => file !== attachment).flatMap((file) => ['-f', file]),
     '-f',
     overlayFile,
+    ...(withAttachments && existsSync(attachment) ? ['-f', attachment] : []),
     ...plan.compose.profiles.flatMap((profile) => ['--profile', profile]),
   ]
 }
@@ -844,7 +849,7 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
     mkdirSync(directory, { recursive: true, mode: 0o700 })
     const temporary = `${generatedOverlay}.${process.pid}.tmp`
     writeFileSync(temporary, content, { mode: 0o600 })
-    const final = await runProcess('docker', [...composeArgs(plan, temporary), 'config', '--format', 'json'], {
+    const final = await runProcess('docker', [...composeArgs(plan, temporary, false), 'config', '--format', 'json'], {
       cwd: workspace,
       reject: false,
     })
@@ -864,6 +869,12 @@ export async function prepareComposeRuntime(options: AdoptionOptions, command: C
       throw new RefusedError('generated runtime still publishes host ports')
     }
     renameSync(temporary, generatedOverlay)
+    await refreshHttpAccessOverlay(context, {
+      project: projectName,
+      workingDir: workspace,
+      files: [...files, generatedOverlay],
+      profiles: manifest.compose.profiles,
+    })
     if (pendingManifestText) writeFileSync(manifests.stored, pendingManifestText, { mode: 0o600 })
     writeFileSync(planPath(context.root, id), `${JSON.stringify(plan, null, 2)}\n`, { mode: 0o600 })
   }
@@ -972,6 +983,13 @@ export async function runtimeAction(
   } else plan = readPlan(context.root, workspace)
   if (action === 'up' || action === 'restart')
     await preflightRuntime(context.root, workspace, plan.compose.projectName, plan.services, context.config.domain)
+  if (action === 'up' || action === 'restart')
+    await refreshHttpAccessOverlay(context, {
+      project: plan.compose.projectName,
+      workingDir: workspace,
+      files: [...plan.compose.files, plan.compose.generatedOverlay],
+      profiles: plan.compose.profiles,
+    })
   const args = composeArgs(plan)
   const publicStart = (action === 'up' || action === 'restart') && plan.profile === 'remote-public'
   const tail = options.tail ? ['--tail', options.tail] : []

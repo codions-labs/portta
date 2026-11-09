@@ -668,6 +668,16 @@
           "alias": {
             "description": "Added in the panel rather than derived from the project",
             "type": "boolean"
+          },
+          "targetPort": {
+            "description": "The HTTP port inside the container",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "forwardAuth": {
+            "description": "This route passes through Portta ForwardAuth",
+            "type": "boolean"
           }
         },
         "required": [
@@ -941,6 +951,24 @@
         ],
         "additionalProperties": false
       },
+      "ContainerPort": {
+        "type": "object",
+        "properties": {
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "protocol": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "port",
+          "protocol"
+        ],
+        "additionalProperties": false
+      },
       "ServiceKind": {
         "type": "string",
         "enum": [
@@ -1139,6 +1167,13 @@
               "type": "integer",
               "minimum": -9007199254740991,
               "maximum": 9007199254740991
+            }
+          },
+          "containerPorts": {
+            "description": "Declared container ports, including their transport",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContainerPort"
             }
           },
           "kind": {
@@ -2123,6 +2158,13 @@
           "file": {
             "type": "string",
             "description": "The generated Traefik file this was written to"
+          },
+          "password": {
+            "description": "Shown once; only its hash is persisted",
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
           }
         },
         "required": [
@@ -2162,6 +2204,76 @@
           "ok",
           "removed",
           "hosts"
+        ],
+        "additionalProperties": false
+      },
+      "HttpIntegrationResult": {
+        "type": "object",
+        "properties": {
+          "ready": {
+            "type": "boolean"
+          },
+          "requestId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "ready",
+          "requestId"
+        ],
+        "additionalProperties": false
+      },
+      "HttpIntegrationOperation": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "project": {
+            "type": "string"
+          },
+          "service": {
+            "type": "string"
+          },
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "ok",
+              "failed"
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "requestId",
+          "project",
+          "service",
+          "port",
+          "state",
+          "error"
         ],
         "additionalProperties": false
       },
@@ -7413,6 +7525,18 @@
               "string",
               "null"
             ]
+          },
+          "targetPort": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "http",
+              "tcp"
+            ]
           }
         },
         "required": [
@@ -7656,6 +7780,12 @@
               "type": "integer",
               "minimum": -9007199254740991,
               "maximum": 9007199254740991
+            }
+          },
+          "containerPorts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContainerPort"
             }
           },
           "networks": {
@@ -10704,6 +10834,14 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 253
+                  },
+                  "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                  },
+                  "protect": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -10814,6 +10952,252 @@
           }
         ],
         "x-portta-permission": "environment:settings"
+      }
+    },
+    "/environments/{project}/services/{service}/http-integration": {
+      "post": {
+        "operationId": "integrateServiceHttp",
+        "tags": [
+          "Environments"
+        ],
+        "summary": "Prepare one service for an HTTP address",
+        "description": "Adds a generated Compose attachment and recreates only the chosen service. No hostname is activated by this operation.",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "description": "COMPOSE_PROJECT_NAME of a running project.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpIntegrationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The requested operation conflicts with the current runtime state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "alias": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 253
+                  },
+                  "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                  }
+                },
+                "required": [
+                  "alias",
+                  "port"
+                ],
+                "additionalProperties": false,
+                "ref": "HttpIntegrationBody"
+              }
+            }
+          }
+        },
+        "x-portta-permission": "environment:settings"
+      }
+    },
+    "/environments/{project}/services/{service}/http-integration/{requestId}": {
+      "get": {
+        "operationId": "getServiceHttpIntegration",
+        "tags": [
+          "Environments"
+        ],
+        "summary": "Get the result of one HTTP integration",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "description": "COMPOSE_PROJECT_NAME of a running project.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpIntegrationOperation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid or the requested action was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The panel is read-only, the write is cross-origin, or the operation is outside the panel allowlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested project, service, container, share or endpoint does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The panel encountered an unexpected failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Docker, Traefik or another local upstream returned an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-portta-permission": "service:read"
       }
     },
     "/projects": {
@@ -14789,6 +15173,11 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "host": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 253
                   }
                 },
                 "additionalProperties": false
@@ -14811,6 +15200,15 @@
             "in": "path",
             "required": true,
             "description": "Docker container id, not a Compose service name.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "host",
+            "in": "query",
+            "required": false,
+            "description": "The one hostname whose decision is removed.",
             "schema": {
               "type": "string"
             }
@@ -14957,6 +15355,24 @@
             "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 253
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
         "x-portta-permission": "service:protect"
       }
     },

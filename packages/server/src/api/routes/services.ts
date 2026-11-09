@@ -6,6 +6,7 @@ import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { adoptions, projectOfEnvironment, visible } from '../../services/access-control.ts'
 import { findContainer } from '../../services/actions.ts'
+import { aliasViewFor, applySnapshotOverrides, loadOverrides } from '../../services/overrides.ts'
 import { dashboardRouterUrl, routersFor } from '../../services/traefik.ts'
 import { containerIdParameter, documentRoute, tailParameter } from '../openapi.ts'
 
@@ -17,6 +18,10 @@ export const ServicesResponse = z
 
 export function serviceRoutes(deps: AppDeps): Hono {
   const app = new Hono()
+
+  async function snapshotView() {
+    return applySnapshotOverrides(await deps.cache.get(), await loadOverrides(deps.db), aliasViewFor(deps.config))
+  }
 
   /**
    * A container, and whether this caller reaches the environment it runs in.
@@ -50,7 +55,7 @@ export function serviceRoutes(deps: AppDeps): Hono {
       errors: [500, 502],
     }),
     async (c) => {
-      const snapshot = await deps.cache.get()
+      const snapshot = await snapshotView()
       const project = c.req.query('project')
       const integrated = new Set(snapshot.environments.filter((item) => item.integrated).map((item) => item.name))
       const services = snapshot.containers.filter(
@@ -81,7 +86,7 @@ export function serviceRoutes(deps: AppDeps): Hono {
       errors: [404, 500, 502],
     }),
     async (c) => {
-      const snapshot = await deps.cache.get()
+      const snapshot = await snapshotView()
       const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
       return c.json(container)
@@ -123,7 +128,7 @@ export function serviceRoutes(deps: AppDeps): Hono {
       errors: [404, 500, 502],
     }),
     async (c) => {
-      const snapshot = await deps.cache.get()
+      const snapshot = await snapshotView()
       const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
       const verdict = await deps.verdict.get()

@@ -265,6 +265,27 @@ published ports. See
 
 #### Who may open a service
 
+The service's Access section lists its internal ports, including TCP or UDP,
+separately from any published host ports. A service may provide both a web
+panel and another protocol: Mailpit's web panel uses port 8025, while its SMTP
+connection remains on port 1025. Choose the web port and **Create web address**
+to add a hostname. Each added address shows its destination port and can be
+removed independently. An unknown port requires an explicit HTTP choice;
+database and SMTP protocol ports are reached through their TCP connections.
+
+When the service is not on the gateway network, the panel first integrates it
+through a generated Compose overlay and recreates only that service. This
+needs the opt-in project runner and can briefly interrupt the selected
+service. The address is created only after integration succeeds. The source
+Compose files and the application's primary port stay as they were, and
+future Portta runtime operations preserve the integration. Removing an
+address leaves the network integration in place, so another address does not
+require another interruption.
+
+On a public gateway, a newly selected web port gets a password-protected
+address by default. The password is shown once. **Who may open** manages each
+hostname separately, including services with several addresses.
+
 Opening a service shows it beside the list. On a public host **Who may open** is
 where its hostname gets a decision: nobody has decided yet, so it is closed.
 

@@ -142,6 +142,57 @@ describe('a service row', () => {
     expect(view.resources?.cpuUtilisation).toBe(4)
   })
 
+  it('offers the Mailpit web panel and keeps the SMTP bridge independently', () => {
+    const mailpit = container({
+      name: 'shop-mailpit-1',
+      service: 'mailpit',
+      image: 'axllent/mailpit:latest',
+      kind: 'smtp',
+      tech: { id: 'mailpit', label: 'Mailpit' },
+      exposedPorts: [1025, 8025],
+      traefikEnabled: false,
+      urls: [
+        {
+          url: 'http://shop--mailpit.localhost',
+          host: 'shop--mailpit.localhost',
+          scheme: 'http',
+          scope: 'local',
+          alias: true,
+          targetPort: 8025,
+        },
+      ],
+    })
+    const bridge = {
+      id: 'mail-bridge',
+      containerId: 'bridge1',
+      project: 'shop',
+      service: 'mailpit',
+      targetPort: 1025,
+      localPort: 32000,
+      bindIp: '127.0.0.1',
+      kind: 'smtp' as const,
+      network: 'shop_default',
+      createdAt: 1,
+      expiresAt: null,
+      state: 'running' as const,
+      connectionString: '127.0.0.1:32000',
+    }
+    const row = serviceView(mailpit, testConfig(), emptyMetrics(), bridge)
+    expect(row.kind).toBe('smtp')
+    expect(row.access).toMatchObject({
+      kind: 'http',
+      routed: true,
+      bridge,
+      primary: { url: 'http://shop--mailpit.localhost', targetPort: 8025, protocol: 'http' },
+    })
+    expect(row.access.endpoints).toContainEqual(expect.objectContaining({ protocol: 'tcp', url: '127.0.0.1:32000' }))
+    expect(row.actions.share).toBe(false)
+    expect(serviceView(mailpit, testConfig(), emptyMetrics(), null).actions.openAccess).toBe(true)
+    const offNetwork = accessFor({ ...mailpit, onGatewayNetwork: false }, testConfig(), bridge)
+    expect(offNetwork.primary).toBeNull()
+    expect(offNetwork.routed).toBe(false)
+  })
+
   it('read-only mode offers no action but logs', () => {
     const view = serviceView(container(), testConfig(), metrics(), null, { readOnly: true })
     expect(view.actions).toEqual({

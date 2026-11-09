@@ -32,6 +32,7 @@ vi.mock('@/lib/api', () => ({
     setEnvironmentSettings: (name: string, body: unknown) => setEnvironmentSettings(name, body),
     clearEnvironmentSettings: (name: string) => clearEnvironmentSettings(name),
     serviceAlias: (...args: unknown[]) => serviceAlias(...args),
+    gateway: vi.fn().mockResolvedValue({ domain: 'localhost', profile: 'local', panel: { readOnly: false } }),
     clearServiceAlias: (...args: unknown[]) => clearServiceAlias(...args),
     containerAction: vi.fn().mockResolvedValue({ ok: true }),
     environmentAction: vi.fn().mockResolvedValue({
@@ -71,6 +72,7 @@ const web: ContainerSummary = makeContainer({
   service: 'web',
   ownership: 'integrated',
   traefikEnabled: true,
+  onGatewayNetwork: true,
   kind: 'http',
   exposedPorts: [80],
   urls: [WEB_URL],
@@ -153,7 +155,7 @@ describe('the environment settings form', () => {
 describe('the alias control', () => {
   it('sets an alias for the service it belongs to', async () => {
     renderWithQuery(<ServiceAlias project="alpha" service={web} />)
-    await userEvent.type(screen.getByLabelText('Additional address for web'), 'shop', { delay: null })
+    await userEvent.type(await screen.findByLabelText('Additional address for web'), 'shop', { delay: null })
     await userEvent.click(screen.getByRole('button', { name: 'Add address' }))
     await waitFor(() => expect(serviceAlias).toHaveBeenCalledWith('alpha', 'web', 'shop'))
   })
@@ -161,7 +163,7 @@ describe('the alias control', () => {
   it('renders a refusal inline rather than losing it', async () => {
     serviceAlias.mockRejectedValue(new ApiError(400, 'shop.localhost is already the hostname of a running container'))
     renderWithQuery(<ServiceAlias project="alpha" service={web} />)
-    await userEvent.type(screen.getByLabelText('Additional address for web'), 'shop', { delay: null })
+    await userEvent.type(await screen.findByLabelText('Additional address for web'), 'shop', { delay: null })
     await userEvent.click(screen.getByRole('button', { name: 'Add address' }))
     expect(await screen.findByText('shop.localhost is already the hostname of a running container')).toBeInTheDocument()
   })
@@ -169,7 +171,7 @@ describe('the alias control', () => {
   it('removes one address and leaves the others', async () => {
     const aliased = { ...web, overrides: { aliases: ['shop.localhost', 'www.shop.localhost'] } }
     renderWithQuery(<ServiceAlias project="alpha" service={aliased} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Remove shop.localhost' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Remove shop.localhost' }))
     await waitFor(() => expect(clearServiceAlias).toHaveBeenCalledWith('alpha', 'web', 'shop.localhost'))
     expect(screen.getByText('www.shop.localhost')).toBeInTheDocument()
   })
@@ -190,7 +192,9 @@ describe('the alias control', () => {
       dns: { type: 'A', name: 'shop.example.com.br', value: '203.0.113.7' },
     })
     renderWithQuery(<ServiceAlias project="alpha" service={web} />)
-    await userEvent.type(screen.getByLabelText('Additional address for web'), 'shop.example.com.br', { delay: null })
+    await userEvent.type(await screen.findByLabelText('Additional address for web'), 'shop.example.com.br', {
+      delay: null,
+    })
     await userEvent.click(screen.getByRole('button', { name: 'Add address' }))
     expect(await screen.findByText('A record: shop.example.com.br → 203.0.113.7')).toBeInTheDocument()
   })

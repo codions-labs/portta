@@ -28,6 +28,8 @@ export interface StoredAlias {
    * resolver's DNS provider does not control the user's domain, so the router asks for HTTP-01.
    */
   certResolver?: string
+  /** Whether this file-provider router enforces the hostname's access policy. */
+  forwardAuth?: boolean
 }
 
 /** Name of the HTTP-01 resolver that profiles/remote-tls-dns.yaml defines beside the default one. */
@@ -95,7 +97,7 @@ export function renderAliases(aliases: StoredAlias[], forwardAuth = false, suspe
     lines.push(`    ${router}:`)
     lines.push(`      rule: ${quoteDynamicValue(`Host(\`${alias.host}\`)`)}`)
     lines.push(`      entryPoints: [${alias.entryPoint}]`)
-    if (forwardAuth) lines.push(`      middlewares: [${FORWARD_AUTH_MIDDLEWARE}]`)
+    if (forwardAuth || alias.forwardAuth) lines.push(`      middlewares: [${FORWARD_AUTH_MIDDLEWARE}]`)
     lines.push(`      service: ${router}`)
     if (alias.certResolver) lines.push('      tls:', `        certResolver: ${quoteDynamicValue(alias.certResolver)}`)
   })

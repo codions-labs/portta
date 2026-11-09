@@ -74,7 +74,7 @@ export const environmentsApi = {
       method: 'DELETE',
       body: '{}',
     }),
-  serviceAlias: (name: string, service: string, alias: string) =>
+  serviceAlias: (name: string, service: string, alias: string, options: { port?: number; protect?: boolean } = {}) =>
     request<{
       host: string
       derivedHosts: string[]
@@ -82,10 +82,28 @@ export const environmentsApi = {
       custom: boolean
       hosts: string[]
       dns: { type: 'A' | 'CNAME'; name: string; value: string | null } | null
+      password?: string | null
+      user?: string | null
     }>(`/environments/${encodeURIComponent(name)}/services/${encodeURIComponent(service)}/alias`, {
       method: 'PUT',
-      body: JSON.stringify({ alias }),
+      body: JSON.stringify({ alias, ...options }),
     }),
+  serviceHttpIntegration: (name: string, service: string, body: { alias: string; port: number }) =>
+    request<{ ready: boolean; requestId: string | null }>(
+      `/environments/${encodeURIComponent(name)}/services/${encodeURIComponent(service)}/http-integration`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+  serviceHttpIntegrationStatus: (name: string, service: string, requestId: string) =>
+    request<{
+      requestId: string
+      project: string
+      service: string
+      port: number
+      state: 'pending' | 'running' | 'ok' | 'failed'
+      error: string | null
+    }>(
+      `/environments/${encodeURIComponent(name)}/services/${encodeURIComponent(service)}/http-integration/${encodeURIComponent(requestId)}`,
+    ),
   clearServiceAlias: (name: string, service: string, host?: string) =>
     request<{ ok: boolean; removed: string | null; hosts: string[] }>(
       `/environments/${encodeURIComponent(name)}/services/${encodeURIComponent(service)}/alias${host ? `?host=${encodeURIComponent(host)}` : ''}`,

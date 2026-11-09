@@ -35,6 +35,7 @@ import { environmentRoutes } from './routes/environments.ts'
 import { exposureRoutes } from './routes/exposure.ts'
 import { gatewayRoutes } from './routes/gateway.ts'
 import { hostRoutes } from './routes/host.ts'
+import { httpIntegrationRoutes } from './routes/http-integration.ts'
 import { networkRoutes } from './routes/network.ts'
 import { overrideRoutes } from './routes/overrides.ts'
 import { projectFileRoutes } from './routes/project-files.ts'
@@ -175,6 +176,7 @@ export function createApi(deps: AppDeps): Hono {
   api.route('/', environmentRoutes(deps))
   api.route('/', runnerRoutes(deps))
   api.route('/', overrideRoutes(deps))
+  api.route('/', httpIntegrationRoutes(deps))
   api.route('/', projectRoutes(deps))
   api.route('/', discoveryRoutes(deps))
   api.route('/', projectFileRoutes(deps))

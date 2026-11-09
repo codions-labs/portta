@@ -5,6 +5,7 @@
 // was seen; a container that disappears still stops appearing in this view.
 
 import type {
+  ContainerPort,
   ContainerState,
   ContainerSummary,
   Environment,
@@ -18,6 +19,7 @@ import type {
 } from 'portta-contracts'
 import {
   composeFilesFromLabel,
+  hasForwardAuth,
   hostLabelFromLabels,
   hostnameFromLabel,
   httpRoutes,
@@ -124,11 +126,25 @@ export function urlsFor(labels: Record<string, string>, containerName: string, c
     const label = hostLabelFromLabels(labels, containerName)
     hosts.push(hostnameFromLabel(label, config.domain))
   }
+  const targetPorts = [
+    ...new Set(
+      Object.entries(labels)
+        .filter(
+          ([key]) =>
+            key.toLowerCase().startsWith('traefik.http.services.') &&
+            key.toLowerCase().endsWith('.loadbalancer.server.port'),
+        )
+        .map(([, value]) => Number(value))
+        .filter((port) => Number.isInteger(port) && port > 0 && port <= 65535),
+    ),
+  ]
   return hosts.map((host) => ({
     host,
     url: `${scheme}://${host}`,
     scheme,
     scope: scopeForHost(host, config),
+    ...(targetPorts.length === 1 ? { targetPort: targetPorts[0] } : {}),
+    ...(hasForwardAuth(labels) ? { forwardAuth: true } : {}),
   }))
 }
 
@@ -165,13 +181,21 @@ function publishedPorts(inspect: DockerContainerInspect | null, item: DockerCont
   return out.sort((a, b) => a.hostPort - b.hostPort)
 }
 
-function exposedPorts(inspect: DockerContainerInspect | null): number[] {
-  const specs = Object.keys(inspect?.Config.ExposedPorts ?? {})
-  return specs
-    .filter((spec) => spec.endsWith('/tcp'))
-    .map((spec) => Number(spec.split('/')[0]))
-    .filter((port) => Number.isFinite(port) && port > 0)
-    .sort((a, b) => a - b)
+function containerPorts(inspect: DockerContainerInspect | null, item: DockerContainerListItem): ContainerPort[] {
+  const found = new Map<string, ContainerPort>()
+  const specs = [
+    ...Object.keys(inspect?.Config.ExposedPorts ?? {}),
+    ...Object.keys(inspect?.NetworkSettings.Ports ?? {}),
+    ...(item.Ports ?? []).map((port) => `${port.PrivatePort}/${port.Type ?? 'tcp'}`),
+  ]
+  for (const spec of specs) {
+    const [number, transport = 'tcp'] = spec.split('/')
+    const port = Number(number)
+    const protocol = transport.toLowerCase()
+    if (!Number.isInteger(port) || port < 1 || port > 65535) continue
+    found.set(`${port}/${protocol}`, { port, protocol })
+  }
+  return [...found.values()].sort((a, b) => a.port - b.port || a.protocol.localeCompare(b.protocol))
 }
 
 function classify(labels: Record<string, string>, onGatewayNetwork: boolean, project: string | null): Ownership {
@@ -208,7 +232,8 @@ export function summarise(
   const oneOff = (labels[LABELS.composeOneoff] ?? '').toLowerCase() === 'true'
   const urls = oneOff ? [] : urlsFor(labels, name, config)
   const ports = publishedPorts(inspect, item)
-  const exposed = exposedPorts(inspect)
+  const declared = containerPorts(inspect, item)
+  const exposed = declared.filter((port) => port.protocol === 'tcp').map((port) => port.port)
   const exitCode = inspect ? inspect.State.ExitCode : null
   const restartPolicy = inspect?.HostConfig?.RestartPolicy?.Name ?? ''
   // A migration that ran and exited 0 under `restart: no` did its job. Docker
@@ -241,6 +266,7 @@ export function summarise(
     traefikEnabled: traefikEnabled(labels),
     ports,
     exposedPorts: exposed,
+    containerPorts: declared,
     // Opting a database into hostname routing also sets traefik.enable, so
     // asking that label alone would call PostgreSQL an HTTP service. What
     // makes something HTTP is ending up with a URL. A worker image can inherit

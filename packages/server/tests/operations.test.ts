@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EnvironmentRemovalPreview, ProjectRebuildResult, ProjectRemoveResult } from 'portta-contracts'
 import { describe, expect, it } from 'vitest'
+import { dispatchRunner, writeRunnerRequest } from '../src/services/operations.ts'
 import { PROJECT_A } from './fixtures.ts'
 import { type FakeContainer, makeApp, post } from './helpers.ts'
 
@@ -120,9 +121,75 @@ describe('POST /api/environments/:project/operations/rebuild', () => {
     await post(app, '/api/environments/alpha/operations/rebuild', { noCache: true })
     expect(requestFile(config.runnerDir)).toEqual({ verb: 'build', project: 'alpha', flags: ['no-cache'] })
   })
+
+  it('does not let concurrent requests replace the runner command while it starts', async () => {
+    const instance = makeApp({ containers: [...PROJECT_A, RUNNER] }, isolated())
+    const snapshot = await instance.cache.get()
+    const inspect = instance.docker.client.inspect.bind(instance.docker.client)
+    let release!: () => void
+    const barrier = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    instance.docker.client.inspect = async (id) => {
+      if (id === RUNNER.id) await barrier
+      return inspect(id)
+    }
+    const first = dispatchRunner(instance.docker.client, snapshot, instance.config, { verb: 'build', project: 'alpha' })
+    await expect(
+      dispatchRunner(instance.docker.client, snapshot, instance.config, {
+        verb: 'integrate-http',
+        project: 'alpha',
+        service: 'web',
+        port: 80,
+        requestId: '1ba200d8-63f2-4b53-934c-1a68ce45590c',
+      }),
+    ).rejects.toMatchObject({ status: 409 })
+    release()
+    await first
+    expect(requestFile(instance.config.runnerDir).verb).toBe('build')
+  })
+
+  it('carries only the typed HTTP integration fields to the runner', () => {
+    const instance = makeApp({}, isolated())
+    const request = {
+      verb: 'integrate-http' as const,
+      project: 'alpha',
+      service: 'mailpit',
+      port: 8025,
+      requestId: '1ba200d8-63f2-4b53-934c-1a68ce45590c',
+    }
+    writeRunnerRequest(instance.config, request)
+    expect(requestFile(instance.config.runnerDir)).toEqual({ ...request, flags: [] })
+  })
 })
 
 describe('POST /api/environments/:project/operations/remove', () => {
+  it('cleans only the removed environment HTTP attachment decisions', async () => {
+    const config = isolated()
+    mkdirSync(config.runnerDir, { recursive: true })
+    const path = join(config.runnerDir, 'http-access.json')
+    writeFileSync(
+      path,
+      JSON.stringify({
+        version: 1,
+        attachments: [
+          { project: 'alpha', service: 'mailpit' },
+          { project: 'beta', service: 'mailpit' },
+        ],
+      }),
+    )
+    const { app } = makeApp({ containers: withVolume }, config)
+    const response = await post(app, '/api/environments/alpha/operations/remove', {
+      confirmation: 'alpha',
+      volumes: false,
+    })
+    expect(response.status).toBe(200)
+    expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual({
+      version: 1,
+      attachments: [{ project: 'beta', service: 'mailpit' }],
+    })
+  })
+
   it('refuses a confirmation that does not match', async () => {
     const { app, docker, config } = makeApp({ containers: PROJECT_A }, isolated())
     const response = await post(app, '/api/environments/alpha/operations/remove', {

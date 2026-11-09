@@ -55,4 +55,35 @@ describe('the Open / Test menu', () => {
     expect(open).toHaveBeenCalledWith('https://alpha--web.dev.example.test', '_blank', 'noopener,noreferrer')
     open.mockRestore()
   })
+
+  it('copies the TCP address of a mixed service instead of opening it as a website', async () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    const web = makeService()
+    const smtp = {
+      provider: 'bridge',
+      url: '127.0.0.1:32768',
+      scope: 'local' as const,
+      usable: true,
+      shareable: false,
+      problem: null,
+      protocol: 'tcp' as const,
+    }
+    renderWithQuery(
+      <OpenTestMenu
+        service={{
+          ...web,
+          kind: 'smtp',
+          access: { ...web.access, endpoints: [...web.access.endpoints, smtp] },
+          actions: { ...web.actions, openAccess: true, share: false },
+        }}
+      />,
+      'en',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Open / Test' }))
+    expect(await screen.findByRole('menuitem', { name: 'Open local access' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('menuitem', { name: '127.0.0.1:32768' }))
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('127.0.0.1:32768')
+    expect(open).not.toHaveBeenCalled()
+    open.mockRestore()
+  })
 })

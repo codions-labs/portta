@@ -1,9 +1,39 @@
 import { describe, expect, it } from 'vitest'
-import { buildSnapshot, collectPorts, urlsFor } from '../src/services/inventory.ts'
+import { buildSnapshot, collectPorts, summarise, urlsFor } from '../src/services/inventory.ts'
 import { BRIDGE, EXTERNAL, FULL_HOST, GATEWAY, PROJECT_A, STANDALONE } from './fixtures.ts'
-import { type FakeContainer, fakeDocker, testConfig } from './helpers.ts'
+import { container, type FakeContainer, fakeDocker, testConfig } from './helpers.ts'
 
 const config = testConfig()
+
+describe('container ports', () => {
+  it('keeps transport, combines declarations with bindings and deduplicates ports', () => {
+    const { item, inspect } = container({ id: 'mail', name: 'mail', image: 'axllent/mailpit', exposed: [1025, 8025] })
+    inspect.Config.ExposedPorts!['5353/udp'] = {}
+    inspect.NetworkSettings.Ports['8025/tcp'] = [{ HostIp: '127.0.0.1', HostPort: '32000' }]
+    item.Ports = [
+      { PrivatePort: 8025, Type: 'tcp' },
+      { PrivatePort: 9999, Type: 'tcp' },
+    ]
+    const view = summarise(item, inspect, config, 1_800_000_000)
+    expect(view.containerPorts).toEqual([
+      { port: 1025, protocol: 'tcp' },
+      { port: 5353, protocol: 'udp' },
+      { port: 8025, protocol: 'tcp' },
+      { port: 9999, protocol: 'tcp' },
+    ])
+    expect(view.exposedPorts).toEqual([1025, 8025, 9999])
+    expect(view.ports).toEqual([{ ip: '127.0.0.1', hostPort: 32000, containerPort: 8025, protocol: 'tcp' }])
+  })
+
+  it('retains listed ports when a container disappears before inspect', () => {
+    const { item } = container({ id: 'mail', name: 'mail', image: 'axllent/mailpit' })
+    item.Ports = [
+      { PrivatePort: 1025, Type: 'tcp' },
+      { PrivatePort: 8025, Type: 'tcp' },
+    ]
+    expect(summarise(item, null, config, 1_800_000_000).exposedPorts).toEqual([1025, 8025])
+  })
+})
 
 describe('classification', () => {
   it('separates the gateway, its projects and everything else', async () => {

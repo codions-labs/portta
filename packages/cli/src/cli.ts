@@ -85,6 +85,7 @@ import {
 import { openHost, protectHost, protectStatus, unprotectHost } from './commands/protect.js'
 import { publicInit } from './commands/public-init.js'
 import { projectsResolve } from './commands/resolve.js'
+import { integrateHttpFromRunner, projectHttpOverlayFromRunner } from './commands/runner-http.js'
 import { setupCommand } from './commands/setup.js'
 import { shareGc, shareList, shareRevoke } from './commands/share.js'
 import { tlsInit, tlsStatus, tlsTrust, tlsUntrust } from './commands/tls.js'
@@ -139,6 +140,10 @@ program
     setProcessReporter(program.opts())
     setJsonSchema(schemaFor(actionCommand))
   })
+
+// Fixed runner entrypoints: no free-form project, path, command or flags.
+program.command('_runner-integrate-http', { hidden: true }).action(() => integrateHttpFromRunner())
+program.command('_runner-http-overlay', { hidden: true }).action(() => projectHttpOverlayFromRunner())
 
 describe(program.command('version'), 'Print the installed version').action((_options, command) =>
   versionCommand(command),

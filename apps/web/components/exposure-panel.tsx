@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../lib/api/index.ts'
 import { canonicalHost } from '../lib/host-access.ts'
 import { useCan } from '../lib/permissions.ts'
-import { keys, useExposure } from '../lib/queries/index.ts'
+import { keys, useExposure, useGateway } from '../lib/queries/index.ts'
 import { cn } from '../lib/utils.ts'
 import { CopyButton, Mono } from './copy.tsx'
 import { Callout } from './shell-bits.tsx'
@@ -20,28 +20,29 @@ import { Checkbox } from './ui/field.tsx'
 import { Segmented } from './ui/segmented.tsx'
 
 /** Deciding who may open one service's hostname, wherever the decision is offered. */
-export function useExposureDecision(container: ContainerSummary) {
+export function useExposureDecision(container: ContainerSummary, host?: string) {
   const queryClient = useQueryClient()
   const [password, setPassword] = useState<string | null>(null)
   // Asked before choosing, since choosing is what makes the password.
   const [passwordOnly, setPasswordOnly] = useState(false)
   const refresh = () => void queryClient.invalidateQueries({ queryKey: keys.exposure() })
   const protect = useMutation({
-    mutationFn: () => api.protectService(container.id, passwordOnly ? { user: null } : {}),
+    mutationFn: () =>
+      api.protectService(container.id, { ...(passwordOnly ? { user: null } : {}), ...(host ? { host } : {}) }),
     onSuccess: (result) => {
       setPassword(result.password ?? null)
       refresh()
     },
   })
   const open = useMutation({
-    mutationFn: () => api.openService(container.id),
+    mutationFn: () => (host ? api.openService(container.id, host) : api.openService(container.id)),
     onSuccess: () => {
       setPassword(null)
       refresh()
     },
   })
   const close = useMutation({
-    mutationFn: () => api.closeService(container.id),
+    mutationFn: () => (host ? api.closeService(container.id, host) : api.closeService(container.id)),
     onSuccess: () => {
       setPassword(null)
       refresh()
@@ -182,18 +183,47 @@ export function ExposureChoice({
  * takes effect on the next request and recreates nothing.
  */
 export function ExposurePanel({ container }: { container: ContainerSummary }) {
-  const { t } = useTranslation('common', { keyPrefix: 'exposure' })
-  const mayDecide = useCan('service:protect')
   const hosts = [...new Set(container.urls.map((url) => canonicalHost(url.host)))]
-  const host = hosts.length === 1 ? (hosts[0] ?? null) : null
+  if (hosts.length === 0) return null
+  return (
+    <div className="space-y-4">
+      {hosts.map((host) => (
+        <div key={host} role="group" aria-label={host} className="space-y-2">
+          {hosts.length > 1 ? (
+            <Mono kind="text" tone="ink">
+              {host}
+            </Mono>
+          ) : null}
+          <HostExposurePanel
+            container={container}
+            host={host}
+            explicitHost={hosts.length > 1 || container.urls.some((url) => url.host === host && url.alias)}
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function HostExposurePanel({
+  container,
+  host,
+  explicitHost,
+}: {
+  container: ContainerSummary
+  host: string
+  explicitHost: boolean
+}) {
+  const { t } = useTranslation('common', { keyPrefix: 'exposure' })
+  const permission = useCan('service:protect')
+  const gateway = useGateway(permission)
+  const mayDecide = permission && gateway.data?.panel.readOnly === false
   const query = useExposure()
   const entry = query.data?.entries.find((candidate) => canonicalHost(candidate.host) === host) ?? null
-  const enforced = hasForwardAuth(container.labels)
-  const decision = useExposureDecision(container)
+  const route = container.urls.find((url) => canonicalHost(url.host) === host)
+  const enforced = route?.forwardAuth ?? hasForwardAuth(container.labels)
+  const decision = useExposureDecision(container, explicitHost ? host : undefined)
   const { protect, close, busy, error, password } = decision
-
-  if (hosts.length > 1) return <p className="text-sm text-subtle">{t('severalHosts')}</p>
-  if (!host) return null
 
   const passwordNotice =
     enforced && password ? (

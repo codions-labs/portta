@@ -7,6 +7,7 @@ import type { AppDeps } from '../../deps.ts'
 import { adoptions, projectOfEnvironment, visible } from '../../services/access-control.ts'
 import { findContainer } from '../../services/actions.ts'
 import { closeService, listExposure, openService, protectService } from '../../services/exposure.ts'
+import { aliasViewFor, applySnapshotOverrides, EMPTY_OVERRIDES } from '../../services/overrides.ts'
 import { record } from '../audit.ts'
 import { containerIdParameter, documentRoute } from '../openapi.ts'
 
@@ -20,11 +21,16 @@ const protectBody = z
       .nullable()
       .optional()
       .describe('A login name to ask for beside the password. null asks for the password alone.'),
+    host: z.string().min(1).max(253).optional(),
   })
   .strict()
 
 export function exposureRoutes(deps: AppDeps): Hono {
   const app = new Hono()
+
+  async function snapshotWithAliases() {
+    return applySnapshotOverrides(await deps.cache.get(), EMPTY_OVERRIDES, aliasViewFor(deps.config))
+  }
 
   async function reach(c: Context, environment: string | null | undefined): Promise<void> {
     authorizeScope(c, environment ? await projectOfEnvironment(deps.db, environment) : null)
@@ -81,7 +87,7 @@ export function exposureRoutes(deps: AppDeps): Hono {
     }),
     async (c) => {
       const body = protectBody.parse(await c.req.json().catch(() => ({})))
-      const snapshot = await deps.cache.get()
+      const snapshot = await snapshotWithAliases()
       const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
       const change = await protectService(
@@ -112,15 +118,20 @@ export function exposureRoutes(deps: AppDeps): Hono {
       operationId: 'openService',
       permission: 'service:protect',
       summary: 'Let everybody open a service, with no login',
+      request: z.object({ host: z.string().min(1).max(253).optional() }).strict(),
       response: ExposureResult,
       parameters: [containerIdParameter],
       errors: [400, 403, 404, 500],
     }),
     async (c) => {
-      const snapshot = await deps.cache.get()
+      const body = z
+        .object({ host: z.string().min(1).max(253).optional() })
+        .strict()
+        .parse(await c.req.json().catch(() => ({})))
+      const snapshot = await snapshotWithAliases()
       const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
-      const change = openService(deps.config, container, snapshot.containers, principalOf(c).scope === 'all')
+      const change = openService(deps.config, container, snapshot.containers, principalOf(c).scope === 'all', body.host)
       await record(deps, c, {
         action: change.action,
         resourceType: 'service',
@@ -140,14 +151,23 @@ export function exposureRoutes(deps: AppDeps): Hono {
       summary: 'Remove the decision for a service hostname',
       description: 'On a public host the hostname is closed afterwards.',
       response: ExposureResult,
-      parameters: [containerIdParameter],
+      parameters: [
+        containerIdParameter,
+        {
+          name: 'host',
+          in: 'query' as const,
+          required: false,
+          description: 'The one hostname whose decision is removed.',
+          schema: { type: 'string' as const },
+        },
+      ],
       errors: [400, 403, 404, 500],
     }),
     async (c) => {
-      const snapshot = await deps.cache.get()
+      const snapshot = await snapshotWithAliases()
       const container = findContainer(snapshot, c.req.param('id'))
       await reach(c, container.environment)
-      const change = closeService(deps.config, container, principalOf(c).scope === 'all')
+      const change = closeService(deps.config, container, principalOf(c).scope === 'all', c.req.query('host'))
       await record(deps, c, {
         action: change.action,
         resourceType: 'service',

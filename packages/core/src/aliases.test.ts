@@ -22,6 +22,12 @@ describe('hostname aliases', () => {
     expect(parseAliases(rendered)).toEqual([ALIAS])
   })
 
+  it('preserves enforcement recorded on an individual alias', () => {
+    const alias = { ...ALIAS, forwardAuth: true }
+    expect(renderAliases([alias])).toContain('middlewares: [portta-forward-auth]')
+    expect(parseAliases(renderAliases([alias]))).toEqual([alias])
+  })
+
   it('keeps an alias suspended until the conflicting decision has been removed', () => {
     const previous = setProtection(emptyProtectionStore(), {
       host: ALIAS.host,

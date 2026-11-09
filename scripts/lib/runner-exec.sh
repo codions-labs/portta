@@ -25,11 +25,19 @@ request_working_dir=$(sed -n 's/.*"workingDir"[[:space:]]*:[[:space:]]*"\([^"]*\
 request_config_files=$(sed -n 's/.*"configFiles"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' "$REQUEST" | head -n1 | tr -d '"')
 
 case "$verb" in
-  up|stop|restart|build|down|down-volumes) ;;
+  up|stop|restart|build|down|down-volumes|integrate-http) ;;
   *) die "unknown runner verb '$verb'" ;;
 esac
 
 [[ "$project" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] || die "refusing project name '$project'"
+
+# Operational behavior stays in the typed CLI. The installed runtime bundles
+# it in bin; a source checkout builds it in the CLI workspace.
+cli="$PORTTA_ROOT/packages/cli/dist/cli.js"
+[ -f "$cli" ] || cli="$PORTTA_ROOT/bin/cli.js"
+if [ "$verb" = "integrate-http" ]; then
+  exec node "$cli" _runner-integrate-http
+fi
 
 # The bound a path from the request must satisfy, the same one
 # packages/core/src/runner.ts checks before writing it: absolute, no walk-up,
@@ -119,6 +127,8 @@ if [ -n "$config_files" ]; then
     file="${file#"${file%%[![:space:]]*}"}"
     file="${file%"${file##*[![:space:]]}"}"
     [ -n "$file" ] || continue
+    # The derived attachment is always regenerated and appended last below.
+    [ "$file" != "$PORTTA_ROOT/runtime/compose/http-access/$project.yaml" ] || continue
     [ -z "$id" ] && assert_request_path "$file" "compose file"
     [ -n "$id" ] || assert_not_portta_path "$file" "a compose file"
     [ -f "${HOST_ROOT}${file}" ] || die "compose file ${file} is not readable"
@@ -138,6 +148,18 @@ if [ ${#files[@]} -eq 0 ]; then
   done
 fi
 [ ${#files[@]} -gt 0 ] || die "no compose file in ${working_dir}"
+
+case "$verb" in
+  up|restart|build)
+    if [ -f "$PORTTA_ROOT/state/runner/http-access.json" ]; then
+      node "$cli" _runner-http-overlay
+    fi
+    ;;
+esac
+http_overlay="$PORTTA_ROOT/runtime/compose/http-access/$project.yaml"
+if [ -f "$http_overlay" ]; then
+  files+=(-f "$http_overlay")
+fi
 
 compose() {
   docker compose --project-name "$project" --project-directory "$working_dir" "${files[@]}" "$@"

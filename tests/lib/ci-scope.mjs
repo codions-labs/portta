@@ -1,6 +1,7 @@
 export const allGateway = [
   'adoption',
   'apply',
+  'http-access',
   'lifecycle',
   'local-tls',
   'public-profile',
@@ -11,7 +12,7 @@ export const allGateway = [
 export const allBrowser = ['panel', 'infrastructure', 'auth', 'roles', 'settings']
 // Each shard gets its own disposable host; every suite belongs to exactly one.
 export const gatewayShards = [
-  ['lifecycle', 'apply', 'web-panel', 'local-tls'],
+  ['lifecycle', 'apply', 'web-panel', 'http-access', 'local-tls'],
   ['tcp-routing', 'tcp-access', 'adoption'],
   ['public-profile'],
 ]
@@ -37,6 +38,10 @@ const gatewayRules = [
     ['public-profile'],
   ],
   [/^packages\/cli\/src\/commands\/access/, ['tcp-access']],
+  [
+    /^(packages\/cli\/src\/commands\/runner-http|packages\/server\/src\/(?:api\/routes|services)\/http-integration|packages\/core\/src\/http-access)/,
+    ['http-access'],
+  ],
   [/^(packages\/db\/|packages\/core\/src\/(config|profiles|runner|database))/, ['web-panel', 'lifecycle']],
 ]
 

@@ -8,7 +8,7 @@ import { api } from '../../lib/api/index.ts'
 import { orderEndpoints } from '../../lib/endpoints.ts'
 import { useCan } from '../../lib/permissions.ts'
 import { keys } from '../../lib/queries/index.ts'
-import { serviceFromContainer } from '../../lib/services.ts'
+import { containerPortsFor, serviceFromContainer } from '../../lib/services.ts'
 import { useFormat } from '../../lib/use-format.ts'
 import { ConnectionPanel } from '../connection-panel.tsx'
 import { ContainerActions } from '../container-actions.tsx'
@@ -18,6 +18,7 @@ import { ExposurePanel } from '../exposure-panel.tsx'
 import { LogViewer } from '../logs.tsx'
 import { ServiceAlias } from '../service-alias.tsx'
 import { ServiceIcon } from '../service-icon.tsx'
+import { ServicePorts } from '../service-ports.tsx'
 import { SharePanel } from '../share-panel.tsx'
 import { KeyValue } from '../shell-bits.tsx'
 import { StateBadge } from '../status.tsx'
@@ -39,6 +40,7 @@ export function ServiceDetails({
   active = true,
   onClose,
   onLogs,
+  onIntegrate,
 }: {
   container: ContainerSummary
   service?: Service | null
@@ -49,6 +51,8 @@ export function ServiceDetails({
   onClose?: () => void
   /** Where logs are read when the page has somewhere better than inline. */
   onLogs?: () => void
+  /** Keep this service's form mounted while its container is recreated. */
+  onIntegrate?: () => void
 }) {
   const { t } = useTranslation('services', { keyPrefix: 'drawer' })
   const { t: tc } = useTranslation('common')
@@ -57,6 +61,7 @@ export function ServiceDetails({
   const logs = useRef<HTMLDetailsElement>(null)
   const console = useRef<HTMLDetailsElement>(null)
   const [consoleOpen, setConsoleOpen] = useState(section === 'console')
+  const [integrating, setIntegrating] = useState(false)
   const share = useRef<HTMLDivElement>(null)
   const access = useRef<HTMLDivElement>(null)
 
@@ -77,7 +82,7 @@ export function ServiceDetails({
     target?.scrollIntoView?.({ block: 'start' })
   }, [active, section])
 
-  const http = container.kind === 'http'
+  const http = container.kind === 'http' || container.urls.length > 0
   const running = container.state === 'running'
   const mayConsole = useCan('container:console')
   const route = http ? orderEndpoints(container.urls)[0] : undefined
@@ -150,13 +155,25 @@ export function ServiceDetails({
           ) : (
             <span className="text-sm text-subtle">{t('noEndpoint')}</span>
           )
-        ) : container.environment && container.service && container.exposedPorts.length > 0 ? (
-          <ConnectionPanel project={container.environment} service={container.service} />
         ) : (
           <span className="text-sm text-subtle">{t('noEndpoint')}</span>
         )}
-        {http && container.environment && running ? (
-          <ServiceAlias project={container.environment} service={container} />
+        <ServicePorts container={container} />
+        {container.environment && (running || integrating) ? (
+          <ServiceAlias
+            project={container.environment}
+            service={container}
+            onIntegrate={() => {
+              setIntegrating(true)
+              onIntegrate?.()
+            }}
+          />
+        ) : null}
+        {container.kind !== 'http' &&
+        container.environment &&
+        container.service &&
+        containerPortsFor(container).some((port) => port.protocol === 'tcp') ? (
+          <ConnectionPanel project={container.environment} service={container.service} />
         ) : null}
       </section>
 
@@ -166,12 +183,14 @@ export function ServiceDetails({
             <h3 className="text-2xs font-semibold tracking-[0.14em] text-subtle uppercase">{t('whoMayOpen')}</h3>
             <ExposurePanel container={container} />
           </section>
-          <section ref={share} aria-label={tc('container.exposure')} className="scroll-mt-4 space-y-2 px-5 py-4">
-            <h3 className="text-2xs font-semibold tracking-[0.14em] text-subtle uppercase">
-              {tc('container.exposure')}
-            </h3>
-            <SharePanel container={container} />
-          </section>
+          {container.kind === 'http' ? (
+            <section ref={share} aria-label={tc('container.exposure')} className="scroll-mt-4 space-y-2 px-5 py-4">
+              <h3 className="text-2xs font-semibold tracking-[0.14em] text-subtle uppercase">
+                {tc('container.exposure')}
+              </h3>
+              <SharePanel container={container} />
+            </section>
+          ) : null}
         </>
       ) : null}
 
@@ -313,12 +332,14 @@ export function ServiceDrawer({
   open,
   onOpenChange,
   section = 'overview',
+  onIntegrate,
 }: {
   container: ContainerSummary
   service?: Service | null
   open: boolean
   onOpenChange: (open: boolean) => void
   section?: ServiceSection
+  onIntegrate?: () => void
 }) {
   const { t } = useTranslation('services', { keyPrefix: 'drawer' })
   const row = service ?? serviceFromContainer(container)
@@ -345,7 +366,13 @@ export function ServiceDrawer({
       }
     >
       <div className="-mx-4 -my-3">
-        <ServiceDetails container={container} service={service} section={section} active={open} />
+        <ServiceDetails
+          container={container}
+          service={service}
+          section={section}
+          active={open}
+          onIntegrate={onIntegrate}
+        />
       </div>
     </Drawer>
   )

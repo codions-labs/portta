@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeContainer } from './fixtures.ts'
@@ -13,6 +13,7 @@ vi.mock('@/lib/api/index', () => ({
   ApiError: class extends Error {},
   api: {
     exposure: () => exposure(),
+    gateway: vi.fn().mockResolvedValue({ panel: { readOnly: false } }),
     protectService: (...args: unknown[]) => protectService(...args),
     openService: (...args: unknown[]) => openService(...args),
     closeService: (...args: unknown[]) => closeService(...args),
@@ -118,5 +119,40 @@ describe('who may open a service', () => {
     renderWithQuery(<ExposurePanel container={container} />, undefined, principal({ permissions: ['service:read'] }))
     expect(await screen.findByText('closed')).toBeInTheDocument()
     expect(screen.queryByRole('radio', { name: /Whoever has the password/ })).toBeNull()
+  })
+
+  it('protects one managed hostname without changing the other address', async () => {
+    const mailpit = makeContainer({
+      id: 'mail',
+      kind: 'smtp',
+      image: 'axllent/mailpit:latest',
+      labels: {},
+      urls: [
+        {
+          url: 'https://mail.example.test',
+          host: 'mail.example.test',
+          scheme: 'https',
+          scope: 'public',
+          alias: true,
+          forwardAuth: true,
+          targetPort: 8025,
+        },
+        {
+          url: 'https://other.example.test',
+          host: 'other.example.test',
+          scheme: 'https',
+          scope: 'public',
+          alias: true,
+          forwardAuth: true,
+          targetPort: 8025,
+        },
+      ],
+    })
+    renderWithQuery(<ExposurePanel container={mailpit} />)
+    const target = within(screen.getByRole('group', { name: 'mail.example.test' }))
+    await waitFor(() => expect(target.getByRole('radio', { name: /Nobody/ })).toBeEnabled())
+    await userEvent.click(target.getByRole('radio', { name: /Whoever has the password/ }))
+    await waitFor(() => expect(protectService).toHaveBeenCalledWith('mail', { host: 'mail.example.test' }))
+    expect(protectService).toHaveBeenCalledTimes(1)
   })
 })

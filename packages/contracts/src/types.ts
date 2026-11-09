@@ -86,6 +86,12 @@ export const PublishedPort = named(
 )
 export type PublishedPort = z.infer<typeof PublishedPort>
 
+export const ContainerPort = named(
+  z.object({ port: z.number().int().min(1).max(65535), protocol: z.string() }).strict(),
+  'ContainerPort',
+)
+export type ContainerPort = z.infer<typeof ContainerPort>
+
 export const RouteUrl = named(
   z
     .object({
@@ -100,6 +106,8 @@ export const RouteUrl = named(
           'A hostname added in the panel, beside the one the project derives; custom=true when it is a domain the user owns',
         ),
       alias: z.boolean().optional().describe('Added in the panel rather than derived from the project'),
+      targetPort: z.number().int().min(1).max(65535).optional().describe('The HTTP port inside the container'),
+      forwardAuth: z.boolean().optional().describe('This route passes through Portta ForwardAuth'),
     })
     .strict(),
   'RouteUrl',
@@ -177,6 +185,7 @@ export const ContainerSummary = named(
       traefikEnabled: z.boolean(),
       ports: z.array(PublishedPort),
       exposedPorts: z.array(z.number().int()),
+      containerPorts: z.array(ContainerPort).optional().describe('Declared container ports, including their transport'),
       kind: ServiceKind,
       tech: ServiceTech,
       urls: z.array(RouteUrl),

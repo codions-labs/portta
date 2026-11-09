@@ -3,6 +3,7 @@ import {
   connectionString,
   defaultPortForImage,
   gatewayConnectionString,
+  httpPortHint,
   isHostnameRoutable,
   serviceKind,
   tcpEntrypoint,
@@ -38,6 +39,20 @@ describe('serviceKind', () => {
 describe('defaultPortForImage', () => {
   it('answers null when it does not know, so the caller asks instead of guessing', () => {
     expect(defaultPortForImage('nginx:1.27')).toBeNull()
+  })
+})
+
+describe('HTTP port hints', () => {
+  it('recognizes the Mailpit panel without turning its SMTP port into HTTP', () => {
+    expect(httpPortHint('axllent/mailpit:latest', 8025)).toBe('http')
+    expect(httpPortHint('axllent/mailpit:latest', 1025)).toBe('tcp')
+    expect(serviceKind('axllent/mailpit:latest')).toBe('smtp')
+  })
+
+  it('keeps databases on their own protocols and asks for unknown ports', () => {
+    expect(httpPortHint('mysql:8.4', 3306)).toBe('tcp')
+    expect(httpPortHint('redis:8.2', 6379)).toBe('tcp')
+    expect(httpPortHint('custom/dashboard:1', 8025)).toBe('unknown')
   })
 })
 

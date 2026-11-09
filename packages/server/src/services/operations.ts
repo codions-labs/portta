@@ -5,7 +5,7 @@
 // the GitHub integration, talks to a remote, or concatenates a path into a
 // shell. See issue #38.
 
-import { mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import type {
   EnvironmentPorttaRecords,
@@ -14,7 +14,13 @@ import type {
   ProjectRemoveResult,
   RunnerStatus,
 } from 'portta-contracts'
-import { parseRunnerRequest, type RunnerFlag, type RunnerRequest, type RunnerVerb } from 'portta-core'
+import {
+  parseRunnerRequest,
+  type RunnerFlag,
+  type RunnerRequest,
+  type RunnerVerb,
+  readHttpAccessStore,
+} from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import type { Database } from '../db/index.ts'
 import { closeBridge, listBridges, listForwarders } from './access.ts'
@@ -177,19 +183,25 @@ export function writeRunnerRequest(config: PanelConfig, request: RunnerRequest):
   mkdirSync(config.runnerDir, { recursive: true, mode: 0o700 })
   const dest = join(config.runnerDir, 'request.json')
   writeFileSync(
-    dest,
+    `${dest}.tmp`,
     `${JSON.stringify({
       verb: parsed.verb,
       project: parsed.project,
       flags: parsed.flags ?? [],
+      ...(parsed.verb === 'integrate-http'
+        ? { service: parsed.service, port: parsed.port, requestId: parsed.requestId }
+        : {}),
       ...(parsed.workingDir === undefined
         ? {}
         : { workingDir: parsed.workingDir, configFiles: parsed.configFiles ?? [] }),
     })}\n`,
     { mode: 0o600 },
   )
+  renameSync(`${dest}.tmp`, dest)
   return dest
 }
+
+const dispatching = new Set<string>()
 
 export async function dispatchRunner(
   client: DockerClient,
@@ -197,20 +209,27 @@ export async function dispatchRunner(
   config: PanelConfig,
   request: RunnerRequest,
 ): Promise<RunnerStatus> {
-  const status = await runnerStatus(client, snapshot, config)
-  if (!status.available) {
-    throw new ActionRefused(status.reason ?? 'the runner is unavailable', status.prepareCommand, 404)
+  if (dispatching.has(config.runnerDir))
+    throw new ActionRefused('the runner is already being started', 'watch it rather than starting a second one', 409)
+  dispatching.add(config.runnerDir)
+  try {
+    const status = await runnerStatus(client, snapshot, config)
+    if (!status.available) {
+      throw new ActionRefused(status.reason ?? 'the runner is unavailable', status.prepareCommand, 404)
+    }
+    if (status.state === 'running') {
+      throw new ActionRefused('the runner is already running', 'watch it rather than starting a second one', 409)
+    }
+    writeRunnerRequest(config, request)
+    const container = runnerOf(snapshot)
+    if (!container) {
+      throw new ActionRefused('the runner is unavailable', status.prepareCommand, 404)
+    }
+    await client.start(container.id)
+    return await runnerStatus(client, snapshot, config, { logs: true })
+  } finally {
+    dispatching.delete(config.runnerDir)
   }
-  if (status.state === 'running') {
-    throw new ActionRefused('the runner is already running', 'watch it rather than starting a second one', 409)
-  }
-  writeRunnerRequest(config, request)
-  const container = runnerOf(snapshot)
-  if (!container) {
-    throw new ActionRefused('the runner is unavailable', status.prepareCommand, 404)
-  }
-  await client.start(container.id)
-  return runnerStatus(client, snapshot, config, { logs: true })
 }
 
 export async function rebuildProject(
@@ -355,6 +374,17 @@ async function cleanupPorttaRecords(
 
   const aliases = loadAliases(config).filter((alias) => alias.project !== name)
   saveAliases(config, aliases)
+
+  const attachmentPath = join(config.runnerDir, 'http-access.json')
+  const attachments = readHttpAccessStore(attachmentPath)
+  if (attachments.attachments.some((attachment) => attachment.project === name)) {
+    attachments.attachments = attachments.attachments.filter((attachment) => attachment.project !== name)
+    writeFileSync(`${attachmentPath}.tmp`, `${JSON.stringify(attachments)}\n`, { mode: 0o600 })
+    renameSync(`${attachmentPath}.tmp`, attachmentPath)
+    // The asynchronous runner may still need the generated overlay to read
+    // the container's recorded Compose files. Its inert projection can be
+    // regenerated later; deleting it here could break the in-flight down.
+  }
 
   deleteAccessFiles(accessFilesFor(config.accessDir, name), config.accessDir)
 

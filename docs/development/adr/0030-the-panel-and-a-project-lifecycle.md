@@ -46,7 +46,7 @@ It follows ADR 0026 exactly:
   filesystem mounted at `/host`, labelled `portta.managed=true` and
   `portta.component=runner`;
 - accepts a **verb from a closed set**, never a command line — `up`, `stop`,
-  `restart`, `build`, `down`, `down-volumes` — plus a project name;
+  `restart`, `build`, `down`, `down-volumes`, `integrate-http` — plus a project name;
 - is gated behind `PORTTA_RUNNER`, which is absent from the panel's field
   catalogue, the way `PORTTA_APPLY` is;
 - reports outcome by having the panel read the container back (state, exit
@@ -73,6 +73,40 @@ Compose files come from Docker's own labels
 path the panel supplied. The runner translates those host paths through
 `/host` so it can read the files; `--project-directory` stays the host path,
 because Compose hands bind mounts to the daemon.
+
+### Attaching one service for an explicit HTTP address
+
+`integrate-http` is a bounded exception to the original lifecycle verbs. Its
+request adds exactly `service`, an exposed TCP `port`, and a UUID `requestId`.
+It accepts no supplied path, Compose options, shell command or image. The API
+records its attachment decision in `state/runner/http-access.json`; the CLI
+reads that intent and refuses requests absent from it. The existing runner
+opt-in and public-host restrictions still apply.
+
+The fixed TypeScript handler resolves the project and service from live Docker
+labels. It projects the attachment into
+`runtime/compose/http-access/<project>.yaml`, preserving private network options
+and adding the gateway network. A secondary service keeps
+`traefik.enable=false`: attaching it creates no automatic router or hostname.
+Existing HTTP routing labels and backend ports remain unchanged. Addresses
+are separate file-provider aliases with explicit target ports and their own
+access decisions. The panel creates the protected alias only after integration
+succeeds.
+
+Only the selected service is recreated, with `up -d --no-deps --force-recreate
+--no-build --pull never <service>`. No unrelated service is recreated, built or
+pulled. Operation results are written to
+`state/runner/http-operations/<requestId>.json`, without credentials. Failure
+restores the prior generated attachment and attempts to recover only the
+selected service from the prior composition; recovery failure is reported.
+On a public host recreation uses `--no-start`, validates the actual created
+labels (including image labels), and starts the selected service only when no
+ungated router exists. The same check protects recovery after a failure.
+
+Canonical runtime and runner start/recreate/build operations regenerate this
+supplemental overlay and append it last. Read and cleanup operations reuse the
+existing projection without mutating it. The source Compose files remain
+immutable. The shell entrypoint only dispatches this behavior to the CLI.
 
 ### Where a project lives
 

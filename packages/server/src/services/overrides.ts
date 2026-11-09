@@ -12,6 +12,7 @@
 import type { ContainerSummary, Environment, EnvironmentOverrides, RouteUrl, ServiceOverrides } from 'portta-contracts'
 import {
   HTTP_CERT_RESOLVER,
+  httpPortHint,
   isTcpOnly,
   parseAliases,
   protectionForHost,
@@ -128,6 +129,19 @@ export function applyOverrides<T extends Environment>(
   })
 }
 
+/** Decorate project service containers without changing standalone or gateway inventory. */
+export function applySnapshotOverrides(snapshot: Snapshot, overrides: OverrideMap, aliases: AliasView): Snapshot {
+  const environments = applyOverrides(snapshot.environments, overrides, aliases)
+  const decorated = new Map(
+    environments.flatMap((environment) => environment.services.map((service) => [service.id, service] as const)),
+  )
+  return {
+    ...snapshot,
+    environments,
+    containers: snapshot.containers.map((container) => decorated.get(container.id) ?? container),
+  }
+}
+
 /**
  * Lists the hostnames added in the panel beside the derived ones.
  *
@@ -154,6 +168,8 @@ function withAliasUrls(
         scope: alias.custom ? 'public' : scopeForHost(alias.host, config),
         alias: true,
         ...(alias.custom ? { custom: true } : {}),
+        targetPort: alias.port,
+        forwardAuth: config.profile === 'remote-public' || alias.forwardAuth === true,
       }
     })
   return added.length === 0 ? service : { ...service, urls: [...service.urls, ...added] }
@@ -212,7 +228,33 @@ export function derivedHosts(snapshot: Snapshot): Set<string> {
  * the reason rather than guessed, because a guessed port produces a router that
  * silently 502s.
  */
-export function aliasPort(service: ContainerSummary): number {
+export function validateHttpPort(service: ContainerSummary, port: number): number {
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new OverrideRefused(`invalid HTTP port: ${port}`)
+  const known = new Set([
+    ...service.exposedPorts,
+    ...service.ports.filter((entry) => entry.protocol === 'tcp').map((entry) => entry.containerPort),
+    ...Object.entries(service.labels)
+      .filter(([key]) => key.startsWith('traefik.http.services.') && key.endsWith('.loadbalancer.server.port'))
+      .map(([, value]) => Number(value))
+      .filter((value) => Number.isInteger(value) && value >= 1 && value <= 65535),
+  ])
+  if (!known.has(port)) {
+    throw new OverrideRefused(
+      `${service.service ?? service.name} does not expose TCP port ${port}`,
+      'choose a container port listed for this service',
+    )
+  }
+  if (httpPortHint(service.image, port) === 'tcp') {
+    throw new OverrideRefused(
+      `port ${port} uses a TCP protocol, not HTTP`,
+      'use a private TCP connection for this port',
+    )
+  }
+  return port
+}
+
+export function aliasPort(service: ContainerSummary, explicitPort?: number): number {
+  if (explicitPort !== undefined) return validateHttpPort(service, explicitPort)
   const label = Object.entries(service.labels).find(
     ([key]) => key.startsWith('traefik.http.services.') && key.endsWith('.loadbalancer.server.port'),
   )
@@ -241,6 +283,7 @@ export interface AliasRequest {
   project: string
   service: string
   alias: string
+  port?: number
 }
 
 /**
@@ -254,6 +297,7 @@ export function planAlias(
   snapshot: Snapshot,
   existing: StoredAlias[],
   config: PanelConfig,
+  options: { allowUnreachable?: boolean } = {},
 ): StoredAlias {
   const project = snapshot.environments.find((item) => item.name === request.project)
   if (!project) throw new OverrideRefused(`no project '${request.project}' is running`)
@@ -305,21 +349,27 @@ export function planAlias(
 
   // A datastore is reached through the mechanisms in docs/product/guides/tcp-routing.md, not
   // by an HTTP router that would answer with a protocol it does not speak.
-  if (service.kind !== 'http' || isTcpOnly(service.labels)) {
+  if (request.port === undefined && (service.kind !== 'http' || isTcpOnly(service.labels))) {
     throw new OverrideRefused(
       `${request.service} is a ${service.kind} service, and an alias is an HTTP router`,
       'reach a database or cache through the Access page; see docs/product/guides/tcp-routing.md',
     )
   }
 
-  if (!service.onGatewayNetwork) {
+  if (request.port !== undefined && service.state !== 'running') {
+    throw new OverrideRefused(`${request.service} must be running before a web address can be created`)
+  }
+
+  const port = aliasPort(service, request.port)
+
+  if (!options.allowUnreachable && !service.onGatewayNetwork) {
     throw new OverrideRefused(
       `${request.service} is not on the ${config.network} network, so Traefik cannot reach it`,
       'add the gateway network to this service in its overlay file',
     )
   }
 
-  if (!traefikEnabled(service.labels)) {
+  if (!options.allowUnreachable && request.port === undefined && !traefikEnabled(service.labels)) {
     throw new OverrideRefused(`${request.service} has not enabled Traefik, so the gateway does not route it`)
   }
 
@@ -329,7 +379,7 @@ export function planAlias(
     // The container name, never the Compose alias: two projects can both have `web`.
     container: service.name,
     host,
-    port: aliasPort(service),
+    port,
     entryPoint: entryPointFor(config),
     ...(custom ? { custom: true } : {}),
     ...(custom && usesHttpResolver(config) ? { certResolver: HTTP_CERT_RESOLVER } : {}),
@@ -444,6 +494,26 @@ export function sortAliases(aliases: StoredAlias[]): StoredAlias[] {
       left.service.localeCompare(right.service) ||
       left.host.localeCompare(right.host),
   )
+}
+
+const aliasMutations = new Map<string, Promise<void>>()
+
+/** Database writes yield; serialize alias changes so two additions cannot lose each other. */
+export async function withAliasMutation<T>(config: PanelConfig, change: () => Promise<T>): Promise<T> {
+  const key = config.dynamicDir
+  const previous = aliasMutations.get(key) ?? Promise.resolve()
+  let release!: () => void
+  const current = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  aliasMutations.set(key, current)
+  await previous
+  try {
+    return await change()
+  } finally {
+    release()
+    if (aliasMutations.get(key) === current) aliasMutations.delete(key)
+  }
 }
 
 export type { StoredAlias }

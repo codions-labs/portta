@@ -139,15 +139,21 @@ export const infraApi = {
       method: 'PUT',
       body: JSON.stringify({ policy }),
     }),
-  protectService: (id: string, body: { user?: string | null } = {}) =>
+  protectService: (id: string, body: { user?: string | null; host?: string } = {}) =>
     request<ExposureResult>(`/services/${encodeURIComponent(id)}/exposure`, {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
-  openService: (id: string) =>
-    request<ExposureResult>(`/services/${encodeURIComponent(id)}/exposure/open`, { method: 'POST', body: '{}' }),
-  closeService: (id: string) =>
-    request<ExposureResult>(`/services/${encodeURIComponent(id)}/exposure`, { method: 'DELETE' }),
+  openService: (id: string, host?: string) =>
+    request<ExposureResult>(`/services/${encodeURIComponent(id)}/exposure/open`, {
+      method: 'POST',
+      body: JSON.stringify(host ? { host } : {}),
+    }),
+  closeService: (id: string, host?: string) =>
+    request<ExposureResult>(
+      `/services/${encodeURIComponent(id)}/exposure${host ? `?host=${encodeURIComponent(host)}` : ''}`,
+      { method: 'DELETE' },
+    ),
   revokeShare: (id: string) => request<{ ok: boolean }>(`/shares/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   config: () => request<ConfigView>('/config'),
   patchConfig: (values: Record<string, string | null>) =>

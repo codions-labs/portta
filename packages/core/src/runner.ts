@@ -12,7 +12,7 @@
 // This is the source of truth used by the TypeScript CLI.
 
 import { isTrue } from './config.ts'
-
+import { HTTP_REQUEST_ID, httpAccessName } from './http-access.ts'
 import { porttaImages } from './images.ts'
 
 export const RUNNER_CONTAINER = 'portta-runner'
@@ -24,14 +24,13 @@ export const RUNNER_COMPONENT = 'runner'
  * `down-volumes` is the destructive form of `down`. It is a distinct verb so
  * a request cannot smuggle `--volumes` onto a preserving removal.
  */
-export const RUNNER_VERBS = ['up', 'stop', 'restart', 'build', 'down', 'down-volumes'] as const
+export const RUNNER_VERBS = ['up', 'stop', 'restart', 'build', 'down', 'down-volumes', 'integrate-http'] as const
 export type RunnerVerb = (typeof RUNNER_VERBS)[number]
 
 export const RUNNER_FLAGS = ['no-cache'] as const
 export type RunnerFlag = (typeof RUNNER_FLAGS)[number]
 
-export interface RunnerRequest {
-  verb: RunnerVerb
+interface RunnerFields {
   project: string
   flags?: RunnerFlag[]
   /**
@@ -43,6 +42,12 @@ export interface RunnerRequest {
   /** The Compose files, absolute host paths, in the order the daemon recorded them. */
   configFiles?: string[]
 }
+
+export type RunnerRequest = RunnerFields &
+  (
+    | { verb: Exclude<RunnerVerb, 'integrate-http'>; service?: never; port?: never; requestId?: never }
+    | { verb: 'integrate-http'; service: string; port: number; requestId: string }
+  )
 
 export function isRunnerVerb(value: string): value is RunnerVerb {
   return (RUNNER_VERBS as readonly string[]).includes(value)
@@ -79,6 +84,24 @@ export function parseRunnerRequest(value: unknown): RunnerRequest {
   if (flags.includes('no-cache') && body.verb !== 'build') {
     throw new Error('no-cache is only valid with build')
   }
+  if (body.verb === 'integrate-http') {
+    if (!httpAccessName(body.service)) throw new Error('invalid HTTP integration service')
+    if (!Number.isInteger(body.port) || Number(body.port) < 1 || Number(body.port) > 65535)
+      throw new Error('invalid HTTP integration port')
+    if (typeof body.requestId !== 'string' || !HTTP_REQUEST_ID.test(body.requestId))
+      throw new Error('invalid HTTP integration request id')
+    if (flags.length || body.workingDir !== undefined || body.configFiles !== undefined)
+      throw new Error('HTTP integration accepts no flags or supplied paths')
+    return {
+      verb: 'integrate-http',
+      project: body.project,
+      service: body.service,
+      port: Number(body.port),
+      requestId: body.requestId,
+    }
+  }
+  if (body.service !== undefined || body.port !== undefined || body.requestId !== undefined)
+    throw new Error('service, port and requestId are only valid with integrate-http')
   const request: RunnerRequest = { verb: body.verb, project: body.project, flags: flags.length > 0 ? flags : undefined }
   if (body.workingDir !== undefined || body.configFiles !== undefined) {
     if (body.verb !== 'up') throw new Error('workingDir and configFiles are only valid with up')

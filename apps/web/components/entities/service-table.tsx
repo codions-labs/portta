@@ -34,15 +34,40 @@ export function ServiceTable({
   emptyHint?: string
 }) {
   const { t } = useTranslation('services')
-  const [selected, setSelected] = useState<{ id: string; section: ServiceSection } | null>(() =>
+  const [selected, setSelected] = useState<{
+    environment: string | null
+    name: string
+    section: ServiceSection
+  } | null>(() =>
     initialService
-      ? { id: services.find((s) => s.name === initialService)?.containerId ?? '', section: initialSection }
+      ? {
+          environment: services.find((s) => s.name === initialService)?.environment ?? null,
+          name: initialService,
+          section: initialSection,
+        }
       : null,
   )
-  const current = selected ? (containers.find((container) => container.id === selected.id) ?? null) : null
-  const currentService = selected ? (services.find((service) => service.containerId === selected.id) ?? null) : null
+  const [integrating, setIntegrating] = useState<{ container: ContainerSummary; service: Service | null } | null>(null)
+  const currentService = selected
+    ? (services.find(
+        (service) =>
+          service.name === selected.name &&
+          (selected.environment === null || service.environment === selected.environment),
+      ) ??
+      integrating?.service ??
+      null)
+    : null
+  const current = selected
+    ? (containers.find(
+        (container) =>
+          (container.service ?? container.name) === selected.name &&
+          (selected.environment === null || container.environment === selected.environment),
+      ) ??
+      integrating?.container ??
+      null)
+    : null
 
-  if (services.length === 0) return <Empty title={emptyTitle ?? t('empty')} hint={emptyHint} />
+  if (services.length === 0 && !current) return <Empty title={emptyTitle ?? t('empty')} hint={emptyHint} />
 
   return (
     <>
@@ -55,7 +80,8 @@ export function ServiceTable({
               service={service}
               showEnvironment={showEnvironment}
               onOpen={(section = 'overview') => {
-                setSelected({ id: service.containerId, section })
+                setIntegrating(null)
+                setSelected({ environment: service.environment, name: service.name, section })
                 onSelect?.(service.name)
               }}
             />
@@ -64,13 +90,16 @@ export function ServiceTable({
       </Table>
       {current ? (
         <ServiceDrawer
+          key={`${selected?.environment}/${selected?.name}`}
           container={current}
           service={currentService}
           section={selected?.section ?? 'overview'}
           open
+          onIntegrate={() => setIntegrating({ container: current, service: currentService })}
           onOpenChange={(open) => {
             if (open) return
             setSelected(null)
+            setIntegrating(null)
             onSelect?.(null)
           }}
         />

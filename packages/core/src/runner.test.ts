@@ -85,6 +85,27 @@ describe('parseRunnerRequest', () => {
       'directory',
     )
   })
+
+  it('bounds HTTP integration to one service and port, with no caller-supplied path or flags', () => {
+    const request = {
+      verb: 'integrate-http',
+      project: 'alpha',
+      service: 'mailpit',
+      port: 8025,
+      requestId: '68da322b-3b78-4ce7-9be2-bcaf206f23b9',
+    }
+    expect(parseRunnerRequest(request)).toEqual(request)
+    for (const patch of [
+      { service: '../db' },
+      { port: 0 },
+      { port: 65536 },
+      { requestId: '../../tmp' },
+      { workingDir: '/srv/alpha' },
+      { flags: ['no-cache'] },
+    ])
+      expect(() => parseRunnerRequest({ ...request, ...patch })).toThrow()
+    expect(() => parseRunnerRequest({ ...request, verb: 'up' })).toThrow('only valid with integrate-http')
+  })
 })
 
 describe('projectOperable', () => {

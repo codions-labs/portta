@@ -21,6 +21,7 @@ import { z } from 'portta-core/zod'
 import type { AppDeps } from '../../deps.ts'
 import { findContainer, removalPreview, removeContainer, runContainerAction } from '../../services/actions.ts'
 import * as cleanup from '../../services/cleanup.ts'
+import { aliasViewFor, applySnapshotOverrides, loadOverrides } from '../../services/overrides.ts'
 import { record } from '../audit.ts'
 import { containerIdParameter, documentRoute, tailParameter } from '../openapi.ts'
 import { readLogs } from './services.ts'
@@ -48,6 +49,10 @@ export const StatsResponse = z
 
 export function dockerRoutes(deps: AppDeps): Hono {
   const app = new Hono()
+
+  async function snapshotView() {
+    return applySnapshotOverrides(await deps.cache.get(), await loadOverrides(deps.db), aliasViewFor(deps.config))
+  }
 
   // Every container on the host, gateway-owned or not. The classification
   // travels with each row so the UI never has to guess.
@@ -85,7 +90,7 @@ export function dockerRoutes(deps: AppDeps): Hono {
       errors: [500, 502],
     }),
     async (c) => {
-      const snapshot = await deps.cache.get()
+      const snapshot = await snapshotView()
       const ownership = ownershipFilter.catch('all').parse(c.req.query('ownership'))
       const state = stateFilter.catch('all').parse(c.req.query('state'))
       const search = (c.req.query('q') ?? '').trim().toLowerCase()
@@ -126,7 +131,7 @@ export function dockerRoutes(deps: AppDeps): Hono {
       errors: [404, 500, 502],
     }),
     async (c) => {
-      const snapshot = await deps.cache.get()
+      const snapshot = await snapshotView()
       return c.json(findContainer(snapshot, c.req.param('id')))
     },
   )

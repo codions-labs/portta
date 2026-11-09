@@ -191,6 +191,11 @@ export function EnvironmentOverview({ name }: { name: string }) {
     const asked = params.get('section')
     return asked === 'share' || asked === 'access' ? asked : 'overview'
   })
+  const [integrating, setIntegrating] = useState<{
+    name: string
+    service: Service
+    container: ContainerSummary
+  } | null>(null)
   const environment = environmentQuery.data
   if (!environment) return <Loading />
 
@@ -198,16 +203,22 @@ export function EnvironmentOverview({ name }: { name: string }) {
   const base = `/environments/${encodeURIComponent(name)}`
   const selectedName = params.get('service')
   const logsFor = params.get('logs')
-  const service = rows.find((row) => row.name === selectedName) ?? null
+  const service =
+    rows.find((row) => row.name === selectedName) ?? (integrating?.name === selectedName ? integrating.service : null)
   const container: ContainerSummary | null = service
-    ? (environment.services.find((candidate) => candidate.id === service.containerId) ?? null)
+    ? (environment.services.find((candidate) => candidate.id === service.containerId) ??
+      (integrating?.name === selectedName ? integrating.container : null))
     : null
 
   const open = (next: Service, nextSection: ServiceSection = 'overview') => {
+    setIntegrating(null)
     setSection(nextSection)
     router.push(`${base}?service=${encodeURIComponent(next.name)}`)
   }
-  const close = () => router.push(base)
+  const close = () => {
+    setIntegrating(null)
+    router.push(base)
+  }
   const filterLogs = (next: string | null) => router.push(next ? `${base}?logs=${encodeURIComponent(next)}` : base)
 
   const list = (compact: boolean) =>
@@ -241,12 +252,13 @@ export function EnvironmentOverview({ name }: { name: string }) {
         <Card className="w-80 shrink-0">{list(true)}</Card>
         <Card className="min-w-0 flex-1">
           <ServiceDetails
-            key={service.containerId}
+            key={service.name}
             container={container}
             service={service}
             section={section}
             onClose={close}
             onLogs={() => filterLogs(service.name)}
+            onIntegrate={() => setIntegrating({ name: service.name, service, container })}
           />
         </Card>
       </div>
@@ -263,11 +275,12 @@ export function EnvironmentOverview({ name }: { name: string }) {
       ) : null}
       {service && container ? (
         <ServiceDrawer
-          key={service.containerId}
+          key={service.name}
           container={container}
           service={service}
           open
           section={section}
+          onIntegrate={() => setIntegrating({ name: service.name, service, container })}
           onOpenChange={(next) => {
             if (!next) close()
           }}

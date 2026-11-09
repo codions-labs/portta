@@ -14,7 +14,7 @@ import type {
   ServiceAccessEndpoint,
   ServiceResources,
 } from 'portta-contracts'
-import { serviceKind } from 'portta-core'
+import { httpPortHint, serviceKind } from 'portta-core'
 import type { PanelConfig } from '../config.ts'
 import { datastoreEndpoints } from './access.ts'
 
@@ -48,25 +48,61 @@ export function httpEndpoints(urls: readonly RouteUrl[]): ServiceAccessEndpoint[
       usable: true,
       shareable: url.scope !== 'local',
       problem: null,
+      protocol: 'http' as const,
+      ...(url.targetPort ? { targetPort: url.targetPort } : {}),
     }))
+}
+
+function hasTcpAccess(container: ContainerSummary): boolean {
+  const webPorts = new Set(container.urls.map((url) => url.targetPort).filter((port) => port !== undefined))
+  if (container.kind === 'http' && serviceKind(container.image) === 'tcp') return false
+  return container.exposedPorts.some((port) => !webPorts.has(port) && httpPortHint(container.image, port) !== 'http')
 }
 
 export function accessFor(container: ContainerSummary, config: PanelConfig, bridge: Bridge | null): ServiceAccess {
   const running = container.state === 'running'
   const kind = serviceKind(container.image)
-  if (container.kind === 'http') {
-    const endpoints = running ? httpEndpoints(container.urls) : []
-    const routed = container.traefikEnabled && container.onGatewayNetwork
+  const tcp = hasTcpAccess(container)
+  const tcpEndpoints: ServiceAccessEndpoint[] =
+    running && tcp
+      ? datastoreEndpoints(container, kind, config, bridge)
+          .filter((endpoint) => endpoint.provider !== 'internal')
+          .map((endpoint) => ({
+            provider: endpoint.provider,
+            url: endpoint.url,
+            scope: endpoint.scope,
+            usable: endpoint.usable,
+            shareable: endpoint.shareable,
+            problem: endpoint.problem,
+            protocol: 'tcp' as const,
+          }))
+      : []
+  if (container.kind === 'http' || container.urls.length > 0) {
+    const endpoints = running
+      ? httpEndpoints(container.urls).map((endpoint) => ({
+          ...endpoint,
+          usable: container.onGatewayNetwork,
+          problem: container.onGatewayNetwork ? null : 'the service is not on the shared network',
+        }))
+      : []
+    const routed = container.onGatewayNetwork && (container.traefikEnabled || container.urls.some((url) => url.alias))
     const problem = !running
       ? null
       : routed && endpoints.length === 0
         ? 'routing is enabled but no hostname was discovered'
-        : !container.traefikEnabled
+        : !container.traefikEnabled && !container.urls.some((url) => url.alias)
           ? 'not routed: the service never enabled traefik'
           : !container.onGatewayNetwork
             ? 'not routed: the service is not on the shared network'
             : null
-    return { kind: 'http', primary: endpoints.find((e) => e.usable) ?? null, endpoints, bridge: null, routed, problem }
+    return {
+      kind: 'http',
+      primary: endpoints.find((e) => e.usable) ?? null,
+      endpoints: [...endpoints, ...tcpEndpoints],
+      bridge: tcp ? bridge : null,
+      routed,
+      problem,
+    }
   }
   if (container.exposedPorts.length === 0 && container.ports.length === 0) {
     return {
@@ -78,18 +114,7 @@ export function accessFor(container: ContainerSummary, config: PanelConfig, brid
       problem: running ? 'no port is exposed' : null,
     }
   }
-  const endpoints = running
-    ? datastoreEndpoints(container, kind, config, bridge)
-        .filter((endpoint) => endpoint.provider !== 'internal')
-        .map((endpoint) => ({
-          provider: endpoint.provider,
-          url: endpoint.url,
-          scope: endpoint.scope,
-          usable: endpoint.usable,
-          shareable: endpoint.shareable,
-          problem: endpoint.problem,
-        }))
-    : []
+  const endpoints = tcpEndpoints
   const primary = endpoints.find((e) => e.provider === 'bridge') ?? endpoints.find((e) => e.usable) ?? null
   return { kind: 'tcp', primary, endpoints, bridge, routed: false, problem: null }
 }
@@ -150,6 +175,7 @@ export function serviceView(
     completed: container.completed,
     ports: container.ports,
     exposedPorts: container.exposedPorts,
+    ...(container.containerPorts ? { containerPorts: container.containerPorts } : {}),
     networks: container.networks,
     onGatewayNetwork: container.onGatewayNetwork,
     access,
@@ -159,8 +185,8 @@ export function serviceView(
       stop: writable && running,
       restart: writable && running,
       logs: true,
-      openAccess: writable && running && access.kind === 'tcp' && bridge === null,
-      share: writable && running && access.kind === 'http' && access.routed,
+      openAccess: writable && running && hasTcpAccess(container) && bridge === null,
+      share: writable && running && container.kind === 'http' && access.routed,
     },
     ...(container.overrides ? { overrides: container.overrides } : {}),
     hidden: options.hidden === true,

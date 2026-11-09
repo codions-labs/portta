@@ -68,6 +68,51 @@ function result(stdout: unknown) {
 }
 
 describe('Compose runtime', () => {
+  it('appends API-owned HTTP attachments after the canonical overlay on later runtime up', async () => {
+    const workspace = temp()
+    mocks.root = join(temp(), 'gateway')
+    writeFileSync(join(workspace, 'compose.yaml'), 'services: {}\n')
+    const source = {
+      services: {
+        app: { ports: [{ target: 8000, published: '8000' }] },
+        mailpit: { image: 'axllent/mailpit', expose: ['1025', '8025'], networks: { private: { aliases: ['mail'] } } },
+      },
+    }
+    const resolved = {
+      services: {
+        app: { labels: { 'traefik.enable': 'true' }, networks: { portta: null } },
+        mailpit: { networks: { private: { aliases: ['mail'] } } },
+      },
+    }
+    mocks.runProcess.mockImplementation(async (_file: string, args: string[]) => {
+      if (args.includes('version')) return result('2.24.4')
+      if (args.includes('branch')) return result('')
+      if (args.includes('--format'))
+        return result(
+          args.some((arg) => arg.endsWith('.tmp') || arg.endsWith('compose.portta.yaml')) ? resolved : source,
+        )
+      return result('')
+    })
+    const plan = await prepareComposeRuntime({ path: workspace, project: 'shop' }, command)
+    mkdirSync(join(mocks.root, 'state/runner'), { recursive: true })
+    writeFileSync(
+      join(mocks.root, 'state/runner/http-access.json'),
+      JSON.stringify({ version: 1, attachments: [{ project: 'shop', service: 'mailpit' }] }),
+    )
+    await runtimeAction('up', { path: workspace }, command)
+    const call = mocks.runProcess.mock.calls.find(([, args]) => args.includes('up'))!
+    const args = call[1] as string[]
+    const attachment = join(mocks.root, 'runtime/compose/http-access/shop.yaml')
+    expect(args.slice(args.indexOf(plan.compose.generatedOverlay), args.indexOf('up'))).toEqual([
+      plan.compose.generatedOverlay,
+      '-f',
+      attachment,
+    ])
+    expect(readFileSync(attachment, 'utf8')).toContain('"private":{"aliases":["mail"]}')
+    expect(readFileSync(attachment, 'utf8')).toContain('traefik.enable: "false"')
+    expect(readFileSync(plan.compose.generatedOverlay, 'utf8')).toContain('loadbalancer.server.port=8000')
+  })
+
   it('requires Compose 2.24.4 because auto overlays use !reset', async () => {
     const workspace = temp()
     mocks.root = join(temp(), 'gateway')

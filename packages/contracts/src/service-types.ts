@@ -4,6 +4,7 @@
 import { z } from 'portta-core/zod'
 import {
   Bridge,
+  ContainerPort,
   ContainerState,
   EndpointScope,
   Health,
@@ -25,6 +26,8 @@ export const ServiceAccessEndpoint = named(
       usable: z.boolean(),
       shareable: z.boolean(),
       problem: z.string().nullable(),
+      targetPort: z.number().int().min(1).max(65535).optional(),
+      protocol: z.enum(['http', 'tcp']).optional(),
     })
     .strict(),
   'ServiceAccessEndpoint',
@@ -95,6 +98,7 @@ export const Service = named(
       completed: z.boolean().optional().describe('Exited 0 with no restart policy: a one-shot that did its job'),
       ports: z.array(PublishedPort),
       exposedPorts: z.array(z.number().int()),
+      containerPorts: z.array(ContainerPort).optional(),
       networks: z.array(z.string()),
       onGatewayNetwork: z.boolean(),
       access: ServiceAccess,

@@ -41,17 +41,30 @@ export function viewOf(record: ProtectionRecord): ExposureEntry {
 }
 
 /** The hostname a routed service answers on. Only a hostname Portta routes can be decided about. */
-export function hostOf(container: ContainerSummary, containers: readonly ContainerSummary[] = []): string {
+export function hostOf(
+  container: ContainerSummary,
+  containers: readonly ContainerSummary[] = [],
+  requested?: string,
+): string {
   const hosts = [...new Set(container.urls.map((url) => normalizeProtectionHost(url.host)))]
   if (hosts.length === 0) throw new ExposureRefused(`${container.service ?? container.name} has no hostname`)
   // One decision per call, about one hostname: a service answering on several
   // would be half decided, so it is refused rather than guessed at.
-  if (hosts.length > 1)
+  if (requested === undefined && hosts.length > 1)
     throw new ExposureRefused(
       `${container.service ?? container.name} answers on several hostnames`,
       'use `portta protect host <host>` for each one',
     )
-  const host = hosts[0]!
+  let host = hosts[0]!
+  if (requested !== undefined) {
+    try {
+      host = normalizeProtectionHost(requested)
+    } catch {
+      throw new ExposureRefused(`${requested} is not a hostname`)
+    }
+    if (!hosts.includes(host))
+      throw new ExposureRefused(`${container.service ?? container.name} does not answer at ${host}`)
+  }
   // Another project's malformed label never vetoes this decision, and replicas
   // of the same service count as one claimant.
   const sameHost = (url: { host: string }): boolean => {
@@ -139,13 +152,13 @@ export async function protectService(
   config: PanelConfig,
   container: ContainerSummary,
   /** `null` asks for the password alone; absent keeps what the host had. */
-  options: { user?: string | null; unscoped?: boolean } = {},
+  options: { user?: string | null; unscoped?: boolean; host?: string } = {},
   containers: readonly ContainerSummary[] = [],
 ): Promise<ExposureChange> {
   // A credential typed over plain HTTP is a credential given away.
   if (config.profile !== 'local' && !config.tlsEnabled)
     throw new ExposureRefused('a password cannot be asked for over plain HTTP', 'turn TLS on first')
-  const host = hostOf(container, containers)
+  const host = hostOf(container, containers, options.host)
   const replicas = containers.filter(
     (other) =>
       container.environment !== null &&
@@ -153,7 +166,8 @@ export async function protectService(
       other.environment === container.environment &&
       other.service === container.service,
   )
-  if ([container, ...replicas].some((target) => !hasForwardAuth(target.labels)))
+  const managed = container.urls.some((url) => url.host === host && url.alias === true && url.forwardAuth === true)
+  if (!managed && [container, ...replicas].some((target) => !hasForwardAuth(target.labels)))
     throw new ExposureRefused(
       'this service does not enforce password protection',
       're-adopt it on a public profile, or attach portta-forward-auth@file to every HTTP router first',
@@ -194,8 +208,9 @@ export function openService(
   container: ContainerSummary,
   containers: readonly ContainerSummary[] = [],
   unscoped = false,
+  requestedHost?: string,
 ): ExposureChange {
-  const host = hostOf(container, containers)
+  const host = hostOf(container, containers, requestedHost)
   return mutateStore<ExposureChange>(config, (store) => {
     const previous = protectionForHost(store, host)
     guard(previous, container, unscoped)
@@ -212,10 +227,15 @@ export function openService(
   })
 }
 
-export function closeService(config: PanelConfig, container: ContainerSummary, unscoped = false): ExposureChange {
+export function closeService(
+  config: PanelConfig,
+  container: ContainerSummary,
+  unscoped = false,
+  requestedHost?: string,
+): ExposureChange {
   // Removing a decision is always allowed for its owner: a duplicate hostname
   // elsewhere must not keep a site open that its owner wants closed.
-  const host = hostOf(container)
+  const host = hostOf(container, [], requestedHost)
   return mutateStore<ExposureChange>(config, (store) => {
     const record = protectionForHost(store, host)
     if (!record) throw new ExposureRefused(`${host} has no decision to remove`, 'it is already closed or never decided')

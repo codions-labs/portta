@@ -91,5 +91,23 @@
       "closed": "Closed",
       "failed": "Failed"
     }
+  },
+  "ports": {
+    "title": "Container ports",
+    "published": "Published on the host"
+  },
+  "webAddress": {
+    "port": "Web port",
+    "create": "Create web address",
+    "confirmHttp": "This service speaks HTTP on port {{port}}.",
+    "integrationHint": "Creating this address connects {{name}} to the gateway and recreates only this service.",
+    "protectedHint": "The new address will require a password.",
+    "integrating": "Connecting this service to the gateway…",
+    "creating": "Creating the address…",
+    "failed": "The service could not be connected to the gateway.",
+    "passwordTitle": "Password for this address",
+    "user": "User: {{user}}",
+    "copyPassword": "Copy password",
+    "passwordHint": "This password appears only now. Save it to open the new address."
   }
 }

@@ -54,6 +54,15 @@ export function OpenTestMenu({
   const [connection, setConnection] = useState(false)
   const access = service.access
   const groups = endpointsByScope(access.endpoints)
+  const hasTcp =
+    access.kind === 'tcp' ||
+    access.bridge !== null ||
+    service.actions.openAccess ||
+    access.endpoints.some((endpoint) => endpoint.protocol === 'tcp')
+  const tcpPrimary =
+    access.kind === 'tcp'
+      ? access.primary
+      : access.endpoints.find((endpoint) => endpoint.protocol === 'tcp' && endpoint.usable)
 
   const bridge = useMutation({
     mutationFn: () => api.openBridge({ project: service.environment, service: service.name }),
@@ -101,7 +110,8 @@ export function OpenTestMenu({
               <ScopeLabel>{tc(`scope.${group.scope}`)}</ScopeLabel>
               {group.endpoints.map((endpoint) => (
                 <div key={`${endpoint.provider}:${endpoint.url}`}>
-                  {access.kind === 'http' ? (
+                  {endpoint.protocol === 'http' ||
+                  (endpoint.protocol === undefined && /^https?:\/\//.test(endpoint.url)) ? (
                     <MenuItem disabled={!endpoint.usable} onSelect={() => open(endpoint.url)}>
                       <ExternalLink className="size-3.5" />
                       <Mono kind="url" tone="ink">
@@ -123,7 +133,7 @@ export function OpenTestMenu({
               ))}
             </div>
           ))}
-          {access.kind === 'tcp' ? (
+          {hasTcp ? (
             <>
               <MenuSeparator />
               {access.bridge ? (
@@ -149,12 +159,12 @@ export function OpenTestMenu({
                   <PlugZap className="size-3.5" /> {t('openAccess')}
                 </MenuItem>
               )}
-              {access.primary && hostPort(access.primary.url) ? (
+              {tcpPrimary && hostPort(tcpPrimary.url) ? (
                 <>
-                  <MenuItem onSelect={() => copy(hostPort(access.primary!.url)!.host)}>
+                  <MenuItem onSelect={() => copy(hostPort(tcpPrimary.url)!.host)}>
                     <Copy className="size-3.5" /> {t('copyHost')}
                   </MenuItem>
-                  <MenuItem onSelect={() => copy(hostPort(access.primary!.url)!.port)}>
+                  <MenuItem onSelect={() => copy(hostPort(tcpPrimary.url)!.port)}>
                     <Copy className="size-3.5" /> {t('copyPort')}
                   </MenuItem>
                 </>

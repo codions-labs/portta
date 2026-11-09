@@ -1,10 +1,11 @@
 import { chmodSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { permissionsOf } from 'portta-auth-core'
 import type { Environment } from 'portta-contracts'
-import { readProtectionStore, setProtection, writeProtectionStore } from 'portta-core'
+import { readProtectionStore, setProtection, verifyPassword, writeProtectionStore } from 'portta-core'
 import { environmentSettings, serviceSettings } from 'portta-db'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GENERATED_FILES } from '../src/services/dynamic.ts'
 import { GATEWAY, PROJECT_A } from './fixtures.ts'
 import { databasePerFile, makeApp } from './helpers.ts'
@@ -28,6 +29,7 @@ function unwritableParent(): string {
 
 const cleanup: string[] = []
 afterEach(async () => {
+  vi.restoreAllMocks()
   for (const dir of cleanup.splice(0)) {
     try {
       chmodSync(dir, 0o700)
@@ -63,7 +65,7 @@ async function storedServiceSetting(instance: Awaited<ReturnType<typeof app>>, s
   return rows.find((row) => row.service === service && row.key === key)?.value
 }
 
-async function put(instance: Awaited<ReturnType<typeof app>>, path: string, body: unknown) {
+async function put(instance: Pick<ReturnType<typeof makeApp>, 'app'>, path: string, body: unknown) {
   return instance.app.request(path, {
     method: 'PUT',
     body: JSON.stringify(body),
@@ -357,5 +359,234 @@ describe('a hostname alias', () => {
     })
     const checks = (await doctor.json()).checks as { id: string; detail?: string; message?: string }[]
     expect(checks.some((check) => check.id === 'aliases-dangling')).toBe(true)
+  })
+})
+
+describe('HTTP addresses for a secondary service', () => {
+  it('accepts an existing declared HTTP target when Docker exposes a different port', async () => {
+    const seeded = await seededDatabase()
+    const dynamicDir = scratch()
+    const instance = makeApp(
+      {
+        containers: PROJECT_A.map((entry) =>
+          entry.id === 'a-web'
+            ? {
+                ...entry,
+                exposed: [9000],
+                labels: { ...entry.labels, 'traefik.http.services.alpha-web.loadbalancer.server.port': '8000' },
+              }
+            : entry,
+        ),
+      },
+      { dynamicDir },
+      seeded.database,
+    )
+    const response = await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'extra', port: 8000 })
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ host: 'extra.localhost', port: 8000 })
+    expect(readFileSync(join(dynamicDir, GENERATED_FILES.aliases), 'utf8')).toContain('http://alpha-web-1:8000')
+  })
+
+  async function mailpit(onGatewayNetwork = true, profile = 'local') {
+    const seeded = await seededDatabase()
+    const dynamicDir = scratch()
+    return {
+      ...makeApp(
+        {
+          containers: [
+            ...GATEWAY,
+            ...PROJECT_A,
+            {
+              id: 'a-mailpit',
+              name: 'alpha-mailpit-1',
+              image: 'axllent/mailpit:latest',
+              networks: onGatewayNetwork ? ['portta', 'alpha_default'] : ['alpha_default'],
+              exposed: [1025, 8025, 9001],
+              labels: {
+                'com.docker.compose.project': 'alpha',
+                'com.docker.compose.service': 'mailpit',
+                'traefik.enable': 'false',
+              },
+            },
+          ],
+        },
+        { dynamicDir, profile, tlsEnabled: profile === 'remote-public' },
+        seeded.database,
+      ),
+      dynamicDir,
+    }
+  }
+
+  it('routes the chosen web port without changing SMTP or the primary application', async () => {
+    const instance = await mailpit()
+    const response = await put(instance, '/api/environments/alpha/services/mailpit/alias', {
+      alias: 'mail',
+      port: 8025,
+    })
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ host: 'mail.localhost', port: 8025 })
+    const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
+    expect(written).toContain('http://alpha-mailpit-1:8025')
+    const project = (await (await instance.app.request('/api/environments/alpha')).json()) as Environment
+    const service = project.services.find((entry) => entry.service === 'mailpit')!
+    expect(service.kind).toBe('smtp')
+    expect(service.urls).toContainEqual(expect.objectContaining({ host: 'mail.localhost', targetPort: 8025 }))
+    expect(project.services.find((entry) => entry.service === 'web')!.urls[0]!.host).toBe('alpha--web.localhost')
+  })
+
+  it.each([1025, 3306, 65534])('refuses a TCP protocol or undiscovered target port %s', async (port) => {
+    const instance = await mailpit()
+    expect(
+      (await put(instance, '/api/environments/alpha/services/mailpit/alias', { alias: 'mail', port })).status,
+    ).toBe(400)
+    expect(existsSync(join(instance.dynamicDir, GENERATED_FILES.aliases))).toBe(false)
+  })
+
+  it('requires integration before publishing a secondary container hostname', async () => {
+    const instance = await mailpit(false)
+    const response = await put(instance, '/api/environments/alpha/services/mailpit/alias', {
+      alias: 'mail',
+      port: 8025,
+    })
+    expect(response.status).toBe(400)
+    expect((await response.json()).error).toContain('network')
+    expect(existsSync(join(instance.dynamicDir, GENERATED_FILES.aliases))).toBe(false)
+  })
+
+  it('keeps independent ports and concurrent hostnames of the same service', async () => {
+    const instance = await mailpit()
+    const responses = await Promise.all([
+      put(instance, '/api/environments/alpha/services/mailpit/alias', { alias: 'mail', port: 8025 }),
+      put(instance, '/api/environments/alpha/services/mailpit/alias', { alias: 'other-panel', port: 9001 }),
+    ])
+    expect(responses.map((response) => response.status)).toEqual([200, 200])
+    const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
+    expect(written).toContain('http://alpha-mailpit-1:8025')
+    expect(written).toContain('http://alpha-mailpit-1:9001')
+  })
+
+  it('protects an explicit public-host URL before publishing it and returns its credential once', async () => {
+    const instance = await mailpit(true, 'remote-public')
+    const response = await put(instance, '/api/environments/alpha/services/mailpit/alias', {
+      alias: 'mail',
+      port: 8025,
+    })
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.user).toBe('reviewer')
+    expect(body.password).toBeTruthy()
+    const record = readProtectionStore(instance.config.authStore).protections.find((entry) => entry.host === body.host)!
+    expect(record).toMatchObject({ mode: 'protected', project: 'alpha', service: 'mailpit' })
+    expect(await verifyPassword(body.password, record.hash!)).toBe(true)
+    expect(readFileSync(instance.config.authStore, 'utf8')).not.toContain(body.password)
+    const written = readFileSync(join(instance.dynamicDir, GENERATED_FILES.aliases), 'utf8')
+    expect(written).toContain('middlewares: [portta-forward-auth]')
+    expect(written).not.toContain(body.password)
+    const secondResponse = await put(instance, '/api/environments/alpha/services/mailpit/alias', {
+      alias: 'other-mail',
+      port: 9001,
+    })
+    expect(secondResponse.status).toBe(200)
+    const second = await secondResponse.json()
+    const secondEpoch = readProtectionStore(instance.config.authStore).protections.find(
+      (entry) => entry.host === second.host,
+    )!.epoch
+    expect(
+      (
+        await instance.app.request('/api/services/a-mailpit/exposure', {
+          method: 'PUT',
+          body: JSON.stringify({}),
+          headers: { 'content-type': 'application/json', origin: 'http://localhost', host: 'localhost' },
+        })
+      ).status,
+    ).toBe(400)
+    const exposure = await instance.app.request('/api/services/a-mailpit/exposure', {
+      method: 'PUT',
+      body: JSON.stringify({ host: body.host }),
+      headers: { 'content-type': 'application/json', origin: 'http://localhost', host: 'localhost' },
+    })
+    expect(exposure.status).toBe(200)
+    expect(
+      readProtectionStore(instance.config.authStore).protections.find((entry) => entry.host === second.host)!.epoch,
+    ).toBe(secondEpoch)
+  })
+
+  it('requires protection permission even when a caller tries to disable the public default', async () => {
+    const instance = await mailpit(true, 'remote-public')
+    const principal = await instance.principals.fromHeaders(new Headers())
+    vi.spyOn(instance.principals, 'fromHeaders').mockResolvedValue({
+      ...principal!,
+      permissions: permissionsOf('developer'),
+    })
+    const response = await put(instance, '/api/environments/alpha/services/mailpit/alias', {
+      alias: 'mail',
+      port: 8025,
+      protect: false,
+    })
+    expect(response.status).toBe(403)
+    expect(existsSync(join(instance.dynamicDir, GENERATED_FILES.aliases))).toBe(false)
+    expect(readProtectionStore(instance.config.authStore).protections).toEqual([])
+    vi.restoreAllMocks()
+    expect(
+      (
+        await put(instance, '/api/environments/alpha/services/mailpit/alias', {
+          alias: 'mail',
+          port: 8025,
+          protect: false,
+        })
+      ).status,
+    ).toBe(400)
+  })
+
+  it('checks project scope before validating the selected service port', async () => {
+    const instance = await mailpit()
+    const principal = await instance.principals.fromHeaders(new Headers())
+    vi.spyOn(instance.principals, 'fromHeaders').mockResolvedValue({ ...principal!, scope: new Set() })
+    const response = await put(instance, '/api/environments/alpha/services/mailpit/alias', {
+      alias: 'mail',
+      port: 65534,
+    })
+    expect(response.status).toBe(403)
+    expect(existsSync(join(instance.dynamicDir, GENERATED_FILES.aliases))).toBe(false)
+  })
+
+  it('does not let a legacy request bypass protection permission when changing a public alias port', async () => {
+    const seeded = await seededDatabase()
+    const instance = makeApp(
+      {
+        containers: PROJECT_A.map((entry) =>
+          entry.id === 'a-web'
+            ? {
+                ...entry,
+                exposed: [80, 8080],
+                labels: { ...entry.labels, 'traefik.http.services.alpha-web.loadbalancer.server.port': '80' },
+              }
+            : entry,
+        ),
+      },
+      { dynamicDir: scratch(), profile: 'remote-public', tlsEnabled: true },
+      seeded.database,
+    )
+    expect(
+      (await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'extra', port: 8080 })).status,
+    ).toBe(200)
+    const principal = await instance.principals.fromHeaders(new Headers())
+    vi.spyOn(instance.principals, 'fromHeaders').mockResolvedValue({
+      ...principal!,
+      permissions: permissionsOf('developer'),
+    })
+    expect((await put(instance, '/api/environments/alpha/services/web/alias', { alias: 'extra' })).status).toBe(403)
+  })
+
+  it('removes its new credential and database hostname if publishing the router fails', async () => {
+    const instance = await mailpit(true, 'remote-public')
+    instance.config.dynamicDir = join(unwritableParent(), 'cannot-be-a-directory')
+    const response = await put(instance, '/api/environments/alpha/services/mailpit/alias', {
+      alias: 'mail',
+      port: 8025,
+    })
+    expect(response.status).toBe(500)
+    expect(readProtectionStore(instance.config.authStore).protections).toEqual([])
+    expect((await instance.db.settings.listAllService()).some((entry) => entry.key === 'aliases')).toBe(false)
   })
 })

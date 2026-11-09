@@ -81,6 +81,17 @@ export function defaultPortForImage(image: string): number | null {
   return rule(image)?.port ?? null
 }
 
+/** A hint about one port, never a decision to publish the whole service. */
+export function httpPortHint(image: string, port: number): 'http' | 'tcp' | 'unknown' {
+  const lower = image.toLowerCase()
+  if (/mailpit|mailhog/.test(lower) && port === 8025) return 'http'
+  // Search's default port speaks HTTP; the other known default ports speak
+  // their own protocols, even if the same image also includes a web console.
+  const known = rule(image)
+  if (known?.port === port) return known.kind === 'search' ? 'http' : 'tcp'
+  return 'unknown'
+}
+
 const TCP_ROUTING: Partial<Record<ServiceKind, TcpRouting>> = {
   postgres: 'starttls-sni',
   redis: 'tls-sni',
