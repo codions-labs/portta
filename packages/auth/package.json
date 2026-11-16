@@ -35,10 +35,10 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@better-auth/api-key": "1.7.15",
-    "better-auth": "1.7.15",
+    "@better-auth/api-key": "1.7.23",
+    "better-auth": "1.7.23",
     "drizzle-orm": "0.45.4",
-    "hono": "4.13.16",
+    "hono": "4.13.18",
     "nanoid": "5.1.16",
     "portta-core": "0.1.0",
     "portta-db": "0.1.0"
@@ -46,6 +46,6 @@
   "devDependencies": {
     "@types/node": "24.13.3",
     "typescript": "7.0.2",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   }
 }
