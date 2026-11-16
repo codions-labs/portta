@@ -6,7 +6,7 @@
 #
 # Built on demand and cached locally; see `portta toolbox build`.
 # ============================================================================
-FROM alpine:3.24.3
+FROM alpine:3.24.4
 
 ARG PORTTA_VERSION
 
